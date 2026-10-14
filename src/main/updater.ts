@@ -27,6 +27,8 @@ export function setupUpdater(isE2E: boolean): void {
   autoUpdater.autoInstallOnAppQuit = true
   autoUpdater.logger = null
   autoUpdater.on('update-downloaded', (info) => {
+    // Une vérification de fond peut ré-émettre l'événement pour une version déjà annoncée : le bandeau masqué ne doit pas revenir.
+    if (readyVersion === info.version) return
     readyVersion = info.version
     broadcastReady(info.version)
   })
