@@ -40,9 +40,18 @@ textarea {
 .shell__center { grid-area: center; position: relative; min-width: 0; }
 .shell__right { grid-area: right; background: var(--surface); border-left: 1px solid var(--line); overflow-y: auto; }
 
-.topbar { display: flex; align-items: center; gap: 14px; padding: 0 16px; background: var(--surface); border-bottom: 1px solid var(--line); }
+.topbar { display: flex; align-items: center; gap: 10px; padding: 0 16px; background: var(--surface); border-bottom: 1px solid var(--line); }
 .wordmark { font-weight: 700; font-size: 17px; letter-spacing: 0.09em; }
 .wordmark__dot { color: var(--accent); }
+.brandmark { flex: none; }
+.brandmark__tile { fill: var(--panel-top); stroke: var(--panel-stroke); stroke-width: 1; }
+.brandmark__cord { fill: none; stroke-width: 2.2; stroke-linecap: round; }
+.brandmark__cord--a { stroke: var(--brand-red); }
+.brandmark__cord--b { stroke: var(--brand-blue); }
+.brandmark__cord--c { stroke: var(--brand-yellow); }
+.brandmark__plug--a { fill: var(--brand-red); }
+.brandmark__plug--b { fill: var(--brand-blue); }
+.brandmark__plug--c { fill: var(--brand-yellow); }
 .topbar__file { font-family: var(--font-mono); font-size: 12px; color: var(--muted); }
 .topbar__dirty { color: var(--accent); margin-right: 4px; }
 .topbar__badge { font-family: var(--font-mono); font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; padding: 2px 6px; border: 1px solid var(--muted); color: var(--muted); }

@@ -14,7 +14,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "peek": "electron-vite build && AVWAN_PEEK=1 playwright test e2e/peek.spec.ts",
-    "e2e": "electron-vite build && playwright test"
+    "e2e": "electron-vite build && playwright test",
+    "brand": "AVWAN_E2E=1 electron scripts/brand/render.cjs"
   },
   "devDependencies": {
     "@fontsource/archivo-narrow": "~5.3.0",

@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <!-- AV·WAN — icône d'app. Grille Apple : tuile de 824 px centrée, rayon 186. Aucune police. -->
+  <defs>
+    <linearGradient id="panel" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2C3137"/>
+      <stop offset="1" stop-color="#17191C"/>
+    </linearGradient>
+    <linearGradient id="sheen" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.09"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
+    </linearGradient>
+    <clipPath id="tile">
+      <rect x="100" y="100" width="824" height="824" rx="186"/>
+    </clipPath>
+  </defs>
+  <rect x="100" y="100" width="824" height="824" rx="186" fill="url(#panel)"/>
+  <g clip-path="url(#tile)">
+    <g fill="none" stroke-linecap="round" stroke-width="58">
+      <path d="M332 452 C332 640 298 720 262 960" stroke="#E5484D"/>
+      <path d="M512 452 L512 960" stroke="#3E8EF7"/>
+      <path d="M692 452 C692 640 726 720 762 960" stroke="#F2C94C"/>
+    </g>
+    <rect x="100" y="100" width="824" height="420" fill="url(#sheen)"/>
+  </g>
+  <circle cx="190" cy="232" r="22" fill="#0E1012"/>
+  <circle cx="834" cy="232" r="22" fill="#0E1012"/>
+  <path d="M178 232H202M822 232H846" stroke="#2C3137" stroke-width="6" stroke-linecap="round"/>
+  <g fill="#0B0D0F" stroke="#454B53" stroke-width="7" stroke-linejoin="round">
+    <path d="M257 296H407V430H369V454H295V430H257Z"/>
+    <path d="M437 296H587V430H549V454H475V430H437Z"/>
+    <path d="M617 296H767V430H729V454H655V430H617Z"/>
+  </g>
+  <rect x="284" y="318" width="96" height="128" rx="14" fill="#E5484D"/>
+  <rect x="464" y="318" width="96" height="128" rx="14" fill="#3E8EF7"/>
+  <rect x="644" y="318" width="96" height="128" rx="14" fill="#F2C94C"/>
+  <circle cx="332" cy="252" r="15" fill="#F5A524"/>
+  <circle cx="512" cy="252" r="15" fill="#F5A524"/>
+  <circle cx="692" cy="252" r="15" fill="#5BE38A"/>
+  <rect x="102" y="102" width="820" height="820" rx="184" fill="none" stroke="#3B4148" stroke-width="4"/>
+</svg>

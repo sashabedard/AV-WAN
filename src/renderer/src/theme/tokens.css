@@ -42,6 +42,10 @@
   --led-off: #3a3f45;
   --sfp-stroke: #5a616a;
   --port-dim: rgba(0, 0, 0, 0.5);
+  /* Identité : les trois cordons de l'icône d'app */
+  --brand-red: #e5484d;
+  --brand-blue: #3e8ef7;
+  --brand-yellow: #f2c94c;
 }
 
 :root[data-theme='light'] {

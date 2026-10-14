@@ -8,6 +8,8 @@ if (userData) app.setPath('userData', userData)
 const isE2E = process.env['AVWAN_E2E'] === '1'
 // En mode test, aucune fenêtre ni icône Dock ne doit apparaître à l'écran.
 if (isE2E) app.dock?.hide()
+// Icône d'app en développement ; une fois empaquetée, electron-builder fournit l'ICNS ou l'ICO (plan 4).
+const devIcon = join(__dirname, '../../build/icon.png')
 
 function createWindow(): BrowserWindow {
   const win = new BrowserWindow({
@@ -18,6 +20,7 @@ function createWindow(): BrowserWindow {
     show: false,
     backgroundColor: '#15181B',
     title: 'AV·WAN',
+    ...(app.isPackaged ? {} : { icon: devIcon }),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       contextIsolation: true,
@@ -52,6 +55,7 @@ function createWindow(): BrowserWindow {
 }
 
 void app.whenReady().then(() => {
+  if (process.platform === 'darwin' && !app.isPackaged && !isE2E) app.dock?.setIcon(devIcon)
   registerIpc()
   buildMenu()
   createWindow()
