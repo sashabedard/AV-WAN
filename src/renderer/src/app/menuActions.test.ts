@@ -38,4 +38,10 @@ describe('handleMenuAction', () => {
     expect(uiStore.getState().welcome).toBe(false)
     expect(uiStore.getState().search).toEqual({ at: null })
   })
+
+  it('ouvre la boîte d’export du PDF (⌘E)', () => {
+    uiStore.getState().setExportOpen(false)
+    handleMenuAction('exportPdf')
+    expect(uiStore.getState().exportOpen).toBe(true)
+  })
 })

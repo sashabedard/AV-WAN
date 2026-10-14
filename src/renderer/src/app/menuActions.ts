@@ -51,5 +51,8 @@ export function handleMenuAction(action: MenuAction): void {
     case 'groupZone':
       projectStore.getState().zoneAroundSelection()
       break
+    case 'exportPdf':
+      uiStore.getState().setExportOpen(true)
+      break
   }
 }

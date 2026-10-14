@@ -64,6 +64,7 @@ export interface ProjectState {
   updateSwitchSpec(deviceId: string, spec: SwitchSpec): void
   updateMeta(patch: MetaPatch): void
   setColorMode(mode: Project['settings']['colorMode']): void
+  setPageFormat(format: Project['settings']['pageFormat']): void
   setSelection(selection: Selection): void
   undo(): void
   redo(): void
@@ -84,12 +85,13 @@ export function linksOnRemovedPorts(project: Project, deviceId: string, spec: Sw
   return project.links.filter((l) => gone(l.a) || gone(l.b))
 }
 
-// ⌘Z ne revient pas sur l'affichage : on garde le mode de couleur courant après une annulation.
-export function keepColorMode(before: History<Project>, after: History<Project>): History<Project> {
+// ⌘Z ne revient pas sur l'affichage : on garde le mode de couleur et le format du PDF courants.
+export function keepViewSettings(before: History<Project>, after: History<Project>): History<Project> {
   if (after === before) return after
-  const mode = before.present.settings.colorMode
-  if (after.present.settings.colorMode === mode) return after
-  return { ...after, present: { ...after.present, settings: { ...after.present.settings, colorMode: mode } } }
+  const { colorMode, pageFormat } = before.present.settings
+  const s = after.present.settings
+  if (s.colorMode === colorMode && s.pageFormat === pageFormat) return after
+  return { ...after, present: { ...after.present, settings: { ...s, colorMode, pageFormat } } }
 }
 
 export function createProjectStore(initial: Project = createProject()): StoreApi<ProjectState> {
@@ -296,11 +298,19 @@ export function createProjectStore(initial: Project = createProject()): StoreApi
         // Fichier en lecture seule : l'affichage ne compte pas comme une modification (rien ne peut être enregistré).
         set(get().readOnly ? { history: { ...history, present }, savedRef: present } : { history: { ...history, present } })
       },
+      // Format du PDF : enregistré dans le fichier, jamais une entrée d'historique (décision 8).
+      setPageFormat: (format) => {
+        const { history } = get()
+        const p = history.present
+        if (p.settings.pageFormat === format) return
+        const present = { ...p, settings: { ...p.settings, pageFormat: format } }
+        set(get().readOnly ? { history: { ...history, present }, savedRef: present } : { history: { ...history, present } })
+      },
       setSelection: (selection) => {
         if (!sameSelection(get().selection, selection)) set({ selection })
       },
-      undo: () => set({ history: keepColorMode(get().history, historyUndo(get().history)) }),
-      redo: () => set({ history: keepColorMode(get().history, historyRedo(get().history)) }),
+      undo: () => set({ history: keepViewSettings(get().history, historyUndo(get().history)) }),
+      redo: () => set({ history: keepViewSettings(get().history, historyRedo(get().history)) }),
       showToast: (message) => set({ toast: message }),
       clearToast: () => set({ toast: null })
     }
