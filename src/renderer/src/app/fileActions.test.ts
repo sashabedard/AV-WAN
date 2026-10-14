@@ -10,6 +10,14 @@ function fakeApi(file: Partial<AvwanApi['file']> = {}): AvwanApi {
   return {
     platform: 'darwin',
     isE2E: false,
+    autosaveMs: 30_000,
+    recovery: {
+      write: vi.fn(async () => 'u-test00'),
+      discard: vi.fn(async () => undefined),
+      list: vi.fn(async () => []),
+      restore: vi.fn(async (key: string) => ({ key, path: null, text: '' })),
+      findNewer: vi.fn(async () => null)
+    },
     onMenu: () => () => undefined,
     onOpenRequest: () => () => undefined,
     rendererReady: vi.fn(),

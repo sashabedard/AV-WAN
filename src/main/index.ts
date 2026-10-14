@@ -2,7 +2,7 @@ import { app, BrowserWindow, dialog, ipcMain, shell } from 'electron'
 import { join } from 'node:path'
 import { IPC, type OpenRequest } from '../shared/api'
 import { APP_NAME, APP_SUBTITLE, RELEASES_URL } from '../shared/appInfo'
-import { grants, registerIpc } from './ipc'
+import { discardLastRecoverySync, grants, registerIpc } from './ipc'
 import { buildMenu } from './menu'
 import { loadRenderer } from './windows'
 import { registerExportIpc } from './exports'
@@ -102,7 +102,11 @@ function createWindow(): BrowserWindow {
       message: 'Des modifications ne sont pas enregistrées.',
       detail: 'Elles seront perdues si vous quittez maintenant.'
     })
-    if (choice === 0) event.preventDefault()
+    if (choice === 0) {
+      // Abandon volontaire : la copie de récupération de cette fenêtre ne doit pas être proposée au prochain lancement.
+      discardLastRecoverySync(win.webContents.id)
+      event.preventDefault()
+    }
   })
   void loadRenderer(win)
   return win

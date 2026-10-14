@@ -10,6 +10,25 @@ export interface OpenedFile {
 // Fichier à ouvrir envoyé par le processus principal (double-clic, Dock, 2e instance).
 export type OpenRequest = { path: string; text: string } | { path: string; error: string }
 
+// Copies de récupération (autosauvegarde) : un fichier par document dans userData/recovery/.
+export interface RecoveryEntry {
+  key: string
+  path: string | null
+  title: string
+  savedAt: string
+}
+export interface RecoveryWrite {
+  path: string | null
+  untitledId: string
+  title: string
+  text: string
+}
+export interface RestoredRecovery {
+  key: string
+  path: string | null
+  text: string
+}
+
 // Travail confié à la fenêtre d'impression cachée : le projet sérialisé et les options choisies.
 export interface PrintJob {
   projectText: string
@@ -19,6 +38,7 @@ export interface PrintJob {
 export interface AvwanApi {
   platform: string
   isE2E: boolean
+  autosaveMs: number
   file: {
     open(): Promise<OpenedFile | null>
     read(path: string): Promise<OpenedFile>
@@ -30,6 +50,13 @@ export interface AvwanApi {
     list(): Promise<string[]>
     open(path: string): Promise<OpenedFile>
     remember(path: string): Promise<void>
+  }
+  recovery: {
+    write(doc: RecoveryWrite): Promise<string>
+    discard(key: string): Promise<void>
+    list(): Promise<RecoveryEntry[]>
+    restore(key: string): Promise<RestoredRecovery>
+    findNewer(path: string): Promise<RecoveryEntry | null>
   }
   export: {
     pdf(projectText: string, options: PdfOptions, suggestedName: string): Promise<string | null>
@@ -55,6 +82,11 @@ export const IPC = {
   recentList: 'recent:list',
   recentOpen: 'recent:open',
   recentRemember: 'recent:remember',
+  recoveryWrite: 'recovery:write',
+  recoveryDiscard: 'recovery:discard',
+  recoveryList: 'recovery:list',
+  recoveryRestore: 'recovery:restore',
+  recoveryFindNewer: 'recovery:findNewer',
   exportPdf: 'export:pdf',
   exportCsv: 'export:csv',
   exportXlsx: 'export:xlsx',
