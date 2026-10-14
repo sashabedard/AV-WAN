@@ -38,6 +38,7 @@ import { memberPositions, selectionMoves, startZoneDrag, type ZoneDrag } from '.
 import { ZONE_DEFAULT } from '../model/zones'
 import { CordEdge } from './CordEdge'
 import { SwitchNode } from './SwitchNode'
+import { PinnedView } from './PinnedLayer'
 import { Legend } from './Legend'
 import { QuickSearch } from '../panels/QuickSearch'
 import { canvasPointer, centreOf } from './pointer'
@@ -156,7 +157,12 @@ function CanvasInner() {
   }, [])
 
   const isValidConnection = useMemo(
-    () => makeIsValidConnection(() => projectStore.getState().history.present, () => uiStore.getState().reconnectingLinkId),
+    () =>
+      makeIsValidConnection(
+        () => projectStore.getState().history.present,
+        () => uiStore.getState().reconnectingLinkId,
+        () => uiStore.getState().pointerOverPinned
+      ),
     []
   )
   const onReconnectStart = useCallback((_e: ReactMouseEvent, edge: CordFlowEdge) => uiStore.getState().setReconnecting(edge.id), [])
@@ -362,8 +368,12 @@ function CanvasInner() {
 
 export function Canvas() {
   return (
-    <ReactFlowProvider>
-      <CanvasInner />
-    </ReactFlowProvider>
+    <>
+      <ReactFlowProvider>
+        <CanvasInner />
+      </ReactFlowProvider>
+      {/* À côté du canvas principal, pas dedans : rien de la vignette n'y remonte (spec 2026-10-14 § 3.3). */}
+      <PinnedView />
+    </>
   )
 }
