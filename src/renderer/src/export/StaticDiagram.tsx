@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { ReactFlow, applyNodeChanges, useNodesInitialized, useReactFlow, type NodeChange } from '@xyflow/react'
+import { ConnectionMode, ReactFlow, applyNodeChanges, useNodesInitialized, useReactFlow, type NodeChange } from '@xyflow/react'
 import type { Project, Zone } from '../model/types'
 import { analyzeLinks, createFlowCache, toFlowEdges, toFlowNodes, toFlowZones, type CordFlowEdge, type FlowNode } from '../canvas/toFlow'
 import { mergeNodes } from '../canvas/canvasHelpers'
@@ -51,6 +51,7 @@ export function StaticDiagram({ project, zone, onReady }: { project: Project; zo
       nodes={nodes}
       edges={edges}
       onNodesChange={onNodesChange}
+      connectionMode={ConnectionMode.Loose}
       nodeTypes={nodeTypes}
       edgeTypes={edgeTypes}
       nodesDraggable={false}

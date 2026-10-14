@@ -19,6 +19,8 @@ html[data-print] #root { height: auto; background: #ffffff; }
 
 /* Canvas imprimé : les mêmes composants, à plat. */
 .print .react-flow { background: transparent; }
+/* Le canvas est mis à l'échelle (fitView) : sans cela, le texte est dimensionné avec des métriques arrondies et déborde du ruban. */
+.print .react-flow__viewport { text-rendering: geometricPrecision; }
 .print .dn { box-shadow: none; background: var(--tile-top); }
 .print .sw { filter: none; }
 .print .sw__panel { fill: var(--panel-top); }

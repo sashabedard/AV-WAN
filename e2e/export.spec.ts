@@ -24,6 +24,9 @@ test('exporte le projet exemple en PDF vectoriel : schéma en Tabloïd, tableau 
     expect(pages[0]!.text).toContain('SW-1')
     expect(pages[0]!.text).toContain('Installation interactive (exemple)')
     expect(pages[0]!.text).toContain('Trunk (bagues = VLAN)')
+    // Pastilles dessinées par les cordons seuls (liens simples Pixels et DMX) : prouvent que les câbles sont imprimés.
+    expect(pages[0]!.text).toContain('PIXELS')
+    expect(pages[0]!.text).toContain('DMX')
     expect(pages[0]!.text).toMatch(new RegExp(`Page\\s*1\\s*/\\s*${pages.length}`))
     expect(pages[1]!.text).toContain('Zone : Régie')
     expect(pages[2]!.text).toContain('Zone : Salle')
