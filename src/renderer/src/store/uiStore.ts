@@ -11,6 +11,10 @@ export interface UiState {
   pendingZone: boolean
   search: { at: XY | null } | null
   focusVlan: number | null
+  sidebarTab: 'devices' | 'vlans'
+  inspectVlanId: number | null
+  setSidebarTab(tab: 'devices' | 'vlans'): void
+  setInspectVlan(id: number | null): void
   hoverDeviceId: string | null
   reconnectingLinkId: string | null
   setReconnecting(id: string | null): void
@@ -29,6 +33,10 @@ export const uiStore = createStore<UiState>()((set) => ({
   pendingZone: false,
   search: null,
   focusVlan: null,
+  sidebarTab: 'devices',
+  inspectVlanId: null,
+  setSidebarTab: (tab) => set({ sidebarTab: tab }),
+  setInspectVlan: (id) => set({ inspectVlanId: id }),
   hoverDeviceId: null,
   reconnectingLinkId: null,
   setReconnecting: (id) => set({ reconnectingLinkId: id }),

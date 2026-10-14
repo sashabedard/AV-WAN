@@ -20,6 +20,7 @@
   --muted: light-dark(#6b675e, #858c94);
   --accent: light-dark(#c2410c, #f2a93b);
   --accent-bg: light-dark(#f6dccb, #2a2318);
+  --danger: light-dark(#b42318, #ff8a80);
   --tape: light-dark(#1e1f22, #f3efe4);
   --tape-ink: light-dark(#f3efe4, #141414);
   --trunk: light-dark(#2b2e33, #eceae4);

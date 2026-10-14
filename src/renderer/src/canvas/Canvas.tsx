@@ -132,6 +132,7 @@ function CanvasInner() {
     projectStore.getState().moveSelection(selectionMoves(zd, dragged))
   }, [])
   const onSelectionChange = useCallback(({ nodes: ns, edges: es }: OnSelectionChangeParams<FlowNode, CordFlowEdge>) => {
+    if (ns.length + es.length > 0) uiStore.getState().setInspectVlan(null)
     projectStore.getState().setSelection({
       deviceIds: ns.filter((n) => !isZone(n)).map((n) => n.id),
       linkIds: es.map((e) => e.id),
