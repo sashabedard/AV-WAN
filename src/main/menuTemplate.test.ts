@@ -22,6 +22,15 @@ describe('menuTemplate', () => {
     expect(toggleAutoSave).toHaveBeenCalledWith(true)
   })
 
+  it('Fichier › Revenir à la version d’ouverture… suit la case et envoie son action', () => {
+    const send = vi.fn()
+    const fichier = submenu(menuTemplate(true, send, handlers(), file()), 'Fichier')
+    const i = fichier.findIndex((it) => it.label === 'Enregistrement automatique')
+    expect(fichier[i + 1]?.label).toBe('Revenir à la version d’ouverture…')
+    click(fichier[i + 1])
+    expect(send).toHaveBeenCalledWith('revertToOpened')
+  })
+
   it('macOS : le menu de l’app en tête, et Aide sans « À propos »', () => {
     const help = handlers()
     const menu = menuTemplate(true, vi.fn(), help, file())

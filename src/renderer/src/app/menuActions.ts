@@ -2,7 +2,7 @@
 import type { MenuAction } from '../../../shared/api'
 import { projectStore } from '../store/projectStore'
 import { uiStore } from '../store/uiStore'
-import { newProjectAction, openProjectAction, saveProjectAction, saveProjectAsAction } from './fileActions'
+import { newProjectAction, openProjectAction, revertToOpenedAction, saveProjectAction, saveProjectAsAction } from './fileActions'
 import { fitAll, pinCurrentView, unpinView, zoomIn, zoomOut } from '../canvas/viewport'
 import { isTextInput, routeUndoRedo } from './routeEditCommand'
 import { duplicateSelection } from './clipboardActions'
@@ -29,6 +29,9 @@ export function handleMenuAction(action: MenuAction): void {
       break
     case 'saveAs':
       void saveProjectAsAction()
+      break
+    case 'revertToOpened':
+      void revertToOpenedAction()
       break
     case 'undo':
     case 'redo':

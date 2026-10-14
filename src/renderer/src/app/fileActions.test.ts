@@ -3,7 +3,7 @@ import type { AvwanApi } from '../../../shared/api'
 import { isDirty, projectStore } from '../store/projectStore'
 import { sampleProject } from '../model/__fixtures__/sample'
 import { serializeProject } from '../model/file'
-import { fileNameOf, loadFromText, openProjectAction, openRecentAction, openRequestAction, restoreRecoveryAction, saveProjectAction } from './fileActions'
+import { fileNameOf, loadFromText, openProjectAction, openRecentAction, openRequestAction, restoreRecoveryAction, revertToOpenedAction, saveProjectAction, saveProjectAsAction } from './fileActions'
 import { autosave } from './autosave'
 import { blankDraft, templateFromDraft } from '../model/customTemplate'
 import { uiStore } from '../store/uiStore'
@@ -319,5 +319,103 @@ describe('enregistrer un projet avec des composantes', () => {
     const written = JSON.parse(vi.mocked(api.file.save).mock.calls[0]![1]) as { templates: unknown[] }
     expect(written.templates).toEqual([])
     expect(projectStore.getState().history.present.templates).toEqual([unused])
+  })
+})
+
+describe('« Enregistrer sous » depuis un fichier créé automatiquement', () => {
+  it('le fichier quitté est confié au processus principal, qui ne supprime que ses propres créations', async () => {
+    const api = fakeApi()
+    vi.stubGlobal('window', { avwan: api, confirm: () => true })
+    await saveProjectAsAction()
+    expect(projectStore.getState().filePath).toBe('/tmp/copie.avwan')
+    expect(api.file.discardAutoCreated).toHaveBeenCalledWith('/tmp/a.avwan')
+  })
+
+  it('rien à déplacer pour un projet sans fichier, ni quand le chemin ne change pas', async () => {
+    const api = fakeApi()
+    vi.stubGlobal('window', { avwan: api, confirm: () => true })
+    projectStore.getState().loadProject(sampleProject(), null)
+    await saveProjectAsAction()
+    expect(projectStore.getState().filePath).toBe('/tmp/copie.avwan')
+    await saveProjectAsAction()
+    expect(api.file.discardAutoCreated).not.toHaveBeenCalled()
+  })
+
+  it('« Enregistrer sous » annulé ou en échec : rien n’est supprimé', async () => {
+    const api = fakeApi({ saveAs: vi.fn(async () => null) })
+    vi.stubGlobal('window', { avwan: api, confirm: () => true })
+    await saveProjectAsAction()
+    vi.mocked(api.file.saveAs).mockRejectedValueOnce(new Error('EACCES'))
+    await saveProjectAsAction()
+    expect(api.file.discardAutoCreated).not.toHaveBeenCalled()
+    expect(projectStore.getState().filePath).toBe('/tmp/a.avwan')
+  })
+})
+
+describe('revenir à la version d’ouverture', () => {
+  const NONE = 'Aucune version d’ouverture pour ce fichier.'
+
+  it('projet sans fichier : message clair, rien ne change', async () => {
+    const api = fakeApi()
+    const confirm = vi.fn(() => true)
+    vi.stubGlobal('window', { avwan: api, confirm })
+    projectStore.getState().loadProject(sampleProject(), null)
+    const before = projectStore.getState().history.present
+    expect(await revertToOpenedAction()).toBe(false)
+    expect(projectStore.getState().toast).toBe(NONE)
+    expect(api.file.openedVersion).not.toHaveBeenCalled()
+    expect(confirm).not.toHaveBeenCalled()
+    expect(projectStore.getState().history.present).toBe(before)
+  })
+
+  it('fichier sans version d’ouverture (créé automatiquement) : même message, projet inchangé', async () => {
+    const api = fakeApi({ openedVersion: vi.fn(async () => null) })
+    const confirm = vi.fn(() => true)
+    vi.stubGlobal('window', { avwan: api, confirm })
+    projectStore.getState().updateMeta({ title: 'Modifié' })
+    const before = projectStore.getState().history.present
+    expect(await revertToOpenedAction()).toBe(false)
+    expect(api.file.openedVersion).toHaveBeenCalledWith('/tmp/a.avwan')
+    expect(projectStore.getState().toast).toBe(NONE)
+    expect(confirm).not.toHaveBeenCalled()
+    expect(projectStore.getState().history.present).toBe(before)
+  })
+
+  it('confirmé : le projet redevient la version d’ouverture, et ⌘Z redonne le projet d’avant', async () => {
+    const opened = { ...sampleProject(), meta: { ...sampleProject().meta, title: 'Version d’ouverture' } }
+    const api = fakeApi({ openedVersion: vi.fn(async () => serializeProject(opened)) })
+    const confirm = vi.fn(() => true)
+    vi.stubGlobal('window', { avwan: api, confirm })
+    projectStore.getState().updateMeta({ title: 'Modifié depuis' })
+    const before = projectStore.getState().history.present
+    expect(await revertToOpenedAction()).toBe(true)
+    expect(confirm).toHaveBeenCalledWith(expect.stringContaining('Revenir à la version d’ouverture de a.avwan ?'))
+    expect(projectStore.getState().history.present.meta.title).toBe('Version d’ouverture')
+    expect(projectStore.getState().filePath).toBe('/tmp/a.avwan')
+    // Une modification ordinaire : l'enregistrement automatique l'écrira dans le fichier.
+    expect(isDirty(projectStore.getState())).toBe(true)
+    projectStore.getState().undo()
+    expect(projectStore.getState().history.present).toBe(before)
+  })
+
+  it('confirmation refusée : rien ne change', async () => {
+    const api = fakeApi({ openedVersion: vi.fn(async () => serializeProject(sampleProject())) })
+    vi.stubGlobal('window', { avwan: api, confirm: () => false })
+    projectStore.getState().updateMeta({ title: 'Modifié depuis' })
+    const before = projectStore.getState().history
+    expect(await revertToOpenedAction()).toBe(false)
+    expect(projectStore.getState().history).toBe(before)
+  })
+
+  it('version illisible ou erreur du processus principal : message, projet inchangé', async () => {
+    const api = fakeApi({ openedVersion: vi.fn(async () => '{') })
+    vi.stubGlobal('window', { avwan: api, confirm: () => true })
+    const before = projectStore.getState().history
+    expect(await revertToOpenedAction()).toBe(false)
+    expect(projectStore.getState().toast).toMatch(/^Retour impossible : /)
+    vi.mocked(api.file.openedVersion).mockRejectedValueOnce(new Error("Error invoking remote method 'file:openedVersion': Error: Accès refusé (EACCES)."))
+    expect(await revertToOpenedAction()).toBe(false)
+    expect(projectStore.getState().toast).toBe('Retour impossible : Accès refusé (EACCES).')
+    expect(projectStore.getState().history).toBe(before)
   })
 })

@@ -141,12 +141,16 @@ export async function openRequestAction(request: OpenRequest): Promise<boolean> 
 export async function saveProjectAsAction(): Promise<void> {
   const s = projectStore.getState()
   const snapshot = s.history.present
+  const previous = s.filePath
   try {
     const path = await window.avwan.file.saveAs(serializeProject(pruneTemplates(snapshot)), suggestedName())
     if (!path) return
     projectStore.setState({ readOnly: false })
     projectStore.getState().markSaved(path, snapshot)
     autosave.saved()
+    // Un fichier créé automatiquement (Documents › AV·WAN) est déplacé, pas copié : le processus principal
+    // ne supprime l'ancien que s'il l'a lui-même créé pendant cette session.
+    if (previous && previous !== path) void window.avwan.file.discardAutoCreated(previous).catch(() => undefined)
   } catch (e) {
     s.showToast(`Échec de l’enregistrement : ${ipcErrorMessage(e)}`)
   }
@@ -163,5 +167,35 @@ export async function saveProjectAction(): Promise<void> {
     autosave.saved()
   } catch (e) {
     s.showToast(`Échec de l’enregistrement : ${ipcErrorMessage(e)}`)
+  }
+}
+
+// Filet de sécurité de l'enregistrement automatique : le projet redevient le fichier tel qu'il était à son
+// ouverture, par une modification ordinaire (annulable par ⌘Z), écrite ensuite dans le fichier.
+export async function revertToOpenedAction(): Promise<boolean> {
+  const s = projectStore.getState()
+  const path = s.filePath
+  const none = 'Aucune version d’ouverture pour ce fichier.'
+  if (!path) {
+    s.showToast(none)
+    return false
+  }
+  try {
+    const text = await window.avwan.file.openedVersion(path)
+    if (text === null) {
+      s.showToast(none)
+      return false
+    }
+    const res = parseProjectFile(text)
+    if (!res.ok) {
+      s.showToast(`Retour impossible : ${res.error}`)
+      return false
+    }
+    if (!window.confirm(`Revenir à la version d’ouverture de ${fileNameOf(path)} ? Les modifications faites depuis seront remplacées (⌘Z permet d’annuler).`)) return false
+    projectStore.getState().apply(() => res.project)
+    return true
+  } catch (e) {
+    s.showToast(`Retour impossible : ${ipcErrorMessage(e)}`)
+    return false
   }
 }
