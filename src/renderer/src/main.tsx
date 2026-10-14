@@ -13,10 +13,17 @@ import { installE2EHooks } from './dev/e2eHooks'
 
 const root = document.getElementById('root')
 if (!root) throw new Error('#root introuvable')
-if (window.avwan.isE2E) installE2EHooks()
-applyPreference(loadPreference(safeLocalStorage()), document.documentElement)
-createRoot(root).render(
-  <StrictMode>
-    <App />
-  </StrictMode>
-)
+if (new URLSearchParams(window.location.search).has('print')) {
+  // Fenêtre d'impression cachée (export PDF) : toujours en thème clair, chargée à part.
+  document.documentElement.dataset['theme'] = 'light'
+  document.documentElement.dataset['print'] = ''
+  void import('./export/PrintApp').then(({ PrintApp }) => createRoot(root).render(<PrintApp />))
+} else {
+  if (window.avwan.isE2E) installE2EHooks()
+  applyPreference(loadPreference(safeLocalStorage()), document.documentElement)
+  createRoot(root).render(
+    <StrictMode>
+      <App />
+    </StrictMode>
+  )
+}

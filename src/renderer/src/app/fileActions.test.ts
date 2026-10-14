@@ -15,6 +15,8 @@ function fakeApi(file: Partial<AvwanApi['file']> = {}): AvwanApi {
       open: vi.fn(async (path: string) => ({ path, text: '' })),
       remember: vi.fn(async () => undefined)
     },
+    export: { pdf: vi.fn(async () => null) },
+    print: { job: vi.fn(async () => ({ projectText: '', options: { sections: [], format: 'na' as const, zonePages: false } })), ready: vi.fn(), failed: vi.fn() },
     file: {
       open: vi.fn(async () => null),
       read: vi.fn(async (path: string) => ({ path, text: '' })),

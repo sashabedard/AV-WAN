@@ -6,6 +6,8 @@ import { serializeProject } from '../model/file'
 import { loadFromText } from '../app/fileActions'
 import { handleMenuAction } from '../app/menuActions'
 import type { MenuAction } from '../../../shared/api'
+import type { PdfOptions } from '../../../shared/pdfOptions'
+import { exportPdfAction } from '../export/exportActions'
 import { makeStressProject } from './stress'
 
 let flow: ReactFlowInstance<FlowNode, CordFlowEdge> | null = null
@@ -22,6 +24,7 @@ export interface E2EHooks {
   saveTo(path: string): Promise<void>
   openPath(path: string): Promise<boolean>
   menu(action: MenuAction): void
+  exportPdf(options: PdfOptions): Promise<string | null>
 }
 
 export function installE2EHooks(): void {
@@ -39,6 +42,7 @@ export function installE2EHooks(): void {
     openPath: async (path) => {
       const file = await window.avwan.file.read(path)
       return loadFromText(file.path, file.text)
-    }
+    },
+    exportPdf: (options) => exportPdfAction(options)
   }
 }

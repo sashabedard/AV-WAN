@@ -6,11 +6,12 @@ import { join } from 'node:path'
 export interface LaunchOptions {
   keepWelcome?: boolean // tâche 18 : garder l'écran d'accueil ouvert
   scale?: number // captures nettes (2 = Retina)
+  env?: Record<string, string> // variables en plus (ex. AVWAN_E2E_EXPORT_DIR)
 }
 
 export async function launchApp(opts: LaunchOptions = {}): Promise<{ app: ElectronApplication; page: Page }> {
   const userData = mkdtempSync(join(tmpdir(), 'avwan-e2e-'))
-  const env = { ...process.env, AVWAN_E2E: '1', AVWAN_USER_DATA: userData } as Record<string, string>
+  const env = { ...process.env, AVWAN_E2E: '1', AVWAN_USER_DATA: userData, ...opts.env } as Record<string, string>
   const args = ['.', ...(opts.scale ? [`--force-device-scale-factor=${opts.scale}`] : [])]
   const app = await electron.launch({ args, env })
   try {

@@ -33,6 +33,7 @@
     "electron-vite": "~5.0.0",
     "jsdom": "~30.1.2",
     "nanoid": "~6.0.2",
+    "pdfjs-dist": "~6.3.289",
     "react": "~19.3.0",
     "react-dom": "~19.3.0",
     "typescript": "~6.0.3",

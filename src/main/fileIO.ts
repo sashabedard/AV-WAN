@@ -4,12 +4,13 @@ import { basename, dirname, join } from 'node:path'
 
 // Écriture atomique : le contenu est écrit puis synchronisé sur disque (fsync) dans un fichier
 // temporaire voisin, puis renommé. Quoi qu'il arrive, le temporaire est supprimé en cas d'échec.
-export async function atomicWriteFile(path: string, data: string): Promise<void> {
+export async function atomicWriteFile(path: string, data: string | Uint8Array): Promise<void> {
   const tmp = join(dirname(path), `.${basename(path)}.${process.pid}.${randomUUID()}.tmp`)
   try {
     const handle = await fs.open(tmp, 'w')
     try {
-      await handle.writeFile(data, 'utf8')
+      if (typeof data === 'string') await handle.writeFile(data, 'utf8')
+      else await handle.writeFile(data)
       await handle.sync()
     } finally {
       await handle.close()

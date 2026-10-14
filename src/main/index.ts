@@ -2,6 +2,8 @@ import { app, BrowserWindow, dialog, shell } from 'electron'
 import { join } from 'node:path'
 import { registerIpc } from './ipc'
 import { buildMenu } from './menu'
+import { loadRenderer } from './windows'
+import { registerExportIpc } from './exports'
 
 const userData = process.env['AVWAN_USER_DATA']
 if (userData) app.setPath('userData', userData)
@@ -48,15 +50,14 @@ function createWindow(): BrowserWindow {
     })
     if (choice === 0) event.preventDefault()
   })
-  const devUrl = process.env['ELECTRON_RENDERER_URL']
-  if (devUrl) void win.loadURL(devUrl)
-  else void win.loadFile(join(__dirname, '../renderer/index.html'))
+  void loadRenderer(win)
   return win
 }
 
 void app.whenReady().then(() => {
   if (process.platform === 'darwin' && !app.isPackaged && !isE2E) app.dock?.setIcon(devIcon)
   registerIpc()
+  registerExportIpc()
   buildMenu()
   createWindow()
   app.on('activate', () => {
