@@ -1,4 +1,4 @@
-export type MenuAction = 'new' | 'open' | 'save' | 'saveAs' | 'undo' | 'redo'
+export type MenuAction = 'new' | 'open' | 'save' | 'saveAs' | 'undo' | 'redo' | 'search'
 
 export interface OpenedFile {
   path: string

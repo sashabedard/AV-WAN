@@ -33,4 +33,15 @@ describe('Palette', () => {
     expect(item.lastElementChild?.textContent).toBe('CAM')
     expect(container.querySelectorAll('.palette__cat svg.icon')).toHaveLength(8)
   })
+
+  it('filtre le catalogue par la même recherche que ⌘K', async () => {
+    const user = userEvent.setup()
+    render(<Palette />)
+    await user.type(screen.getByRole('searchbox', { name: 'Filtrer les appareils' }), 'ptz')
+    expect(screen.queryByRole('heading', { name: 'Éclairage' })).toBeNull()
+    expect(screen.getByTestId('palette-ptz-ndi')).toBeTruthy()
+    expect(screen.queryByTestId('palette-dante-avio')).toBeNull()
+    await user.keyboard('{Escape}')
+    expect(screen.getByRole('heading', { name: 'Éclairage' })).toBeTruthy()
+  })
 })

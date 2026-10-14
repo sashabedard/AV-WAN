@@ -1,6 +1,8 @@
 // src/renderer/src/panels/Palette.tsx
+import { useMemo, useState } from 'react'
 import type { DeviceTemplate } from '../model/types'
 import { TEMPLATES } from '../catalog/templates'
+import { searchTemplates } from '../catalog/search'
 import { CATEGORY_LABELS, CATEGORY_ORDER } from '../catalog/categories'
 import { uiStore, useUiStore } from '../store/uiStore'
 import { DeviceIcon, Icon } from '../icons/Icon'
@@ -36,21 +38,49 @@ export function PaletteItem({ template, pending }: { template: DeviceTemplate; p
 
 export function Palette() {
   const pending = useUiStore((s) => s.pendingTemplateId)
+  const [filter, setFilter] = useState('')
+  const results = useMemo(() => (filter.trim() ? searchTemplates(filter) : null), [filter])
   return (
     <nav className="palette" aria-label="Palette d’appareils">
-      {GROUPS.map((g) => (
-        <section key={g.category}>
-          <h2 className="palette__cat">
-            <Icon name={CATEGORY_ICON[g.category]} size={14} />
-            {CATEGORY_LABELS[g.category]}
-          </h2>
-          <ul>
-            {g.items.map((t) => (
+      <div className="palette__search">
+        <Icon name="search" size={14} />
+        <input
+          className="palette__filter"
+          type="search"
+          aria-label="Filtrer les appareils"
+          placeholder="Filtrer…"
+          value={filter}
+          onChange={(e) => setFilter(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Escape') setFilter('')
+          }}
+        />
+      </div>
+      {results ? (
+        results.length > 0 ? (
+          <ul aria-label="Résultats du filtre">
+            {results.map((t) => (
               <PaletteItem key={t.id} template={t} pending={pending === t.id} />
             ))}
           </ul>
-        </section>
-      ))}
+        ) : (
+          <p className="palette__empty">Aucun appareil ne correspond.</p>
+        )
+      ) : (
+        GROUPS.map((g) => (
+          <section key={g.category}>
+            <h2 className="palette__cat">
+              <Icon name={CATEGORY_ICON[g.category]} size={14} />
+              {CATEGORY_LABELS[g.category]}
+            </h2>
+            <ul>
+              {g.items.map((t) => (
+                <PaletteItem key={t.id} template={t} pending={pending === t.id} />
+              ))}
+            </ul>
+          </section>
+        ))
+      )}
     </nav>
   )
 }

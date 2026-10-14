@@ -27,6 +27,8 @@ import { useAltKey } from './useAltKey'
 import { DeviceNode } from './DeviceNode'
 import { CordEdge } from './CordEdge'
 import { SwitchNode } from './SwitchNode'
+import { QuickSearch } from '../panels/QuickSearch'
+import { canvasPointer, centreOf } from './pointer'
 import { SwitchConfigurator } from '../panels/SwitchConfigurator'
 import { DEFAULT_SWITCH_SPEC } from '../catalog/switch'
 import { registerFlowInstance } from '../dev/e2eHooks'
@@ -55,6 +57,8 @@ function CanvasInner() {
 
   const pendingTemplate = useUiStore((s) => s.pendingTemplateId)
   const pendingSwitch = useUiStore((s) => s.pendingSwitch)
+  const search = useUiStore((s) => s.search)
+  const wrapper = useRef<HTMLDivElement>(null)
   const alt = useAltKey()
   const { screenToFlowPosition } = useReactFlow()
 
@@ -95,6 +99,22 @@ function CanvasInner() {
     },
     [screenToFlowPosition, project.settings.snapToGrid]
   )
+  const onPaneMouseMove = useCallback((e: ReactMouseEvent) => {
+    canvasPointer.client = { x: e.clientX, y: e.clientY }
+  }, [])
+  // Double-clic dans le vide : recherche rapide à cet endroit (spec § 9.1).
+  const onDoubleClick = useCallback((e: ReactMouseEvent) => {
+    if ((e.target as Element).classList?.contains('react-flow__pane')) uiStore.getState().openSearch({ x: e.clientX, y: e.clientY })
+  }, [])
+  const onPick = useCallback(
+    (templateId: string) => {
+      const at = uiStore.getState().search?.at ?? canvasPointer.client ?? centreOf(wrapper.current)
+      uiStore.getState().closeSearch()
+      if (at) place(templateId, at)
+    },
+    [place]
+  )
+  const closeSearch = useCallback(() => uiStore.getState().closeSearch(), [])
   const onDragOver = useCallback((e: DragEvent) => {
     if (!e.dataTransfer.types.includes(TEMPLATE_MIME)) return
     e.preventDefault()
@@ -129,10 +149,11 @@ function CanvasInner() {
   }, [])
 
   return (
-    <div className={`canvas${pendingTemplate ? ' canvas--placing' : ''}`}>
+    <div ref={wrapper} className={`canvas${pendingTemplate ? ' canvas--placing' : ''}`} onDoubleClick={onDoubleClick}>
       <ReactFlow<DeviceFlowNode, CordFlowEdge>
         nodes={nodes}
         onInit={registerFlowInstance}
+        onPaneMouseMove={onPaneMouseMove}
         nodeTypes={nodeTypes}
         edges={edges}
         edgeTypes={edgeTypes}
@@ -180,6 +201,7 @@ function CanvasInner() {
           />
         </div>
       )}
+      {search && <QuickSearch onPick={onPick} onClose={closeSearch} />}
     </div>
   )
 }

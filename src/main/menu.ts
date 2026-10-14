@@ -44,6 +44,8 @@ export function buildMenu(): void {
         { label: 'Annuler', accelerator: 'CmdOrCtrl+Z', click: () => send('undo') },
         { label: 'Rétablir', accelerator: 'Shift+CmdOrCtrl+Z', click: () => send('redo') },
         { type: 'separator' },
+        { label: 'Rechercher un appareil…', accelerator: 'CmdOrCtrl+K', click: () => send('search') },
+        { type: 'separator' },
         { role: 'cut', label: 'Couper' },
         { role: 'copy', label: 'Copier' },
         { role: 'paste', label: 'Coller' },

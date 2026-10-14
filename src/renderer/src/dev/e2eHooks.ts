@@ -4,6 +4,8 @@ import type { CordFlowEdge, DeviceFlowNode } from '../canvas/toFlow'
 import { projectStore, type Selection } from '../store/projectStore'
 import { serializeProject } from '../model/file'
 import { loadFromText } from '../app/fileActions'
+import { handleMenuAction } from '../app/menuActions'
+import type { MenuAction } from '../../../shared/api'
 import { makeStressProject } from './stress'
 
 let flow: ReactFlowInstance<DeviceFlowNode, CordFlowEdge> | null = null
@@ -19,12 +21,14 @@ export interface E2EHooks {
   fitView(): Promise<boolean>
   saveTo(path: string): Promise<void>
   openPath(path: string): Promise<boolean>
+  menu(action: MenuAction): void
 }
 
 export function installE2EHooks(): void {
   window.__avwan = {
     getProject: () => projectStore.getState().history.present,
     select: (selection) => projectStore.getState().setSelection(selection),
+    menu: (action) => handleMenuAction(action),
     loadStress: () => projectStore.getState().loadProject(makeStressProject(), null),
     fitView: async () => (flow ? flow.fitView({ padding: 0.05 }) : false),
     saveTo: async (path) => {
