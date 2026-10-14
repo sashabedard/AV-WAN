@@ -6,7 +6,7 @@ import { join } from 'node:path'
 import { existingRecent, readRecent, rememberRecent } from './recent'
 import { assertRecentMember, createGrants } from './grants'
 import { frenchErrors, frenchFsMessage } from './errors'
-import { uniqueProjectPath } from './defaultLocation'
+import { discardAutoCreated, uniqueProjectPath } from './defaultLocation'
 import { atomicWriteFile, atomicWriteFileSync, backupFile, readTextFile } from './fileIO'
 import { discardRecovery, discardRecoverySync, findNewerRecovery, isRecoveryKey, keyForPath, keyForUntitled, listRecovery, parseRecoveryWrite, prepareRestore, writeRecovery } from './recovery'
 import { readOpenedVersion, rememberOpenedVersion } from './versions'
@@ -134,12 +134,10 @@ export function registerIpc(): void {
     }
   })
 
-  ipcMain.handle(IPC.fileDiscardAutoCreated, (_event, path: unknown) =>
+  // L'ancien fichier n'est supprimé que si l'app l'a créé et que ce n'est pas celui qu'on vient d'écrire.
+  ipcMain.handle(IPC.fileDiscardAutoCreated, (_event, previous: unknown, current: unknown) =>
     frenchErrors(async (): Promise<void> => {
-      if (typeof path === 'string' && autoCreated.has(path)) {
-        autoCreated.delete(path)
-        await fs.rm(path, { force: true })
-      }
+      await discardAutoCreated(autoCreated, previous, current)
     })
   )
 

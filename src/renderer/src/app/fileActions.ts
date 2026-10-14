@@ -149,8 +149,9 @@ export async function saveProjectAsAction(): Promise<void> {
     projectStore.getState().markSaved(path, snapshot)
     autosave.saved()
     // Un fichier créé automatiquement (Documents › AV·WAN) est déplacé, pas copié : le processus principal
-    // ne supprime l'ancien que s'il l'a lui-même créé pendant cette session.
-    if (previous && previous !== path) void window.avwan.file.discardAutoCreated(previous).catch(() => undefined)
+    // ne supprime l'ancien que s'il l'a lui-même créé pendant cette session, et jamais s'il s'agit sur le
+    // disque du fichier qu'on vient d'écrire (même nom à la casse près sous macOS et Windows).
+    if (previous && previous !== path) void window.avwan.file.discardAutoCreated(previous, path).catch(() => undefined)
   } catch (e) {
     s.showToast(`Échec de l’enregistrement : ${ipcErrorMessage(e)}`)
   }

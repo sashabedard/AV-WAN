@@ -328,7 +328,8 @@ describe('« Enregistrer sous » depuis un fichier créé automatiquement', () =
     vi.stubGlobal('window', { avwan: api, confirm: () => true })
     await saveProjectAsAction()
     expect(projectStore.getState().filePath).toBe('/tmp/copie.avwan')
-    expect(api.file.discardAutoCreated).toHaveBeenCalledWith('/tmp/a.avwan')
+    // Les deux chemins : le processus principal vérifie sur le disque que ce n'est pas le même fichier.
+    expect(api.file.discardAutoCreated).toHaveBeenCalledWith('/tmp/a.avwan', '/tmp/copie.avwan')
   })
 
   it('rien à déplacer pour un projet sans fichier, ni quand le chemin ne change pas', async () => {

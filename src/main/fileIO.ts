@@ -44,6 +44,19 @@ export function atomicWriteFileSync(path: string, data: string): void {
   }
 }
 
+// Même fichier sur le disque, quelle que soit l'écriture du chemin : APFS (macOS) et NTFS (Windows) ignorent
+// la casse, APFS aussi la forme Unicode (NFC/NFD). Même volume et même nœud = même fichier (bigint : les
+// numéros de fichier NTFS dépassent la précision d'un nombre). Dans le doute (un des deux introuvable ou
+// illisible), on répond « même fichier » : l'appelant ne supprime alors rien.
+export async function isSameFile(a: string, b: string): Promise<boolean> {
+  try {
+    const [sa, sb] = await Promise.all([fs.stat(a, { bigint: true }), fs.stat(b, { bigint: true })])
+    return sa.dev === sb.dev && sa.ino === sb.ino
+  } catch {
+    return true
+  }
+}
+
 export async function readTextFile(path: string): Promise<string> {
   return fs.readFile(path, 'utf8')
 }
