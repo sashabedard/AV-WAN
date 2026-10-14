@@ -7,6 +7,8 @@ import type { PinnedRect } from '../canvas/pinnedView'
 export type XY = { x: number; y: number }
 
 // État d'interface : jamais enregistré dans le fichier, jamais dans l'historique.
+export type ComponentEditorState = { mode: 'new' } | { mode: 'edit'; templateId: string }
+
 export interface UiState {
   welcome: boolean
   setWelcome(on: boolean): void
@@ -40,6 +42,9 @@ export interface UiState {
   // Le pointeur est au-dessus de la vignette : aucun câble ne s'y branche.
   pointerOverPinned: boolean
   setPointerOverPinned(on: boolean): void
+  // Boîte « Nouvelle composante » (spec plan 4 § 6.2) : la bibliothèque n'appartient à aucun document.
+  componentEditor: ComponentEditorState | null
+  openComponentEditor(state: ComponentEditorState | null): void
   resetForDocument(): void
 }
 
@@ -75,6 +80,8 @@ export const uiStore = createStore<UiState>()((set) => ({
   pointerOverPinned: false,
   setPointerOverPinned: (on) => set({ pointerOverPinned: on }),
   // Un autre document remplace le courant : tout l'état transitoire qui s'y rapportait est remis à zéro.
+  componentEditor: null,
+  openComponentEditor: (state) => set({ componentEditor: state }),
   resetForDocument: () =>
     set({
       focusVlan: null,

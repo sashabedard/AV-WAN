@@ -1,0 +1,30 @@
+/* Boîte « Nouvelle composante » */
+.ce { position: fixed; inset: 0; z-index: 65; display: grid; place-items: center; background: color-mix(in srgb, var(--paper) 70%, transparent); }
+.ce__card { display: grid; gap: 14px; width: 620px; max-width: calc(100vw - 32px); max-height: calc(100vh - 48px); overflow: auto; padding: 20px 22px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); box-shadow: 0 18px 48px var(--tile-shadow); color: var(--ink); }
+.ce__title { margin: 0; font: 700 18px/1.2 var(--font-display); letter-spacing: 0.04em; }
+.ce__row { display: flex; gap: 12px; }
+.ce__field { display: grid; gap: 4px; align-content: start; }
+.ce__grow { flex: 1; min-width: 0; }
+.ce__code input { width: 72px; font-family: var(--font-mono); text-transform: uppercase; }
+.ce__label { padding: 0; font: 600 10px/1 var(--font-mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+.ce input, .ce select { padding: 5px 7px; border: 1px solid var(--line); border-radius: 3px; background: var(--surface-2); color: var(--ink); font-size: 13px; }
+.ce input:focus, .ce select:focus { border-color: var(--accent); outline: none; }
+.ce__error { margin: 0; color: var(--danger); font-size: 12px; }
+.ce__group { display: grid; gap: 8px; margin: 0; padding: 0; border: 0; }
+.ce__icons { display: grid; grid-template-columns: repeat(12, 1fr); gap: 4px; }
+.ce__icon { display: grid; place-items: center; height: 30px; border: 1px solid var(--line); border-radius: 3px; background: var(--surface-2); color: var(--ink-2); cursor: pointer; }
+.ce__icon:hover { border-color: var(--accent); }
+.ce__icon.is-on { border-color: var(--accent); background: var(--accent-bg); color: var(--accent); }
+.ce__import { display: flex; align-items: center; gap: 10px; }
+.ce__preview { display: grid; place-items: center; width: 40px; height: 40px; border: 1px dashed var(--line); border-radius: 4px; color: var(--ink); }
+.ce__hint { color: var(--muted); font-size: 12px; }
+.ce__ports { width: 100%; border-collapse: collapse; font-size: 13px; }
+.ce__ports th { padding: 0 4px 4px; font: 600 10px/1 var(--font-mono); letter-spacing: 0.06em; text-align: left; text-transform: uppercase; color: var(--muted); }
+.ce__ports td { padding: 2px 4px; }
+.ce__ports td input, .ce__ports td select { width: 100%; }
+.ce__remove { border: 0; background: none; color: var(--muted); cursor: pointer; }
+.ce__remove:hover { color: var(--danger); }
+.ce__batch { display: flex; align-items: center; gap: 8px; }
+.ce__batch input { width: 64px; }
+.ce__actions { display: flex; justify-content: flex-end; gap: 8px; }
+.ce__sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
