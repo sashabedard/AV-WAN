@@ -8,11 +8,7 @@ import { autosave } from './autosave'
 const DISCARD_QUESTION = 'Des modifications ne sont pas enregistrées. Continuer quand même ?'
 
 function confirmDiscard(): boolean {
-  if (!isDirty(projectStore.getState())) return true
-  if (!window.confirm(DISCARD_QUESTION)) return false
-  // Abandon volontaire : la copie de récupération de ce document ne sert plus.
-  autosave.discardCurrent()
-  return true
+  return !isDirty(projectStore.getState()) || window.confirm(DISCARD_QUESTION)
 }
 
 export function fileNameOf(path: string | null): string {

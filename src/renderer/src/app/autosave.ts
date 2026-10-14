@@ -10,7 +10,6 @@ export type RecoveryBridge = Pick<AvwanApi['recovery'], 'write' | 'discard'>
 export interface Autosave {
   tick(): Promise<void>
   saved(): void
-  discardCurrent(): void
   adopt(key: string): void
   stop(): void
 }
@@ -62,7 +61,6 @@ export function createAutosave(store: StoreApi<ProjectState>, api: RecoveryBridg
       return running
     },
     saved: forget,
-    discardCurrent: forget,
     adopt: (key) => {
       currentKey = key
       lastWritten = null

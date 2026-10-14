@@ -172,4 +172,15 @@ describe('copie de récupération et fichier', () => {
     await openRecentAction('/x/b.avwan')
     expect(api.recovery.discard).toHaveBeenCalledWith('f-fedcba9876543210')
   })
+
+  it('une ouverture annulée garde la copie du document resté ouvert', async () => {
+    const api = fakeApi({ open: vi.fn(async () => null) })
+    vi.mocked(api.recovery.write).mockResolvedValue('f-0123456789abcdef')
+    vi.stubGlobal('window', { avwan: api, confirm: () => true })
+    projectStore.getState().updateMeta({ title: 'Modifié' })
+    await autosave.tick()
+    await openProjectAction()
+    expect(api.recovery.discard).not.toHaveBeenCalled()
+    expect(projectStore.getState().filePath).toBe('/tmp/a.avwan')
+  })
 })
