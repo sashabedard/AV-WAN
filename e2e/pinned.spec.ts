@@ -64,6 +64,13 @@ test('vue épinglée : cadre figé, sélection, recentrage, garde-fous, durée d
     const mainCam = main.locator('.react-flow__node[data-id="ex-cam1"]')
     await expect(mainCam).toHaveClass(/selected/)
 
+    // 5 bis. Un câble cuivre sélectionné montre sa poignée de coude dans le canvas principal, jamais dans la vignette.
+    await page.evaluate(() => window.__avwan!.select({ deviceIds: [], linkIds: ['ex-l10'] }))
+    await expect(pinned.locator('.react-flow__edge[data-id="ex-l10"]')).toHaveCount(1)
+    await expect(page.locator('.pinned .elbow-grip')).toHaveCount(0)
+    if ((await main.locator('.react-flow__edge[data-id="ex-l10"]').count()) > 0)
+      await expect.poll(() => page.locator('.canvas .elbow-grip').count()).toBeGreaterThanOrEqual(1)
+
     // 6. Double-clic sur l'étiquette de CAM-1 dans la vignette : pas de renommage, la vue principale se centre sur CAM-1.
     await pinnedCam.locator('.dn__tape').dblclick()
     await expect(page.getByRole('textbox', { name: 'Nom de l’appareil' })).toHaveCount(0)

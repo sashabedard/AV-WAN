@@ -3,8 +3,9 @@ import { EdgeLabelRenderer, Position, getSmoothStepPath, getStraightPath, useSto
 import type { Side } from '../model/types'
 import type { CordFlowEdge } from './toFlow'
 import { useEffectiveFocus } from './useEffectiveFocus'
+import { useLocked } from './staticView'
 import { useUiStore } from '../store/uiStore'
-import { projectStore, useProjectStore } from '../store/projectStore'
+import { projectStore } from '../store/projectStore'
 import { BOLT_PATH, badgePoint, bandReach, bandRects, beside, bootRect, elbowFromDrag, outward, stubLength, wavesPath } from './cordGeometry'
 
 const RADIUS = 9
@@ -75,7 +76,7 @@ function CordEdgeImpl({ sourceX, sourceY, targetX, targetY, sourcePosition, targ
   const hot = useUiStore((s) => s.hoverDeviceId !== null && (s.hoverDeviceId === aId || s.hoverDeviceId === bId))
   const focus = useEffectiveFocus()
   const [draft, setDraft] = useState<Elbow | null>(null)
-  const readOnly = useProjectStore((s) => s.readOnly)
+  const locked = useLocked()
   if (!data) return null
   const { style, link, tag, portLabels } = data
   const elbow = draft ?? link.elbow
@@ -105,7 +106,7 @@ function CordEdgeImpl({ sourceX, sourceY, targetX, targetY, sourcePosition, targ
   // Le badge de support va sur la sortie du port cible : le milieu d'un cordon court contourne la tuile et tombe dessus.
   const badgeAt = style.straight ? { x: labelX, y: labelY } : badgePoint(targetX, targetY, ends[1]![2], data.exits[1] ?? 0, style.bands.length)
   const showTag = selected || hover || hot || style.alwaysTag
-  const grip = selected && !style.straight && !readOnly
+  const grip = selected && !style.straight && !locked
   return (
     <>
       <g className={`cord${selected ? ' cord--selected' : ''}${dim ? ' cord--dim' : ''}${hot ? ' cord--hot' : ''}`} data-testid={`cord-${link.cableId}`}>
