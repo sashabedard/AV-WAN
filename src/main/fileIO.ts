@@ -1,13 +1,22 @@
+import { randomUUID } from 'node:crypto'
 import { promises as fs } from 'node:fs'
 import { basename, dirname, join } from 'node:path'
 
+// Écriture atomique : le contenu est écrit puis synchronisé sur disque (fsync) dans un fichier
+// temporaire voisin, puis renommé. Quoi qu'il arrive, le temporaire est supprimé en cas d'échec.
 export async function atomicWriteFile(path: string, data: string): Promise<void> {
-  const tmp = join(dirname(path), `.${basename(path)}.${process.pid}.${Date.now()}.tmp`)
-  await fs.writeFile(tmp, data, 'utf8')
+  const tmp = join(dirname(path), `.${basename(path)}.${process.pid}.${randomUUID()}.tmp`)
   try {
+    const handle = await fs.open(tmp, 'w')
+    try {
+      await handle.writeFile(data, 'utf8')
+      await handle.sync()
+    } finally {
+      await handle.close()
+    }
     await fs.rename(tmp, path)
   } catch (e) {
-    await fs.rm(tmp, { force: true })
+    await fs.rm(tmp, { force: true }).catch(() => undefined)
     throw e
   }
 }
