@@ -6,7 +6,7 @@ import { FAMILY_LABELS, canConnectPorts, canReconnect, connectorFamily, defaultM
 import { setLinkVlan as deriveSetLinkVlan, type VlanChoice } from '../model/derive'
 import { buildSwitchPorts } from '../catalog/switch'
 import { pasteFragment as pasteFragmentModel, type Fragment } from '../model/clipboard'
-import { assignZones, createZone, moveZones, placeDevices, removeZones, resizeZone as resizeZoneModel, zoneAround, type ZoneRect } from '../model/zones'
+import { assignZones, createZone, moveZones, placeDevices, removeZones, resizeZone as resizeZoneModel, zoneAround, zonesWithin, type ZoneRect } from '../model/zones'
 import { commit, initHistory, redo as historyRedo, undo as historyUndo, type History } from './history'
 
 export interface Selection {
@@ -129,8 +129,8 @@ export function createProjectStore(initial: Project = createProject()): StoreApi
       // Un glisser = une entrée : zones déplacées avec leurs membres, puis appareils libres, puis appartenance.
       moveSelection: ({ devices, zones }) =>
         apply((p) => {
-          const moving = new Set(zones.filter((z) => z.dx !== 0 || z.dy !== 0).map((z) => z.id))
-          const members = new Set(p.devices.filter((d) => d.zoneId !== undefined && moving.has(d.zoneId)).map((d) => d.id))
+          const root = zonesWithin(p, zones.filter((z) => z.dx !== 0 || z.dy !== 0).map((z) => z.id))
+          const members = new Set(p.devices.filter((d) => d.zoneId !== undefined && root.has(d.zoneId)).map((d) => d.id))
           const own = devices.filter((m) => !members.has(m.id))
           const q = placeDevices(moveZones(p, zones), own)
           return own.length > 0 ? assignZones(q, own.map((m) => m.id)) : q

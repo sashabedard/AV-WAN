@@ -88,18 +88,50 @@ export function placeDevices(project: Project, moves: ReadonlyArray<{ id: string
   return changed ? { ...project, devices } : project
 }
 
-// Déplace des zones et leurs membres du même décalage.
+// Zones emportées par les zones déplacées : une zone entièrement dans une zone emportée suit (en cascade).
+// Chaque zone emportée est associée à la zone déplacée dont elle prend le décalage.
+export function zonesWithin(project: Project, ids: readonly string[]): Map<string, string> {
+  const root = new Map<string, string>()
+  for (const id of ids) root.set(id, id)
+  const rectOf = new Map(project.zones.map((z) => [z.id, z.rect]))
+  const inside = (inner: ZoneRect, outer: ZoneRect): boolean =>
+    inner.x >= outer.x && inner.y >= outer.y && inner.x + inner.w <= outer.x + outer.w && inner.y + inner.h <= outer.y + outer.h
+  let grew = true
+  while (grew) {
+    grew = false
+    for (const z of project.zones) {
+      if (root.has(z.id)) continue
+      for (const [carried, rootId] of [...root]) {
+        const outer = rectOf.get(carried)
+        if (outer && inside(z.rect, outer)) {
+          root.set(z.id, rootId)
+          grew = true
+          break
+        }
+      }
+    }
+  }
+  return root
+}
+
+// Déplace des zones, leurs zones emportées et leurs membres, du même décalage que la zone déplacée.
 export function moveZones(project: Project, moves: ReadonlyArray<{ id: string; dx: number; dy: number }>): Project {
-  const byId = new Map(moves.filter((m) => m.dx !== 0 || m.dy !== 0).map((m) => [m.id, m]))
-  if (byId.size === 0) return project
+  const moving = moves.filter((m) => m.dx !== 0 || m.dy !== 0)
+  if (moving.length === 0) return project
+  const deltas = new Map(moving.map((m) => [m.id, m]))
+  const root = zonesWithin(project, moving.map((m) => m.id))
+  const deltaOf = (zoneId: string): { dx: number; dy: number } | undefined => {
+    const r = root.get(zoneId)
+    return r === undefined ? undefined : deltas.get(r)
+  }
   return {
     ...project,
     zones: project.zones.map((z) => {
-      const m = byId.get(z.id)
+      const m = deltaOf(z.id)
       return m ? { ...z, rect: { ...z.rect, x: z.rect.x + m.dx, y: z.rect.y + m.dy } } : z
     }),
     devices: project.devices.map((d) => {
-      const m = d.zoneId ? byId.get(d.zoneId) : undefined
+      const m = d.zoneId ? deltaOf(d.zoneId) : undefined
       return m ? { ...d, position: { x: d.position.x + m.dx, y: d.position.y + m.dy } } : d
     })
   }

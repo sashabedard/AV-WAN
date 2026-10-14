@@ -221,6 +221,14 @@ describe('zones dans le store', () => {
     expect(s.getState().history.present.devices[1]!.position).toEqual({ x: 40, y: 200 })
   })
 
+  it('un membre sélectionné suit le décalage de sa zone, même si la position demandée diffère', () => {
+    const s = store()
+    s.getState().setSelection({ deviceIds: ['cam1'], linkIds: [] })
+    const z = s.getState().zoneAroundSelection()!
+    s.getState().moveSelection({ devices: [{ id: 'cam1', position: { x: 500, y: 500 } }], zones: [{ id: z, dx: 40, dy: 0 }] })
+    expect(s.getState().history.present.devices[1]!.position).toEqual({ x: 40, y: 200 })
+  })
+
   it('supprimer une zone garde ses appareils', () => {
     const s = store()
     s.getState().setSelection({ deviceIds: ['cam1'], linkIds: [] })

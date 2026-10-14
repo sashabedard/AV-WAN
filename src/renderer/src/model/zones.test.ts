@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Project, Zone } from './types'
-import { assignZones, createZone, moveZones, nextZoneName, placeDevices, removeZones, resizeZone, zoneAround, zoneAt, ZONE_COLORS } from './zones'
+import { assignZones, createZone, moveZones, nextZoneName, placeDevices, removeZones, resizeZone, zoneAround, zoneAt, zonesWithin, ZONE_COLORS } from './zones'
 import { sampleProject } from './__fixtures__/sample'
 
 const zone = (id: string, x: number, y: number, w: number, h: number): Zone => ({ id, name: id, color: '#3E8EF7', rect: { x, y, w, h }, ownPdfPage: false })
@@ -67,5 +67,31 @@ describe('zones', () => {
   it('placeDevices rend le même projet si rien ne bouge', () => {
     const p = sampleProject()
     expect(placeDevices(p, [{ id: 'cam1', position: { x: 0, y: 200 } }])).toBe(p)
+  })
+})
+
+describe('zones imbriquées', () => {
+  // A contient B, B contient C (deux niveaux), D ne fait que chevaucher A.
+  const nested = (): Project => {
+    const base = sampleProject()
+    const p: Project = {
+      ...base,
+      zones: [zone('A', -100, -100, 400, 400), zone('B', -24, 148, 224, 134), zone('C', 0, 150, 100, 60), zone('D', 250, 250, 300, 200)],
+      devices: base.devices.map((d) => (d.id === 'sw1' ? { ...d, position: { x: 300, y: 300 } } : d))
+    }
+    return assignZones(p)
+  }
+
+  it('zonesWithin emporte une zone imbriquée et une zone à deux niveaux, pas une zone qui chevauche seulement', () => {
+    const map = zonesWithin(nested(), ['A'])
+    expect([...map.entries()].sort()).toEqual([['A', 'A'], ['B', 'A'], ['C', 'A']])
+  })
+
+  it('déplacer la zone externe déplace les zones imbriquées et leurs appareils, pas la zone qui chevauche', () => {
+    const p = nested()
+    expect(p.devices.map((d) => d.zoneId)).toEqual(['D', 'B'])
+    const q = moveZones(p, [{ id: 'A', dx: 40, dy: 8 }])
+    expect(q.zones.map((z) => [z.id, z.rect.x, z.rect.y])).toEqual([['A', -60, -92], ['B', 16, 156], ['C', 40, 158], ['D', 250, 250]])
+    expect(q.devices.map((d) => d.position)).toEqual([{ x: 300, y: 300 }, { x: 40, y: 208 }])
   })
 })
