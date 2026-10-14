@@ -27,6 +27,9 @@ test('un .avwan reçu du système (open-file) s’ouvre, puis ⌘S l’écrit en
     await expect(page.getByRole('dialog', { name: 'Accueil' })).toHaveCount(0)
     expect((await page.evaluate(() => window.__avwan!.getProject())).meta.title).toBe('Salle B')
 
+    // Les récents passent par assertGranted sans exception e2e : le chemin a bien été accordé à l'ouverture.
+    await expect.poll(() => page.evaluate(() => window.avwan.recent.list())).toContain(file)
+
     await page.getByTestId('palette-ptz-ndi').click()
     await page.locator('.react-flow__pane').click({ position: { x: 360, y: 300 } })
     await page.evaluate(() => window.__avwan!.menu('save'))

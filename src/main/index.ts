@@ -81,8 +81,10 @@ function createWindow(): BrowserWindow {
     if (mainWindow === win) mainWindow = null
     openQueue.reset()
   })
-  // Un rechargement (menu Affichage) doit de nouveau signaler que l'interface est prête.
-  win.webContents.on('did-start-loading', () => openQueue.reset())
+  // Une navigation validée (premier chargement, rechargement du menu Affichage) ou un plantage du rendu
+  // oblige l'interface à signaler de nouveau qu'elle est prête ; un rechargement annulé ne change rien.
+  win.webContents.on('did-navigate', () => openQueue.reset())
+  win.webContents.on('render-process-gone', () => openQueue.reset())
   if (!isE2E) win.once('ready-to-show', () => win.show())
   win.webContents.setWindowOpenHandler(({ url }) => {
     void shell.openExternal(url)
