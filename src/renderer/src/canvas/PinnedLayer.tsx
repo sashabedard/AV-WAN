@@ -10,7 +10,7 @@ const setPointerInside = (on: boolean): void => uiStore.getState().setPointerOve
 
 // Vue épinglée (spec 2026-10-14) : une couche de la taille du canvas, montée à côté du canvas principal
 // (pas dedans) pour qu'aucun clic, double-clic ou coup de molette de la vignette n'y remonte.
-export function PinnedView() {
+export function PinnedLayer() {
   const rect = useUiStore((s) => s.pinnedRect)
   const layer = useRef<HTMLDivElement>(null)
   const [bounds, setBounds] = useState<Size | null>(null)

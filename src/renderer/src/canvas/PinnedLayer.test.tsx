@@ -2,7 +2,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act, cleanup, render, screen } from '@testing-library/react'
 import { uiStore } from '../store/uiStore'
-import { PinnedView as PinnedLayer } from './PinnedLayer'
+import { PinnedLayer } from './PinnedLayer'
 
 vi.mock('./PinnedDiagram', () => ({ PinnedDiagram: () => <div data-testid="schema" /> }))
 
