@@ -5,6 +5,7 @@ import { APP_NAME } from '../shared/appInfo'
 // Actions du menu Aide, fournies par le processus principal (boîtes de dialogue, navigateur).
 export interface HelpHandlers {
   about(): void
+  checkUpdates(): void
   releases(): void
 }
 
@@ -31,6 +32,7 @@ export function menuTemplate(isMac: boolean, send: (action: MenuAction) => void,
   const quitItems: MenuItemConstructorOptions[] = isMac ? [] : [SEPARATOR, { role: 'quit', label: 'Quitter' }]
   const helpItems: MenuItemConstructorOptions[] = [
     ...(isMac ? [] : [{ label: `À propos d’${APP_NAME}`, click: () => help.about() }, SEPARATOR]),
+    { label: 'Rechercher les mises à jour…', click: () => help.checkUpdates() },
     { label: 'Téléchargements et notes de version…', click: () => help.releases() }
   ]
   return [

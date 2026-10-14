@@ -8,6 +8,7 @@ import { loadRenderer } from './windows'
 import { registerExportIpc } from './exports'
 import { readTextFile } from './fileIO'
 import { frenchFsMessage } from './errors'
+import { checkForUpdatesManually, setupUpdater } from './updater'
 import { createOpenQueue, pathsFromArgv } from './openRequests'
 
 const userData = process.env['AVWAN_USER_DATA']
@@ -149,8 +150,13 @@ if (!primary) {
     if (process.platform === 'darwin' && !app.isPackaged && !isE2E) app.dock?.setIcon(devIcon)
     registerIpc()
     registerExportIpc()
+    setupUpdater(isE2E)
     app.setAboutPanelOptions({ applicationName: APP_NAME, applicationVersion: app.getVersion(), version: '', credits: APP_SUBTITLE })
-    buildMenu({ about: showAbout, releases: () => void shell.openExternal(RELEASES_URL) })
+    buildMenu({
+      about: showAbout,
+      checkUpdates: () => void checkForUpdatesManually(BrowserWindow.getFocusedWindow()),
+      releases: () => void shell.openExternal(RELEASES_URL)
+    })
     createWindow()
     app.on('activate', () => {
       if (BrowserWindow.getAllWindows().length === 0) createWindow()

@@ -71,6 +71,11 @@ export interface AvwanApi {
   onMenu(callback: (action: MenuAction) => void): () => void
   onOpenRequest(callback: (request: OpenRequest) => void): () => void
   rendererReady(): void
+  updates: {
+    pending(): Promise<string | null>
+    install(): void
+  }
+  onUpdateReady(callback: (version: string) => void): () => void
 }
 
 export const IPC = {
@@ -95,5 +100,8 @@ export const IPC = {
   printFailed: 'print:failed',
   openRequest: 'app:openRequest',
   rendererReady: 'app:rendererReady',
+  updateReady: 'update:ready',
+  updatePending: 'update:pending',
+  updateInstall: 'update:install',
   menu: 'menu'
 } as const

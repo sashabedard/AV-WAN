@@ -22,6 +22,8 @@ function fakeApi(file: Partial<AvwanApi['file']> = {}): AvwanApi {
     onMenu: () => () => undefined,
     onOpenRequest: () => () => undefined,
     rendererReady: vi.fn(),
+    updates: { pending: vi.fn(async () => null), install: vi.fn() },
+    onUpdateReady: () => () => undefined,
     recent: {
       list: vi.fn(async () => []),
       open: vi.fn(async (path: string) => ({ path, text: '' })),

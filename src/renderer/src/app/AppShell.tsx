@@ -5,6 +5,7 @@ import { ExportDialog } from '../export/ExportDialog'
 import { Sidebar } from '../panels/Sidebar'
 import { Inspector } from '../panels/Inspector'
 import { Canvas } from '../canvas/Canvas'
+import { UpdateBanner } from './UpdateBanner'
 
 export function AppShell() {
   return (
@@ -15,6 +16,7 @@ export function AppShell() {
       </aside>
       <main className="shell__center">
         <Canvas />
+        <UpdateBanner />
       </main>
       <aside className="shell__right" aria-label="Inspecteur">
         <Inspector />

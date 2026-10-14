@@ -9,7 +9,7 @@ function submenu(menu: MenuItemConstructorOptions[], label: string): MenuItemCon
   return m.submenu
 }
 const click = (item: MenuItemConstructorOptions | undefined): void => (item?.click as (() => void) | undefined)?.()
-const handlers = (): HelpHandlers => ({ about: vi.fn(), releases: vi.fn() })
+const handlers = (): HelpHandlers => ({ about: vi.fn(), checkUpdates: vi.fn(), releases: vi.fn() })
 
 describe('menuTemplate', () => {
   it('macOS : le menu de l’app en tête, et Aide sans « À propos »', () => {
@@ -17,8 +17,10 @@ describe('menuTemplate', () => {
     const menu = menuTemplate(true, vi.fn(), help)
     expect(labels(menu)).toEqual(['AV·WAN', 'Fichier', 'Édition', 'Affichage', 'Aide'])
     const aide = submenu(menu, 'Aide')
-    expect(labels(aide)).toEqual(['Téléchargements et notes de version…'])
+    expect(labels(aide)).toEqual(['Rechercher les mises à jour…', 'Téléchargements et notes de version…'])
     click(aide[0])
+    click(aide[1])
+    expect(help.checkUpdates).toHaveBeenCalledOnce()
     expect(help.releases).toHaveBeenCalledOnce()
   })
 
@@ -27,7 +29,7 @@ describe('menuTemplate', () => {
     const menu = menuTemplate(false, vi.fn(), help)
     expect(labels(menu)).toEqual(['Fichier', 'Édition', 'Affichage', 'Aide'])
     const aide = submenu(menu, 'Aide')
-    expect(labels(aide)).toEqual(['À propos d’AV·WAN', 'separator', 'Téléchargements et notes de version…'])
+    expect(labels(aide)).toEqual(['À propos d’AV·WAN', 'separator', 'Rechercher les mises à jour…', 'Téléchargements et notes de version…'])
     click(aide[0])
     expect(help.about).toHaveBeenCalledOnce()
     expect(labels(submenu(menu, 'Fichier')).at(-1)).toBe('Quitter')

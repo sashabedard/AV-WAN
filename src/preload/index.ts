@@ -48,7 +48,18 @@ const api: AvwanApi = {
       ipcRenderer.removeListener(IPC.openRequest, handler)
     }
   },
-  rendererReady: () => ipcRenderer.send(IPC.rendererReady)
+  rendererReady: () => ipcRenderer.send(IPC.rendererReady),
+  updates: {
+    pending: () => ipcRenderer.invoke(IPC.updatePending),
+    install: () => ipcRenderer.send(IPC.updateInstall)
+  },
+  onUpdateReady: (callback) => {
+    const handler = (_event: IpcRendererEvent, version: string): void => callback(version)
+    ipcRenderer.on(IPC.updateReady, handler)
+    return () => {
+      ipcRenderer.removeListener(IPC.updateReady, handler)
+    }
+  }
 }
 
 contextBridge.exposeInMainWorld('avwan', api)
