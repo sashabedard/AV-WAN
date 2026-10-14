@@ -17,8 +17,15 @@ export function connectionRefs(c: ConnectionLike): [PortRef, PortRef] | null {
   ]
 }
 
-export function makeIsValidConnection(getProject: () => Project, getReconnecting: () => string | null = () => null): (c: ConnectionLike) => boolean {
+export function makeIsValidConnection(
+  getProject: () => Project,
+  getReconnecting: () => string | null = () => null,
+  isBlocked: () => boolean = () => false
+): (c: ConnectionLike) => boolean {
   return (c) => {
+    // Pointeur au-dessus de la vignette épinglée : rien ne s'y branche, même si un port du canvas
+    // principal se trouve dessous (spec 2026-10-14 § 3.3).
+    if (isBlocked()) return false
     const project = getProject()
     const linkId = getReconnecting()
     if (linkId) {
@@ -54,6 +61,8 @@ export function clientPoint(event: MouseEvent | TouchEvent): { x: number; y: num
 
 export function nodeIdAt(doc: Pick<Document, 'elementFromPoint'>, point: { x: number; y: number }): string | null {
   const el = doc.elementFromPoint(point.x, point.y)
+  // Un lâcher au-dessus de la vignette épinglée n'atteint aucun appareil.
+  if (el?.closest('.pinned')) return null
   return el?.closest('.react-flow__node')?.getAttribute('data-id') ?? null
 }
 

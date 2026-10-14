@@ -2,6 +2,7 @@
 import { createStore } from 'zustand/vanilla'
 import { useStore } from 'zustand'
 import type { PdfSection } from '../../../shared/pdfOptions'
+import type { PinnedRect } from '../canvas/pinnedView'
 
 export type XY = { x: number; y: number }
 
@@ -33,6 +34,12 @@ export interface UiState {
   // Dernier choix de sections (pour la session) : la boîte le reprend au prochain export.
   lastPdfChoice: { sections: PdfSection[]; zonePages: boolean } | null
   rememberPdfChoice(choice: { sections: PdfSection[]; zonePages: boolean }): void
+  // Vue épinglée (spec 2026-10-14) : le cadre de la vignette, le temps de la session.
+  pinnedRect: PinnedRect | null
+  setPinned(rect: PinnedRect | null): void
+  // Le pointeur est au-dessus de la vignette : aucun câble ne s'y branche.
+  pointerOverPinned: boolean
+  setPointerOverPinned(on: boolean): void
   resetForDocument(): void
 }
 
@@ -62,6 +69,11 @@ export const uiStore = createStore<UiState>()((set) => ({
   setExportOpen: (on) => set({ exportOpen: on }),
   lastPdfChoice: null,
   rememberPdfChoice: (choice) => set({ lastPdfChoice: choice }),
+  // Vue épinglée (spec 2026-10-14) : le cadre de la vignette, le temps de la session.
+  pinnedRect: null,
+  setPinned: (rect) => set({ pinnedRect: rect }),
+  pointerOverPinned: false,
+  setPointerOverPinned: (on) => set({ pointerOverPinned: on }),
   // Un autre document remplace le courant : tout l'état transitoire qui s'y rapportait est remis à zéro.
   resetForDocument: () =>
     set({
@@ -72,7 +84,8 @@ export const uiStore = createStore<UiState>()((set) => ({
       pendingZone: false,
       pendingTemplateId: null,
       pendingSwitch: null,
-      search: null
+      search: null,
+      pinnedRect: null
     })
 }))
 

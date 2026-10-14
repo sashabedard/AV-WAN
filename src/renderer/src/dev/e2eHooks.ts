@@ -23,6 +23,7 @@ export interface E2EHooks {
   loadStress(): void
   loadRenderFixture(): void
   fitView(padding?: FitViewOptions['padding']): Promise<boolean>
+  setViewport(viewport: { x: number; y: number; zoom: number }): Promise<boolean>
   saveTo(path: string): Promise<void>
   openPath(path: string): Promise<boolean>
   menu(action: MenuAction): void
@@ -37,6 +38,7 @@ export function installE2EHooks(): void {
     loadStress: () => projectStore.getState().loadProject(makeStressProject(), null),
     loadRenderFixture: () => projectStore.getState().loadProject(makeRenderFixture(), null),
     fitView: async (padding) => (flow ? flow.fitView({ padding: padding ?? 0.05 }) : false),
+    setViewport: async (viewport) => (flow ? flow.setViewport(viewport) : false),
     saveTo: async (path) => {
       const snapshot = projectStore.getState().history.present
       await window.avwan.file.save(path, serializeProject(snapshot))

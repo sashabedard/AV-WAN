@@ -1,0 +1,16 @@
+/* Vue épinglée (spec 2026-10-14) : couche au-dessus du canvas principal, sous les boîtes de dialogue. */
+.pinned-layer { position: absolute; inset: 0; z-index: 12; pointer-events: none; overflow: hidden; }
+.pinned { position: absolute; display: flex; flex-direction: column; box-sizing: border-box; pointer-events: auto; border: 2px solid var(--accent); border-radius: 6px; background: var(--paper); box-shadow: 0 8px 24px var(--tile-shadow); overflow: hidden; }
+.pinned__bar { display: flex; flex: none; align-items: center; gap: 6px; height: 26px; padding: 0 4px 0 8px; border-bottom: 1px solid var(--line); background: var(--surface); color: var(--accent); cursor: grab; user-select: none; }
+.pinned__bar:active { cursor: grabbing; }
+.pinned__title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 600 10px/1 var(--font-mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+.pinned__btn { height: 20px; padding: 0 6px; border: 1px solid var(--line); border-radius: 4px; background: var(--surface-2); color: var(--ink-2); font: 11px/1 var(--font-mono); cursor: pointer; }
+.pinned__btn:hover { color: var(--accent); }
+.pinned__btn--icon { display: grid; place-items: center; width: 20px; padding: 0; }
+.pinned__body { position: relative; flex: 1; min-height: 0; }
+/* React Flow prend 100 % de son parent : un parent positionné en absolu lui donne une taille certaine. */
+.pinned__flow { position: absolute; inset: 0; }
+.pinned__grip { position: absolute; right: 0; bottom: 0; width: 14px; height: 14px; background: linear-gradient(135deg, transparent 50%, var(--accent) 50%); opacity: 0.85; cursor: nwse-resize; }
+/* Aucune prise de la vignette ne capte le pointeur : le canvas principal ne peut pas la prendre pour une cible. */
+.pinned .react-flow__handle { pointer-events: none; }
+.pinned .zone__title { cursor: pointer; }

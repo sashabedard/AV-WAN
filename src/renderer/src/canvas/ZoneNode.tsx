@@ -1,12 +1,13 @@
 // src/renderer/src/canvas/ZoneNode.tsx
 import { memo, useState, type CSSProperties } from 'react'
 import { NodeResizer, type NodeProps } from '@xyflow/react'
-import { projectStore, useProjectStore } from '../store/projectStore'
+import { projectStore } from '../store/projectStore'
+import { useLocked } from './staticView'
 import type { ZoneFlowNode } from './toFlow'
 import { InlineName } from './InlineName'
 
 function ZoneNodeImpl({ id, data, selected }: NodeProps<ZoneFlowNode>) {
-  const readOnly = useProjectStore((s) => s.readOnly)
+  const readOnly = useLocked()
   const [renaming, setRenaming] = useState(false)
   const { zone } = data
   return (

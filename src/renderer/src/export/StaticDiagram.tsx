@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { ConnectionMode, ReactFlow, applyNodeChanges, useNodesInitialized, useReactFlow, type NodeChange } from '@xyflow/react'
+import { useEffect, useRef } from 'react'
+import { ConnectionMode, ReactFlow, useNodesInitialized, useReactFlow } from '@xyflow/react'
 import type { Project, Zone } from '../model/types'
-import { analyzeLinks, createFlowCache, toFlowEdges, toFlowNodes, toFlowZones, type CordFlowEdge, type FlowNode } from '../canvas/toFlow'
-import { mergeNodes } from '../canvas/canvasHelpers'
+import type { CordFlowEdge, FlowNode } from '../canvas/toFlow'
+import { useStaticFlow } from '../canvas/useStaticFlow'
+import { StaticViewContext } from '../canvas/staticView'
 import { DeviceNode } from '../canvas/DeviceNode'
 import { SwitchNode } from '../canvas/SwitchNode'
 import { ZoneNode } from '../canvas/ZoneNode'
@@ -17,15 +18,7 @@ const PADDING = 0.04
 // Le canvas pour l'impression : mêmes nœuds et cordons, aucune interaction (spec § 11.1). Cadre tout
 // le projet, ou une zone, puis appelle onReady une seule fois.
 export function StaticDiagram({ project, zone, onReady }: { project: Project; zone?: Zone; onReady: () => void }) {
-  const [cache] = useState(createFlowCache)
-  const analysis = useMemo(() => analyzeLinks(project, 'light'), [project])
-  const derivedNodes = useMemo<FlowNode[]>(() => [...toFlowZones(project, cache), ...toFlowNodes(project, analysis, cache)], [project, analysis])
-  // React Flow 12 renvoie les dimensions mesurées par onNodesChange : sans les appliquer aux nœuds,
-  // useNodesInitialized() resterait faux et le PDF attendrait jusqu'au délai maximal (comme Canvas).
-  const [nodes, setNodes] = useState(derivedNodes)
-  useEffect(() => setNodes((prev) => mergeNodes(derivedNodes, prev)), [derivedNodes])
-  const onNodesChange = useCallback((changes: NodeChange<FlowNode>[]) => setNodes((ns) => applyNodeChanges(changes, ns)), [])
-  const edges = useMemo<CordFlowEdge[]>(() => toFlowEdges(project, analysis, cache), [project, analysis])
+  const { nodes, edges, onNodesChange } = useStaticFlow(project, 'light')
   const initialized = useNodesInitialized()
   const flow = useReactFlow<FlowNode, CordFlowEdge>()
   const done = useRef(false)
@@ -47,27 +40,29 @@ export function StaticDiagram({ project, zone, onReady }: { project: Project; zo
     )
   }, [initialized, nodes.length, zone, flow, onReady])
   return (
-    <ReactFlow<FlowNode, CordFlowEdge>
-      nodes={nodes}
-      edges={edges}
-      onNodesChange={onNodesChange}
-      connectionMode={ConnectionMode.Loose}
-      nodeTypes={nodeTypes}
-      edgeTypes={edgeTypes}
-      nodesDraggable={false}
-      nodesConnectable={false}
-      nodesFocusable={false}
-      edgesFocusable={false}
-      elementsSelectable={false}
-      panOnDrag={false}
-      zoomOnScroll={false}
-      zoomOnPinch={false}
-      zoomOnDoubleClick={false}
-      preventScrolling={false}
-      minZoom={0.02}
-      maxZoom={2}
-      colorMode="light"
-      proOptions={PRO_OPTIONS}
-    />
+    <StaticViewContext.Provider value={true}>
+      <ReactFlow<FlowNode, CordFlowEdge>
+        nodes={nodes}
+        edges={edges}
+        onNodesChange={onNodesChange}
+        connectionMode={ConnectionMode.Loose}
+        nodeTypes={nodeTypes}
+        edgeTypes={edgeTypes}
+        nodesDraggable={false}
+        nodesConnectable={false}
+        nodesFocusable={false}
+        edgesFocusable={false}
+        elementsSelectable={false}
+        panOnDrag={false}
+        zoomOnScroll={false}
+        zoomOnPinch={false}
+        zoomOnDoubleClick={false}
+        preventScrolling={false}
+        minZoom={0.02}
+        maxZoom={2}
+        colorMode="light"
+        proOptions={PRO_OPTIONS}
+      />
+    </StaticViewContext.Provider>
   )
 }

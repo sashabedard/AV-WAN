@@ -108,3 +108,6 @@ button.legend__item:hover { background: var(--surface-2); }
 .react-flow__resize-control.zone__handle { width: 9px; height: 9px; border: 1.5px solid var(--accent); border-radius: 2px; background: var(--surface); }
 .react-flow__resize-control.zone__line { border-color: transparent; }
 .react-flow__minimap-node.mm-zone { fill: color-mix(in srgb, var(--muted) 18%, transparent); }
+
+/* Bouton punaise de la barre de zoom : le glyphe reste en trait. */
+.react-flow__controls-button .icon { fill: none; }

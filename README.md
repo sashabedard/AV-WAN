@@ -45,7 +45,7 @@ AV·WAN est gratuit, fonctionne hors ligne sur macOS et Windows, et est en fran�
 |---|---|
 | **Dessiner** | Canvas infini. Glisser un appareil depuis la palette (40 gabarits avec leurs icônes : switch, AP, caméras PTZ NDI, Dante AVIO, ESP32-POE, PixLite, broker MQTT, panneau de brassage…) ou le trouver avec `⌘K`, puis glisser pour le déplacer, avec alignement sur une grille de 8 px. |
 | **Organiser** | Zones (régie, salle, scène) qui emportent leurs appareils, `⌘G` pour en créer une autour de la sélection. Copier, coller, dupliquer, renommer d'un double-clic. |
-| **Voir** | Couleur des cordons par VLAN, par type de câble ou par port. Un clic sur un VLAN de la légende met ses appareils en évidence. Minicarte, `⌘0` pour tout cadrer. |
+| **Voir** | Couleur des cordons par VLAN, par type de câble ou par port. Un clic sur un VLAN de la légende met ses appareils en évidence. Minicarte, `⌘0` pour tout cadrer. **Vue épinglée** (`⇧⌘P`) : une vignette figée sur un cadre du schéma, à jour en direct, pendant que la vue principale reste libre ; un clic y sélectionne, un double-clic y recentre la vue principale. |
 | **Configurer un switch** | 4, 5, 8, 12, 16, 24 ou 48 ports, PoE / PoE+ / PoE++ avec budget en watts, 0, 2 ou 4 cages SFP+. La façade est dessinée comme le vrai matériel. |
 | **Brancher** | Glisser d'un port à un autre, ou lâcher le câble sur l'appareil : AV·WAN choisit un port libre compatible, et un port PoE pour un appareil alimenté. Un port n'accepte qu'un seul câble. On rebranche un bout de câble en le glissant, et on déplace son coude. |
 | **Régler** | IP de chaque appareil (bascule *Statique / DHCP*), VLAN en accès ou en trunk, médium (Cat6, fibre OM4, DAC, Wi-Fi…), longueur. |

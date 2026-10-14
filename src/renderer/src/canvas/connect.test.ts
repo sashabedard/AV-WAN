@@ -38,10 +38,18 @@ describe('connect', () => {
   })
 
   it('trouve le nœud sous le pointeur, souris ou tactile', () => {
-    const doc = { elementFromPoint: () => ({ closest: () => ({ getAttribute: () => 'sw1' }) }) } as unknown as Pick<Document, 'elementFromPoint'>
+    const doc = { elementFromPoint: () => ({ closest: (s: string) => (s === '.react-flow__node' ? { getAttribute: () => 'sw1' } : null) }) } as unknown as Pick<Document, 'elementFromPoint'>
     expect(nodeIdAt(doc, { x: 1, y: 2 })).toBe('sw1')
     expect(clientPoint({ clientX: 3, clientY: 4 } as MouseEvent)).toEqual({ x: 3, y: 4 })
     expect(clientPoint({ changedTouches: [{ clientX: 5, clientY: 6 }] } as unknown as TouchEvent)).toEqual({ x: 5, y: 6 })
+  })
+
+  it('aucun câble ne se branche sur la vignette épinglée', () => {
+    const doc = { elementFromPoint: () => ({ closest: (s: string) => (s === '.pinned' ? {} : { getAttribute: () => 'cam1' }) }) } as unknown as Pick<Document, 'elementFromPoint'>
+    expect(nodeIdAt(doc, { x: 1, y: 2 })).toBeNull()
+    const p = withDevice('dante-avio')
+    const blocked = makeIsValidConnection(() => p, () => null, () => true)
+    expect(blocked({ source: 'dante-avio', sourceHandle: 'ETH', target: 'sw1', targetHandle: '2' })).toBe(false)
   })
 })
 
