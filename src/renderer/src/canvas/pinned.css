@@ -13,3 +13,4 @@
 .pinned__grip { position: absolute; right: 0; bottom: 0; width: 14px; height: 14px; background: linear-gradient(135deg, transparent 50%, var(--accent) 50%); opacity: 0.85; cursor: nwse-resize; }
 /* Aucune prise de la vignette ne capte le pointeur : le canvas principal ne peut pas la prendre pour une cible. */
 .pinned .react-flow__handle { pointer-events: none; }
+.pinned .zone__title { cursor: pointer; }
