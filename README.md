@@ -143,8 +143,8 @@ AV·WAN se met à jour seul : la nouvelle version se télécharge en arrière-pl
 1. Une seule fois, ajouter les secrets du dépôt (Settings › Secrets and variables › Actions) :
    - `MAC_CERT_P12_BASE64` : le certificat « Developer ID Application » exporté en `.p12`, encodé en base64 (`base64 -i certificat.p12 | pbcopy`) ;
    - `MAC_CERT_PASSWORD` : le mot de passe du `.p12` ;
-   - `APPLE_API_KEY_P8` : le contenu de la clé d'API App Store Connect (`AuthKey_XXXX.p8`) ;
-   - `APPLE_API_KEY_ID` et `APPLE_API_ISSUER` : son identifiant et celui de l'émetteur.
+   - `APPLE_ID` : l'identifiant Apple du compte développeur ;
+   - `APPLE_APP_SPECIFIC_PASSWORD` : un mot de passe d'app créé sur appleid.apple.com (Connexion et sécurité › Mots de passe pour app).
 2. `npm version 1.0.0` pour la première version publique, puis `npm version minor` (ou `patch`) pour les suivantes ; ensuite `git push --follow-tags`.
 3. La CI construit le DMG notarisé et l'installeur Windows, vérifie l'association `.avwan`, et crée un **brouillon** de release avec le guide PDF.
 4. Tester les fichiers du brouillon, puis **Publish**. Les apps installées proposent alors la mise à jour.
