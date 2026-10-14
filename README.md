@@ -6,8 +6,7 @@
 </p>
 
 <p align="center">
-  <b>Le schéma de branchement réseau + IoT des projets de fin de bac,<br>
-  dessiné comme une vraie baie, documenté comme un vrai plan.</b>
+  <b>Planifier. Brancher. Documenter.</b>
 </p>
 
 <p align="center">
@@ -21,7 +20,7 @@
 
 ## Pourquoi AV·WAN
 
-Un projet d'installation interactive met en réseau des choses très différentes : des caméras PTZ en NDI, une carte Dante, des contrôleurs de pixels, des ESP32, un broker MQTT, une régie. Les étudiants doivent remettre un **schéma de branchement** et une **liste de branchement** fiables. Les outils existants leur compliquent la tâche :
+Un projet d'installation interactive met en réseau des choses très différentes : des caméras PTZ en NDI, une carte Dante, des contrôleurs de pixels, des ESP32, un broker MQTT, une régie. Il faut ensuite remettre un **schéma de branchement** et une **liste de branchement** fiables, et les outils existants compliquent la tâche :
 
 - **Les outils de dessin** (draw.io, Visio) ne savent pas ce qu'est un port, un VLAN ou le PoE. Chaque information est ressaisie à la main, et le schéma et le tableau finissent par se contredire.
 - **Les outils AV professionnels** qui génèrent ces listes coûtent de 15 à 170 $ US par mois ou ne tournent que sous Windows.
@@ -101,7 +100,7 @@ npm run e2e          # build, puis tests de bout en bout (Playwright + Electron)
 npm run build        # build de production dans out/
 ```
 
-## Installer (étudiants)
+## Installer
 
 Les installeurs `.dmg` et `.exe` arrivent avec le plan 4. L'app n'est pas signée, donc il faut une étape de plus au premier lancement :
 
