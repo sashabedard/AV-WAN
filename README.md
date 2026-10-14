@@ -151,8 +151,6 @@ src/renderer/    l'interface React
 
 **Une seule source de vérité.** Le projet est un fichier JSON validé. Le canvas, l'inspecteur et le PDF n'en sont que des *vues*, ce qui les empêche de se contredire. `model/`, `catalog/` et `reports/` ne dépendent ni de l'interface ni d'Electron, et sont testés en quelques millisecondes.
 
-Pour aller plus loin :
-
 ## Le nom
 
 <img src=".github/assets/icone-app.png" alt="Icône d'AV·WAN : trois cordons de couleur branchés sur une façade de switch" width="96" align="right">
@@ -166,6 +164,7 @@ C'est l'acronyme d'**A**udio-**V**idéo · **W**iring, **A**ddressing, **N**etwo
 - Canvas : [React Flow](https://reactflow.dev) (MIT).
 - Typographie : [Archivo Narrow](https://fonts.google.com/specimen/Archivo+Narrow) et [IBM Plex Mono](https://github.com/IBM/plex) (SIL Open Font License), incluses dans l'app pour fonctionner hors ligne.
 - Construit avec Electron, React, zustand, zod et Vitest.
+- Données du domaine : documentation publique d'Audinate (Dante), de NDI, d'Ubiquiti (UniFi), de l'ESTA (sACN) et des fabricants.
 
 ## Licence
 

@@ -5,7 +5,6 @@ dist/
 release/
 *.log
 
-
 # OS
 .DS_Store
 test-results/
