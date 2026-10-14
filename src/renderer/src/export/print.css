@@ -86,3 +86,8 @@ html[data-print] #root { height: auto; background: #ffffff; }
 .print .vs__dl dt { color: #6b675e; }
 .print .vs__dl dd { margin: 0; }
 .print .vs__members, .print .vs__note { margin: 4pt 0 0; font: 7.5pt/1.4 var(--font-mono); }
+
+/* Renvois de câbles et « Détail p. N » (coordonnées du schéma : ~11 px, lisibles à l'impression). */
+.print .renvoi-stubs { position: absolute; top: 0; left: 0; overflow: visible; pointer-events: none; }
+.print .renvoi { position: absolute; top: 0; left: 0; box-sizing: border-box; padding: 0 4px; border-radius: 2px; background: rgba(255, 253, 247, 0.94); color: #1e1f22; font: 600 11px/15px var(--font-mono); white-space: nowrap; pointer-events: none; }
+.print .renvoi--detail { width: auto; height: auto; padding: 1px 6px; border: 1px solid #6b675e; font-weight: 700; color: #4a4a46; }
