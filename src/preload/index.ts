@@ -10,7 +10,10 @@ const api: AvwanApi = {
     read: (path) => ipcRenderer.invoke(IPC.read, path),
     save: (path, text) => ipcRenderer.invoke(IPC.save, path, text),
     saveAs: (text, suggestedName) => ipcRenderer.invoke(IPC.saveAs, text, suggestedName),
-    backup: (path) => ipcRenderer.invoke(IPC.backup, path)
+    backup: (path) => ipcRenderer.invoke(IPC.backup, path),
+    createDefault: (title, text) => ipcRenderer.invoke(IPC.fileCreateDefault, title, text),
+    saveSync: (path, text) => ipcRenderer.sendSync(IPC.fileSaveSync, path, text),
+    discardAutoCreated: (path) => ipcRenderer.invoke(IPC.fileDiscardAutoCreated, path)
   },
   recent: {
     list: () => ipcRenderer.invoke(IPC.recentList),

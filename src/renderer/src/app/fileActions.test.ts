@@ -41,6 +41,9 @@ function fakeApi(file: Partial<AvwanApi['file']> = {}): AvwanApi {
       save: vi.fn(async (path: string) => path),
       saveAs: vi.fn(async () => '/tmp/copie.avwan'),
       backup: vi.fn(async (path: string) => `${path}.bak`),
+      createDefault: vi.fn(async () => '/docs/Nouveau projet.avwan'),
+      saveSync: vi.fn(() => ({ ok: true as const })),
+      discardAutoCreated: vi.fn(async () => undefined),
       ...file
     }
   }

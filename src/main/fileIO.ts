@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto'
-import { promises as fs } from 'node:fs'
+import { closeSync, fsyncSync, openSync, renameSync, rmSync, writeFileSync, promises as fs } from 'node:fs'
 import { basename, dirname, join } from 'node:path'
 
 // Écriture atomique : le contenu est écrit puis synchronisé sur disque (fsync) dans un fichier
@@ -18,6 +18,28 @@ export async function atomicWriteFile(path: string, data: string | Uint8Array): 
     await fs.rename(tmp, path)
   } catch (e) {
     await fs.rm(tmp, { force: true }).catch(() => undefined)
+    throw e
+  }
+}
+
+// Version synchrone, pour la fermeture de la fenêtre : le processus attend la fin de l'écriture.
+export function atomicWriteFileSync(path: string, data: string): void {
+  const tmp = join(dirname(path), `.${basename(path)}.${process.pid}.${randomUUID()}.tmp`)
+  try {
+    const fd = openSync(tmp, 'w')
+    try {
+      writeFileSync(fd, data, 'utf8')
+      fsyncSync(fd)
+    } finally {
+      closeSync(fd)
+    }
+    renameSync(tmp, path)
+  } catch (e) {
+    try {
+      rmSync(tmp, { force: true })
+    } catch {
+      // le temporaire n'a peut-être jamais existé
+    }
     throw e
   }
 }

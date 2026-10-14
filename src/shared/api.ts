@@ -51,6 +51,9 @@ export interface AvwanApi {
     save(path: string, text: string): Promise<string>
     saveAs(text: string, suggestedName: string): Promise<string | null>
     backup(path: string): Promise<string>
+    createDefault(title: string, text: string): Promise<string>
+    saveSync(path: string, text: string): { ok: true } | { ok: false; error: string }
+    discardAutoCreated(path: string): Promise<void>
   }
   recent: {
     list(): Promise<string[]>
@@ -106,6 +109,9 @@ export const IPC = {
   save: 'file:save',
   saveAs: 'file:saveAs',
   backup: 'file:backup',
+  fileCreateDefault: 'file:createDefault',
+  fileSaveSync: 'file:saveSync',
+  fileDiscardAutoCreated: 'file:discardAutoCreated',
   recentList: 'recent:list',
   recentOpen: 'recent:open',
   recentRemember: 'recent:remember',

@@ -1,11 +1,13 @@
 import { app, BrowserWindow, dialog, ipcMain, type OpenDialogOptions, type SaveDialogOptions } from 'electron'
 import { IPC, type LibraryFile, type OpenedFile, type RecoveryEntry, type RestoredRecovery } from '../shared/api'
 import { FILE_EXTENSION } from '../shared/appInfo'
+import { existsSync, promises as fs } from 'node:fs'
 import { join } from 'node:path'
 import { existingRecent, readRecent, rememberRecent } from './recent'
 import { assertRecentMember, createGrants } from './grants'
-import { frenchErrors } from './errors'
-import { atomicWriteFile, backupFile, readTextFile } from './fileIO'
+import { frenchErrors, frenchFsMessage } from './errors'
+import { uniqueProjectPath } from './defaultLocation'
+import { atomicWriteFile, atomicWriteFileSync, backupFile, readTextFile } from './fileIO'
 import { discardRecovery, discardRecoverySync, findNewerRecovery, isRecoveryKey, keyForPath, keyForUntitled, listRecovery, parseRecoveryWrite, prepareRestore, writeRecovery } from './recovery'
 import { listLibrary, removeLibrary, saveLibrary } from './library'
 
@@ -19,6 +21,10 @@ function assertProjectPath(path: string): void {
 // Le renderer n'écrit et ne rouvre que des chemins accordés ici.
 export const grants = createGrants()
 const isE2E = (): boolean => process.env['AVWAN_E2E'] === '1'
+
+// Fichiers créés par l'app dans Documents pendant la session (seuls ceux-là peuvent être supprimés).
+const autoCreated = new Set<string>()
+const documentsDir = (): string => (isE2E() && process.env['AVWAN_E2E_DOCUMENTS_DIR']) || join(app.getPath('documents'), 'AV·WAN')
 
 const recentFile = (): string => join(app.getPath('userData'), 'recent.json')
 // La liste des récents ne doit jamais faire échouer une ouverture ou un enregistrement.
@@ -86,6 +92,43 @@ export function registerIpc(): void {
       await atomicWriteFile(path, text)
       await remember(path)
       return path
+    })
+  )
+
+  ipcMain.handle(IPC.fileCreateDefault, (_event, title: unknown, text: unknown) =>
+    frenchErrors(async (): Promise<string> => {
+      if (typeof text !== 'string') throw new Error('Contenu du projet invalide.')
+      const dir = documentsDir()
+      await fs.mkdir(dir, { recursive: true })
+      const path = uniqueProjectPath(dir, typeof title === 'string' ? title : '', existsSync)
+      await atomicWriteFile(path, text)
+      grants.grant(path)
+      autoCreated.add(path)
+      await remember(path)
+      return path
+    })
+  )
+
+  // Écriture synchrone (fermeture de la fenêtre) : le renderer attend toujours une réponse.
+  ipcMain.on(IPC.fileSaveSync, (event, path: unknown, text: unknown) => {
+    try {
+      if (typeof path !== 'string' || typeof text !== 'string') throw new Error('Requête d’enregistrement invalide.')
+      assertProjectPath(path)
+      if (isE2E()) grants.grant(path)
+      grants.assertGranted(path)
+      atomicWriteFileSync(path, text)
+      event.returnValue = { ok: true }
+    } catch (e) {
+      event.returnValue = { ok: false, error: frenchFsMessage(e) }
+    }
+  })
+
+  ipcMain.handle(IPC.fileDiscardAutoCreated, (_event, path: unknown) =>
+    frenchErrors(async (): Promise<void> => {
+      if (typeof path === 'string' && autoCreated.has(path)) {
+        autoCreated.delete(path)
+        await fs.rm(path, { force: true })
+      }
     })
   )
 

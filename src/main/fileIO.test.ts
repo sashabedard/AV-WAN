@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { promises as fsp, mkdirSync, mkdtempSync, readFileSync, readdirSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { atomicWriteFile, backupFile, backupPathFor, readTextFile } from './fileIO'
+import { atomicWriteFile, atomicWriteFileSync, backupFile, backupPathFor, readTextFile } from './fileIO'
 
 afterEach(() => {
   vi.restoreAllMocks()
@@ -17,6 +17,17 @@ describe('fileIO', () => {
     expect(readFileSync(file, 'utf8')).toBe('nouveau é')
     expect(readdirSync(dir)).toEqual(['projet.avwan'])
     expect(await readTextFile(file)).toBe('nouveau é')
+  })
+
+  it('écrit de façon atomique en synchrone, sans temporaire, et lève si le dossier manque', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'avwan-io-'))
+    const file = join(dir, 'sync.avwan')
+    atomicWriteFileSync(file, 'abc')
+    expect(readFileSync(file, 'utf8')).toBe('abc')
+    expect(readdirSync(dir)).toEqual(['sync.avwan'])
+    const missing = join(dir, 'absent')
+    expect(() => atomicWriteFileSync(join(missing, 'x.avwan'), 'abc')).toThrow()
+    expect(readdirSync(dir)).toEqual(['sync.avwan'])
   })
 
   it('crée une copie de sauvegarde *.bak.avwan', async () => {

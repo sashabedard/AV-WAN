@@ -12,7 +12,7 @@ export interface LaunchOptions {
 
 export async function launchApp(opts: LaunchOptions = {}): Promise<{ app: ElectronApplication; page: Page }> {
   const userData = opts.userData ?? mkdtempSync(join(tmpdir(), 'avwan-e2e-'))
-  const env = { ...process.env, AVWAN_E2E: '1', AVWAN_USER_DATA: userData, ...opts.env } as Record<string, string>
+  const env = { ...process.env, AVWAN_E2E: '1', AVWAN_USER_DATA: userData, AVWAN_E2E_DOCUMENTS_DIR: join(userData, 'Documents'), ...opts.env } as Record<string, string>
   // AVWAN_EXECUTABLE : l'app empaquetée (CI, ou release/mac-universal en local) au lieu du dossier du projet.
   const executablePath = process.env['AVWAN_EXECUTABLE']
   const scale = opts.scale ? [`--force-device-scale-factor=${opts.scale}`] : []
