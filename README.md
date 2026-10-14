@@ -32,20 +32,22 @@ AV·WAN est gratuit, fonctionne hors ligne sur macOS et Windows, et est en fran�
 
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset=".github/assets/apercu-sombre.png">
-    <img alt="Maquette d'AV·WAN : un switch 8 ports PoE+ et ses appareils branchés, cordons colorés par VLAN" src=".github/assets/apercu-clair.png" width="100%">
+    <source media="(prefers-color-scheme: dark)" srcset=".github/assets/capture-sombre.png">
+    <img alt="AV·WAN : le projet exemple, avec une régie, une salle et une scène, des cordons colorés par VLAN et l'inspecteur d'une caméra" src=".github/assets/capture-clair.png" width="100%">
   </picture>
 </p>
 
-<p align="center"><sub>Maquette de la direction visuelle retenue : la façade et les cordons d'une baie de brassage, avec la ligne nette d'un plan technique. L'app suit le thème clair ou sombre du système.</sub></p>
+<p align="center"><sub>Le projet exemple livré avec l'app : régie, salle et scène, deux switchs reliés en fibre, cordons colorés par VLAN. L'app suit le thème clair ou sombre du système, ou celui choisi en haut à droite.</sub></p>
 
 ## Ce que fait la v1
 
 | | |
 |---|---|
-| **Dessiner** | Canvas infini. Glisser un appareil depuis la palette (39 gabarits : switch, AP, caméras PTZ NDI, Dante AVIO, ESP32-POE, PixLite, broker MQTT…), puis glisser pour le déplacer, avec alignement sur une grille de 8 px. |
+| **Dessiner** | Canvas infini. Glisser un appareil depuis la palette (40 gabarits avec leurs icônes : switch, AP, caméras PTZ NDI, Dante AVIO, ESP32-POE, PixLite, broker MQTT, panneau de brassage…) ou le trouver avec `⌘K`, puis glisser pour le déplacer, avec alignement sur une grille de 8 px. |
+| **Organiser** | Zones (régie, salle, scène) qui emportent leurs appareils, `⌘G` pour en créer une autour de la sélection. Copier, coller, dupliquer, renommer d'un double-clic. |
+| **Voir** | Couleur des cordons par VLAN, par type de câble ou par port. Un clic sur un VLAN de la légende met ses appareils en évidence. Minicarte, `⌘0` pour tout cadrer. |
 | **Configurer un switch** | 4, 5, 8, 12, 16, 24 ou 48 ports, PoE / PoE+ / PoE++ avec budget en watts, 0, 2 ou 4 cages SFP+. La façade est dessinée comme le vrai matériel. |
-| **Brancher** | Glisser d'un port à un autre, ou lâcher le câble sur l'appareil : AV·WAN choisit un port libre compatible, et un port PoE pour un appareil alimenté. Un port n'accepte qu'un seul câble. |
+| **Brancher** | Glisser d'un port à un autre, ou lâcher le câble sur l'appareil : AV·WAN choisit un port libre compatible, et un port PoE pour un appareil alimenté. Un port n'accepte qu'un seul câble. On rebranche un bout de câble en le glissant, et on déplace son coude. |
 | **Régler** | IP de chaque appareil (bascule *Statique / DHCP*), VLAN en accès ou en trunk, médium (Cat6, fibre OM4, DAC, Wi-Fi…), longueur. |
 | **Documenter** | Liste de branchement, fiches par appareil, carte des ports de chaque switch, fiches VLAN avec les réglages UniFi (IGMP Snooping, Querier, profil ProAV…), plan d'adressage IP, nomenclature. |
 | **Exporter** | PDF vectoriel en Tabloïd + Lettre (ou A3 + A4) avec un cartouche sur chaque page, CSV et Excel. |
@@ -59,6 +61,8 @@ AV·WAN est gratuit, fonctionne hors ligne sur macOS et Windows, et est en fran�
 | **Cordon neutre avec des bagues de couleur** | Un trunk. Chaque bague est un VLAN étiqueté qui passe sur ce câble. |
 | **DEL d'un port** | Ambre : le port alimente un appareil (PoE). Vert : lien sans PoE. Éteinte : port libre. |
 | **Fiche de couleur enfoncée dans un port** | Le port est occupé. |
+| **Éclair ⚡ près d'un bout** | Le côté qui fournit l'alimentation PoE. |
+| **Cadre teinté avec un titre** | Une zone : régie, salle, scène… |
 | **Étiquette ruban** | Le nom de l'appareil (`CAM-PTZ-1`). Le code encadré (`CAM`, `DNT`, `IOT`) donne son type. |
 
 ## VLAN prédéfinis
@@ -97,6 +101,9 @@ npm run dev          # lance l'app avec rechargement à chaud
 npm test             # tests unitaires et de composants (Vitest)
 npm run typecheck    # TypeScript strict
 npm run e2e          # build, puis tests de bout en bout (Playwright + Electron)
+npm run peek         # capture d'écran de l'app, fenêtre jamais visible (test-results/peek.png)
+npm run captures     # régénère les captures du README depuis le projet exemple
+npm run brand        # régénère l'icône d'app et les logos depuis build/icon.svg (macOS)
 npm run build        # build de production dans out/
 ```
 
@@ -125,6 +132,8 @@ src/renderer/    l'interface React
 Pour aller plus loin :
 
 ## Le nom
+
+<img src=".github/assets/icone-app.png" alt="Icône d'AV·WAN : trois cordons de couleur branchés sur une façade de switch" width="96" align="right">
 
 **AV·WAN** se prononce « Avi-Wan ». Oui, ça sonne comme vous le pensez.
 
