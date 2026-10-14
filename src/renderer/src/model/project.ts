@@ -9,10 +9,16 @@ export function newId(): string {
   return nanoid(10)
 }
 
+// Date du calendrier local (toISOString donne la date UTC : le lendemain en soirée à Montréal).
+function localDate(now: Date): string {
+  const pad = (n: number): string => String(n).padStart(2, '0')
+  return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`
+}
+
 export function createProject(now: Date = new Date()): Project {
   return {
     schemaVersion: 1,
-    meta: { title: 'Nouveau projet', authors: [], date: now.toISOString().slice(0, 10), revision: 'A', status: 'conception' },
+    meta: { title: 'Nouveau projet', authors: [], date: localDate(now), revision: 'A', status: 'conception' },
     settings: { colorMode: 'vlan', pageFormat: 'na', cableIdPrefix: 'C-', snapToGrid: true },
     vlans: DEFAULT_PROJECT_VLAN_IDS.map((id) => vlanPreset(id)),
     devices: [],

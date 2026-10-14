@@ -4,11 +4,17 @@ import { ProjectSchema } from './schema'
 
 describe('createProject', () => {
   it('crée un projet valide avec les 5 VLAN par défaut', () => {
-    const p = createProject(new Date('2026-10-13T15:00:00Z'))
+    const p = createProject(new Date(2026, 9, 13, 15, 0))
     expect(ProjectSchema.safeParse(p).success).toBe(true)
     expect(p.vlans.map((v) => v.id)).toEqual([10, 20, 30, 40, 60])
     expect(p.meta.date).toBe('2026-10-13')
     expect(p.settings).toEqual({ colorMode: 'vlan', pageFormat: 'na', cableIdPrefix: 'C-', snapToGrid: true })
+  })
+
+  it('date le projet au jour local, même tard le soir ou tôt le matin', () => {
+    expect(createProject(new Date(2026, 9, 13, 23, 30)).meta.date).toBe('2026-10-13')
+    expect(createProject(new Date(2026, 9, 13, 0, 30)).meta.date).toBe('2026-10-13')
+    expect(createProject(new Date(2026, 0, 5, 23, 59)).meta.date).toBe('2026-01-05')
   })
 })
 
