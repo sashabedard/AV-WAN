@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { ConnectionMode, ReactFlow, ViewportPortal, useNodesInitialized, useReactFlow } from '@xyflow/react'
 import type { Project, Side, Zone } from '../model/types'
-import { cordExit, type CordFlowEdge, type FlowNode } from '../canvas/toFlow'
+import { type CordFlowEdge, type FlowNode } from '../canvas/toFlow'
 import { useStaticFlow } from '../canvas/useStaticFlow'
 import { StaticViewContext } from '../canvas/staticView'
 import { DeviceNode } from '../canvas/DeviceNode'
@@ -62,7 +62,7 @@ export function StaticDiagram({ project, zone, pages, onReady }: { project: Proj
           x: internal.internals.positionAbsolute.x + h.x + h.width / 2,
           y: internal.internals.positionAbsolute.y + h.y + h.height / 2,
           side,
-          exit: cordExit(project, { deviceId: r.deviceId, portId: r.portId }),
+          node: { x: internal.internals.positionAbsolute.x, y: internal.internals.positionAbsolute.y, w: internal.measured.width ?? 0, h: internal.measured.height ?? 0 },
           label: r.label
         })
       }
@@ -120,8 +120,8 @@ export function StaticDiagram({ project, zone, pages, onReady }: { project: Proj
                 return (
                   <line
                     key={s.key}
-                    x1={s.x}
-                    y1={s.y}
+                    x1={s.x1}
+                    y1={s.y1}
                     x2={s.x2}
                     y2={s.y2}
                     stroke={st?.color ?? '#8A847A'}

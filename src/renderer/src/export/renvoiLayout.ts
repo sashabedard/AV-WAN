@@ -16,10 +16,12 @@ export interface StubInput {
   x: number
   y: number
   side: Side
-  exit: number
+  node: Rect // boîte du nœud : le bout de câble part de son bord, pas du port
   label: string
 }
 export interface Stub extends StubInput {
+  x1: number // départ : là où la sortie du port quitte la boîte du nœud
+  y1: number
   x2: number
   y2: number
   box: Rect // boîte de l'étiquette, au bout du câble
@@ -45,16 +47,18 @@ export function layoutStubs(inputs: StubInput[]): Stub[] {
     const sorted = [...group].sort((a, b) => (vertical ? b.x - a.x : b.y - a.y) || a.key.localeCompare(b.key))
     sorted.forEach((s, rank) => {
       const d = outward(s.side)
-      const len = s.exit + STUB_BASE + rank * STUB_STEP
-      const x2 = s.x + d.x * len
-      const y2 = s.y + d.y * len
+      const x1 = d.x === 0 ? s.x : d.x > 0 ? s.node.x + s.node.w : s.node.x
+      const y1 = d.y === 0 ? s.y : d.y > 0 ? s.node.y + s.node.h : s.node.y
+      const len = STUB_BASE + rank * STUB_STEP
+      const x2 = x1 + d.x * len
+      const y2 = y1 + d.y * len
       const w = labelWidth(s.label)
       let box: Rect
       if (s.side === 'bottom') box = { x: x2 - 4, y: y2, w, h: LABEL_H }
       else if (s.side === 'top') box = { x: x2 - 4, y: y2 - LABEL_H, w, h: LABEL_H }
       else if (s.side === 'right') box = { x: x2, y: y2 - LABEL_H / 2, w, h: LABEL_H }
       else box = { x: x2 - w, y: y2 - LABEL_H / 2, w, h: LABEL_H }
-      out.push({ ...s, x2, y2, box })
+      out.push({ ...s, x1, y1, x2, y2, box })
     })
   }
   return out

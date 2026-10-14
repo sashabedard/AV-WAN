@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { layoutStubs, unionRect, type StubInput } from './renvoiLayout'
 
-const at = (key: string, x: number, label = 'C-001 › SW-2 · SFP+1 · Salle p. 3'): StubInput => ({ key, linkId: key, deviceId: 'd', x, y: 100, side: 'bottom', exit: 0, label })
+const at = (key: string, x: number, label = 'C-001 › SW-2 · SFP+1 · Salle p. 3'): StubInput => ({ key, linkId: key, deviceId: 'd', x, y: 100, side: 'bottom', node: { x: 0, y: 80, w: 200, h: 40 }, label })
 
 describe('layoutStubs', () => {
   it('allonge les bouts d’un même côté et garde le plus long à gauche', () => {
@@ -17,5 +17,13 @@ describe('layoutStubs', () => {
   it('l’union englobe la zone et les étiquettes', () => {
     const u = unionRect({ x: 0, y: 0, w: 100, h: 100 }, [{ x: -10, y: 90, w: 50, h: 40 }])
     expect(u).toEqual({ x: -10, y: 0, w: 110, h: 130 })
+  })
+
+  it('part du bord du nœud, pas du centre du port', () => {
+    const [bottom] = layoutStubs([at('b', 30)])
+    expect([bottom!.x1, bottom!.y1]).toEqual([30, 120])
+    const [top] = layoutStubs([{ ...at('t', 30), side: 'top' }])
+    expect([top!.x1, top!.y1]).toEqual([30, 80])
+    expect(top!.y2).toBeLessThan(80)
   })
 })
