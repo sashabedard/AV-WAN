@@ -1,0 +1,28 @@
+name: Tests
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  unit:
+    name: Typecheck et tests unitaires
+    runs-on: ubuntu-latest
+    env:
+      # Les tests n'ont pas besoin du binaire Electron ; mêmes dates qu'en local.
+      ELECTRON_SKIP_BINARY_DOWNLOAD: '1'
+      TZ: America/Montreal
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
