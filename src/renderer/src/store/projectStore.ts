@@ -8,6 +8,7 @@ import { buildSwitchPorts } from '../catalog/switch'
 import { pasteFragment as pasteFragmentModel, type Fragment } from '../model/clipboard'
 import { addVlan as addVlanModel, changeVlanId as changeVlanIdModel, removeVlan as removeVlanModel, updateVlan as updateVlanModel, type VlanPatch } from '../model/vlans'
 import { assignZones, createZone, moveZones, placeDevices, removeZones, resizeZone as resizeZoneModel, zoneAround, zonesWithin, type ZoneRect } from '../model/zones'
+import { withTemplate } from '../model/customTemplate'
 import { uiStore } from './uiStore'
 import { commit, initHistory, redo as historyRedo, undo as historyUndo, type History } from './history'
 
@@ -142,9 +143,10 @@ export function createProjectStore(initial: Project = createProject()): StoreApi
       addDevice: (templateId, position, opts) => {
         let id = ''
         apply((p) => {
-          const device = createDevice(p, templateId, position, opts)
+          const base = opts?.template ? withTemplate(p, opts.template) : p
+          const device = createDevice(base, templateId, position, opts)
           id = device.id
-          return assignZones({ ...p, devices: [...p.devices, device] }, [device.id])
+          return assignZones({ ...base, devices: [...base.devices, device] }, [device.id])
         })
         return id
       },

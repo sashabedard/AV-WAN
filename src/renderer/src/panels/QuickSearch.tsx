@@ -1,6 +1,7 @@
 // src/renderer/src/panels/QuickSearch.tsx
 import { useMemo, useState } from 'react'
 import { searchTemplates } from '../catalog/search'
+import { usePlaceableTemplates } from './usePlaceableTemplates'
 import { DeviceIcon, Icon } from '../icons/Icon'
 import './panels.css'
 
@@ -9,7 +10,8 @@ const MAX_RESULTS = 12
 export function QuickSearch({ onPick, onClose }: { onPick: (templateId: string) => void; onClose: () => void }) {
   const [query, setQuery] = useState('')
   const [active, setActive] = useState(0)
-  const results = useMemo(() => searchTemplates(query).slice(0, MAX_RESULTS), [query])
+  const { all } = usePlaceableTemplates()
+  const results = useMemo(() => searchTemplates(query, all).slice(0, MAX_RESULTS), [query, all])
   const pick = (i: number): void => {
     const t = results[i]
     if (t) onPick(t.id)

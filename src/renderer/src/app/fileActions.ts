@@ -1,5 +1,6 @@
 import { isDirty, projectStore } from '../store/projectStore'
 import { parseProjectFile, serializeProject } from '../model/file'
+import { pruneTemplates } from '../model/customTemplate'
 import { ipcErrorMessage } from './ipcError'
 import type { OpenedFile, OpenRequest, RecoveryEntry } from '../../../shared/api'
 import { uiStore } from '../store/uiStore'
@@ -132,7 +133,7 @@ export async function saveProjectAsAction(): Promise<void> {
   const s = projectStore.getState()
   const snapshot = s.history.present
   try {
-    const path = await window.avwan.file.saveAs(serializeProject(snapshot), suggestedName())
+    const path = await window.avwan.file.saveAs(serializeProject(pruneTemplates(snapshot)), suggestedName())
     if (!path) return
     projectStore.setState({ readOnly: false })
     projectStore.getState().markSaved(path, snapshot)
@@ -148,7 +149,7 @@ export async function saveProjectAction(): Promise<void> {
   const path = s.filePath
   const snapshot = s.history.present
   try {
-    await window.avwan.file.save(path, serializeProject(snapshot))
+    await window.avwan.file.save(path, serializeProject(pruneTemplates(snapshot)))
     projectStore.getState().markSaved(path, snapshot)
     autosave.saved()
   } catch (e) {
