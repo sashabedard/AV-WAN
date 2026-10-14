@@ -10,6 +10,8 @@ import { readTextFile } from './fileIO'
 import { frenchFsMessage } from './errors'
 import { cancelInstallRequest, checkForUpdatesManually, setupUpdater } from './updater'
 import { createOpenQueue, pathsFromArgv } from './openRequests'
+import { chromeOptions } from './windowChrome'
+import { followFullscreen, registerWindowChromeIpc } from './windowChromeIpc'
 
 const userData = process.env['AVWAN_USER_DATA']
 if (userData) app.setPath('userData', userData)
@@ -67,6 +69,7 @@ function createWindow(): BrowserWindow {
     show: false,
     backgroundColor: '#15181B',
     title: 'AV·WAN',
+    ...chromeOptions(process.platform),
     ...(app.isPackaged ? {} : { icon: devIcon }),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
@@ -77,6 +80,7 @@ function createWindow(): BrowserWindow {
     }
   })
   mainWindow = win
+  followFullscreen(win)
   openQueue.reset()
   win.on('closed', () => {
     if (mainWindow === win) mainWindow = null
@@ -153,6 +157,7 @@ if (!primary) {
     if (process.platform === 'darwin' && !app.isPackaged && !isE2E) app.dock?.setIcon(devIcon)
     registerIpc()
     registerExportIpc()
+    registerWindowChromeIpc()
     setupUpdater(isE2E)
     app.setAboutPanelOptions({ applicationName: APP_NAME, applicationVersion: app.getVersion(), version: '', credits: APP_SUBTITLE })
     buildMenu({
