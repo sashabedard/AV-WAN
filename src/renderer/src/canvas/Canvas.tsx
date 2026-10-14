@@ -26,7 +26,7 @@ import { useThemeMode } from '../theme/useThemeMode'
 import { TEMPLATE_MIME } from '../panels/Palette'
 import { analyzeLinks, createFlowCache, toFlowEdges, toFlowNodes, type CordFlowEdge, type DeviceFlowNode } from './toFlow'
 import { GRID, mergeEdges, mergeNodes, nodesMatchDerived, snapPoint } from './canvasHelpers'
-import { clientPoint, connectionRefs, dropOnDevice, makeIsValidConnection, nodeIdAt } from './connect'
+import { clientPoint, connectionRefs, dropOnDevice, makeIsValidConnection, nodeIdAt, reconnectEnd } from './connect'
 import { useAltKey } from './useAltKey'
 import { FIT_OPTIONS, registerViewport } from './viewport'
 import { arrowDelta, nudgeMoves } from './keyboard'
@@ -50,6 +50,7 @@ const CONNECTION_LINE_STYLE = { stroke: 'var(--accent)', strokeWidth: 3 }
 const PRO_OPTIONS = { hideAttribution: true }
 const MULTI_SELECT_KEYS = ['Shift', 'Meta', 'Control']
 const MINIMAP_STYLE = { left: 46 }
+const RECONNECT_RADIUS = 12
 function minimapNodeClass(node: DeviceFlowNode): string {
   return node.type === 'switch' ? 'mm-rack' : 'mm-device'
 }
@@ -107,7 +108,18 @@ function CanvasInner() {
     projectStore.getState().removeElements(ns.map((n) => n.id), es.map((e) => e.id))
   }, [])
 
-  const isValidConnection = useMemo(() => makeIsValidConnection(() => projectStore.getState().history.present), [])
+  const isValidConnection = useMemo(
+    () => makeIsValidConnection(() => projectStore.getState().history.present, () => uiStore.getState().reconnectingLinkId),
+    []
+  )
+  const onReconnectStart = useCallback((_e: ReactMouseEvent, edge: CordFlowEdge) => uiStore.getState().setReconnecting(edge.id), [])
+  const onReconnect = useCallback((oldEdge: CordFlowEdge, c: Connection) => {
+    const s = projectStore.getState()
+    const link = s.history.present.links.find((l) => l.id === oldEdge.id)
+    const move = link ? reconnectEnd(link, c) : null
+    if (move) s.reconnect(oldEdge.id, move.end, move.to)
+  }, [])
+  const onReconnectEnd = useCallback(() => uiStore.getState().setReconnecting(null), [])
   const onConnect = useCallback((c: Connection) => {
     const refs = connectionRefs(c)
     if (refs) projectStore.getState().connect(refs[0], refs[1])
@@ -209,6 +221,11 @@ function CanvasInner() {
         onConnect={onConnect}
         onConnectEnd={onConnectEnd}
         isValidConnection={isValidConnection}
+        edgesReconnectable={!readOnly}
+        reconnectRadius={RECONNECT_RADIUS}
+        onReconnectStart={onReconnectStart}
+        onReconnect={onReconnect}
+        onReconnectEnd={onReconnectEnd}
         connectionLineType={ConnectionLineType.SmoothStep}
         connectionLineStyle={CONNECTION_LINE_STYLE}
         nodesConnectable={!readOnly}

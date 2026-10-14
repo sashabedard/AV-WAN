@@ -65,6 +65,14 @@ export function canConnectPorts(project: Project, a: PortRef, b: PortRef): boole
   return !project.links.some((l) => (sameRef(l.a, a) && sameRef(l.b, b)) || (sameRef(l.a, b) && sameRef(l.b, a)))
 }
 
+// Rebrancher le bout `end` d'un câble sur `to` : on juge comme si le câble n'existait pas encore.
+export function canReconnect(project: Project, linkId: string, end: 'a' | 'b', to: PortRef): boolean {
+  const link = project.links.find((l) => l.id === linkId)
+  if (!link) return false
+  const fixed = end === 'a' ? link.b : link.a
+  return canConnectPorts({ ...project, links: project.links.filter((l) => l.id !== linkId) }, fixed, to)
+}
+
 export function defaultMedium(c: Connector): Medium {
   switch (c) {
     case 'rj45':

@@ -11,6 +11,8 @@ export interface UiState {
   search: { at: XY | null } | null
   focusVlan: number | null
   hoverDeviceId: string | null
+  reconnectingLinkId: string | null
+  setReconnecting(id: string | null): void
   setFocusVlan(id: number | null): void
   setHoverDevice(id: string | null): void
   setPendingTemplate(id: string | null): void
@@ -25,6 +27,8 @@ export const uiStore = createStore<UiState>()((set) => ({
   search: null,
   focusVlan: null,
   hoverDeviceId: null,
+  reconnectingLinkId: null,
+  setReconnecting: (id) => set({ reconnectingLinkId: id }),
   setFocusVlan: (id) => set({ focusVlan: id }),
   setHoverDevice: (id) => set({ hoverDeviceId: id }),
   setPendingTemplate: (id) => set({ pendingTemplateId: id }),

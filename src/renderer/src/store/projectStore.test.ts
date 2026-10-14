@@ -145,4 +145,28 @@ describe('projectStore', () => {
     s.getState().undo()
     expect(isDirty(s.getState())).toBe(false)
   })
+
+  it('rebranche un bout en une entrée d’historique et retire le coude manuel', () => {
+    const s = store()
+    s.getState().updateLink('l1', { elbow: { dx: 20, dy: 0 } })
+    expect(s.getState().reconnect('l1', 'a', { deviceId: 'sw1', portId: '3' })).toBe(true)
+    const l = s.getState().history.present.links[0]!
+    expect(l.a).toEqual({ deviceId: 'sw1', portId: '3' })
+    expect(l.elbow).toBeUndefined()
+    expect(s.getState().history.past).toHaveLength(2)
+    s.getState().undo()
+    expect(s.getState().history.present.links[0]!.a.portId).toBe('1')
+  })
+
+  it('refuse un port occupé ou incompatible, et la lecture seule', () => {
+    const s = store()
+    const id = s.getState().addDevice('dante-avio', { x: 0, y: 0 })
+    s.getState().connect({ deviceId: id, portId: 'ETH' }, { deviceId: 'sw1', portId: '2' })
+    expect(s.getState().reconnect('l1', 'a', { deviceId: 'sw1', portId: '2' })).toBe(false)
+    expect(s.getState().toast).toContain('Rebranchement impossible')
+    s.getState().loadProject(sampleProject(), null, { readOnly: true })
+    expect(s.getState().reconnect('l1', 'a', { deviceId: 'sw1', portId: '3' })).toBe(false)
+    expect(s.getState().history.present.links[0]!.a.portId).toBe('1')
+    expect(s.getState().toast).toContain('lecture seule')
+  })
 })

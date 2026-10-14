@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { sampleProject } from './__fixtures__/sample'
-import { canConnectPorts, defaultMedium, isPortFree, nextCableId, nextDeviceName, pickPort } from './rules'
+import { canConnectPorts, canReconnect, defaultMedium, isPortFree, nextCableId, nextDeviceName, pickPort } from './rules'
 import { createDevice } from './project'
 import type { Project } from './types'
 
@@ -64,5 +64,20 @@ describe('pickPort', () => {
   it("renvoie undefined s'il n'y a aucun port compatible libre", () => {
     const p = withDevices(sampleProject(), 'led-strip')
     expect(pickPort(p, { deviceId: 'led-strip', portId: 'IN' }, 'sw1')).toBeUndefined()
+  })
+})
+
+describe('canReconnect', () => {
+  it('déplace un bout vers un port libre compatible, y compris son port actuel', () => {
+    const p = sampleProject()
+    expect(canReconnect(p, 'l1', 'a', { deviceId: 'sw1', portId: '2' })).toBe(true)
+    expect(canReconnect(p, 'l1', 'a', { deviceId: 'sw1', portId: '1' })).toBe(true)
+  })
+
+  it('refuse un connecteur incompatible, les deux bouts sur le même appareil, un câble inconnu', () => {
+    const p = sampleProject()
+    expect(canReconnect(p, 'l1', 'b', { deviceId: 'cam1', portId: 'HDMI' })).toBe(false)
+    expect(canReconnect(p, 'l1', 'b', { deviceId: 'sw1', portId: '2' })).toBe(false)
+    expect(canReconnect(p, 'inconnu', 'a', { deviceId: 'sw1', portId: '2' })).toBe(false)
   })
 })

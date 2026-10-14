@@ -61,3 +61,7 @@ export function bandRects(x: number, y: number, side: Side, colors: string[], co
     return { x: x + d.x * dist - w / 2, y: y + d.y * dist - h / 2, w, h, color }
   })
 }
+
+export function elbowFromDrag(start: { dx: number; dy: number }, delta: { x: number; y: number }, zoom: number): { dx: number; dy: number } {
+  return { dx: Math.round(start.dx + delta.x / zoom), dy: Math.round(start.dy + delta.y / zoom) }
+}

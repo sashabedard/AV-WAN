@@ -2,7 +2,7 @@ import { createStore, type StoreApi } from 'zustand/vanilla'
 import { useStore } from 'zustand'
 import type { Device, Link, PortRef, PortState, Project, SwitchSpec } from '../model/types'
 import { createDevice, createProject, newId, type CreateDeviceOptions } from '../model/project'
-import { FAMILY_LABELS, canConnectPorts, connectorFamily, defaultMedium, findPort, nextCableId } from '../model/rules'
+import { FAMILY_LABELS, canConnectPorts, canReconnect, connectorFamily, defaultMedium, findPort, nextCableId, sameRef } from '../model/rules'
 import { setLinkVlan as deriveSetLinkVlan, type VlanChoice } from '../model/derive'
 import { buildSwitchPorts } from '../catalog/switch'
 import { commit, initHistory, redo as historyRedo, undo as historyUndo, type History } from './history'
@@ -31,6 +31,7 @@ export interface ProjectState {
   moveDevices(moves: Array<{ id: string; position: { x: number; y: number } }>): void
   removeElements(deviceIds: string[], linkIds: string[]): void
   connect(a: PortRef, b: PortRef): string | null
+  reconnect(linkId: string, end: 'a' | 'b', to: PortRef): boolean
   updateDevice(id: string, patch: DevicePatch): void
   updateLink(id: string, patch: LinkPatch): void
   setLinkVlan(linkId: string, choice: VlanChoice): void
@@ -147,6 +148,25 @@ export function createProjectStore(initial: Project = createProject()): StoreApi
         const link: Link = { id: newId(), cableId: nextCableId(p), a, b, medium: defaultMedium(pa.port.connector) }
         apply((q) => ({ ...q, links: [...q.links, link] }))
         return get().history.present.links.some((l) => l.id === link.id) ? link.id : null
+      },
+
+      reconnect: (linkId, end, to) => {
+        const p = get().history.present
+        const link = p.links.find((l) => l.id === linkId)
+        if (!link || sameRef(link[end], to)) return false
+        if (!canReconnect(p, linkId, end, to)) {
+          set({ toast: 'Rebranchement impossible : port occupé ou connecteurs incompatibles.' })
+          return false
+        }
+        apply((q) => ({
+          ...q,
+          links: q.links.map((l) => {
+            if (l.id !== linkId) return l
+            const { elbow: _elbow, ...rest } = l // le coude manuel ne correspond plus au nouveau tracé
+            return { ...rest, [end]: to }
+          })
+        }))
+        return get().history.present.links.some((l) => l.id === linkId && sameRef(l[end], to))
       },
 
       updateDevice: (id, patch) => apply((p) => ({ ...p, devices: p.devices.map((d) => (d.id === id ? { ...d, ...patch } : d)) })),

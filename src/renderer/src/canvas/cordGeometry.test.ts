@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { BAND_PITCH, BAND_START, bandRects, bandReach, beside, bootRect, stubLength, wavesPath } from './cordGeometry'
+import { BAND_PITCH, BAND_START, bandRects, elbowFromDrag, bandReach, beside, bootRect, stubLength, wavesPath } from './cordGeometry'
 
 describe('cordGeometry', () => {
   it('place la botte de la fiche à l’extérieur du port', () => {
@@ -31,5 +31,10 @@ describe('cordGeometry', () => {
 
   it('dessine les ondes Wi-Fi centrées sur un point', () => {
     expect(wavesPath(10, 20)).toBe('M4 19A8 8 0 0 1 16 19M6.5 21.5A5 5 0 0 1 13.5 21.5')
+  })
+
+  it('convertit un glisser à l’écran en décalage de coude, selon le zoom', () => {
+    expect(elbowFromDrag({ dx: 10, dy: 0 }, { x: 30, y: -16 }, 2)).toEqual({ dx: 25, dy: -8 })
+    expect(elbowFromDrag({ dx: 0, dy: 0 }, { x: 0, y: 0 }, 1)).toEqual({ dx: 0, dy: 0 })
   })
 })

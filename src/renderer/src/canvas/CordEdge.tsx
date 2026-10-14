@@ -1,9 +1,10 @@
-import { memo, useState } from 'react'
-import { EdgeLabelRenderer, Position, getSmoothStepPath, getStraightPath, type EdgeProps } from '@xyflow/react'
+import { memo, useRef, useState } from 'react'
+import { EdgeLabelRenderer, Position, getSmoothStepPath, getStraightPath, useStore as useFlowStore, type EdgeProps } from '@xyflow/react'
 import type { Side } from '../model/types'
 import type { CordFlowEdge } from './toFlow'
 import { useUiStore } from '../store/uiStore'
-import { BOLT_PATH, bandReach, bandRects, beside, bootRect, outward, stubLength, wavesPath } from './cordGeometry'
+import { projectStore, useProjectStore } from '../store/projectStore'
+import { BOLT_PATH, bandReach, bandRects, beside, bootRect, elbowFromDrag, outward, stubLength, wavesPath } from './cordGeometry'
 
 const RADIUS = 9
 
@@ -20,14 +21,56 @@ function sideOf(position: Position): Side {
   }
 }
 
+type Elbow = { dx: number; dy: number }
+const NO_ELBOW: Elbow = { dx: 0, dy: 0 }
+
+// Poignée au milieu d'un câble sélectionné : glisser pour décaler le coude, double-clic pour le recentrer.
+function ElbowGrip({ x, y, start, onDraft, onCommit, onReset }: { x: number; y: number; start: Elbow; onDraft: (e: Elbow | null) => void; onCommit: (e: Elbow) => void; onReset: () => void }) {
+  const zoom = useFlowStore((s) => s.transform[2])
+  const origin = useRef<{ x: number; y: number } | null>(null)
+  const at = (e: { clientX: number; clientY: number }): Elbow =>
+    elbowFromDrag(start, { x: e.clientX - (origin.current?.x ?? e.clientX), y: e.clientY - (origin.current?.y ?? e.clientY) }, zoom)
+  return (
+    <EdgeLabelRenderer>
+      <div
+        className="elbow-grip nodrag nopan"
+        style={{ transform: `translate(-50%, -50%) translate(${x}px, ${y}px)` }}
+        title="Glisser pour déplacer le coude · double-clic pour le recentrer"
+        onPointerDown={(e) => {
+          e.stopPropagation()
+          e.currentTarget.setPointerCapture(e.pointerId)
+          origin.current = { x: e.clientX, y: e.clientY }
+        }}
+        onPointerMove={(e) => {
+          if (origin.current) onDraft(at(e))
+        }}
+        onPointerUp={(e) => {
+          if (!origin.current) return
+          const next = at(e)
+          origin.current = null
+          onDraft(null)
+          if (next.dx !== start.dx || next.dy !== start.dy) onCommit(next)
+        }}
+        onDoubleClick={(e) => {
+          e.stopPropagation()
+          onReset()
+        }}
+      />
+    </EdgeLabelRenderer>
+  )
+}
+
 function CordEdgeImpl({ sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition, data, selected }: EdgeProps<CordFlowEdge>) {
   const [hover, setHover] = useState(false)
   const aId = data?.link.a.deviceId
   const bId = data?.link.b.deviceId
   const hot = useUiStore((s) => s.hoverDeviceId !== null && (s.hoverDeviceId === aId || s.hoverDeviceId === bId))
   const focus = useUiStore((s) => s.focusVlan)
+  const [draft, setDraft] = useState<Elbow | null>(null)
+  const readOnly = useProjectStore((s) => s.readOnly)
   if (!data) return null
   const { style, link, tag, portLabels } = data
+  const elbow = draft ?? link.elbow
   const [path, labelX, labelY] = style.straight
     ? getStraightPath({ sourceX, sourceY, targetX, targetY })
     : getSmoothStepPath({
@@ -39,7 +82,7 @@ function CordEdgeImpl({ sourceX, sourceY, targetX, targetY, sourcePosition, targ
         targetPosition,
         borderRadius: RADIUS,
         offset: stubLength(style.bands.length),
-        ...(link.elbow ? { centerX: (sourceX + targetX) / 2 + link.elbow.dx, centerY: (sourceY + targetY) / 2 + link.elbow.dy } : {})
+        ...(elbow ? { centerX: (sourceX + targetX) / 2 + elbow.dx, centerY: (sourceY + targetY) / 2 + elbow.dy } : {})
       })
   const ends: Array<[number, number, Side]> = [
     [sourceX, sourceY, sideOf(sourcePosition)],
@@ -47,6 +90,7 @@ function CordEdgeImpl({ sourceX, sourceY, targetX, targetY, sourcePosition, targ
   ]
   const dim = focus !== null && !data.vlans.includes(focus)
   const showTag = selected || hover || hot || style.alwaysTag
+  const grip = selected && !style.straight && !readOnly
   return (
     <>
       <g className={`cord${selected ? ' cord--selected' : ''}${dim ? ' cord--dim' : ''}${hot ? ' cord--hot' : ''}`} data-testid={`cord-${link.cableId}`}>
@@ -88,7 +132,7 @@ function CordEdgeImpl({ sourceX, sourceY, targetX, targetY, sourcePosition, targ
         <EdgeLabelRenderer>
           <div
             className={`cord-tag${showTag ? '' : ' cord-tag--badge'}${dim ? ' cord-tag--dim' : ''}`}
-            style={{ transform: `translate(-50%, -50%) translate(${labelX}px, ${labelY}px)` }}
+            style={{ transform: `translate(-50%, ${grip ? '-170%' : '-50%'}) translate(${labelX}px, ${labelY}px)` }}
           >
             {showTag ? `${tag}${style.extraBands > 0 ? ` · +${style.extraBands} VLAN` : ''}` : style.badge}
           </div>
@@ -106,6 +150,16 @@ function CordEdgeImpl({ sourceX, sourceY, targetX, targetY, sourcePosition, targ
               )
             })}
         </EdgeLabelRenderer>
+      )}
+      {grip && (
+        <ElbowGrip
+          x={labelX}
+          y={labelY}
+          start={link.elbow ?? NO_ELBOW}
+          onDraft={setDraft}
+          onCommit={(e) => projectStore.getState().updateLink(link.id, { elbow: e })}
+          onReset={() => projectStore.getState().updateLink(link.id, { elbow: undefined })}
+        />
       )}
     </>
   )
