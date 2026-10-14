@@ -137,6 +137,7 @@ function CanvasInner() {
         edges={edges}
         edgeTypes={edgeTypes}
         connectionMode={ConnectionMode.Loose}
+        zoomOnDoubleClick={false}
         onConnect={onConnect}
         onConnectEnd={onConnectEnd}
         isValidConnection={isValidConnection}

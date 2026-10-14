@@ -25,4 +25,12 @@ describe('Palette', () => {
     await user.click(screen.getByTestId('palette-dante-avio'))
     expect(uiStore.getState().pendingTemplateId).toBeNull()
   })
+
+  it('montre une icône par catégorie et par gabarit, et le code à droite', () => {
+    const { container } = render(<Palette />)
+    const item = screen.getByTestId('palette-ptz-ndi')
+    expect(item.querySelector('svg.icon')).toBeTruthy()
+    expect(item.lastElementChild?.textContent).toBe('CAM')
+    expect(container.querySelectorAll('.palette__cat svg.icon')).toHaveLength(8)
+  })
 })

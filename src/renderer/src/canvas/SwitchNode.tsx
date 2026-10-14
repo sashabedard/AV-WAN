@@ -1,12 +1,16 @@
-import { memo, useEffect, useMemo } from 'react'
+import { memo, useEffect, useMemo, useState } from 'react'
 import { Handle, Position, useUpdateNodeInternals, type NodeProps } from '@xyflow/react'
 import type { DeviceFlowNode } from './toFlow'
 import { switchFacade } from './switchFacade'
 import { switchSummary } from '../catalog/switch'
 import { usePortCompatibility } from './useConnectingFrom'
+import { projectStore, useProjectStore } from '../store/projectStore'
+import { InlineName } from './InlineName'
 
 function SwitchNodeImpl({ id, data, selected }: NodeProps<DeviceFlowNode>) {
   const { device, ports, poeUsage } = data
+  const readOnly = useProjectStore((s) => s.readOnly)
+  const [renaming, setRenaming] = useState(false)
   const facade = useMemo(() => switchFacade(device.ports), [device.ports])
   const compat = usePortCompatibility(id)
   const updateInternals = useUpdateNodeInternals()
@@ -14,6 +18,7 @@ function SwitchNodeImpl({ id, data, selected }: NodeProps<DeviceFlowNode>) {
     updateInternals(id)
   }, [id, facade, updateInternals])
   const title = `${device.name} · ${device.switch ? switchSummary(device.switch) : 'Switch'}`
+  const tapeWidth = title.length * 5.8 + 12
   const gradientId = `swg-${id}`
   const { width, height } = facade
   return (
@@ -37,7 +42,7 @@ function SwitchNodeImpl({ id, data, selected }: NodeProps<DeviceFlowNode>) {
           <circle key={i} className="sw__screw" cx={cx} cy={cy} r={2} />
         ))}
         <g transform={`rotate(-0.6 ${width / 2} 13)`}>
-          <rect className="sw__tape" x={20} y={6} width={title.length * 5.8 + 12} height={14} rx={1} />
+          <rect className="sw__tape" x={20} y={6} width={tapeWidth} height={14} rx={1} />
           <text className="sw__tape-text" x={26} y={16.5}>
             {title}
           </text>
@@ -77,6 +82,26 @@ function SwitchNodeImpl({ id, data, selected }: NodeProps<DeviceFlowNode>) {
           )
         })}
       </svg>
+      {renaming ? (
+        <InlineName
+          value={device.name}
+          label="Nom de l’appareil"
+          className="inline-name--rack"
+          onCommit={(name) => projectStore.getState().updateDevice(id, { name })}
+          onDone={() => setRenaming(false)}
+        />
+      ) : (
+        <div
+          className="sw__tape-hit"
+          style={{ width: tapeWidth }}
+          title={readOnly ? title : `${title} · double-clic pour renommer`}
+          onDoubleClick={(e) => {
+            if (readOnly) return
+            e.stopPropagation()
+            setRenaming(true)
+          }}
+        />
+      )}
       {facade.ports.map((p) => {
         const state = compat(p.id)
         return (

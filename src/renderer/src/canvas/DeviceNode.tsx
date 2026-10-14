@@ -1,15 +1,20 @@
-import { memo, useEffect, type CSSProperties } from 'react'
+import { memo, useEffect, useState, type CSSProperties } from 'react'
 import { Handle, Position, useUpdateNodeInternals, type NodeProps } from '@xyflow/react'
 import type { Side } from '../model/types'
 import { POE_LABELS } from '../model/derive'
+import { projectStore, useProjectStore } from '../store/projectStore'
+import { DeviceIcon } from '../icons/Icon'
 import type { DeviceFlowNode } from './toFlow'
 import { usePortCompatibility } from './useConnectingFrom'
+import { InlineName } from './InlineName'
 import { DEVICE_NODE_HEIGHT, TAPE_TOP_MAX_WIDTH, deviceNodeWidth, devicePortOffset } from './nodeGeometry'
 
 const POSITION: Record<Side, Position> = { top: Position.Top, bottom: Position.Bottom, left: Position.Left, right: Position.Right }
 
 function DeviceNodeImpl({ id, data, selected }: NodeProps<DeviceFlowNode>) {
   const { device, template, side, ports } = data
+  const readOnly = useProjectStore((s) => s.readOnly)
+  const [renaming, setRenaming] = useState(false)
   const updateInternals = useUpdateNodeInternals()
   useEffect(() => {
     updateInternals(id)
@@ -21,10 +26,31 @@ function DeviceNodeImpl({ id, data, selected }: NodeProps<DeviceFlowNode>) {
   const line2 = device.ip?.address ? `${device.ip.address} · ${device.ip.mode === 'static' ? 'FIXE' : 'DHCP'}` : 'IP non définie'
   return (
     <div className={`dn${selected ? ' dn--selected' : ''}`} style={{ width, height: DEVICE_NODE_HEIGHT }} data-testid={`device-${device.name}`}>
-      <span className="dn__tape" style={side === 'top' ? { maxWidth: TAPE_TOP_MAX_WIDTH } : undefined} title={device.name}>
-        {device.name}
-      </span>
+      {renaming ? (
+        <InlineName
+          value={device.name}
+          label="Nom de l’appareil"
+          onCommit={(name) => projectStore.getState().updateDevice(id, { name })}
+          onDone={() => setRenaming(false)}
+        />
+      ) : (
+        <span
+          className="dn__tape"
+          style={side === 'top' ? { maxWidth: TAPE_TOP_MAX_WIDTH } : undefined}
+          title={readOnly ? device.name : `${device.name} · double-clic pour renommer`}
+          onDoubleClick={(e) => {
+            if (readOnly) return
+            e.stopPropagation()
+            setRenaming(true)
+          }}
+        >
+          {device.name}
+        </span>
+      )}
       {template && <span className="dn__code">{template.code}</span>}
+      <span className="dn__icon">
+        <DeviceIcon icon={device.icon ?? template?.icon} size={20} />
+      </span>
       <span className="dn__line1">{line1}</span>
       <span className="dn__line2">{line2}</span>
       {device.ports.map((p, i) => {
