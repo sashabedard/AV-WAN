@@ -10,7 +10,7 @@ import {
   type OnNodeDrag,
   type OnSelectionChangeParams
 } from '@xyflow/react'
-import { projectStore, useProject } from '../store/projectStore'
+import { projectStore, useProject, useProjectStore } from '../store/projectStore'
 import { uiStore, useUiStore } from '../store/uiStore'
 import { useThemeMode } from '../theme/useThemeMode'
 import { TEMPLATE_MIME } from '../panels/Palette'
@@ -21,9 +21,13 @@ import { DeviceNode } from './DeviceNode'
 import './canvas.css'
 
 const nodeTypes = { device: DeviceNode, switch: DeviceNode }
+const SNAP_GRID: [number, number] = [GRID, GRID]
+const DELETE_KEYS = ['Backspace', 'Delete']
+const PRO_OPTIONS = { hideAttribution: true }
 
 function CanvasInner() {
   const project = useProject()
+  const readOnly = useProjectStore((s) => s.readOnly)
   const theme = useThemeMode()
   const cache = useRef(createFlowCache())
   const analysis = useMemo(() => analyzeLinks(project, theme), [project, theme])
@@ -98,13 +102,14 @@ function CanvasInner() {
         onPaneClick={onPaneClick}
         onDragOver={onDragOver}
         onDrop={onDrop}
+        nodesDraggable={!readOnly}
         snapToGrid={project.settings.snapToGrid && !alt}
-        snapGrid={[GRID, GRID]}
-        deleteKeyCode={['Backspace', 'Delete']}
+        snapGrid={SNAP_GRID}
+        deleteKeyCode={readOnly ? null : DELETE_KEYS}
         minZoom={0.2}
         maxZoom={2.5}
         colorMode={theme}
-        proOptions={{ hideAttribution: true }}
+        proOptions={PRO_OPTIONS}
       >
         <Background id="minor" className="bg-minor" variant={BackgroundVariant.Lines} gap={GRID} lineWidth={0.5} />
         <Background id="major" className="bg-major" variant={BackgroundVariant.Lines} gap={GRID * 5} lineWidth={0.7} />
