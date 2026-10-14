@@ -1,4 +1,5 @@
 import { app, BrowserWindow, dialog, shell } from 'electron'
+import { APP_NAME, APP_SUBTITLE, RELEASES_URL } from '../shared/appInfo'
 import { join } from 'node:path'
 import { registerIpc } from './ipc'
 import { buildMenu } from './menu'
@@ -54,11 +55,19 @@ function createWindow(): BrowserWindow {
   return win
 }
 
+// « À propos » sous Windows : macOS a le panneau natif du menu de l'app.
+function showAbout(): void {
+  const options = { type: 'info' as const, title: `À propos d’${APP_NAME}`, message: APP_NAME, detail: `${APP_SUBTITLE}\nVersion ${app.getVersion()}`, buttons: ['OK'] }
+  const win = BrowserWindow.getFocusedWindow()
+  void (win ? dialog.showMessageBox(win, options) : dialog.showMessageBox(options))
+}
+
 void app.whenReady().then(() => {
   if (process.platform === 'darwin' && !app.isPackaged && !isE2E) app.dock?.setIcon(devIcon)
   registerIpc()
   registerExportIpc()
-  buildMenu()
+  app.setAboutPanelOptions({ applicationName: APP_NAME, applicationVersion: app.getVersion(), version: '', credits: APP_SUBTITLE })
+  buildMenu({ about: showAbout, releases: () => void shell.openExternal(RELEASES_URL) })
   createWindow()
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()

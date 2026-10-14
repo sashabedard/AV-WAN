@@ -3,6 +3,9 @@
   "productName": "AV·WAN",
   "version": "0.1.0",
   "description": "AV·WAN — Audio-Vidéo · Wiring, Addressing, Networking",
+  "author": "Sasha Bédard",
+  "homepage": "https://github.com/sashabedard/AV-WAN",
+  "repository": { "type": "git", "url": "https://github.com/sashabedard/AV-WAN.git" },
   "private": true,
   "main": "./out/main/index.js",
   "scripts": {

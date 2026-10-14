@@ -1,0 +1,43 @@
+import { describe, expect, it, vi } from 'vitest'
+import type { MenuItemConstructorOptions } from 'electron'
+import { menuTemplate, type HelpHandlers } from './menuTemplate'
+
+const labels = (items: MenuItemConstructorOptions[]): string[] => items.map((i) => i.label ?? i.type ?? '')
+function submenu(menu: MenuItemConstructorOptions[], label: string): MenuItemConstructorOptions[] {
+  const m = menu.find((i) => i.label === label)
+  if (!m || !Array.isArray(m.submenu)) throw new Error(`Menu ${label} introuvable`)
+  return m.submenu
+}
+const click = (item: MenuItemConstructorOptions | undefined): void => (item?.click as (() => void) | undefined)?.()
+const handlers = (): HelpHandlers => ({ about: vi.fn(), releases: vi.fn() })
+
+describe('menuTemplate', () => {
+  it('macOS : le menu de l’app en tête, et Aide sans « À propos »', () => {
+    const help = handlers()
+    const menu = menuTemplate(true, vi.fn(), help)
+    expect(labels(menu)).toEqual(['AV·WAN', 'Fichier', 'Édition', 'Affichage', 'Aide'])
+    const aide = submenu(menu, 'Aide')
+    expect(labels(aide)).toEqual(['Téléchargements et notes de version…'])
+    click(aide[0])
+    expect(help.releases).toHaveBeenCalledOnce()
+  })
+
+  it('Windows : « À propos » dans Aide, et « Quitter » à la fin de Fichier', () => {
+    const help = handlers()
+    const menu = menuTemplate(false, vi.fn(), help)
+    expect(labels(menu)).toEqual(['Fichier', 'Édition', 'Affichage', 'Aide'])
+    const aide = submenu(menu, 'Aide')
+    expect(labels(aide)).toEqual(['À propos d’AV·WAN', 'separator', 'Téléchargements et notes de version…'])
+    click(aide[0])
+    expect(help.about).toHaveBeenCalledOnce()
+    expect(labels(submenu(menu, 'Fichier')).at(-1)).toBe('Quitter')
+  })
+
+  it('les entrées envoient leur action au renderer', () => {
+    const send = vi.fn()
+    const menu = menuTemplate(true, send, handlers())
+    click(submenu(menu, 'Fichier').find((i) => i.label === 'Nouveau projet'))
+    click(submenu(menu, 'Affichage').find((i) => i.label === 'Épingler cette vue'))
+    expect(send.mock.calls).toEqual([['new'], ['pinView']])
+  })
+})
