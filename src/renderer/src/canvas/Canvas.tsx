@@ -25,7 +25,7 @@ import { uiStore, useUiStore } from '../store/uiStore'
 import { useThemeMode } from '../theme/useThemeMode'
 import { TEMPLATE_MIME } from '../panels/Palette'
 import { analyzeLinks, createFlowCache, toFlowEdges, toFlowNodes, type CordFlowEdge, type DeviceFlowNode } from './toFlow'
-import { GRID, mergeEdges, mergeNodes, snapPoint } from './canvasHelpers'
+import { GRID, mergeEdges, mergeNodes, nodesMatchDerived, snapPoint } from './canvasHelpers'
 import { clientPoint, connectionRefs, dropOnDevice, makeIsValidConnection, nodeIdAt } from './connect'
 import { useAltKey } from './useAltKey'
 import { FIT_OPTIONS, registerViewport } from './viewport'
@@ -82,6 +82,7 @@ function CanvasInner() {
   // Cadrer le contenu à l'ouverture d'un fichier (report du plan 1), une seule fois par document.
   const docId = useProjectStore((s) => s.docId)
   const nodesReady = useNodesInitialized()
+  const nodesForDoc = nodesMatchDerived(nodes, derivedNodes)
   const fittedDoc = useRef<number | null>(null)
   useEffect(() => {
     if (fittedDoc.current === docId) return
@@ -90,10 +91,10 @@ function CanvasInner() {
       fittedDoc.current = docId
       return
     }
-    if (!nodesReady) return
+    if (!nodesReady || !nodesForDoc) return
     fittedDoc.current = docId
     void fitView(FIT_OPTIONS)
-  }, [docId, nodesReady, fitView])
+  }, [docId, nodesReady, nodesForDoc, fitView])
 
   const onNodesChange = useCallback((changes: NodeChange<DeviceFlowNode>[]) => setNodes((ns) => applyNodeChanges(changes, ns)), [])
   const onNodeDragStop: OnNodeDrag<DeviceFlowNode> = useCallback((_event, _node, dragged) => {

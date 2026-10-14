@@ -16,6 +16,11 @@ export function mergeNodes(derived: DeviceFlowNode[], prev: DeviceFlowNode[]): D
   })
 }
 
+// Vrai quand l'état de React Flow reflète déjà les nœuds dérivés du projet courant (mergeNodes garde l'objet position).
+export function nodesMatchDerived(nodes: ReadonlyArray<{ id: string; position: unknown }>, derived: ReadonlyArray<{ id: string; position: unknown }>): boolean {
+  return nodes.length === derived.length && nodes.every((n, i) => n.id === derived[i].id && n.position === derived[i].position)
+}
+
 export function mergeEdges(derived: CordFlowEdge[], prev: CordFlowEdge[]): CordFlowEdge[] {
   const selected = new Set(prev.filter((e) => e.selected).map((e) => e.id))
   return derived.map((e) => (selected.has(e.id) ? { ...e, selected: true } : e))
