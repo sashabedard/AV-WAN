@@ -1,6 +1,11 @@
 import { isDirty, projectStore } from '../store/projectStore'
 import { parseProjectFile, serializeProject } from '../model/file'
+import { pruneTemplates } from '../model/customTemplate'
 import { ipcErrorMessage } from './ipcError'
+import type { OpenedFile, OpenRequest, RecoveryEntry } from '../../../shared/api'
+import { uiStore } from '../store/uiStore'
+import { autosave } from './autosave'
+import { timeAgo } from './timeAgo'
 
 const DISCARD_QUESTION = 'Des modifications ne sont pas enregistrées. Continuer quand même ?'
 
@@ -44,11 +49,63 @@ export async function loadFromText(path: string, text: string): Promise<boolean>
   return true
 }
 
+// Copie de récupération rechargée « modifiée » : ⌘S l'écrit à l'emplacement d'origine (chemin accordé par le
+// processus principal), ou passe par « Enregistrer sous » si le fichier a disparu.
+export async function restoreRecoveryAction(key: string): Promise<boolean> {
+  const s = projectStore.getState()
+  try {
+    const restored = await window.avwan.recovery.restore(key)
+    const res = parseProjectFile(restored.text)
+    if (!res.ok) {
+      s.showToast(`Restauration impossible : ${res.error}`)
+      return false
+    }
+    s.loadProject(res.project, res.readOnly ? null : restored.path, { readOnly: res.readOnly, restored: true })
+    autosave.adopt(restored.key)
+    uiStore.getState().setWelcome(false)
+    const where = restored.path && !res.readOnly ? ` Enregistrez pour la garder dans ${fileNameOf(restored.path)}.` : ' Enregistrez-la pour la garder.'
+    projectStore
+      .getState()
+      .showToast(
+        res.readOnly
+          ? 'Version récupérée restaurée en lecture seule : elle vient d’une version plus récente d’AV·WAN. Utilisez « Enregistrer sous… ».'
+          : `Version récupérée restaurée.${where}`
+      )
+    return true
+  } catch (e) {
+    s.showToast(`Restauration impossible : ${ipcErrorMessage(e)}`)
+    return false
+  }
+}
+
+// Ouvrir un fichier : s'il a une copie plus récente que lui, on propose de la restaurer.
+async function loadWithRecovery(file: OpenedFile): Promise<boolean> {
+  let newer: RecoveryEntry | null = null
+  // Rouvrir le document déjà ouvert : sa copie est celle de cette session, que l'utilisateur vient
+  // d'abandonner (confirmDiscard) ; le changement de document l'efface. On ne la propose pas.
+  if (file.path !== projectStore.getState().filePath) {
+    try {
+      newer = await window.avwan.recovery.findNewer(file.path)
+    } catch {
+      newer = null
+    }
+  }
+  if (newer) {
+    const question = `Une version récupérée de ${fileNameOf(file.path)}, plus récente que le fichier (${timeAgo(newer.savedAt)}), existe. Restaurer cette version ?`
+    if (window.confirm(question)) return restoreRecoveryAction(newer.key)
+    // La copie n'est effacée qu'une fois le fichier ouvert : s'il est illisible, il reste la copie.
+    const opened = await loadFromText(file.path, file.text)
+    if (opened) void window.avwan.recovery.discard(newer.key).catch(() => undefined)
+    return opened
+  }
+  return loadFromText(file.path, file.text)
+}
+
 export async function openProjectAction(): Promise<void> {
   if (!confirmDiscard()) return
   try {
     const file = await window.avwan.file.open()
-    if (file) await loadFromText(file.path, file.text)
+    if (file) await loadWithRecovery(file)
   } catch (e) {
     projectStore.getState().showToast(`Ouverture impossible : ${ipcErrorMessage(e)}`)
   }
@@ -58,9 +115,26 @@ export async function openRecentAction(path: string): Promise<void> {
   if (!confirmDiscard()) return
   try {
     const file = await window.avwan.recent.open(path)
-    await loadFromText(file.path, file.text)
+    await loadWithRecovery(file)
   } catch (e) {
     projectStore.getState().showToast(`Ouverture impossible : ${ipcErrorMessage(e)}`)
+  }
+}
+
+// Fichier ouvert par le système (double-clic, Dock, 2e instance) : même chemin que ⌘O.
+export async function openRequestAction(request: OpenRequest): Promise<boolean> {
+  if ('error' in request) {
+    projectStore.getState().showToast(`Ouverture impossible : ${request.error}`)
+    return false
+  }
+  if (!confirmDiscard()) return false
+  try {
+    const opened = await loadWithRecovery(request)
+    if (opened) uiStore.getState().setWelcome(false)
+    return opened
+  } catch (e) {
+    projectStore.getState().showToast(`Ouverture impossible : ${ipcErrorMessage(e)}`)
+    return false
   }
 }
 
@@ -68,10 +142,11 @@ export async function saveProjectAsAction(): Promise<void> {
   const s = projectStore.getState()
   const snapshot = s.history.present
   try {
-    const path = await window.avwan.file.saveAs(serializeProject(snapshot), suggestedName())
+    const path = await window.avwan.file.saveAs(serializeProject(pruneTemplates(snapshot)), suggestedName())
     if (!path) return
     projectStore.setState({ readOnly: false })
     projectStore.getState().markSaved(path, snapshot)
+    autosave.saved()
   } catch (e) {
     s.showToast(`Échec de l’enregistrement : ${ipcErrorMessage(e)}`)
   }
@@ -83,8 +158,9 @@ export async function saveProjectAction(): Promise<void> {
   const path = s.filePath
   const snapshot = s.history.present
   try {
-    await window.avwan.file.save(path, serializeProject(snapshot))
+    await window.avwan.file.save(path, serializeProject(pruneTemplates(snapshot)))
     projectStore.getState().markSaved(path, snapshot)
+    autosave.saved()
   } catch (e) {
     s.showToast(`Échec de l’enregistrement : ${ipcErrorMessage(e)}`)
   }

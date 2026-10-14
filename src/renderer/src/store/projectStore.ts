@@ -8,6 +8,7 @@ import { buildSwitchPorts } from '../catalog/switch'
 import { pasteFragment as pasteFragmentModel, type Fragment } from '../model/clipboard'
 import { addVlan as addVlanModel, changeVlanId as changeVlanIdModel, removeVlan as removeVlanModel, updateVlan as updateVlanModel, type VlanPatch } from '../model/vlans'
 import { assignZones, createZone, moveZones, placeDevices, removeZones, resizeZone as resizeZoneModel, zoneAround, zonesWithin, type ZoneRect } from '../model/zones'
+import { withTemplate } from '../model/customTemplate'
 import { uiStore } from './uiStore'
 import { commit, initHistory, redo as historyRedo, undo as historyUndo, type History } from './history'
 
@@ -36,10 +37,12 @@ export interface ProjectState {
   savedRef: Project | null
   readOnly: boolean
   docId: number
+  // Identifiant du document tant qu'il n'a pas de chemin : nomme sa copie de récupération (u-<id>).
+  untitledId: string
   selection: Selection
   toast: string | null
   newProject(): void
-  loadProject(project: Project, filePath: string | null, opts?: { readOnly?: boolean }): void
+  loadProject(project: Project, filePath: string | null, opts?: { readOnly?: boolean; restored?: boolean }): void
   markSaved(filePath: string, saved?: Project): void
   apply(fn: (p: Project) => Project): void
   addDevice(templateId: string, position: { x: number; y: number }, opts?: CreateDeviceOptions): string
@@ -112,16 +115,26 @@ export function createProjectStore(initial: Project = createProject()): StoreApi
       savedRef: initial,
       readOnly: false,
       docId: 0,
+      untitledId: newId(),
       selection: EMPTY_SELECTION,
       toast: null,
 
       newProject: () => {
         const p = createProject()
-        set({ history: initHistory(p), filePath: null, savedRef: p, readOnly: false, selection: EMPTY_SELECTION, docId: get().docId + 1 })
+        set({ history: initHistory(p), filePath: null, savedRef: p, readOnly: false, selection: EMPTY_SELECTION, docId: get().docId + 1, untitledId: newId() })
         uiStore.getState().resetForDocument()
       },
+      // restored : une copie de récupération, chargée comme « modifiée » (rien n'est encore enregistré).
       loadProject: (project, filePath, opts) => {
-        set({ history: initHistory(project), filePath, savedRef: project, readOnly: opts?.readOnly ?? false, selection: EMPTY_SELECTION, docId: get().docId + 1 })
+        set({
+          history: initHistory(project),
+          filePath,
+          savedRef: opts?.restored ? null : project,
+          readOnly: opts?.readOnly ?? false,
+          selection: EMPTY_SELECTION,
+          docId: get().docId + 1,
+          untitledId: newId()
+        })
         uiStore.getState().resetForDocument()
       },
       markSaved: (filePath, saved) => set({ filePath, savedRef: saved ?? get().history.present }),
@@ -130,9 +143,10 @@ export function createProjectStore(initial: Project = createProject()): StoreApi
       addDevice: (templateId, position, opts) => {
         let id = ''
         apply((p) => {
-          const device = createDevice(p, templateId, position, opts)
+          const base = opts?.template ? withTemplate(p, opts.template) : p
+          const device = createDevice(base, templateId, position, opts)
           id = device.id
-          return assignZones({ ...p, devices: [...p.devices, device] }, [device.id])
+          return assignZones({ ...base, devices: [...base.devices, device] }, [device.id])
         })
         return id
       },

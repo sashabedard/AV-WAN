@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { ProjectSchema } from './schema'
+import { IconRefSchema, ProjectSchema } from './schema'
 import { sampleProject } from './__fixtures__/sample'
 
 describe('ProjectSchema', () => {
@@ -32,5 +32,12 @@ describe('ProjectSchema', () => {
     const r = ProjectSchema.parse(p)
     expect(r.devices[0]!.name).toBe('RÉGIE-É')
     expect(r.meta.title).toBe('')
+  })
+})
+
+describe('IconRefSchema', () => {
+  it('garde la teinte d’une icône importée, facultative', () => {
+    expect(IconRefSchema.parse({ kind: 'image', dataUri: 'data:image/svg+xml;base64,AA==', tint: true })).toEqual({ kind: 'image', dataUri: 'data:image/svg+xml;base64,AA==', tint: true })
+    expect(IconRefSchema.parse({ kind: 'image', dataUri: 'data:image/png;base64,AA==' })).toEqual({ kind: 'image', dataUri: 'data:image/png;base64,AA==' })
   })
 })

@@ -80,3 +80,18 @@
 .colors__item { display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--ink-2); }
 .colors__item input { width: 34px; height: 22px; padding: 0; border: 1px solid var(--line); border-radius: 3px; background: none; }
 .btn--danger { margin-top: 10px; border-color: color-mix(in srgb, var(--danger) 60%, var(--line)); color: var(--danger); }
+
+/* Mes composantes, Ce projet */
+.palette__head { display: flex; align-items: center; justify-content: space-between; padding-right: 10px; }
+.palette__add { display: grid; place-items: center; width: 22px; height: 22px; margin-top: 10px; border: 1px solid var(--line); border-radius: 3px; background: var(--surface-2); color: var(--ink-2); cursor: pointer; }
+.palette__add:hover { border-color: var(--accent); color: var(--accent); }
+.palette__hint { margin: 2px 14px 6px; color: var(--muted); font-size: 12px; }
+.palette__row { display: flex; align-items: center; }
+.palette__row > .palette__item { flex: 1; min-width: 0; padding-right: 4px; }
+.palette__act { flex: none; display: grid; place-items: center; width: 24px; height: 24px; margin-right: 8px; border: 0; border-radius: 3px; background: none; color: var(--muted); cursor: pointer; }
+.palette__act:hover, .palette__act[aria-expanded='true'] { background: var(--surface-2); color: var(--ink); }
+.palette__menu { position: relative; }
+.palette__pop { position: absolute; top: 26px; right: 8px; z-index: 20; display: grid; min-width: 140px; padding: 4px; border: 1px solid var(--line); border-radius: 5px; background: var(--surface); box-shadow: 0 8px 24px var(--tile-shadow); }
+.palette__pop button { padding: 6px 10px; border: 0; border-radius: 3px; background: none; color: var(--ink); text-align: left; font-size: 13px; cursor: pointer; }
+.palette__pop button:hover { background: var(--surface-2); }
+.palette__pop .is-danger { color: var(--danger); }

@@ -1,11 +1,13 @@
 import { app, BrowserWindow, dialog, ipcMain, type OpenDialogOptions, type SaveDialogOptions } from 'electron'
-import { IPC, type OpenedFile } from '../shared/api'
+import { IPC, type LibraryFile, type OpenedFile, type RecoveryEntry, type RestoredRecovery } from '../shared/api'
 import { FILE_EXTENSION } from '../shared/appInfo'
 import { join } from 'node:path'
 import { existingRecent, readRecent, rememberRecent } from './recent'
 import { assertRecentMember, createGrants } from './grants'
 import { frenchErrors } from './errors'
 import { atomicWriteFile, backupFile, readTextFile } from './fileIO'
+import { discardRecovery, discardRecoverySync, findNewerRecovery, isRecoveryKey, keyForPath, keyForUntitled, listRecovery, parseRecoveryWrite, prepareRestore, writeRecovery } from './recovery'
+import { listLibrary, removeLibrary, saveLibrary } from './library'
 
 const filters = [{ name: 'Projet AV·WAN', extensions: [FILE_EXTENSION] }]
 const EXT = `.${FILE_EXTENSION}`
@@ -15,7 +17,7 @@ function assertProjectPath(path: string): void {
 }
 
 // Le renderer n'écrit et ne rouvre que des chemins accordés ici.
-const grants = createGrants()
+export const grants = createGrants()
 const isE2E = (): boolean => process.env['AVWAN_E2E'] === '1'
 
 const recentFile = (): string => join(app.getPath('userData'), 'recent.json')
@@ -25,6 +27,31 @@ const remember = (path: string): Promise<void> =>
     () => undefined,
     () => undefined
   )
+
+const recoveryDir = (): string => join(app.getPath('userData'), 'recovery')
+const libraryDir = (): string => join(app.getPath('userData'), 'library')
+// Dernière copie écrite par chaque fenêtre, pour « Quitter sans enregistrer ».
+const lastRecoveryKey = new Map<number, string>()
+// Fenêtres dont l'utilisateur a abandonné le travail : une écriture tardive (perte de focus) est ignorée.
+const closedSenders = new Set<number>()
+
+export function discardLastRecoverySync(webContentsId: number): void {
+  closedSenders.add(webContentsId)
+  const key = lastRecoveryKey.get(webContentsId)
+  if (!key) return
+  lastRecoveryKey.delete(webContentsId)
+  try {
+    discardRecoverySync(recoveryDir(), key)
+  } catch {
+    // l'app se ferme : une copie restée là sera proposée au prochain lancement
+  }
+}
+
+// Un rechargement garde le même webContents : la fenêtre doit pouvoir écrire de nouveau des copies.
+export function resetRecoverySession(webContentsId: number): void {
+  closedSenders.delete(webContentsId)
+  lastRecoveryKey.delete(webContentsId)
+}
 
 export function registerIpc(): void {
   ipcMain.handle(IPC.open, (event) =>
@@ -108,4 +135,54 @@ export function registerIpc(): void {
       return backupFile(path)
     })
   )
+
+  // Le processus principal choisit la clé : un chemin n'est retenu que s'il a été accordé.
+  ipcMain.handle(IPC.recoveryWrite, (event, payload: unknown) =>
+    frenchErrors(async (): Promise<string> => {
+      const doc = parseRecoveryWrite(payload)
+      const path = doc.path !== null && grants.isGranted(doc.path) ? doc.path : null
+      const key = path ? keyForPath(path) : keyForUntitled(doc.untitledId)
+      if (closedSenders.has(event.sender.id)) return key
+      await writeRecovery(recoveryDir(), key, { version: 1, path, title: doc.title, savedAt: new Date().toISOString(), text: doc.text })
+      // Abandon survenu pendant l'écriture : la copie qui vient d'atterrir ne doit pas survivre.
+      if (closedSenders.has(event.sender.id)) {
+        await discardRecovery(recoveryDir(), key)
+        return key
+      }
+      lastRecoveryKey.set(event.sender.id, key)
+      return key
+    })
+  )
+
+  ipcMain.handle(IPC.recoveryDiscard, (event, key: unknown) =>
+    frenchErrors(async () => {
+      if (!isRecoveryKey(key)) return
+      await discardRecovery(recoveryDir(), key)
+      if (lastRecoveryKey.get(event.sender.id) === key) lastRecoveryKey.delete(event.sender.id)
+    })
+  )
+
+  ipcMain.handle(IPC.recoveryList, () => frenchErrors((): Promise<RecoveryEntry[]> => listRecovery(recoveryDir())))
+
+  ipcMain.handle(IPC.recoveryRestore, (event, key: unknown) =>
+    frenchErrors(async (): Promise<RestoredRecovery> => {
+      if (!isRecoveryKey(key)) throw new Error('Clé de récupération invalide.')
+      const restored = await prepareRestore(recoveryDir(), key)
+      if (!restored) throw new Error('Cette copie de récupération n’existe plus.')
+      if (restored.path) grants.grant(restored.path)
+      // Quitter sans enregistrer juste après la restauration doit aussi effacer cette copie.
+      lastRecoveryKey.set(event.sender.id, key)
+      return restored
+    })
+  )
+
+  // Seulement pour un chemin déjà accordé (dialogue, récents, double-clic).
+  ipcMain.handle(IPC.recoveryFindNewer, (_event, path: unknown) =>
+    frenchErrors(async (): Promise<RecoveryEntry | null> =>
+      typeof path === 'string' && grants.isGranted(path) ? findNewerRecovery(recoveryDir(), path) : null
+    )
+  )
+  ipcMain.handle(IPC.libraryList, (): Promise<LibraryFile[]> => listLibrary(libraryDir()))
+  ipcMain.handle(IPC.librarySave, (_event, id: unknown, text: unknown) => frenchErrors(() => saveLibrary(libraryDir(), id, text)))
+  ipcMain.handle(IPC.libraryRemove, (_event, id: unknown) => frenchErrors(() => removeLibrary(libraryDir(), id)))
 }

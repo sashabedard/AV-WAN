@@ -7,13 +7,17 @@ export interface LaunchOptions {
   keepWelcome?: boolean // tâche 18 : garder l'écran d'accueil ouvert
   scale?: number // captures nettes (2 = Retina)
   env?: Record<string, string> // variables en plus (ex. AVWAN_E2E_EXPORT_DIR)
+  userData?: string // réutiliser un dossier userData (relance après un arrêt brutal)
 }
 
 export async function launchApp(opts: LaunchOptions = {}): Promise<{ app: ElectronApplication; page: Page }> {
-  const userData = mkdtempSync(join(tmpdir(), 'avwan-e2e-'))
+  const userData = opts.userData ?? mkdtempSync(join(tmpdir(), 'avwan-e2e-'))
   const env = { ...process.env, AVWAN_E2E: '1', AVWAN_USER_DATA: userData, ...opts.env } as Record<string, string>
-  const args = ['.', ...(opts.scale ? [`--force-device-scale-factor=${opts.scale}`] : [])]
-  const app = await electron.launch({ args, env })
+  // AVWAN_EXECUTABLE : l'app empaquetée (CI, ou release/mac-universal en local) au lieu du dossier du projet.
+  const executablePath = process.env['AVWAN_EXECUTABLE']
+  const scale = opts.scale ? [`--force-device-scale-factor=${opts.scale}`] : []
+  const args = executablePath ? scale : ['.', ...scale]
+  const app = await electron.launch({ ...(executablePath ? { executablePath } : {}), args, env })
   try {
     const page = await app.firstWindow()
     // Règle de santé : aucune fenêtre ne doit jamais apparaître à l'écran.

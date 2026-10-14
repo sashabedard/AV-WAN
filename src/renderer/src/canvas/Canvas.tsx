@@ -44,6 +44,8 @@ import { QuickSearch } from '../panels/QuickSearch'
 import { canvasPointer, centreOf } from './pointer'
 import { SwitchConfigurator } from '../panels/SwitchConfigurator'
 import { DEFAULT_SWITCH_SPEC } from '../catalog/switch'
+import { getTemplate } from '../catalog'
+import { libraryTemplate } from '../store/libraryStore'
 import { clampPopover } from './popover'
 import { useDismissOnOutside } from '../panels/useDismiss'
 import { Icon } from '../icons/Icon'
@@ -200,8 +202,18 @@ function CanvasInner() {
   const place = useCallback(
     (templateId: string, client: { x: number; y: number }, alt = false) => {
       const position = snapPoint(screenToFlowPosition(client), project.settings.snapToGrid && !alt)
-      if (templateId === 'switch') uiStore.getState().setPendingSwitch({ position, screen: client })
-      else projectStore.getState().addDevice(templateId, position)
+      if (templateId === 'switch') {
+        uiStore.getState().setPendingSwitch({ position, screen: client })
+        return
+      }
+      const s = projectStore.getState()
+      // Composante perso : celle du projet si elle y est, sinon celle de la bibliothèque, embarquée au placement.
+      const template = getTemplate(s.history.present, templateId) ?? libraryTemplate(templateId)
+      if (!template) {
+        s.showToast('Cet appareil n’existe plus dans votre bibliothèque.')
+        return
+      }
+      s.addDevice(templateId, position, template.isCustom ? { template } : undefined)
     },
     [screenToFlowPosition, project.settings.snapToGrid]
   )

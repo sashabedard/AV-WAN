@@ -4,8 +4,13 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { QuickSearch } from './QuickSearch'
+import { libraryStore } from '../store/libraryStore'
+import { blankDraft, templateFromDraft } from '../model/customTemplate'
 
-afterEach(cleanup)
+afterEach(() => {
+  cleanup()
+  libraryStore.setState({ templates: [] })
+})
 
 function setup() {
   const onPick = vi.fn()
@@ -44,4 +49,14 @@ describe('QuickSearch', () => {
     await user.keyboard('zzzq')
     expect(screen.getByText('Aucun appareil ne correspond.')).toBeTruthy()
   })
+})
+
+it('trouve aussi mes composantes', async () => {
+  const user = userEvent.setup()
+  const onPick = vi.fn()
+  libraryStore.setState({ templates: [templateFromDraft({ ...blankDraft(), name: 'Balise Wi-Fi', code: 'BAL' }, 'custom-balise0001')] })
+  render(<QuickSearch onPick={onPick} onClose={() => undefined} />)
+  await user.type(screen.getByLabelText('Rechercher'), 'balise')
+  await user.keyboard('{Enter}')
+  expect(onPick).toHaveBeenCalledWith('custom-balise0001')
 })

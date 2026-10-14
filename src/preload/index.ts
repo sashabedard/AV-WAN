@@ -1,9 +1,10 @@
 import { contextBridge, ipcRenderer, type IpcRendererEvent } from 'electron'
-import { IPC, type AvwanApi, type MenuAction } from '../shared/api'
+import { IPC, type AvwanApi, type MenuAction, type OpenRequest } from '../shared/api'
 
 const api: AvwanApi = {
   platform: process.platform,
   isE2E: process.env['AVWAN_E2E'] === '1',
+  autosaveMs: Number(process.env['AVWAN_AUTOSAVE_MS']) || 30_000,
   file: {
     open: () => ipcRenderer.invoke(IPC.open),
     read: (path) => ipcRenderer.invoke(IPC.read, path),
@@ -15,6 +16,18 @@ const api: AvwanApi = {
     list: () => ipcRenderer.invoke(IPC.recentList),
     open: (path) => ipcRenderer.invoke(IPC.recentOpen, path),
     remember: (path) => ipcRenderer.invoke(IPC.recentRemember, path)
+  },
+  recovery: {
+    write: (doc) => ipcRenderer.invoke(IPC.recoveryWrite, doc),
+    discard: (key) => ipcRenderer.invoke(IPC.recoveryDiscard, key),
+    list: () => ipcRenderer.invoke(IPC.recoveryList),
+    restore: (key) => ipcRenderer.invoke(IPC.recoveryRestore, key),
+    findNewer: (path) => ipcRenderer.invoke(IPC.recoveryFindNewer, path)
+  },
+  library: {
+    list: () => ipcRenderer.invoke(IPC.libraryList),
+    save: (id, text) => ipcRenderer.invoke(IPC.librarySave, id, text),
+    remove: (id) => ipcRenderer.invoke(IPC.libraryRemove, id)
   },
   export: {
     pdf: (projectText, options, suggestedName) => ipcRenderer.invoke(IPC.exportPdf, projectText, options, suggestedName),
@@ -31,6 +44,25 @@ const api: AvwanApi = {
     ipcRenderer.on(IPC.menu, handler)
     return () => {
       ipcRenderer.removeListener(IPC.menu, handler)
+    }
+  },
+  onOpenRequest: (callback) => {
+    const handler = (_event: IpcRendererEvent, request: OpenRequest): void => callback(request)
+    ipcRenderer.on(IPC.openRequest, handler)
+    return () => {
+      ipcRenderer.removeListener(IPC.openRequest, handler)
+    }
+  },
+  rendererReady: () => ipcRenderer.send(IPC.rendererReady),
+  updates: {
+    pending: () => ipcRenderer.invoke(IPC.updatePending),
+    install: () => ipcRenderer.send(IPC.updateInstall)
+  },
+  onUpdateReady: (callback) => {
+    const handler = (_event: IpcRendererEvent, version: string): void => callback(version)
+    ipcRenderer.on(IPC.updateReady, handler)
+    return () => {
+      ipcRenderer.removeListener(IPC.updateReady, handler)
     }
   }
 }

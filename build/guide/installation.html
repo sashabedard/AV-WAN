@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>AV·WAN — Guide d’installation</title>
+<style>
+  @font-face { font-family: 'Archivo Narrow'; font-weight: 500; src: url('{{FONT_DIR}}/archivo-narrow/files/archivo-narrow-latin-500-normal.woff2') format('woff2'); }
+  @font-face { font-family: 'Archivo Narrow'; font-weight: 700; src: url('{{FONT_DIR}}/archivo-narrow/files/archivo-narrow-latin-700-normal.woff2') format('woff2'); }
+  @font-face { font-family: 'IBM Plex Mono'; font-weight: 400; src: url('{{FONT_DIR}}/ibm-plex-mono/files/ibm-plex-mono-latin-400-normal.woff2') format('woff2'); }
+  @font-face { font-family: 'IBM Plex Mono'; font-weight: 600; src: url('{{FONT_DIR}}/ibm-plex-mono/files/ibm-plex-mono-latin-600-normal.woff2') format('woff2'); }
+  @page { size: letter portrait; margin: 0.6in 0.7in; }
+  :root { --ink: #1e1f22; --muted: #6b675e; --line: #cfc8b8; --accent: #c2410c; --accent-bg: #f6dccb; --paper: #ffffff; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--paper); color: var(--ink); font: 500 11.5pt/1.45 'Archivo Narrow', sans-serif; }
+  header { display: flex; align-items: baseline; justify-content: space-between; padding-bottom: 8pt; border-bottom: 2pt solid var(--ink); }
+  h1 { margin: 0; font: 700 26pt/1 'Archivo Narrow', sans-serif; letter-spacing: 0.09em; }
+  .sub { margin: 4pt 0 0; font: 400 8.5pt/1.3 'IBM Plex Mono', monospace; color: var(--muted); }
+  .version { font: 600 9pt/1 'IBM Plex Mono', monospace; color: var(--muted); }
+  h2 { margin: 16pt 0 6pt; font: 700 13pt/1.2 'Archivo Narrow', sans-serif; letter-spacing: 0.04em; text-transform: uppercase; }
+  ol { margin: 0; padding-left: 16pt; }
+  li { margin: 3pt 0; }
+  .note { margin: 8pt 0 0; padding: 6pt 9pt; border-left: 3pt solid var(--accent); background: var(--accent-bg); }
+  code, .btn { font: 600 9.5pt/1 'IBM Plex Mono', monospace; }
+  .btn { display: inline-block; padding: 1.5pt 5pt; border: 1pt solid var(--ink); border-radius: 3pt; }
+  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 0 22pt; }
+  footer { margin-top: 18pt; padding-top: 6pt; border-top: 1pt solid var(--line); font: 400 8.5pt/1.4 'IBM Plex Mono', monospace; color: var(--muted); }
+</style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>AV·WAN</h1>
+      <p class="sub">Audio-Vidéo · Wiring, Addressing, Networking — guide d’installation</p>
+    </div>
+    <span class="version">Version {{VERSION}}</span>
+  </header>
+
+  <div class="cols">
+    <section>
+      <h2>macOS 13 et plus</h2>
+      <ol>
+        <li>Ouvrez <code>AV-WAN-{{VERSION}}-universal.dmg</code>.</li>
+        <li>Glissez <strong>AV·WAN</strong> dans le dossier <strong>Applications</strong>.</li>
+        <li>Ouvrez AV·WAN depuis Applications.</li>
+        <li>La première fois, macOS rappelle que l’app vient d’Internet : cliquez sur <span class="btn">Ouvrir</span>.</li>
+      </ol>
+      <p class="note">L’app est signée et vérifiée par Apple. Elle fonctionne sur les Mac Intel et Apple Silicon.</p>
+    </section>
+
+    <section>
+      <h2>Windows 10 et 11</h2>
+      <ol>
+        <li>Lancez <code>AV-WAN-{{VERSION}}-setup.exe</code>. Aucun droit d’administrateur n’est demandé.</li>
+        <li>Si Windows affiche « Windows a protégé votre ordinateur », cliquez sur <span class="btn">Informations complémentaires</span>, puis sur <span class="btn">Exécuter quand même</span>.</li>
+        <li>AV·WAN s’ouvre. Un raccourci est ajouté au Bureau et au menu Démarrer.</li>
+      </ol>
+      <p class="note">Cet avertissement vient de ce que l’installeur Windows n’est pas signé par un certificat payant. Il n’apparaît qu’à l’installation.</p>
+    </section>
+  </div>
+
+  <h2>Ouvrir un projet</h2>
+  <p>Double-cliquez sur un fichier <code>.avwan</code> : AV·WAN s’ouvre sur ce projet. Si un autre projet a des modifications non enregistrées, l’app vous le demande d’abord.</p>
+
+  <h2>Mises à jour</h2>
+  <p>AV·WAN vérifie seul les nouvelles versions et les télécharge en arrière-plan. Un bandeau propose alors <span class="btn">Redémarrer maintenant</span> ; sinon, la mise à jour s’installe à la prochaine fermeture. Pour vérifier tout de suite : menu <strong>Aide › Rechercher les mises à jour…</strong></p>
+
+  <h2>Travail non enregistré</h2>
+  <p>AV·WAN garde une copie de secours de votre projet toutes les 30 secondes. Après un arrêt imprévu, l’écran d’accueil propose de la restaurer.</p>
+
+  <footer>Toutes les versions et les notes de version : {{RELEASES_URL}}</footer>
+</body>
+</html>

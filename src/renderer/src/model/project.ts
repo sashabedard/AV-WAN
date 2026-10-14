@@ -1,5 +1,5 @@
 import { nanoid } from 'nanoid'
-import type { Device, Project, SwitchSpec } from './types'
+import type { Device, DeviceTemplate, Project, SwitchSpec } from './types'
 import { DEFAULT_PROJECT_VLAN_IDS, vlanPreset } from '../catalog/vlanPresets'
 import { getTemplate } from '../catalog'
 import { buildSwitchPorts, defaultPoeBudget } from '../catalog/switch'
@@ -31,6 +31,8 @@ export function createProject(now: Date = new Date()): Project {
 export interface CreateDeviceOptions {
   switchSpec?: SwitchSpec
   id?: string
+  // Composante perso de la bibliothèque : addDevice l'embarque dans le projet avant de créer l'appareil.
+  template?: DeviceTemplate
 }
 
 export function createDevice(

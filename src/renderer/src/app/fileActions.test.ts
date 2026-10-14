@@ -3,13 +3,29 @@ import type { AvwanApi } from '../../../shared/api'
 import { isDirty, projectStore } from '../store/projectStore'
 import { sampleProject } from '../model/__fixtures__/sample'
 import { serializeProject } from '../model/file'
-import { fileNameOf, loadFromText, openProjectAction, saveProjectAction } from './fileActions'
+import { fileNameOf, loadFromText, openProjectAction, openRecentAction, openRequestAction, restoreRecoveryAction, saveProjectAction } from './fileActions'
+import { autosave } from './autosave'
+import { blankDraft, templateFromDraft } from '../model/customTemplate'
+import { uiStore } from '../store/uiStore'
 
 function fakeApi(file: Partial<AvwanApi['file']> = {}): AvwanApi {
   return {
     platform: 'darwin',
     isE2E: false,
+    autosaveMs: 30_000,
+    recovery: {
+      write: vi.fn(async () => 'u-test00'),
+      discard: vi.fn(async () => undefined),
+      list: vi.fn(async () => []),
+      restore: vi.fn(async (key: string) => ({ key, path: null, text: '' })),
+      findNewer: vi.fn(async () => null)
+    },
+    library: { list: vi.fn(async () => []), save: vi.fn(async () => undefined), remove: vi.fn(async () => undefined) },
     onMenu: () => () => undefined,
+    onOpenRequest: () => () => undefined,
+    rendererReady: vi.fn(),
+    updates: { pending: vi.fn(async () => null), install: vi.fn() },
+    onUpdateReady: () => () => undefined,
     recent: {
       list: vi.fn(async () => []),
       open: vi.fn(async (path: string) => ({ path, text: '' })),
@@ -110,5 +126,192 @@ describe('fileActions', () => {
     vi.stubGlobal('window', { avwan: api, confirm: () => true })
     await openProjectAction()
     expect(projectStore.getState().toast).toBe('Ouverture impossible : Accès refusé (EACCES).')
+  })
+})
+
+describe('openRequestAction (double-clic)', () => {
+  it('ouvre le fichier et ferme l’accueil', async () => {
+    vi.stubGlobal('window', { avwan: fakeApi(), confirm: () => true })
+    uiStore.getState().setWelcome(true)
+    const project = { ...sampleProject(), meta: { ...sampleProject().meta, title: 'Salle B' } }
+    expect(await openRequestAction({ path: '/x/salle-b.avwan', text: serializeProject(project) })).toBe(true)
+    expect(projectStore.getState().filePath).toBe('/x/salle-b.avwan')
+    expect(projectStore.getState().history.present.meta.title).toBe('Salle B')
+    expect(uiStore.getState().welcome).toBe(false)
+  })
+
+  it('demande avant de remplacer un projet modifié, et ne touche à rien si on refuse', async () => {
+    vi.stubGlobal('window', { avwan: fakeApi(), confirm: () => false })
+    projectStore.getState().updateMeta({ title: 'Pas enregistré' })
+    expect(await openRequestAction({ path: '/x/salle-b.avwan', text: serializeProject(sampleProject()) })).toBe(false)
+    expect(projectStore.getState().filePath).toBe('/tmp/a.avwan')
+    expect(projectStore.getState().history.present.meta.title).toBe('Pas enregistré')
+  })
+
+  it('affiche l’erreur de lecture en français', async () => {
+    vi.stubGlobal('window', { avwan: fakeApi(), confirm: () => true })
+    expect(await openRequestAction({ path: '/x/absent.avwan', error: 'Fichier ou dossier introuvable (ENOENT).' })).toBe(false)
+    expect(projectStore.getState().toast).toBe('Ouverture impossible : Fichier ou dossier introuvable (ENOENT).')
+  })
+
+  it('un fichier invalide laisse l’accueil ouvert et affiche l’erreur', async () => {
+    vi.stubGlobal('window', { avwan: fakeApi(), confirm: () => true })
+    uiStore.getState().setWelcome(true)
+    expect(await openRequestAction({ path: '/x/casse.avwan', text: '{' })).toBe(false)
+    expect(uiStore.getState().welcome).toBe(true)
+    expect(projectStore.getState().toast).toContain('JSON')
+  })
+
+  it('une exception pendant l’ouverture devient un toast, accueil ouvert', async () => {
+    const backup = vi.fn(async () => { throw new Error('disque plein') })
+    vi.stubGlobal('window', { avwan: fakeApi({ backup }), confirm: () => true })
+    uiStore.getState().setWelcome(true)
+    const p = sampleProject()
+    p.links.push({ id: 'l2', cableId: 'C-002', a: { deviceId: 'fantome', portId: 'ETH' }, b: { deviceId: 'sw1', portId: '2' }, medium: 'cat6' })
+    expect(await openRequestAction({ path: '/x/orphelin.avwan', text: serializeProject(p) })).toBe(false)
+    expect(uiStore.getState().welcome).toBe(true)
+    expect(projectStore.getState().toast).toContain('Ouverture impossible')
+  })
+})
+
+describe('copie de récupération et fichier', () => {
+  it('⌘S efface la copie du document', async () => {
+    const api = fakeApi()
+    vi.mocked(api.recovery.write).mockResolvedValue('f-0123456789abcdef')
+    vi.stubGlobal('window', { avwan: api, confirm: () => true })
+    projectStore.getState().updateMeta({ title: 'Modifié' })
+    await autosave.tick()
+    await saveProjectAction()
+    expect(api.recovery.discard).toHaveBeenCalledWith('f-0123456789abcdef')
+  })
+
+  it('abandonner les modifications pour ouvrir un autre fichier efface la copie', async () => {
+    const api = fakeApi()
+    vi.mocked(api.recovery.write).mockResolvedValue('f-fedcba9876543210')
+    vi.mocked(api.recent.open).mockResolvedValue({ path: '/x/b.avwan', text: serializeProject(sampleProject()) })
+    vi.stubGlobal('window', { avwan: api, confirm: () => true })
+    projectStore.getState().updateMeta({ title: 'Modifié' })
+    await autosave.tick()
+    await openRecentAction('/x/b.avwan')
+    expect(api.recovery.discard).toHaveBeenCalledWith('f-fedcba9876543210')
+  })
+
+  it('une ouverture annulée garde la copie du document resté ouvert', async () => {
+    const api = fakeApi({ open: vi.fn(async () => null) })
+    vi.mocked(api.recovery.write).mockResolvedValue('f-0123456789abcdef')
+    vi.stubGlobal('window', { avwan: api, confirm: () => true })
+    projectStore.getState().updateMeta({ title: 'Modifié' })
+    await autosave.tick()
+    await openProjectAction()
+    expect(api.recovery.discard).not.toHaveBeenCalled()
+    expect(projectStore.getState().filePath).toBe('/tmp/a.avwan')
+  })
+})
+
+describe('restauration', () => {
+  it('Restaurer recharge la copie comme modifiée, reliée à son fichier', async () => {
+    const api = fakeApi()
+    vi.mocked(api.recovery.restore).mockResolvedValue({ key: 'f-0123456789abcdef', path: '/x/salle-b.avwan', text: serializeProject(sampleProject()) })
+    vi.stubGlobal('window', { avwan: api, confirm: () => true })
+    uiStore.getState().setWelcome(true)
+    expect(await restoreRecoveryAction('f-0123456789abcdef')).toBe(true)
+    expect(projectStore.getState().filePath).toBe('/x/salle-b.avwan')
+    expect(isDirty(projectStore.getState())).toBe(true)
+    expect(uiStore.getState().welcome).toBe(false)
+  })
+
+  it('une copie illisible affiche l’erreur et ne touche pas au projet', async () => {
+    const api = fakeApi()
+    vi.mocked(api.recovery.restore).mockResolvedValue({ key: 'u-abcdef', path: null, text: '{pas du json' })
+    vi.stubGlobal('window', { avwan: api, confirm: () => true })
+    expect(await restoreRecoveryAction('u-abcdef')).toBe(false)
+    expect(projectStore.getState().filePath).toBe('/tmp/a.avwan')
+    expect(projectStore.getState().toast).toMatch(/^Restauration impossible : Fichier illisible/)
+  })
+
+  it('une copie d’une version plus récente se restaure en lecture seule', async () => {
+    const api = fakeApi()
+    const future = JSON.stringify({ ...sampleProject(), schemaVersion: 2 })
+    vi.mocked(api.recovery.restore).mockResolvedValue({ key: 'f-0123456789abcdef', path: '/x/salle-b.avwan', text: future })
+    vi.stubGlobal('window', { avwan: api, confirm: () => true })
+    expect(await restoreRecoveryAction('f-0123456789abcdef')).toBe(true)
+    expect(projectStore.getState().readOnly).toBe(true)
+    expect(projectStore.getState().filePath).toBeNull()
+    expect(projectStore.getState().toast).toBe('Version récupérée restaurée en lecture seule : elle vient d’une version plus récente d’AV·WAN. Utilisez « Enregistrer sous… ».')
+  })
+
+  it('une copie dont le fichier a disparu se restaure sans titre ; ⌘S passe par « Enregistrer sous »', async () => {
+    const api = fakeApi()
+    vi.mocked(api.recovery.restore).mockResolvedValue({ key: 'f-0123456789abcdef', path: null, text: serializeProject(sampleProject()) })
+    vi.stubGlobal('window', { avwan: api, confirm: () => true })
+    expect(await restoreRecoveryAction('f-0123456789abcdef')).toBe(true)
+    expect(projectStore.getState().filePath).toBeNull()
+    expect(isDirty(projectStore.getState())).toBe(true)
+    expect(projectStore.getState().toast).toBe('Version récupérée restaurée. Enregistrez-la pour la garder.')
+    await saveProjectAction()
+    expect(api.file.saveAs).toHaveBeenCalled()
+    expect(api.file.save).not.toHaveBeenCalled()
+  })
+
+  it('ouvrir un fichier qui a une copie plus récente propose de la restaurer', async () => {
+    const api = fakeApi()
+    const entry = { key: 'f-0123456789abcdef', path: '/x/b.avwan', title: 'B', savedAt: new Date().toISOString() }
+    vi.mocked(api.recent.open).mockResolvedValue({ path: '/x/b.avwan', text: serializeProject(sampleProject()) })
+    vi.mocked(api.recovery.findNewer).mockResolvedValue(entry)
+    vi.mocked(api.recovery.restore).mockResolvedValue({ key: entry.key, path: '/x/b.avwan', text: serializeProject(sampleProject()) })
+    const confirm = vi.fn(() => true)
+    vi.stubGlobal('window', { avwan: api, confirm })
+    await openRecentAction('/x/b.avwan')
+    expect(confirm).toHaveBeenCalledWith(expect.stringContaining('Une version récupérée de b.avwan'))
+    expect(api.recovery.restore).toHaveBeenCalledWith(entry.key)
+    expect(isDirty(projectStore.getState())).toBe(true)
+  })
+
+  it('rouvrir le fichier déjà ouvert ne propose pas sa propre copie', async () => {
+    const api = fakeApi()
+    vi.mocked(api.recent.open).mockResolvedValue({ path: '/tmp/a.avwan', text: serializeProject(sampleProject()) })
+    vi.mocked(api.recovery.findNewer).mockResolvedValue({ key: 'f-0123456789abcdef', path: '/tmp/a.avwan', title: 'A', savedAt: new Date().toISOString() })
+    const confirm = vi.fn(() => true)
+    vi.stubGlobal('window', { avwan: api, confirm })
+    await openRecentAction('/tmp/a.avwan')
+    expect(api.recovery.findNewer).not.toHaveBeenCalled()
+    expect(confirm).not.toHaveBeenCalled()
+  })
+
+  it('refuser la copie ouvre le fichier tel quel et efface la copie', async () => {
+    const api = fakeApi()
+    const entry = { key: 'f-0123456789abcdef', path: '/x/b.avwan', title: 'B', savedAt: new Date().toISOString() }
+    vi.mocked(api.recent.open).mockResolvedValue({ path: '/x/b.avwan', text: serializeProject(sampleProject()) })
+    vi.mocked(api.recovery.findNewer).mockResolvedValue(entry)
+    vi.stubGlobal('window', { avwan: api, confirm: () => false })
+    await openRecentAction('/x/b.avwan')
+    expect(api.recovery.restore).not.toHaveBeenCalled()
+    expect(api.recovery.discard).toHaveBeenCalledWith(entry.key)
+    expect(projectStore.getState().filePath).toBe('/x/b.avwan')
+    expect(isDirty(projectStore.getState())).toBe(false)
+  })
+
+  it('refuser la copie puis échouer à ouvrir le fichier garde la copie', async () => {
+    const api = fakeApi()
+    const entry = { key: 'f-0123456789abcdef', path: '/x/b.avwan', title: 'B', savedAt: new Date().toISOString() }
+    vi.mocked(api.recent.open).mockResolvedValue({ path: '/x/b.avwan', text: '{' })
+    vi.mocked(api.recovery.findNewer).mockResolvedValue(entry)
+    vi.stubGlobal('window', { avwan: api, confirm: () => false })
+    await openRecentAction('/x/b.avwan')
+    expect(api.recovery.discard).not.toHaveBeenCalled()
+    expect(projectStore.getState().toast).toContain('JSON')
+  })
+})
+
+describe('enregistrer un projet avec des composantes', () => {
+  it('n’écrit que les composantes utilisées, sans toucher au projet ouvert', async () => {
+    const api = fakeApi()
+    vi.stubGlobal('window', { avwan: api, confirm: () => true })
+    const unused = templateFromDraft({ ...blankDraft(), name: 'Inutile', code: 'INU' }, 'custom-inutile001')
+    projectStore.getState().apply((p) => ({ ...p, templates: [unused] }))
+    await saveProjectAction()
+    const written = JSON.parse(vi.mocked(api.file.save).mock.calls[0]![1]) as { templates: unknown[] }
+    expect(written.templates).toEqual([])
+    expect(projectStore.getState().history.present.templates).toEqual([unused])
   })
 })

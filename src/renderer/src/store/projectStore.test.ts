@@ -3,6 +3,7 @@ import { createProjectStore, isDirty, linksOnRemovedPorts } from './projectStore
 import { copyFragment } from '../model/clipboard'
 import { vlanPreset } from '../catalog/vlanPresets'
 import { sampleProject } from '../model/__fixtures__/sample'
+import { blankDraft, templateFromDraft } from '../model/customTemplate'
 
 const store = () => createProjectStore(sampleProject())
 
@@ -331,5 +332,37 @@ describe('VLAN dans le store', () => {
     s.getState().setColorMode('type')
     expect(s.getState().history.present.settings.colorMode).toBe('type')
     expect(isDirty(s.getState())).toBe(false)
+  })
+})
+
+describe('documents restaurés et sans titre', () => {
+  it('un projet restauré est chargé comme modifié, relié à son fichier', () => {
+    const store = createProjectStore()
+    store.getState().loadProject(sampleProject(), '/x/a.avwan', { restored: true })
+    expect(isDirty(store.getState())).toBe(true)
+    expect(store.getState().filePath).toBe('/x/a.avwan')
+  })
+
+  it('chaque document reçoit un nouvel identifiant sans titre', () => {
+    const store = createProjectStore()
+    const first = store.getState().untitledId
+    expect(first).toMatch(/^[A-Za-z0-9_-]{6,40}$/)
+    store.getState().newProject()
+    const second = store.getState().untitledId
+    store.getState().loadProject(sampleProject(), null)
+    expect(new Set([first, second, store.getState().untitledId]).size).toBe(3)
+  })
+})
+
+describe('placer une composante perso', () => {
+  it('l’embarque une seule fois et nomme les appareils avec son code', () => {
+    const store = createProjectStore()
+    const lidar = templateFromDraft({ ...blankDraft(), name: 'Capteur LiDAR', code: 'LID', ports: [{ label: 'ETH', connector: 'rj45', poe: 'in-af' }] }, 'custom-lidar00001')
+    store.getState().addDevice(lidar.id, { x: 0, y: 0 }, { template: lidar })
+    store.getState().addDevice(lidar.id, { x: 200, y: 0 }, { template: lidar })
+    const p = store.getState().history.present
+    expect(p.templates).toEqual([lidar])
+    expect(p.devices.map((d) => d.name)).toEqual(['LID-1', 'LID-2'])
+    expect(p.devices[0]!.ports).toEqual([{ id: 'ETH', label: 'ETH', connector: 'rj45', speedMbps: 1000, poeIn: 'af' }])
   })
 })

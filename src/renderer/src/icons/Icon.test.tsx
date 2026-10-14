@@ -27,3 +27,17 @@ describe('Icon', () => {
     expect(container.querySelectorAll('path')).toHaveLength(GLYPHS.generic.length)
   })
 })
+
+describe('DeviceIcon importée', () => {
+  it('une icône monochrome est teintée par un masque, sans <img>', () => {
+    const { container } = render(<DeviceIcon icon={{ kind: 'image', dataUri: 'data:image/svg+xml;base64,PHN2Zy8+', tint: true }} />)
+    expect(container.querySelector('span.icon.icon--mask')).toBeTruthy()
+    expect(container.querySelector('img')).toBeNull()
+  })
+
+  it('une dataUri qui n’est pas un SVG en base64 reste une image, même marquée tint', () => {
+    const { container } = render(<DeviceIcon icon={{ kind: 'image', dataUri: 'data:image/png;base64,AAAA', tint: true }} />)
+    expect(container.querySelector('img.icon--image')).toBeTruthy()
+    expect(container.querySelector('.icon--mask')).toBeNull()
+  })
+})
