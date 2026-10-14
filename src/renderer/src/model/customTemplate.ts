@@ -136,8 +136,16 @@ export function templateFromDraft(d: TemplateDraft, id: string): DeviceTemplate 
   }
 }
 
+const COPY_SUFFIX = ' (copie)'
+
+// Une copie est toujours perso ; le nom est tronqué avant le suffixe pour que « (copie) » reste visible.
 export function duplicateTemplate(t: DeviceTemplate): DeviceTemplate {
-  return { ...structuredClone(t), id: newCustomId(), name: `${t.name} (copie)`.slice(0, MAX_NAME) }
+  return {
+    ...structuredClone(t),
+    id: newCustomId(),
+    name: `${t.name.slice(0, MAX_NAME - COPY_SUFFIX.length)}${COPY_SUFFIX}`,
+    isCustom: true
+  }
 }
 
 // Placement : le projet embarque la composante, pour s'ouvrir complet chez quelqu'un qui ne l'a pas.

@@ -132,3 +132,18 @@ describe('composantes d’un projet', () => {
     expect(projectOnlyTemplates({ templates: [t1, t2] }, new Set([t1.id]))).toEqual([t2])
   })
 })
+
+describe('duplicateTemplate', () => {
+  it('une copie d’un gabarit intégré est toujours perso', () => {
+    const copy = duplicateTemplate(TEMPLATES_BY_ID.get('dante-avio')!)
+    expect(copy.isCustom).toBe(true)
+    expect(copy.id).toMatch(CUSTOM_ID)
+    expect(copy.name).toBe('Adaptateur Dante AVIO (copie)')
+  })
+
+  it('le suffixe « (copie) » reste visible, même pour un nom de 60 caractères', () => {
+    const copy = duplicateTemplate({ ...templateFromDraft(lidar(), 'custom-aaaaaaaaaaaa'), name: 'x'.repeat(60) })
+    expect(copy.name).toHaveLength(60)
+    expect(copy.name.endsWith(' (copie)')).toBe(true)
+  })
+})
