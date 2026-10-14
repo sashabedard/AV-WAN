@@ -24,6 +24,11 @@ const api: AvwanApi = {
     restore: (key) => ipcRenderer.invoke(IPC.recoveryRestore, key),
     findNewer: (path) => ipcRenderer.invoke(IPC.recoveryFindNewer, path)
   },
+  library: {
+    list: () => ipcRenderer.invoke(IPC.libraryList),
+    save: (id, text) => ipcRenderer.invoke(IPC.librarySave, id, text),
+    remove: (id) => ipcRenderer.invoke(IPC.libraryRemove, id)
+  },
   export: {
     pdf: (projectText, options, suggestedName) => ipcRenderer.invoke(IPC.exportPdf, projectText, options, suggestedName),
     csv: (tables, suggestedName) => ipcRenderer.invoke(IPC.exportCsv, tables, suggestedName),

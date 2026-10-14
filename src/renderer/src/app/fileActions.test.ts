@@ -19,6 +19,7 @@ function fakeApi(file: Partial<AvwanApi['file']> = {}): AvwanApi {
       restore: vi.fn(async (key: string) => ({ key, path: null, text: '' })),
       findNewer: vi.fn(async () => null)
     },
+    library: { list: vi.fn(async () => []), save: vi.fn(async () => undefined), remove: vi.fn(async () => undefined) },
     onMenu: () => () => undefined,
     onOpenRequest: () => () => undefined,
     rendererReady: vi.fn(),

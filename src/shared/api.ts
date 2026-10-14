@@ -29,6 +29,12 @@ export interface RestoredRecovery {
   text: string
 }
 
+// Composante de la bibliothèque perso, telle qu'écrite sur le disque (validée par le renderer).
+export interface LibraryFile {
+  id: string
+  text: string
+}
+
 // Travail confié à la fenêtre d'impression cachée : le projet sérialisé et les options choisies.
 export interface PrintJob {
   projectText: string
@@ -57,6 +63,11 @@ export interface AvwanApi {
     list(): Promise<RecoveryEntry[]>
     restore(key: string): Promise<RestoredRecovery>
     findNewer(path: string): Promise<RecoveryEntry | null>
+  }
+  library: {
+    list(): Promise<LibraryFile[]>
+    save(id: string, text: string): Promise<void>
+    remove(id: string): Promise<void>
   }
   export: {
     pdf(projectText: string, options: PdfOptions, suggestedName: string): Promise<string | null>
@@ -92,6 +103,9 @@ export const IPC = {
   recoveryList: 'recovery:list',
   recoveryRestore: 'recovery:restore',
   recoveryFindNewer: 'recovery:findNewer',
+  libraryList: 'library:list',
+  librarySave: 'library:save',
+  libraryRemove: 'library:remove',
   exportPdf: 'export:pdf',
   exportCsv: 'export:csv',
   exportXlsx: 'export:xlsx',

@@ -1,5 +1,5 @@
 import { app, BrowserWindow, dialog, ipcMain, type OpenDialogOptions, type SaveDialogOptions } from 'electron'
-import { IPC, type OpenedFile, type RecoveryEntry, type RestoredRecovery } from '../shared/api'
+import { IPC, type LibraryFile, type OpenedFile, type RecoveryEntry, type RestoredRecovery } from '../shared/api'
 import { FILE_EXTENSION } from '../shared/appInfo'
 import { join } from 'node:path'
 import { existingRecent, readRecent, rememberRecent } from './recent'
@@ -7,6 +7,7 @@ import { assertRecentMember, createGrants } from './grants'
 import { frenchErrors } from './errors'
 import { atomicWriteFile, backupFile, readTextFile } from './fileIO'
 import { discardRecovery, discardRecoverySync, findNewerRecovery, isRecoveryKey, keyForPath, keyForUntitled, listRecovery, parseRecoveryWrite, prepareRestore, writeRecovery } from './recovery'
+import { listLibrary, removeLibrary, saveLibrary } from './library'
 
 const filters = [{ name: 'Projet AV·WAN', extensions: [FILE_EXTENSION] }]
 const EXT = `.${FILE_EXTENSION}`
@@ -28,6 +29,7 @@ const remember = (path: string): Promise<void> =>
   )
 
 const recoveryDir = (): string => join(app.getPath('userData'), 'recovery')
+const libraryDir = (): string => join(app.getPath('userData'), 'library')
 // Dernière copie écrite par chaque fenêtre, pour « Quitter sans enregistrer ».
 const lastRecoveryKey = new Map<number, string>()
 // Fenêtres dont l'utilisateur a abandonné le travail : une écriture tardive (perte de focus) est ignorée.
@@ -178,4 +180,7 @@ export function registerIpc(): void {
       typeof path === 'string' && grants.isGranted(path) ? findNewerRecovery(recoveryDir(), path) : null
     )
   )
+  ipcMain.handle(IPC.libraryList, (): Promise<LibraryFile[]> => listLibrary(libraryDir()))
+  ipcMain.handle(IPC.librarySave, (_event, id: unknown, text: unknown) => frenchErrors(() => saveLibrary(libraryDir(), id, text)))
+  ipcMain.handle(IPC.libraryRemove, (_event, id: unknown) => frenchErrors(() => removeLibrary(libraryDir(), id)))
 }
