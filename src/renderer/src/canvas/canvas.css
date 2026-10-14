@@ -5,7 +5,7 @@
 .bg-major path { stroke: var(--grid-major); }
 .react-flow__node { font-family: var(--font-mono); }
 
-/* Appareil (tuile) */
+/* Appareil (tuile) — .dn__tape left: 8px = TAPE_LEFT (nodeGeometry.ts) */
 .dn { position: relative; border-radius: 5px; border: 1px solid var(--tile-stroke); background: linear-gradient(var(--tile-top), var(--tile-bottom)); box-shadow: 0 3px 8px var(--tile-shadow); color: var(--ink); }
 .dn--selected, .sw--selected { outline: 1.5px solid var(--accent); outline-offset: 4px; }
 .dn__tape { position: absolute; top: -7px; left: 8px; max-width: calc(100% - 52px); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; background: var(--tape); color: var(--tape-ink); font: 600 11px/1 var(--font-mono); padding: 2px 6px 3px; transform: rotate(-0.6deg); }
