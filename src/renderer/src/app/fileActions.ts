@@ -5,18 +5,16 @@ import { ipcErrorMessage } from './ipcError'
 import type { OpenedFile, OpenRequest, RecoveryEntry } from '../../../shared/api'
 import { uiStore } from '../store/uiStore'
 import { autosave } from './autosave'
+import { fileAutoSave } from './fileAutoSave'
+import { fileNameOf } from './fileName'
 import { timeAgo } from './timeAgo'
 
 const DISCARD_QUESTION = 'Des modifications ne sont pas enregistrées. Continuer quand même ?'
 
+// Comme à la fermeture : avec l'enregistrement automatique, la dernière modification est d'abord écrite dans
+// le fichier ; la question ne revient que si cette écriture est impossible.
 function confirmDiscard(): boolean {
-  return !isDirty(projectStore.getState()) || window.confirm(DISCARD_QUESTION)
-}
-
-export function fileNameOf(path: string | null): string {
-  if (!path) return 'Sans titre'
-  const parts = path.split(/[\\/]/)
-  return parts[parts.length - 1] || path
+  return !isDirty(projectStore.getState()) || fileAutoSave.flushSync() || window.confirm(DISCARD_QUESTION)
 }
 
 export function suggestedName(): string {

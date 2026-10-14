@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { RecoveryEntry } from '../../../shared/api'
-import { fileNameOf, restoreRecoveryAction } from './fileActions'
+import { restoreRecoveryAction } from './fileActions'
+import { fileNameOf } from './fileName'
 import { timeAgo } from './timeAgo'
 
 const MAX_ROWS = 3

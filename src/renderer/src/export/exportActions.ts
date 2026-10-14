@@ -1,7 +1,8 @@
 import type { PdfOptions } from '../../../shared/pdfOptions'
 import { projectStore } from '../store/projectStore'
 import { serializeProject } from '../model/file'
-import { fileNameOf, suggestedName } from '../app/fileActions'
+import { suggestedName } from '../app/fileActions'
+import { fileNameOf } from '../app/fileName'
 import { ipcErrorMessage } from '../app/ipcError'
 import { dataTables } from '../reports/dataTables'
 

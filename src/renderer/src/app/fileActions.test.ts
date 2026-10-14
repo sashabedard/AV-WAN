@@ -3,7 +3,7 @@ import type { AvwanApi } from '../../../shared/api'
 import { isDirty, projectStore } from '../store/projectStore'
 import { sampleProject } from '../model/__fixtures__/sample'
 import { serializeProject } from '../model/file'
-import { fileNameOf, loadFromText, openProjectAction, openRecentAction, openRequestAction, restoreRecoveryAction, revertToOpenedAction, saveProjectAction, saveProjectAsAction } from './fileActions'
+import { loadFromText, newProjectAction, openProjectAction, openRecentAction, openRequestAction, restoreRecoveryAction, revertToOpenedAction, saveProjectAction, saveProjectAsAction } from './fileActions'
 import { autosave } from './autosave'
 import { blankDraft, templateFromDraft } from '../model/customTemplate'
 import { uiStore } from '../store/uiStore'
@@ -51,10 +51,14 @@ function fakeApi(file: Partial<AvwanApi['file']> = {}): AvwanApi {
 }
 
 beforeEach(() => {
+  // Enregistrement automatique coupé par défaut : seuls les tests qui le décrivent l'allument (minuteurs simulés).
+  uiStore.getState().setAutoSave(false)
   projectStore.getState().loadProject(sampleProject(), '/tmp/a.avwan')
 })
 afterEach(() => {
+  vi.useRealTimers()
   vi.unstubAllGlobals()
+  uiStore.getState().setAutoSave(true)
 })
 
 describe('fileActions', () => {
@@ -110,12 +114,6 @@ describe('fileActions', () => {
     expect(await loadFromText('/tmp/casse.avwan', '{')).toBe(false)
     expect(projectStore.getState().filePath).toBe('/tmp/a.avwan')
     expect(projectStore.getState().toast).toContain('JSON')
-  })
-
-  it('extrait le nom du fichier (macOS et Windows)', () => {
-    expect(fileNameOf('/Users/x/lumen.avwan')).toBe('lumen.avwan')
-    expect(fileNameOf('C:\\Projets\\lumen.avwan')).toBe('lumen.avwan')
-    expect(fileNameOf(null)).toBe('Sans titre')
   })
 
   it('ne mémorise un fichier récent qu’après une ouverture valide', async () => {
@@ -418,5 +416,47 @@ describe('revenir à la version d’ouverture', () => {
     expect(await revertToOpenedAction()).toBe(false)
     expect(projectStore.getState().toast).toBe('Retour impossible : Accès refusé (EACCES).')
     expect(projectStore.getState().history).toBe(before)
+  })
+})
+
+describe('changer de document moins de 2 s après une modification (enregistrement automatique)', () => {
+  const QUESTION = 'Des modifications ne sont pas enregistrées. Continuer quand même ?'
+  beforeEach(() => {
+    vi.useFakeTimers()
+    uiStore.getState().setAutoSave(true)
+  })
+
+  it('⌘N : la dernière modification est écrite dans le fichier, sans question', () => {
+    const api = fakeApi()
+    const confirm = vi.fn(() => false)
+    vi.stubGlobal('window', { avwan: api, confirm })
+    projectStore.getState().updateMeta({ title: 'Dernière modification' })
+    newProjectAction()
+    expect(api.file.saveSync).toHaveBeenCalledWith('/tmp/a.avwan', expect.stringContaining('"title": "Dernière modification"'))
+    expect(confirm).not.toHaveBeenCalled()
+    expect(projectStore.getState().filePath).toBeNull()
+  })
+
+  it('⌘O : la boîte d’ouverture s’affiche sans question une fois la modification écrite', async () => {
+    const api = fakeApi()
+    const confirm = vi.fn(() => false)
+    vi.stubGlobal('window', { avwan: api, confirm })
+    projectStore.getState().updateMeta({ title: 'Dernière modification' })
+    await openProjectAction()
+    expect(api.file.saveSync).toHaveBeenCalledTimes(1)
+    expect(confirm).not.toHaveBeenCalled()
+    expect(api.file.open).toHaveBeenCalledTimes(1)
+  })
+
+  it('écriture impossible : la question habituelle revient, et refuser garde le projet', () => {
+    const api = fakeApi({ saveSync: vi.fn(() => ({ ok: false as const, error: 'Disque plein (ENOSPC).' })) })
+    const confirm = vi.fn(() => false)
+    vi.stubGlobal('window', { avwan: api, confirm })
+    projectStore.getState().updateMeta({ title: 'Pas écrit' })
+    newProjectAction()
+    expect(api.file.saveSync).toHaveBeenCalledTimes(1)
+    expect(confirm).toHaveBeenCalledWith(QUESTION)
+    expect(projectStore.getState().filePath).toBe('/tmp/a.avwan')
+    expect(projectStore.getState().history.present.meta.title).toBe('Pas écrit')
   })
 })

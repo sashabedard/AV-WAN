@@ -5,7 +5,8 @@ import { createExampleProject } from '../samples/exampleProject'
 import { projectStore } from '../store/projectStore'
 import { uiStore, useUiStore } from '../store/uiStore'
 import { BrandMark } from './BrandMark'
-import { fileNameOf, openProjectAction, openRecentAction } from './fileActions'
+import { openProjectAction, openRecentAction } from './fileActions'
+import { fileNameOf } from './fileName'
 import { RecoveryBanner } from './RecoveryBanner'
 
 export function Welcome() {

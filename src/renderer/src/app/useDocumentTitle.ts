@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import { isDirty, useProjectStore } from '../store/projectStore'
-import { fileNameOf } from './fileActions'
+import { fileNameOf } from './fileName'
 import { fileAutoSave } from './fileAutoSave'
 
 export function useDocumentTitle(): void {

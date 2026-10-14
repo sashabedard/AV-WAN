@@ -6,7 +6,7 @@ import { pruneTemplates } from '../model/customTemplate'
 import { isDirty, projectStore, type ProjectState } from '../store/projectStore'
 import { uiStore } from '../store/uiStore'
 import { autosave } from './autosave'
-import { fileNameOf } from './fileActions'
+import { fileNameOf } from './fileName'
 import { ipcErrorMessage } from './ipcError'
 
 export const FILE_AUTOSAVE_DELAY_MS = 2000
