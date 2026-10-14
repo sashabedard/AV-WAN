@@ -1,4 +1,5 @@
-import type { CordFlowEdge, DeviceFlowNode } from './toFlow'
+import type { Node } from '@xyflow/react'
+import type { CordFlowEdge } from './toFlow'
 
 export const GRID = 8
 
@@ -7,7 +8,7 @@ export function snapPoint(p: { x: number; y: number }, on: boolean): { x: number
 }
 
 // Les nœuds dérivés du store n'ont ni dimensions mesurées ni sélection : on les reprend de l'état local.
-export function mergeNodes(derived: DeviceFlowNode[], prev: DeviceFlowNode[]): DeviceFlowNode[] {
+export function mergeNodes<T extends Node>(derived: T[], prev: T[]): T[] {
   const byId = new Map(prev.map((n) => [n.id, n]))
   return derived.map((n) => {
     const p = byId.get(n.id)

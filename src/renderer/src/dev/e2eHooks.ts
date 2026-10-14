@@ -1,6 +1,6 @@
 import type { ReactFlowInstance } from '@xyflow/react'
 import type { Project } from '../model/types'
-import type { CordFlowEdge, DeviceFlowNode } from '../canvas/toFlow'
+import type { CordFlowEdge, FlowNode } from '../canvas/toFlow'
 import { projectStore, type Selection } from '../store/projectStore'
 import { serializeProject } from '../model/file'
 import { loadFromText } from '../app/fileActions'
@@ -8,9 +8,9 @@ import { handleMenuAction } from '../app/menuActions'
 import type { MenuAction } from '../../../shared/api'
 import { makeStressProject } from './stress'
 
-let flow: ReactFlowInstance<DeviceFlowNode, CordFlowEdge> | null = null
+let flow: ReactFlowInstance<FlowNode, CordFlowEdge> | null = null
 
-export function registerFlowInstance(instance: ReactFlowInstance<DeviceFlowNode, CordFlowEdge>): void {
+export function registerFlowInstance(instance: ReactFlowInstance<FlowNode, CordFlowEdge>): void {
   flow = instance
 }
 

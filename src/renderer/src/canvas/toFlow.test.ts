@@ -4,7 +4,7 @@ import { createDevice, createProject } from '../model/project'
 import { vlanPreset } from '../catalog/vlanPresets'
 import type { Project } from '../model/types'
 import { NEUTRAL } from './cordStyle'
-import { analyzeLinks, cordTag, createFlowCache, toFlowEdges, toFlowNodes } from './toFlow'
+import { analyzeLinks, cordTag, createFlowCache, toFlowEdges, toFlowNodes, toFlowZones } from './toFlow'
 
 describe('toFlowNodes', () => {
   it('crée un nœud switch et un nœud appareil avec les infos de ports', () => {
@@ -103,5 +103,17 @@ describe('radio Wi-Fi à plusieurs clients', () => {
     expect(analyzeLinks(same.p, 'dark').ports.get(same.apId)!['WIFI']!.color).toBe('#F2C94C')
     const mixed = apWithClients([20, 60])
     expect(analyzeLinks(mixed.p, 'dark').ports.get(mixed.apId)!['WIFI']!.color).toBe(NEUTRAL.dark)
+  })
+})
+
+describe('toFlowZones', () => {
+  it('fait un nœud de zone sous le reste, déplaçable par son titre, réutilisé tant qu’il ne change pas', () => {
+    const p = { ...sampleProject(), zones: [{ id: 'z1', name: 'Salle', color: '#3E8EF7', rect: { x: -24, y: 148, w: 224, h: 134 }, ownPdfPage: false }] }
+    const cache = createFlowCache()
+    const [node] = toFlowZones(p, cache)
+    expect(node).toMatchObject({ id: 'z1', type: 'zone', position: { x: -24, y: 148 }, width: 224, height: 134, zIndex: -1, dragHandle: '.zone__title' })
+    expect(toFlowZones({ ...p, meta: { ...p.meta, title: 'Autre' } }, cache)[0]).toBe(node)
+    expect(toFlowZones({ ...p, zones: [] }, cache)).toEqual([])
+    expect(cache.zones.size).toBe(0)
   })
 })

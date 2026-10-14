@@ -38,6 +38,7 @@ export function PaletteItem({ template, pending }: { template: DeviceTemplate; p
 
 export function Palette() {
   const pending = useUiStore((s) => s.pendingTemplateId)
+  const pendingZone = useUiStore((s) => s.pendingZone)
   const [filter, setFilter] = useState('')
   const results = useMemo(() => (filter.trim() ? searchTemplates(filter) : null), [filter])
   return (
@@ -56,6 +57,17 @@ export function Palette() {
           }}
         />
       </div>
+      <button
+        type="button"
+        className={`palette__tool${pendingZone ? ' is-pending' : ''}`}
+        aria-pressed={pendingZone}
+        title="Cliquer puis cliquer sur le canvas · ⌘G : une zone autour de la sélection"
+        onClick={() => uiStore.getState().setPendingZone(!pendingZone)}
+      >
+        <Icon name="zone" size={16} />
+        Zone
+        <kbd className="palette__kbd">⌘G</kbd>
+      </button>
       {results ? (
         results.length > 0 ? (
           <ul aria-label="Résultats du filtre">

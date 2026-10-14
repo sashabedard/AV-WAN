@@ -98,6 +98,7 @@ export function DeviceForm({ device, project }: { device: Device; project: Proje
         <span className="field__label">Note</span>
         <CommitInput className="input" aria-label="Note" value={device.note ?? ''} onCommit={(v) => s().updateDevice(device.id, { note: v.trim() || undefined })} />
       </label>
+      <p className="insp__note">Zone : {project.zones.find((z) => z.id === device.zoneId)?.name ?? 'aucune'}</p>
       <SwitchSection device={device} project={project} />
       <section className="insp__section">
         <h3 className="insp__title">Ports</h3>

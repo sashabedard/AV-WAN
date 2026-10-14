@@ -41,5 +41,8 @@ export function handleMenuAction(action: MenuAction): void {
     case 'duplicate':
       if (!isTextInput(document.activeElement)) duplicateSelection()
       break
+    case 'groupZone':
+      projectStore.getState().zoneAroundSelection()
+      break
   }
 }

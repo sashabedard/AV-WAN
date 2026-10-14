@@ -24,4 +24,10 @@ describe('handleMenuAction', () => {
     handleMenuAction('redo')
     expect(projectStore.getState().history.present.devices).toHaveLength(3)
   })
+
+  it('⌘G crée une zone autour de la sélection', () => {
+    projectStore.getState().setSelection({ deviceIds: ['cam1'], linkIds: [] })
+    handleMenuAction('groupZone')
+    expect(projectStore.getState().history.present.zones).toHaveLength(1)
+  })
 })

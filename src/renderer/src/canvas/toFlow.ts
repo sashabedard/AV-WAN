@@ -1,5 +1,5 @@
 import type { Edge, Node } from '@xyflow/react'
-import type { Device, DeviceTemplate, Link, PortRef, Project, Side } from '../model/types'
+import type { Device, DeviceTemplate, Link, PortRef, Project, Side, Zone } from '../model/types'
 import { getTemplate } from '../catalog'
 import { resolvePortSide } from '../model/layout'
 import { findPort, sameRef } from '../model/rules'
@@ -25,12 +25,16 @@ export type DeviceNodeData = {
   vlans: number[]
 }
 export type DeviceFlowNode = Node<DeviceNodeData, 'device' | 'switch'>
+export type ZoneNodeData = { zone: Zone }
+export type ZoneFlowNode = Node<ZoneNodeData, 'zone'>
+export type FlowNode = DeviceFlowNode | ZoneFlowNode
 export type CordEdgeData = { link: Link; style: CordStyle; tag: string; portLabels: [string, string]; vlans: number[]; poeAt: 'source' | 'target' | null }
 export type CordFlowEdge = Edge<CordEdgeData, 'cord'>
 
 export interface FlowCache {
   nodes: Map<string, { key: string; device: Device; node: DeviceFlowNode }>
   edges: Map<string, { key: string; link: Link; edge: CordFlowEdge }>
+  zones: Map<string, { zone: Zone; node: ZoneFlowNode }>
 }
 export interface LinkAnalysis {
   ports: Map<string, Record<string, PortInfo>>
@@ -42,7 +46,7 @@ export interface LinkAnalysis {
 }
 
 export function createFlowCache(): FlowCache {
-  return { nodes: new Map(), edges: new Map() }
+  return { nodes: new Map(), edges: new Map(), zones: new Map() }
 }
 
 export function analyzeLinks(project: Project, theme: ThemeMode): LinkAnalysis {
@@ -162,5 +166,29 @@ export function toFlowEdges(project: Project, analysis: LinkAnalysis, cache: Flo
     out.push(edge)
   }
   for (const id of [...cache.edges.keys()]) if (!alive.has(id)) cache.edges.delete(id)
+  return out
+}
+
+// Les zones passent sous les cordons et les appareils ; seul leur titre sert à les déplacer.
+export function toFlowZones(project: Project, cache: FlowCache): ZoneFlowNode[] {
+  const alive = new Set<string>()
+  const out = project.zones.map((zone) => {
+    alive.add(zone.id)
+    const hit = cache.zones.get(zone.id)
+    if (hit && hit.zone === zone) return hit.node
+    const node: ZoneFlowNode = {
+      id: zone.id,
+      type: 'zone',
+      position: { x: zone.rect.x, y: zone.rect.y },
+      width: zone.rect.w,
+      height: zone.rect.h,
+      zIndex: -1,
+      dragHandle: '.zone__title',
+      data: { zone }
+    }
+    cache.zones.set(zone.id, { zone, node })
+    return node
+  })
+  for (const id of [...cache.zones.keys()]) if (!alive.has(id)) cache.zones.delete(id)
   return out
 }

@@ -64,4 +64,32 @@ describe('Inspector', () => {
     act(() => projectStore.getState().setSelection({ deviceIds: ['sw1'], linkIds: [] }))
     expect(screen.getByRole('heading', { name: 'Switch' })).toBeTruthy()
   })
+
+  it('modifie une zone : nom, couleur, page séparée', async () => {
+    const user = userEvent.setup()
+    const s = projectStore.getState()
+    s.setSelection({ deviceIds: ['cam1'], linkIds: [] })
+    const id = s.zoneAroundSelection()!
+    s.setSelection({ deviceIds: [], linkIds: [], zoneIds: [id] })
+    render(<Inspector />)
+    const zone = () => project().zones[0]!
+    expect(screen.getByRole('heading', { name: 'Zone' })).toBeTruthy()
+    expect(screen.getByText(/1 appareil dans cette zone/)).toBeTruthy()
+    await user.clear(screen.getByLabelText('Nom de la zone'))
+    await user.type(screen.getByLabelText('Nom de la zone'), 'Régie{Enter}')
+    expect(zone().name).toBe('Régie')
+    await user.click(screen.getByRole('radio', { name: 'Vert' }))
+    expect(zone().color).toBe('#3DBE6E')
+    await user.click(screen.getByLabelText('Page séparée dans le PDF'))
+    expect(zone().ownPdfPage).toBe(true)
+  })
+
+  it('indique la zone d’un appareil', () => {
+    const s = projectStore.getState()
+    s.setSelection({ deviceIds: ['cam1'], linkIds: [] })
+    s.zoneAroundSelection()
+    s.setSelection({ deviceIds: ['cam1'], linkIds: [] })
+    render(<Inspector />)
+    expect(screen.getByText('Zone : Zone 1')).toBeTruthy()
+  })
 })

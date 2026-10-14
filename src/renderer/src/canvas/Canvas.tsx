@@ -24,7 +24,7 @@ import { projectStore, useProject, useProjectStore } from '../store/projectStore
 import { uiStore, useUiStore } from '../store/uiStore'
 import { useThemeMode } from '../theme/useThemeMode'
 import { TEMPLATE_MIME } from '../panels/Palette'
-import { analyzeLinks, createFlowCache, toFlowEdges, toFlowNodes, type CordFlowEdge, type DeviceFlowNode } from './toFlow'
+import { analyzeLinks, createFlowCache, toFlowEdges, toFlowNodes, toFlowZones, type CordFlowEdge, type FlowNode } from './toFlow'
 import { GRID, mergeEdges, mergeNodes, nodesMatchDerived, snapPoint, syncSelected } from './canvasHelpers'
 import { clientPoint, connectionRefs, dropOnDevice, makeIsValidConnection, nodeIdAt, reconnectEnd, dropReconnectOnDevice } from './connect'
 import { useAltKey } from './useAltKey'
@@ -32,6 +32,9 @@ import { FIT_OPTIONS, registerViewport } from './viewport'
 import { arrowDelta, nudgeMoves } from './keyboard'
 import { isTextInput } from '../app/routeEditCommand'
 import { DeviceNode } from './DeviceNode'
+import { ZoneNode } from './ZoneNode'
+import { memberPositions, selectionMoves, startZoneDrag, type ZoneDrag } from './zoneDrag'
+import { ZONE_DEFAULT } from '../model/zones'
 import { CordEdge } from './CordEdge'
 import { SwitchNode } from './SwitchNode'
 import { Legend } from './Legend'
@@ -42,7 +45,7 @@ import { DEFAULT_SWITCH_SPEC } from '../catalog/switch'
 import { registerFlowInstance } from '../dev/e2eHooks'
 import './canvas.css'
 
-const nodeTypes = { device: DeviceNode, switch: SwitchNode }
+const nodeTypes = { device: DeviceNode, switch: SwitchNode, zone: ZoneNode }
 const edgeTypes = { cord: CordEdge }
 const SNAP_GRID: [number, number] = [GRID, GRID]
 const DELETE_KEYS = ['Backspace', 'Delete']
@@ -51,7 +54,9 @@ const PRO_OPTIONS = { hideAttribution: true }
 const MULTI_SELECT_KEYS = ['Shift', 'Meta', 'Control']
 const MINIMAP_STYLE = { left: 46 }
 const RECONNECT_RADIUS = 12
-function minimapNodeClass(node: DeviceFlowNode): string {
+const isZone = (n: { type?: string }): boolean => n.type === 'zone'
+function minimapNodeClass(node: FlowNode): string {
+  if (node.type === 'zone') return 'mm-zone'
   return node.type === 'switch' ? 'mm-rack' : 'mm-device'
 }
 
@@ -61,7 +66,7 @@ function CanvasInner() {
   const theme = useThemeMode()
   const cache = useRef(createFlowCache())
   const analysis = useMemo(() => analyzeLinks(project, theme), [project, theme])
-  const derivedNodes = useMemo(() => toFlowNodes(project, analysis, cache.current), [project, analysis])
+  const derivedNodes = useMemo<FlowNode[]>(() => [...toFlowZones(project, cache.current), ...toFlowNodes(project, analysis, cache.current)], [project, analysis])
   const [nodes, setNodes] = useState(derivedNodes)
   useEffect(() => setNodes((prev) => mergeNodes(derivedNodes, prev)), [derivedNodes])
   const derivedEdges = useMemo(() => toFlowEdges(project, analysis, cache.current), [project, analysis])
@@ -76,11 +81,12 @@ function CanvasInner() {
 
   const pendingTemplate = useUiStore((s) => s.pendingTemplateId)
   const pendingSwitch = useUiStore((s) => s.pendingSwitch)
+  const pendingZone = useUiStore((s) => s.pendingZone)
   const search = useUiStore((s) => s.search)
   const wrapper = useRef<HTMLDivElement>(null)
   const alt = useAltKey()
   const { screenToFlowPosition, fitView } = useReactFlow()
-  const onInit = useCallback((instance: ReactFlowInstance<DeviceFlowNode, CordFlowEdge>) => {
+  const onInit = useCallback((instance: ReactFlowInstance<FlowNode, CordFlowEdge>) => {
     registerFlowInstance(instance)
     registerViewport(instance)
   }, [])
@@ -102,15 +108,42 @@ function CanvasInner() {
     void fitView(FIT_OPTIONS)
   }, [docId, nodesReady, nodesForDoc, fitView])
 
-  const onNodesChange = useCallback((changes: NodeChange<DeviceFlowNode>[]) => setNodes((ns) => applyNodeChanges(changes, ns)), [])
-  const onNodeDragStop: OnNodeDrag<DeviceFlowNode> = useCallback((_event, _node, dragged) => {
-    projectStore.getState().moveDevices(dragged.map((n) => ({ id: n.id, position: n.position })))
+  const onNodesChange = useCallback((changes: NodeChange<FlowNode>[]) => setNodes((ns) => applyNodeChanges(changes, ns)), [])
+  // Glisser : une zone emporte ses membres en direct ; le store reçoit une seule opération à la fin.
+  const zoneDrag = useRef<ZoneDrag | null>(null)
+  const onNodeDragStart: OnNodeDrag<FlowNode> = useCallback((_e, _node, dragged) => {
+    zoneDrag.current = startZoneDrag(projectStore.getState().history.present, dragged)
   }, [])
-  const onSelectionChange = useCallback(({ nodes: ns, edges: es }: OnSelectionChangeParams<DeviceFlowNode, CordFlowEdge>) => {
-    projectStore.getState().setSelection({ deviceIds: ns.map((n) => n.id), linkIds: es.map((e) => e.id) })
+  const onNodeDrag: OnNodeDrag<FlowNode> = useCallback((_e, _node, dragged) => {
+    const zd = zoneDrag.current
+    if (!zd) return
+    const moved = memberPositions(zd, dragged)
+    if (moved.size === 0) return
+    setNodes((ns) =>
+      ns.map((n) => {
+        const pos = moved.get(n.id)
+        return pos ? { ...n, position: pos } : n
+      })
+    )
   }, [])
-  const onDelete = useCallback(({ nodes: ns, edges: es }: { nodes: DeviceFlowNode[]; edges: CordFlowEdge[] }) => {
-    projectStore.getState().removeElements(ns.map((n) => n.id), es.map((e) => e.id))
+  const onNodeDragStop: OnNodeDrag<FlowNode> = useCallback((_e, _node, dragged) => {
+    const zd = zoneDrag.current
+    zoneDrag.current = null
+    projectStore.getState().moveSelection(selectionMoves(zd, dragged))
+  }, [])
+  const onSelectionChange = useCallback(({ nodes: ns, edges: es }: OnSelectionChangeParams<FlowNode, CordFlowEdge>) => {
+    projectStore.getState().setSelection({
+      deviceIds: ns.filter((n) => !isZone(n)).map((n) => n.id),
+      linkIds: es.map((e) => e.id),
+      zoneIds: ns.filter(isZone).map((n) => n.id)
+    })
+  }, [])
+  const onDelete = useCallback(({ nodes: ns, edges: es }: { nodes: FlowNode[]; edges: CordFlowEdge[] }) => {
+    projectStore.getState().removeElements(
+      ns.filter((n) => !isZone(n)).map((n) => n.id),
+      es.map((e) => e.id),
+      ns.filter(isZone).map((n) => n.id)
+    )
   }, [])
 
   const isValidConnection = useMemo(
@@ -157,8 +190,12 @@ function CanvasInner() {
     },
     [screenToFlowPosition, project.settings.snapToGrid]
   )
-  const onPaneMouseMove = useCallback((e: ReactMouseEvent) => {
+  // Le curseur est suivi sur tout le canvas (⌘K au-dessus d'un nœud place sous le curseur).
+  const onMouseMove = useCallback((e: ReactMouseEvent) => {
     canvasPointer.client = { x: e.clientX, y: e.clientY }
+  }, [])
+  const onMouseLeave = useCallback(() => {
+    canvasPointer.client = null
   }, [])
   // Double-clic dans le vide : recherche rapide à cet endroit (spec § 9.1).
   const onDoubleClick = useCallback((e: ReactMouseEvent) => {
@@ -172,7 +209,9 @@ function CanvasInner() {
     },
     [place]
   )
-  const onNodeMouseEnter = useCallback((_e: ReactMouseEvent, node: DeviceFlowNode) => uiStore.getState().setHoverDevice(node.id), [])
+  const onNodeMouseEnter = useCallback((_e: ReactMouseEvent, node: FlowNode) => {
+    if (!isZone(node)) uiStore.getState().setHoverDevice(node.id)
+  }, [])
   const onNodeMouseLeave = useCallback(() => uiStore.getState().setHoverDevice(null), [])
   const closeSearch = useCallback(() => uiStore.getState().closeSearch(), [])
   const onDragOver = useCallback((e: DragEvent) => {
@@ -191,40 +230,55 @@ function CanvasInner() {
   )
   const onPaneClick = useCallback(
     (e: ReactMouseEvent) => {
-      const id = uiStore.getState().pendingTemplateId
+      const ui = uiStore.getState()
+      if (ui.pendingZone) {
+        ui.setPendingZone(false)
+        const at = snapPoint(screenToFlowPosition({ x: e.clientX, y: e.clientY }), project.settings.snapToGrid && !e.altKey)
+        projectStore.getState().addZone({ x: at.x, y: at.y, w: ZONE_DEFAULT.w, h: ZONE_DEFAULT.h })
+        return
+      }
+      const id = ui.pendingTemplateId
       if (!id) return
-      uiStore.getState().setPendingTemplate(null)
+      ui.setPendingTemplate(null)
       place(id, { x: e.clientX, y: e.clientY }, e.altKey)
     },
-    [place]
+    [place, screenToFlowPosition, project.settings.snapToGrid]
   )
   useEffect(() => {
     const onKey = (e: KeyboardEvent): void => {
       if (e.key === 'Escape') {
         uiStore.getState().setPendingTemplate(null)
         uiStore.getState().setPendingSwitch(null)
+        uiStore.getState().setPendingZone(false)
         uiStore.getState().setFocusVlan(null)
         return
       }
       const delta = arrowDelta(e.key, e.shiftKey)
       if (!delta || e.metaKey || e.ctrlKey || e.altKey || isTextInput(document.activeElement)) return
       const s = projectStore.getState()
-      if (s.readOnly || s.selection.deviceIds.length === 0) return
+      const zoneIds = s.selection.zoneIds ?? []
+      if (s.readOnly || s.selection.deviceIds.length + zoneIds.length === 0) return
       e.preventDefault()
-      s.moveDevices(nudgeMoves(s.history.present, s.selection.deviceIds, delta))
+      s.moveSelection({ devices: nudgeMoves(s.history.present, s.selection.deviceIds, delta), zones: zoneIds.map((id) => ({ id, ...delta })) })
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [])
 
+  const placing = pendingTemplate !== null || pendingZone
   return (
-    <div ref={wrapper} className={`canvas${pendingTemplate ? ' canvas--placing' : ''}${project.settings.colorMode === 'port' ? ' canvas--port' : ''}`} onDoubleClick={onDoubleClick}>
-      <ReactFlow<DeviceFlowNode, CordFlowEdge>
+    <div
+      ref={wrapper}
+      className={`canvas${placing ? ' canvas--placing' : ''}${project.settings.colorMode === 'port' ? ' canvas--port' : ''}`}
+      onDoubleClick={onDoubleClick}
+      onMouseMove={onMouseMove}
+      onMouseLeave={onMouseLeave}
+    >
+      <ReactFlow<FlowNode, CordFlowEdge>
         nodes={nodes}
         onInit={onInit}
         multiSelectionKeyCode={MULTI_SELECT_KEYS}
         disableKeyboardA11y
-        onPaneMouseMove={onPaneMouseMove}
         nodeTypes={nodeTypes}
         edges={edges}
         edgeTypes={edgeTypes}
@@ -243,6 +297,8 @@ function CanvasInner() {
         nodesConnectable={!readOnly}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
+        onNodeDragStart={onNodeDragStart}
+        onNodeDrag={onNodeDrag}
         onNodeDragStop={onNodeDragStop}
         onNodeMouseEnter={onNodeMouseEnter}
         onNodeMouseLeave={onNodeMouseLeave}

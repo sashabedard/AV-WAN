@@ -8,6 +8,7 @@ import { uiStore } from '../store/uiStore'
 afterEach(() => {
   cleanup()
   uiStore.getState().setPendingTemplate(null)
+  uiStore.getState().setPendingZone(false)
 })
 
 describe('Palette', () => {
@@ -43,5 +44,17 @@ describe('Palette', () => {
     expect(screen.queryByTestId('palette-dante-avio')).toBeNull()
     await user.keyboard('{Escape}')
     expect(screen.getByRole('heading', { name: 'Éclairage' })).toBeTruthy()
+  })
+
+  it('l’outil Zone s’arme d’un clic et s’exclut avec un gabarit', async () => {
+    const user = userEvent.setup()
+    render(<Palette />)
+    const tool = screen.getByRole('button', { name: /^Zone/ })
+    await user.click(tool)
+    expect(uiStore.getState().pendingZone).toBe(true)
+    expect(tool.getAttribute('aria-pressed')).toBe('true')
+    await user.click(screen.getByTestId('palette-dante-avio'))
+    expect(uiStore.getState().pendingZone).toBe(false)
+    expect(uiStore.getState().pendingTemplateId).toBe('dante-avio')
   })
 })

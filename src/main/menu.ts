@@ -50,6 +50,7 @@ export function buildMenu(): void {
         { role: 'copy', label: 'Copier' },
         { role: 'paste', label: 'Coller' },
         { label: 'Dupliquer', accelerator: 'CmdOrCtrl+D', click: () => send('duplicate') },
+        { label: 'Créer une zone autour de la sélection', accelerator: 'CmdOrCtrl+G', click: () => send('groupZone') },
         { role: 'selectAll', label: 'Tout sélectionner' }
       ]
     },

@@ -8,6 +8,7 @@ export type XY = { x: number; y: number }
 export interface UiState {
   pendingTemplateId: string | null
   pendingSwitch: { position: XY; screen: XY } | null
+  pendingZone: boolean
   search: { at: XY | null } | null
   focusVlan: number | null
   hoverDeviceId: string | null
@@ -17,6 +18,7 @@ export interface UiState {
   setHoverDevice(id: string | null): void
   setPendingTemplate(id: string | null): void
   setPendingSwitch(value: { position: XY; screen: XY } | null): void
+  setPendingZone(on: boolean): void
   openSearch(at: XY | null): void
   closeSearch(): void
 }
@@ -24,6 +26,7 @@ export interface UiState {
 export const uiStore = createStore<UiState>()((set) => ({
   pendingTemplateId: null,
   pendingSwitch: null,
+  pendingZone: false,
   search: null,
   focusVlan: null,
   hoverDeviceId: null,
@@ -31,7 +34,8 @@ export const uiStore = createStore<UiState>()((set) => ({
   setReconnecting: (id) => set({ reconnectingLinkId: id }),
   setFocusVlan: (id) => set({ focusVlan: id }),
   setHoverDevice: (id) => set({ hoverDeviceId: id }),
-  setPendingTemplate: (id) => set({ pendingTemplateId: id }),
+  setPendingTemplate: (id) => set(id ? { pendingTemplateId: id, pendingZone: false } : { pendingTemplateId: null }),
+  setPendingZone: (on) => set(on ? { pendingZone: true, pendingTemplateId: null } : { pendingZone: false }),
   setPendingSwitch: (value) => set({ pendingSwitch: value }),
   openSearch: (at) => set({ search: { at } }),
   closeSearch: () => set({ search: null })
