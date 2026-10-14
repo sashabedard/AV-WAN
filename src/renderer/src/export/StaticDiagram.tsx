@@ -63,7 +63,6 @@ export function StaticDiagram({ project, zone, onReady }: { project: Project; zo
         colorMode="light"
         proOptions={PRO_OPTIONS}
       />
-    )
     </StaticViewContext.Provider>
   )
 }
