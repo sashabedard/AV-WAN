@@ -44,6 +44,7 @@ function fakeApi(file: Partial<AvwanApi['file']> = {}): AvwanApi {
       createDefault: vi.fn(async () => '/docs/Nouveau projet.avwan'),
       saveSync: vi.fn(() => ({ ok: true as const })),
       discardAutoCreated: vi.fn(async () => undefined),
+      openedVersion: vi.fn(async () => null),
       ...file
     }
   }

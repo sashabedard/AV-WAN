@@ -2,7 +2,7 @@ import { app, BrowserWindow, dialog, ipcMain, shell } from 'electron'
 import { join } from 'node:path'
 import { IPC, type OpenRequest } from '../shared/api'
 import { APP_NAME, APP_SUBTITLE, RELEASES_URL } from '../shared/appInfo'
-import { discardLastRecoverySync, grants, registerIpc, resetRecoverySession } from './ipc'
+import { discardLastRecoverySync, grants, keepOpenedVersion, registerIpc, resetRecoverySession } from './ipc'
 import { buildMenu } from './menu'
 import { DEFAULT_SETTINGS, readSettings, writeSettings, type Settings } from './settings'
 import { loadRenderer } from './windows'
@@ -41,6 +41,7 @@ async function deliverOpen(path: string): Promise<void> {
     const text = await readTextFile(path)
     // Le double-clic dans le Finder ou l'Explorateur vaut consentement : ⌘S pourra écrire ce fichier.
     grants.grant(path)
+    keepOpenedVersion(path, text)
     request = { path, text }
   } catch (e) {
     request = { path, error: frenchFsMessage(e) }

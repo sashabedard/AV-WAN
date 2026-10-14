@@ -9,6 +9,7 @@ import { frenchErrors, frenchFsMessage } from './errors'
 import { uniqueProjectPath } from './defaultLocation'
 import { atomicWriteFile, atomicWriteFileSync, backupFile, readTextFile } from './fileIO'
 import { discardRecovery, discardRecoverySync, findNewerRecovery, isRecoveryKey, keyForPath, keyForUntitled, listRecovery, parseRecoveryWrite, prepareRestore, writeRecovery } from './recovery'
+import { readOpenedVersion, rememberOpenedVersion } from './versions'
 import { listLibrary, removeLibrary, saveLibrary } from './library'
 
 const filters = [{ name: 'Projet AV·WAN', extensions: [FILE_EXTENSION] }]
@@ -59,6 +60,13 @@ export function resetRecoverySession(webContentsId: number): void {
   lastRecoveryKey.delete(webContentsId)
 }
 
+export const versionsDir = (): string => join(app.getPath('userData'), 'versions')
+
+// Au mieux : une version impossible à garder n'empêche jamais d'ouvrir.
+export function keepOpenedVersion(path: string, text: string): void {
+  void rememberOpenedVersion(versionsDir(), path, text).catch(() => undefined)
+}
+
 export function registerIpc(): void {
   ipcMain.handle(IPC.open, (event) =>
     frenchErrors(async (): Promise<OpenedFile | null> => {
@@ -69,6 +77,7 @@ export function registerIpc(): void {
       if (res.canceled || !path) return null
       const text = await readTextFile(path)
       grants.grant(path)
+      keepOpenedVersion(path, text)
       return { path, text }
     })
   )
@@ -79,7 +88,9 @@ export function registerIpc(): void {
       frenchErrors(async (): Promise<OpenedFile> => {
         assertProjectPath(path)
         grants.grant(path)
-        return { path, text: await readTextFile(path) }
+        const text = await readTextFile(path)
+        keepOpenedVersion(path, text)
+        return { path, text }
       })
     )
   }
@@ -158,6 +169,7 @@ export function registerIpc(): void {
       assertRecentMember(await readRecent(recentFile()), path)
       const text = await readTextFile(path)
       grants.grant(path)
+      keepOpenedVersion(path, text)
       return { path, text }
     })
   )
@@ -212,7 +224,12 @@ export function registerIpc(): void {
       if (!isRecoveryKey(key)) throw new Error('Clé de récupération invalide.')
       const restored = await prepareRestore(recoveryDir(), key)
       if (!restored) throw new Error('Cette copie de récupération n’existe plus.')
-      if (restored.path) grants.grant(restored.path)
+      if (restored.path) {
+        grants.grant(restored.path)
+        // Version d'ouverture = le fichier sur le disque, avant la restauration (il peut ne pas exister).
+        const restoredPath = restored.path
+        void readTextFile(restoredPath).then((text) => keepOpenedVersion(restoredPath, text)).catch(() => undefined)
+      }
       // Quitter sans enregistrer juste après la restauration doit aussi effacer cette copie.
       lastRecoveryKey.set(event.sender.id, key)
       return restored
@@ -224,6 +241,9 @@ export function registerIpc(): void {
     frenchErrors(async (): Promise<RecoveryEntry | null> =>
       typeof path === 'string' && grants.isGranted(path) ? findNewerRecovery(recoveryDir(), path) : null
     )
+  )
+  ipcMain.handle(IPC.fileOpenedVersion, (_event, path: unknown) =>
+    typeof path === 'string' && grants.isGranted(path) ? readOpenedVersion(versionsDir(), path) : null
   )
   ipcMain.handle(IPC.libraryList, (): Promise<LibraryFile[]> => listLibrary(libraryDir()))
   ipcMain.handle(IPC.librarySave, (_event, id: unknown, text: unknown) => frenchErrors(() => saveLibrary(libraryDir(), id, text)))
