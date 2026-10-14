@@ -40,7 +40,13 @@ export function createAutosave(store: StoreApi<ProjectState>, api: RecoveryBridg
     const present = s.history.present
     // Un document en lecture seule ne peut pas être modifié (apply() le bloque) : le réécrire
     // transformerait une copie d'une version plus récente en copie de la version courante.
-    if (s.readOnly || !isDirty(s) || present === lastWritten) return
+    if (s.readOnly) return
+    // Revenu à l'état enregistré (annulation) : la copie courante ramènerait une modification annulée.
+    if (!isDirty(s)) {
+      if (currentKey) forget()
+      return
+    }
+    if (present === lastWritten) return
     const key = await api.write({ path: s.filePath, untitledId: s.untitledId, title: present.meta.title, text: serializeProject(present) })
     const after = store.getState()
     // Enregistré ou abandonné pendant l'écriture : cette copie ne sert plus.

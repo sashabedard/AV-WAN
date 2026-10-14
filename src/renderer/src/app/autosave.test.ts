@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { createProjectStore } from '../store/projectStore'
+import { createProjectStore, isDirty } from '../store/projectStore'
 import { sampleProject } from '../model/__fixtures__/sample'
 import { createAutosave, type RecoveryBridge } from './autosave'
 
@@ -49,6 +49,20 @@ describe('autosauvegarde', () => {
     store.getState().markSaved('/x/a.avwan')
     autosave.saved()
     expect(api.discard).toHaveBeenCalledWith(key)
+  })
+
+  it('revenir à l’état enregistré (annuler) efface la copie, puis plus rien n’est écrit', async () => {
+    const { store, api, autosave } = setup()
+    store.getState().updateMeta({ title: 'Salle B' })
+    await autosave.tick()
+    const key = await api.write.mock.results[0]!.value
+    store.getState().undo()
+    expect(isDirty(store.getState())).toBe(false)
+    await autosave.tick()
+    expect(api.discard).toHaveBeenCalledWith(key)
+    await autosave.tick()
+    expect(api.discard).toHaveBeenCalledTimes(1)
+    expect(api.write).toHaveBeenCalledTimes(1)
   })
 
   it('au changement de document, la copie du document quitté est effacée', async () => {
