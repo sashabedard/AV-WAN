@@ -4,6 +4,7 @@ import {
   BackgroundVariant,
   ConnectionLineType,
   ConnectionMode,
+  ControlButton,
   Controls,
   MiniMap,
   ReactFlow,
@@ -28,7 +29,7 @@ import { analyzeLinks, createFlowCache, toFlowEdges, toFlowNodes, toFlowZones, t
 import { GRID, mergeEdges, mergeNodes, nodesMatchDerived, snapPoint, syncSelected } from './canvasHelpers'
 import { clientPoint, connectionRefs, dropOnDevice, makeIsValidConnection, nodeIdAt, reconnectEnd, dropReconnectOnDevice } from './connect'
 import { useAltKey } from './useAltKey'
-import { FIT_OPTIONS, registerViewport } from './viewport'
+import { FIT_OPTIONS, pinCurrentView, registerViewport } from './viewport'
 import { arrowDelta, nudgeMoves } from './keyboard'
 import { isTextInput } from '../app/routeEditCommand'
 import { DeviceNode } from './DeviceNode'
@@ -44,6 +45,7 @@ import { SwitchConfigurator } from '../panels/SwitchConfigurator'
 import { DEFAULT_SWITCH_SPEC } from '../catalog/switch'
 import { clampPopover } from './popover'
 import { useDismissOnOutside } from '../panels/useDismiss'
+import { Icon } from '../icons/Icon'
 import { registerFlowInstance } from '../dev/e2eHooks'
 import './canvas.css'
 
@@ -94,7 +96,7 @@ function CanvasInner() {
   const { screenToFlowPosition, fitView } = useReactFlow()
   const onInit = useCallback((instance: ReactFlowInstance<FlowNode, CordFlowEdge>) => {
     registerFlowInstance(instance)
-    registerViewport(instance)
+    registerViewport(instance, wrapper.current)
   }, [])
 
   // Cadrer le contenu à l'ouverture d'un fichier (report du plan 1), une seule fois par document.
@@ -325,7 +327,11 @@ function CanvasInner() {
       >
         <Background id="minor" className="bg-minor" variant={BackgroundVariant.Lines} gap={GRID} lineWidth={0.5} />
         <Background id="major" className="bg-major" variant={BackgroundVariant.Lines} gap={GRID * 5} lineWidth={0.7} />
-        <Controls position="bottom-left" showInteractive={false} fitViewOptions={FIT_OPTIONS} />
+        <Controls position="bottom-left" showInteractive={false} fitViewOptions={FIT_OPTIONS}>
+          <ControlButton onClick={pinCurrentView} title="Épingler cette vue (⇧⌘P)" aria-label="Épingler cette vue">
+            <Icon name="pin" size={14} />
+          </ControlButton>
+        </Controls>
         <MiniMap position="bottom-left" style={MINIMAP_STYLE} pannable zoomable nodeClassName={minimapNodeClass} ariaLabel="Minicarte" />
       </ReactFlow>
       <Legend />

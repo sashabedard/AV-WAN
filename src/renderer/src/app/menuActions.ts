@@ -3,7 +3,7 @@ import type { MenuAction } from '../../../shared/api'
 import { projectStore } from '../store/projectStore'
 import { uiStore } from '../store/uiStore'
 import { newProjectAction, openProjectAction, saveProjectAction, saveProjectAsAction } from './fileActions'
-import { fitAll, zoomIn, zoomOut } from '../canvas/viewport'
+import { fitAll, pinCurrentView, unpinView, zoomIn, zoomOut } from '../canvas/viewport'
 import { isTextInput, routeUndoRedo } from './routeEditCommand'
 import { duplicateSelection } from './clipboardActions'
 import { exportCsvAction, exportXlsxAction } from '../export/exportActions'
@@ -45,6 +45,12 @@ export function handleMenuAction(action: MenuAction): void {
       break
     case 'zoomOut':
       zoomOut()
+      break
+    case 'pinView':
+      pinCurrentView()
+      break
+    case 'unpinView':
+      unpinView()
       break
     case 'duplicate':
       if (!isTextInput(document.activeElement)) duplicateSelection()

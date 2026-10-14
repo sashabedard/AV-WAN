@@ -1,9 +1,10 @@
 // src/renderer/src/app/menuActions.test.ts
 // @vitest-environment jsdom
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { handleMenuAction } from './menuActions'
 import { projectStore } from '../store/projectStore'
 import { uiStore } from '../store/uiStore'
+import { registerViewport } from '../canvas/viewport'
 import { sampleProject } from '../model/__fixtures__/sample'
 
 beforeEach(() => {
@@ -43,5 +44,21 @@ describe('handleMenuAction', () => {
     uiStore.getState().setExportOpen(false)
     handleMenuAction('exportPdf')
     expect(uiStore.getState().exportOpen).toBe(true)
+  })
+
+  it('épingle la vue (⇧⌘P) puis la retire', () => {
+    const instance = {
+      fitView: vi.fn().mockResolvedValue(true),
+      zoomIn: vi.fn().mockResolvedValue(true),
+      zoomOut: vi.fn().mockResolvedValue(true),
+      getViewport: () => ({ x: 0, y: 0, zoom: 1 }),
+      setCenter: vi.fn().mockResolvedValue(true)
+    }
+    registerViewport(instance, { getBoundingClientRect: () => ({ width: 800, height: 600 }) } as unknown as HTMLElement)
+    handleMenuAction('pinView')
+    expect(uiStore.getState().pinnedRect).toEqual({ x: 0, y: 0, w: 800, h: 600 })
+    handleMenuAction('unpinView')
+    expect(uiStore.getState().pinnedRect).toBeNull()
+    registerViewport(null)
   })
 })
