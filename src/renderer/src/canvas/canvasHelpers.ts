@@ -25,3 +25,15 @@ export function mergeEdges(derived: CordFlowEdge[], prev: CordFlowEdge[]): CordF
   const selected = new Set(prev.filter((e) => e.selected).map((e) => e.id))
   return derived.map((e) => (selected.has(e.id) ? { ...e, selected: true } : e))
 }
+
+// La sélection posée par le store (coller, tests, panneau VLAN) devient celle du canvas.
+export function syncSelected<T extends { id: string; selected?: boolean }>(items: T[], ids: ReadonlySet<string>): T[] {
+  let changed = false
+  const next = items.map((item) => {
+    const want = ids.has(item.id)
+    if ((item.selected ?? false) === want) return item
+    changed = true
+    return { ...item, selected: want }
+  })
+  return changed ? next : items
+}

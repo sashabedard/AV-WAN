@@ -5,11 +5,18 @@ import { createDevice, createProject, newId, type CreateDeviceOptions } from '..
 import { FAMILY_LABELS, canConnectPorts, canReconnect, connectorFamily, defaultMedium, findPort, nextCableId, sameRef } from '../model/rules'
 import { setLinkVlan as deriveSetLinkVlan, type VlanChoice } from '../model/derive'
 import { buildSwitchPorts } from '../catalog/switch'
+import { pasteFragment as pasteFragmentModel, type Fragment } from '../model/clipboard'
 import { commit, initHistory, redo as historyRedo, undo as historyUndo, type History } from './history'
 
 export interface Selection {
   deviceIds: string[]
   linkIds: string[]
+  zoneIds?: string[]
+}
+
+export function sameSelection(a: Selection, b: Selection): boolean {
+  const eq = (x: readonly string[] = [], y: readonly string[] = []): boolean => x.length === y.length && x.every((v, i) => v === y[i])
+  return eq(a.deviceIds, b.deviceIds) && eq(a.linkIds, b.linkIds) && eq(a.zoneIds, b.zoneIds)
 }
 export type DevicePatch = Partial<Pick<Device, 'name' | 'model' | 'ip' | 'hostname' | 'note' | 'portSide'>>
 export type LinkPatch = Partial<Pick<Link, 'cableId' | 'medium' | 'lengthM' | 'jacketColor' | 'wifi' | 'note' | 'elbow'>>
@@ -30,6 +37,7 @@ export interface ProjectState {
   addDevice(templateId: string, position: { x: number; y: number }, opts?: CreateDeviceOptions): string
   moveDevices(moves: Array<{ id: string; position: { x: number; y: number } }>): void
   removeElements(deviceIds: string[], linkIds: string[]): void
+  pasteFragment(fragment: Fragment, offset: { x: number; y: number }): string[]
   connect(a: PortRef, b: PortRef): string | null
   reconnect(linkId: string, end: 'a' | 'b', to: PortRef): boolean
   updateDevice(id: string, patch: DevicePatch): void
@@ -120,6 +128,19 @@ export function createProjectStore(initial: Project = createProject()): StoreApi
           return changed ? { ...p, devices } : p
         }),
 
+      pasteFragment: (fragment, offset) => {
+        let deviceIds: string[] = []
+        let linkIds: string[] = []
+        apply((p) => {
+          const r = pasteFragmentModel(p, fragment, offset)
+          deviceIds = r.deviceIds
+          linkIds = r.linkIds
+          return r.deviceIds.length > 0 ? r.project : p
+        })
+        if (deviceIds.length > 0) set({ selection: { deviceIds, linkIds } })
+        return deviceIds
+      },
+
       removeElements: (deviceIds, linkIds) => {
         const ds = new Set(deviceIds)
         const ls = new Set(linkIds)
@@ -203,7 +224,9 @@ export function createProjectStore(initial: Project = createProject()): StoreApi
         if (p.settings.colorMode === mode) return
         set({ history: { ...history, present: { ...p, settings: { ...p.settings, colorMode: mode } } } })
       },
-      setSelection: (selection) => set({ selection }),
+      setSelection: (selection) => {
+        if (!sameSelection(get().selection, selection)) set({ selection })
+      },
       undo: () => set({ history: keepColorMode(get().history, historyUndo(get().history)) }),
       redo: () => set({ history: keepColorMode(get().history, historyRedo(get().history)) }),
       showToast: (message) => set({ toast: message }),

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { createProjectStore, isDirty, linksOnRemovedPorts } from './projectStore'
+import { copyFragment } from '../model/clipboard'
 import { sampleProject } from '../model/__fixtures__/sample'
 
 const store = () => createProjectStore(sampleProject())
@@ -168,5 +169,21 @@ describe('projectStore', () => {
     expect(s.getState().reconnect('l1', 'a', { deviceId: 'sw1', portId: '3' })).toBe(false)
     expect(s.getState().history.present.links[0]!.a.portId).toBe('1')
     expect(s.getState().toast).toContain('lecture seule')
+  })
+
+  it('colle un fragment en une entrée d’historique et sélectionne les copies', () => {
+    const s = store()
+    const f = copyFragment(s.getState().history.present, ['cam1'])!
+    const [id] = s.getState().pasteFragment(f, { x: 24, y: 24 })
+    expect(s.getState().history.past).toHaveLength(1)
+    expect(s.getState().selection).toEqual({ deviceIds: [id], linkIds: [] })
+  })
+
+  it('ne remplace pas la sélection par une sélection identique', () => {
+    const s = store()
+    s.getState().setSelection({ deviceIds: ['cam1'], linkIds: [] })
+    const before = s.getState().selection
+    s.getState().setSelection({ deviceIds: ['cam1'], linkIds: [] })
+    expect(s.getState().selection).toBe(before)
   })
 })

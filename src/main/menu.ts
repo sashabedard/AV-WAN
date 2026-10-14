@@ -49,6 +49,7 @@ export function buildMenu(): void {
         { role: 'cut', label: 'Couper' },
         { role: 'copy', label: 'Copier' },
         { role: 'paste', label: 'Coller' },
+        { label: 'Dupliquer', accelerator: 'CmdOrCtrl+D', click: () => send('duplicate') },
         { role: 'selectAll', label: 'Tout sélectionner' }
       ]
     },

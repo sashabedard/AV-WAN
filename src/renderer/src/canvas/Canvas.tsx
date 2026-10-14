@@ -25,7 +25,7 @@ import { uiStore, useUiStore } from '../store/uiStore'
 import { useThemeMode } from '../theme/useThemeMode'
 import { TEMPLATE_MIME } from '../panels/Palette'
 import { analyzeLinks, createFlowCache, toFlowEdges, toFlowNodes, type CordFlowEdge, type DeviceFlowNode } from './toFlow'
-import { GRID, mergeEdges, mergeNodes, nodesMatchDerived, snapPoint } from './canvasHelpers'
+import { GRID, mergeEdges, mergeNodes, nodesMatchDerived, snapPoint, syncSelected } from './canvasHelpers'
 import { clientPoint, connectionRefs, dropOnDevice, makeIsValidConnection, nodeIdAt, reconnectEnd, dropReconnectOnDevice } from './connect'
 import { useAltKey } from './useAltKey'
 import { FIT_OPTIONS, registerViewport } from './viewport'
@@ -67,6 +67,11 @@ function CanvasInner() {
   const derivedEdges = useMemo(() => toFlowEdges(project, analysis, cache.current), [project, analysis])
   const [edges, setEdges] = useState(derivedEdges)
   useEffect(() => setEdges((prev) => mergeEdges(derivedEdges, prev)), [derivedEdges])
+  const selection = useProjectStore((s) => s.selection)
+  useEffect(() => {
+    setNodes((ns) => syncSelected(ns, new Set([...selection.deviceIds, ...(selection.zoneIds ?? [])])))
+    setEdges((es) => syncSelected(es, new Set(selection.linkIds)))
+  }, [selection])
   const onEdgesChange = useCallback((changes: EdgeChange<CordFlowEdge>[]) => setEdges((es) => applyEdgeChanges(changes, es)), [])
 
   const pendingTemplate = useUiStore((s) => s.pendingTemplateId)
