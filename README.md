@@ -47,6 +47,8 @@ AV·WAN est gratuit, fonctionne hors ligne sur macOS et Windows, et est en fran�
 | **Organiser** | Zones (régie, salle, scène) qui emportent leurs appareils, `⌘G` pour en créer une autour de la sélection. Copier, coller, dupliquer, renommer d'un double-clic. |
 | **Voir** | Couleur des cordons par VLAN, par type de câble ou par port. Un clic sur un VLAN de la légende met ses appareils en évidence. Minicarte, `⌘0` pour tout cadrer. **Vue épinglée** (`⇧⌘P`) : une vignette figée sur un cadre du schéma, à jour en direct, pendant que la vue principale reste libre ; un clic y sélectionne, un double-clic y recentre la vue principale. |
 | **Configurer un switch** | 4, 5, 8, 12, 16, 24 ou 48 ports, PoE / PoE+ / PoE++ avec budget en watts, 0, 2 ou 4 cages SFP+. La façade est dessinée comme le vrai matériel. |
+| **Mes composantes** | Créer ses propres appareils : nom, code, catégorie, ports (RJ45, SFP, USB, DMX, HDMI…) avec PoE reçu ou fourni, et une icône maison ou importée (SVG ou PNG). Ils se réutilisent d'un projet à l'autre, et chaque projet embarque ceux qu'il utilise : il s'ouvre complet chez quelqu'un qui ne les a pas. |
+| **Ne rien perdre** | Copie de secours toutes les 30 secondes ; après un arrêt imprévu, l'accueil propose de la restaurer. Double-clic sur un fichier `.avwan` pour l'ouvrir. |
 | **Brancher** | Glisser d'un port à un autre, ou lâcher le câble sur l'appareil : AV·WAN choisit un port libre compatible, et un port PoE pour un appareil alimenté. Un port n'accepte qu'un seul câble. On rebranche un bout de câble en le glissant, et on déplace son coude. |
 | **Régler** | IP de chaque appareil (bascule *Statique / DHCP*), VLAN en accès ou en trunk, médium (Cat6, fibre OM4, DAC, Wi-Fi…), longueur. |
 | **Documenter** | Liste de branchement, fiches par appareil, carte des ports de chaque switch, fiches VLAN avec les réglages UniFi (IGMP Snooping, Querier, profil ProAV…), plan d'adressage IP, nomenclature. |
@@ -106,7 +108,7 @@ Pourquoi séparer Dante, NDI et l'éclairage ? Leurs flux multicast tombent tous
 - [x] **Plan 1 — Fondations** : canvas, palette, façade de switch, cordons, branchement, inspecteur, fichier `.avwan`, annuler/rétablir, test de bout en bout et mesure de fluidité (150 appareils, 400 câbles).
 - [x] **Plan 2 — Canvas complet et identité** : **logo et icône d'app**, jeu d'icônes maison, zones (régie, salle, scène), panneau VLAN, modes de couleur *Type* et *Port*, recherche `⌘K`, projet exemple, **captures d'écran de ce README**.
 - [x] **Plan 3 — Rapports et exports** : PDF vectoriel (schéma, pages de zone, fiches, cartes des ports, branchement, VLAN, plan IP, nomenclature), CSV et Excel, VLAN à travers le panneau de brassage.
-- [ ] **Plan 4 — Distribution** : `.dmg` universel et `.exe` avec leurs icônes, autosauvegarde et récupération, composantes perso avec import d'icône.
+- [x] **Plan 4 — Livraison** : DMG universel notarisé et installeur Windows publiés par la CI, guide d'installation PDF, mises à jour automatiques, ouverture par double-clic, autosauvegarde et récupération, composantes perso avec import d'icône.
 
 ## Démarrer (développement)
 
@@ -122,15 +124,30 @@ npm run peek         # capture d'écran de l'app, fenêtre jamais visible (test-
 npm run captures     # régénère les captures du README depuis le projet exemple
 npm run rendu:maj    # met à jour les captures de référence du canvas (e2e/rendu.spec.ts-snapshots)
 npm run brand        # régénère l'icône d'app et les logos depuis build/icon.svg (macOS)
+npm run dist:dir     # app universelle non notarisée dans release/mac-universal (rien n'est lancé)
+npm run guide        # guide d'installation PDF dans release/
 npm run build        # build de production dans out/
 ```
 
-## Installer
+## Télécharger et installer
 
-Les installeurs `.dmg` et `.exe` arrivent avec le plan 4. L'app n'est pas signée, donc il faut une étape de plus au premier lancement :
+Les versions sont sur la page [Releases](https://github.com/sashabedard/AV-WAN/releases), avec un guide d'installation d'une page (PDF).
 
-- **macOS** : Réglages Système › Confidentialité et sécurité › **Ouvrir quand même**.
-- **Windows** : dans la fenêtre SmartScreen, **Informations complémentaires › Exécuter quand même**.
+- **macOS 13 et plus** (Intel et Apple Silicon) : `AV-WAN-<version>-universal.dmg`. Glisser AV·WAN dans Applications. L'app est signée et vérifiée par Apple.
+- **Windows 10 et 11** : `AV-WAN-<version>-setup.exe`, sans droits d'administrateur. L'installeur n'est pas signé : dans la fenêtre SmartScreen, **Informations complémentaires › Exécuter quand même**.
+
+AV·WAN se met à jour seul : la nouvelle version se télécharge en arrière-plan, puis un bandeau propose **Redémarrer maintenant**. Menu **Aide › Rechercher les mises à jour…** pour vérifier tout de suite.
+
+### Publier une version
+
+1. Une seule fois, ajouter les secrets du dépôt (Settings › Secrets and variables › Actions) :
+   - `MAC_CERT_P12_BASE64` : le certificat « Developer ID Application » exporté en `.p12`, encodé en base64 (`base64 -i certificat.p12 | pbcopy`) ;
+   - `MAC_CERT_PASSWORD` : le mot de passe du `.p12` ;
+   - `APPLE_API_KEY_P8` : le contenu de la clé d'API App Store Connect (`AuthKey_XXXX.p8`) ;
+   - `APPLE_API_KEY_ID` et `APPLE_API_ISSUER` : son identifiant et celui de l'émetteur.
+2. `npm version minor` (ou `patch`), puis `git push --follow-tags`.
+3. La CI construit le DMG notarisé et l'installeur Windows, vérifie l'association `.avwan`, et crée un **brouillon** de release avec le guide PDF.
+4. Tester les fichiers du brouillon, puis **Publish**. Les apps installées proposent alors la mise à jour.
 
 ## Architecture
 
