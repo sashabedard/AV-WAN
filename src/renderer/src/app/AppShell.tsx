@@ -1,5 +1,6 @@
 import { TopBar } from './TopBar'
 import { Toast } from './Toast'
+import { Welcome } from './Welcome'
 import { Sidebar } from '../panels/Sidebar'
 import { Inspector } from '../panels/Inspector'
 import { Canvas } from '../canvas/Canvas'
@@ -18,6 +19,7 @@ export function AppShell() {
         <Inspector />
       </aside>
       <Toast />
+      <Welcome />
     </div>
   )
 }

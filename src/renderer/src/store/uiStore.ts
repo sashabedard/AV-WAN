@@ -6,6 +6,8 @@ export type XY = { x: number; y: number }
 
 // État d'interface : jamais enregistré dans le fichier, jamais dans l'historique.
 export interface UiState {
+  welcome: boolean
+  setWelcome(on: boolean): void
   pendingTemplateId: string | null
   pendingSwitch: { position: XY; screen: XY } | null
   pendingZone: boolean
@@ -28,6 +30,8 @@ export interface UiState {
 }
 
 export const uiStore = createStore<UiState>()((set) => ({
+  welcome: true,
+  setWelcome: (on) => set({ welcome: on }),
   pendingTemplateId: null,
   pendingSwitch: null,
   pendingZone: false,
