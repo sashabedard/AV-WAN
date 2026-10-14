@@ -10,7 +10,7 @@
 </p>
 
 <p align="center">
-  <img alt="Statut : plan 3 terminé" src="https://img.shields.io/badge/statut-plan%203%20termin%C3%A9-F2A93B?style=flat-square&labelColor=1D2125">
+  <img alt="Statut : plan 4 terminé" src="https://img.shields.io/badge/statut-plan%204%20termin%C3%A9-F2A93B?style=flat-square&labelColor=1D2125">
   <img alt="macOS et Windows, hors ligne" src="https://img.shields.io/badge/macOS%20%C2%B7%20Windows-hors%20ligne-8E969F?style=flat-square&labelColor=1D2125">
   <img alt="Electron, React, React Flow" src="https://img.shields.io/badge/Electron%20%C2%B7%20React%20%C2%B7%20React%20Flow-3E8EF7?style=flat-square&labelColor=1D2125">
   <img alt="Interface en français" src="https://img.shields.io/badge/interface-fran%C3%A7ais-3DBE6E?style=flat-square&labelColor=1D2125">
