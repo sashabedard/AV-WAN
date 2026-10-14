@@ -3,15 +3,16 @@ import { Handle, Position, useUpdateNodeInternals, type NodeProps } from '@xyflo
 import type { DeviceFlowNode } from './toFlow'
 import { TAPE_X, facadeLabels, switchFacade } from './switchFacade'
 import { switchSummary } from '../catalog/switch'
+import { useEffectiveFocus } from './useEffectiveFocus'
 import { usePortCompatibility } from './useConnectingFrom'
 import { projectStore, useProjectStore } from '../store/projectStore'
-import { useUiStore } from '../store/uiStore'
 import { InlineName } from './InlineName'
 
 function SwitchNodeImpl({ id, data, selected }: NodeProps<DeviceFlowNode>) {
   const { device, template, ports, poeUsage } = data
   const readOnly = useProjectStore((s) => s.readOnly)
-  const dim = useUiStore((s) => s.focusVlan !== null && !data.vlans.includes(s.focusVlan))
+  const focus = useEffectiveFocus()
+  const dim = focus !== null && !data.vlans.includes(focus)
   const [renaming, setRenaming] = useState(false)
   const facade = useMemo(() => switchFacade(device.ports), [device.ports])
   const compat = usePortCompatibility(id)

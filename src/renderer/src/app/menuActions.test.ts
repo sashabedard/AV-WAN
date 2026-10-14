@@ -9,6 +9,7 @@ import { sampleProject } from '../model/__fixtures__/sample'
 beforeEach(() => {
   projectStore.getState().loadProject(sampleProject(), null)
   uiStore.getState().closeSearch()
+  uiStore.getState().setWelcome(false)
 })
 
 describe('handleMenuAction', () => {
@@ -29,5 +30,12 @@ describe('handleMenuAction', () => {
     projectStore.getState().setSelection({ deviceIds: ['cam1'], linkIds: [] })
     handleMenuAction('groupZone')
     expect(projectStore.getState().history.present.zones).toHaveLength(1)
+  })
+
+  it('ferme l’écran d’accueil avant d’agir derrière lui', () => {
+    uiStore.getState().setWelcome(true)
+    handleMenuAction('search')
+    expect(uiStore.getState().welcome).toBe(false)
+    expect(uiStore.getState().search).toEqual({ at: null })
   })
 })

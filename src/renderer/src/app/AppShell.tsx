@@ -9,7 +9,7 @@ export function AppShell() {
   return (
     <div className="shell">
       <TopBar />
-      <aside className="shell__left" aria-label="Palette">
+      <aside className="shell__left" aria-label="Panneau de gauche">
         <Sidebar />
       </aside>
       <main className="shell__center">

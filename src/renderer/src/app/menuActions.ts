@@ -9,13 +9,20 @@ import { duplicateSelection } from './clipboardActions'
 
 // Point d'entrée unique des commandes du menu natif (et des tests de bout en bout).
 export function handleMenuAction(action: MenuAction): void {
+  // L'écran d'accueil recouvre le canvas : on le ferme avant d'agir (« Ouvrir » le ferme seulement si un fichier s'ouvre).
+  if (uiStore.getState().welcome && action !== 'open') uiStore.getState().setWelcome(false)
   switch (action) {
     case 'new':
       newProjectAction()
       break
-    case 'open':
-      void openProjectAction()
+    case 'open': {
+      const wasWelcome = uiStore.getState().welcome
+      const doc = projectStore.getState().docId
+      void openProjectAction().then(() => {
+        if (wasWelcome && projectStore.getState().docId !== doc) uiStore.getState().setWelcome(false)
+      })
       break
+    }
     case 'save':
       void saveProjectAction()
       break

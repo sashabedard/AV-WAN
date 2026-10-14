@@ -306,4 +306,12 @@ describe('VLAN dans le store', () => {
     expect(s.getState().history.present.vlans[0]!.name).toBe('NDI')
     expect(s.getState().toast).toContain('lecture seule')
   })
+
+  it('un changement de mode de couleur sur un fichier en lecture seule n’est pas une modification', () => {
+    const s = createProjectStore()
+    s.getState().loadProject(sampleProject(), null, { readOnly: true })
+    s.getState().setColorMode('type')
+    expect(s.getState().history.present.settings.colorMode).toBe('type')
+    expect(isDirty(s.getState())).toBe(false)
+  })
 })

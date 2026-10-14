@@ -8,6 +8,7 @@ import { buildSwitchPorts } from '../catalog/switch'
 import { pasteFragment as pasteFragmentModel, type Fragment } from '../model/clipboard'
 import { addVlan as addVlanModel, changeVlanId as changeVlanIdModel, removeVlan as removeVlanModel, updateVlan as updateVlanModel, type VlanPatch } from '../model/vlans'
 import { assignZones, createZone, moveZones, placeDevices, removeZones, resizeZone as resizeZoneModel, zoneAround, zonesWithin, type ZoneRect } from '../model/zones'
+import { uiStore } from './uiStore'
 import { commit, initHistory, redo as historyRedo, undo as historyUndo, type History } from './history'
 
 export interface Selection {
@@ -115,9 +116,12 @@ export function createProjectStore(initial: Project = createProject()): StoreApi
       newProject: () => {
         const p = createProject()
         set({ history: initHistory(p), filePath: null, savedRef: p, readOnly: false, selection: EMPTY_SELECTION, docId: get().docId + 1 })
+        uiStore.getState().resetForDocument()
       },
-      loadProject: (project, filePath, opts) =>
-        set({ history: initHistory(project), filePath, savedRef: project, readOnly: opts?.readOnly ?? false, selection: EMPTY_SELECTION, docId: get().docId + 1 }),
+      loadProject: (project, filePath, opts) => {
+        set({ history: initHistory(project), filePath, savedRef: project, readOnly: opts?.readOnly ?? false, selection: EMPTY_SELECTION, docId: get().docId + 1 })
+        uiStore.getState().resetForDocument()
+      },
       markSaved: (filePath, saved) => set({ filePath, savedRef: saved ?? get().history.present }),
       apply,
 
@@ -251,9 +255,14 @@ export function createProjectStore(initial: Project = createProject()): StoreApi
           return false
         }
         apply(() => next)
+        const ui = uiStore.getState()
+        if (ui.focusVlan === from) ui.setFocusVlan(to) // le focus suit le nouveau numéro
         return true
       },
-      removeVlan: (id) => apply((p) => removeVlanModel(p, id)),
+      removeVlan: (id) => {
+        apply((p) => removeVlanModel(p, id))
+        if (!get().history.present.vlans.some((v) => v.id === id) && uiStore.getState().focusVlan === id) uiStore.getState().setFocusVlan(null)
+      },
       setPortState: (deviceId, portId, patch) =>
         apply((p) => ({
           ...p,
@@ -283,7 +292,9 @@ export function createProjectStore(initial: Project = createProject()): StoreApi
         const { history } = get()
         const p = history.present
         if (p.settings.colorMode === mode) return
-        set({ history: { ...history, present: { ...p, settings: { ...p.settings, colorMode: mode } } } })
+        const present = { ...p, settings: { ...p.settings, colorMode: mode } }
+        // Fichier en lecture seule : l'affichage ne compte pas comme une modification (rien ne peut être enregistré).
+        set(get().readOnly ? { history: { ...history, present }, savedRef: present } : { history: { ...history, present } })
       },
       setSelection: (selection) => {
         if (!sameSelection(get().selection, selection)) set({ selection })

@@ -3,9 +3,9 @@ import { Handle, Position, useUpdateNodeInternals, type NodeProps } from '@xyflo
 import type { Side } from '../model/types'
 import { POE_LABELS } from '../model/derive'
 import { projectStore, useProjectStore } from '../store/projectStore'
-import { useUiStore } from '../store/uiStore'
 import { DeviceIcon } from '../icons/Icon'
 import type { DeviceFlowNode } from './toFlow'
+import { useEffectiveFocus } from './useEffectiveFocus'
 import { usePortCompatibility } from './useConnectingFrom'
 import { InlineName } from './InlineName'
 import { DEVICE_NODE_HEIGHT, TAPE_TOP_MAX_WIDTH, deviceNodeWidth, devicePortOffset } from './nodeGeometry'
@@ -15,7 +15,8 @@ const POSITION: Record<Side, Position> = { top: Position.Top, bottom: Position.B
 function DeviceNodeImpl({ id, data, selected }: NodeProps<DeviceFlowNode>) {
   const { device, template, side, ports } = data
   const readOnly = useProjectStore((s) => s.readOnly)
-  const dim = useUiStore((s) => s.focusVlan !== null && !data.vlans.includes(s.focusVlan))
+  const focus = useEffectiveFocus()
+  const dim = focus !== null && !data.vlans.includes(focus)
   const [renaming, setRenaming] = useState(false)
   const updateInternals = useUpdateNodeInternals()
   useEffect(() => {

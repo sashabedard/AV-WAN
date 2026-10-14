@@ -27,6 +27,7 @@ export interface UiState {
   setPendingZone(on: boolean): void
   openSearch(at: XY | null): void
   closeSearch(): void
+  resetForDocument(): void
 }
 
 export const uiStore = createStore<UiState>()((set) => ({
@@ -50,7 +51,19 @@ export const uiStore = createStore<UiState>()((set) => ({
   setPendingZone: (on) => set(on ? { pendingZone: true, pendingTemplateId: null } : { pendingZone: false }),
   setPendingSwitch: (value) => set({ pendingSwitch: value }),
   openSearch: (at) => set({ search: { at } }),
-  closeSearch: () => set({ search: null })
+  closeSearch: () => set({ search: null }),
+  // Un autre document remplace le courant : tout l'état transitoire qui s'y rapportait est remis à zéro.
+  resetForDocument: () =>
+    set({
+      focusVlan: null,
+      inspectVlanId: null,
+      hoverDeviceId: null,
+      reconnectingLinkId: null,
+      pendingZone: false,
+      pendingTemplateId: null,
+      pendingSwitch: null,
+      search: null
+    })
 }))
 
 export function useUiStore<T>(selector: (s: UiState) => T): T {
