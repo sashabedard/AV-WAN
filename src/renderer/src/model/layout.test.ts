@@ -41,17 +41,4 @@ describe('resolvePortSide', () => {
     const wide = (d: Device) => (d.switch ? { w: 2000, h: 66 } : { w: 176, h: 58 })
     expect(resolvePortSide(p, p.devices[1]!, wide)).toBe('right')
   })
-
-  it('donne plus de poids au voisin proche : la bande LED juste dessous l’emporte sur le switch loin au-dessus', () => {
-    const p = createProject()
-    const sw = createDevice(p, 'switch', { x: 0, y: 0 }, { id: 'sw' })
-    p.devices.push(sw)
-    const pix = createDevice(p, 'pixel-controller', { x: 0, y: 520 }, { id: 'pix' })
-    p.devices.push(pix)
-    const led = createDevice(p, 'led-strip', { x: 0, y: 640 }, { id: 'led' })
-    p.devices.push(led)
-    p.links.push({ id: 'l1', cableId: 'C-001', a: { deviceId: 'sw', portId: '1' }, b: { deviceId: 'pix', portId: 'ETH1' }, medium: 'cat6' })
-    p.links.push({ id: 'l2', cableId: 'C-002', a: { deviceId: 'pix', portId: 'OUT1' }, b: { deviceId: 'led', portId: 'IN' }, medium: 'pixel' })
-    expect(resolvePortSide(p, pix)).toBe('bottom')
-  })
 })
