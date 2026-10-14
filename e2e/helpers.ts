@@ -1,5 +1,5 @@
 import { _electron as electron, type ElectronApplication, type Page } from '@playwright/test'
-import { mkdtempSync } from 'node:fs'
+import { mkdtempSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
@@ -7,11 +7,13 @@ export interface LaunchOptions {
   keepWelcome?: boolean // tâche 18 : garder l'écran d'accueil ouvert
   scale?: number // captures nettes (2 = Retina)
   env?: Record<string, string> // variables en plus (ex. AVWAN_E2E_EXPORT_DIR)
+  autoSave?: boolean // enregistrement automatique dans le fichier (désactivé par défaut dans les tests)
   userData?: string // réutiliser un dossier userData (relance après un arrêt brutal)
 }
 
 export async function launchApp(opts: LaunchOptions = {}): Promise<{ app: ElectronApplication; page: Page }> {
   const userData = opts.userData ?? mkdtempSync(join(tmpdir(), 'avwan-e2e-'))
+  writeFileSync(join(userData, 'settings.json'), JSON.stringify({ autoSave: opts.autoSave ?? false }))
   const env = { ...process.env, AVWAN_E2E: '1', AVWAN_USER_DATA: userData, AVWAN_E2E_DOCUMENTS_DIR: join(userData, 'Documents'), ...opts.env } as Record<string, string>
   // AVWAN_EXECUTABLE : l'app empaquetée (CI, ou release/mac-universal en local) au lieu du dossier du projet.
   const executablePath = process.env['AVWAN_EXECUTABLE']
