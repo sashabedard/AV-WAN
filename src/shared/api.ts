@@ -87,6 +87,11 @@ export interface AvwanApi {
     install(): void
   }
   onUpdateReady(callback: (version: string) => void): () => void
+  // Réglages de l'app (menu Fichier › Enregistrement automatique).
+  settings: {
+    get(): Promise<{ autoSave: boolean }>
+    onChange(callback: (settings: { autoSave: boolean }) => void): () => void
+  }
   // Fenêtre sans barre de titre : couleurs des boutons Windows, menu ☰, plein écran (pastilles macOS masquées).
   window: {
     setTitleBarColors(colors: { color: string; symbolColor: string }): void
@@ -123,6 +128,8 @@ export const IPC = {
   updateReady: 'update:ready',
   updatePending: 'update:pending',
   updateInstall: 'update:install',
+  settingsGet: 'settings:get',
+  settingsChanged: 'settings:changed',
   windowTitleBarColors: 'window:titleBarColors',
   windowShowMenu: 'window:showMenu',
   windowFullscreen: 'window:fullscreen',

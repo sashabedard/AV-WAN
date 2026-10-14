@@ -4,6 +4,7 @@ import { IPC, type OpenRequest } from '../shared/api'
 import { APP_NAME, APP_SUBTITLE, RELEASES_URL } from '../shared/appInfo'
 import { discardLastRecoverySync, grants, registerIpc, resetRecoverySession } from './ipc'
 import { buildMenu } from './menu'
+import { DEFAULT_SETTINGS, readSettings, writeSettings, type Settings } from './settings'
 import { loadRenderer } from './windows'
 import { registerExportIpc } from './exports'
 import { readTextFile } from './fileIO'
@@ -26,6 +27,8 @@ const devIcon = join(__dirname, '../../build/icon.png')
 const primary = !app.isPackaged || app.requestSingleInstanceLock()
 
 let mainWindow: BrowserWindow | null = null
+let settings: Settings = { ...DEFAULT_SETTINGS }
+const settingsFile = (): string => join(app.getPath('userData'), 'settings.json')
 
 // Fichiers à ouvrir (double-clic, Dock, 2e instance) : ils attendent que l'interface soit prête.
 const openQueue = createOpenQueue((path) => void deliverOpen(path))
@@ -149,22 +152,35 @@ if (!primary) {
   // Windows : l'app lancée par un double-clic reçoit le chemin dans son argv.
   if (process.platform !== 'darwin') for (const path of pathsFromArgv(process.argv.slice(1))) openQueue.push(path)
 
+  ipcMain.handle(IPC.settingsGet, () => settings)
   ipcMain.on(IPC.rendererReady, (event) => {
     if (mainWindow && event.sender === mainWindow.webContents) openQueue.ready()
   })
 
-  void app.whenReady().then(() => {
+  void app.whenReady().then(async () => {
     if (process.platform === 'darwin' && !app.isPackaged && !isE2E) app.dock?.setIcon(devIcon)
     registerIpc()
     registerExportIpc()
     registerWindowChromeIpc()
     setupUpdater(isE2E)
     app.setAboutPanelOptions({ applicationName: APP_NAME, applicationVersion: app.getVersion(), version: '', credits: APP_SUBTITLE })
-    buildMenu({
-      about: showAbout,
-      checkUpdates: () => void checkForUpdatesManually(BrowserWindow.getFocusedWindow()),
-      releases: () => void shell.openExternal(RELEASES_URL)
-    })
+    settings = await readSettings(settingsFile())
+    buildMenu(
+      {
+        about: showAbout,
+        checkUpdates: () => void checkForUpdatesManually(BrowserWindow.getFocusedWindow()),
+        releases: () => void shell.openExternal(RELEASES_URL)
+      },
+      {
+        autoSave: settings.autoSave,
+        // La case native se coche d'elle-même : pas besoin de reconstruire le menu.
+        toggleAutoSave: (on) => {
+          settings = { ...settings, autoSave: on }
+          void writeSettings(settingsFile(), settings).catch(() => undefined)
+          for (const w of BrowserWindow.getAllWindows()) if (!w.isDestroyed()) w.webContents.send(IPC.settingsChanged, settings)
+        }
+      }
+    )
     createWindow()
     app.on('activate', () => {
       if (BrowserWindow.getAllWindows().length === 0) createWindow()

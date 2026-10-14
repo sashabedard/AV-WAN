@@ -6,6 +6,7 @@ import { useClipboardEvents } from './app/clipboardActions'
 import { useOpenRequests } from './app/useOpenRequests'
 import { useAutosave } from './app/autosave'
 import { useLibraryLoad } from './app/useLibraryLoad'
+import { useSettingsSync } from './app/useSettingsSync'
 
 export function App() {
   useMenuBridge()
@@ -15,5 +16,6 @@ export function App() {
   useOpenRequests()
   useAutosave()
   useLibraryLoad()
+  useSettingsSync()
   return <AppShell />
 }

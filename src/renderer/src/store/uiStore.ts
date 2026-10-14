@@ -45,6 +45,9 @@ export interface UiState {
   // Boîte « Nouvelle composante » (spec plan 4 § 6.2) : la bibliothèque n'appartient à aucun document.
   componentEditor: ComponentEditorState | null
   openComponentEditor(state: ComponentEditorState | null): void
+  // Réglage de l'app, pas du document : jamais remis à zéro par resetForDocument.
+  autoSave: boolean
+  setAutoSave(on: boolean): void
   resetForDocument(): void
 }
 
@@ -82,6 +85,8 @@ export const uiStore = createStore<UiState>()((set) => ({
   // Un autre document remplace le courant : tout l'état transitoire qui s'y rapportait est remis à zéro.
   componentEditor: null,
   openComponentEditor: (state) => set({ componentEditor: state }),
+  autoSave: true,
+  setAutoSave: (on) => set({ autoSave: on }),
   resetForDocument: () =>
     set({
       focusVlan: null,

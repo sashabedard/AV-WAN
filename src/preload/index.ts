@@ -65,6 +65,16 @@ const api: AvwanApi = {
       ipcRenderer.removeListener(IPC.updateReady, handler)
     }
   },
+  settings: {
+    get: () => ipcRenderer.invoke(IPC.settingsGet),
+    onChange: (callback) => {
+      const handler = (_event: IpcRendererEvent, settings: { autoSave: boolean }): void => callback(settings)
+      ipcRenderer.on(IPC.settingsChanged, handler)
+      return () => {
+        ipcRenderer.removeListener(IPC.settingsChanged, handler)
+      }
+    }
+  },
   window: {
     setTitleBarColors: (colors) => ipcRenderer.send(IPC.windowTitleBarColors, colors),
     showMenu: (x, y) => ipcRenderer.send(IPC.windowShowMenu, { x, y }),
