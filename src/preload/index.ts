@@ -13,7 +13,8 @@ const api: AvwanApi = {
   },
   recent: {
     list: () => ipcRenderer.invoke(IPC.recentList),
-    open: (path) => ipcRenderer.invoke(IPC.recentOpen, path)
+    open: (path) => ipcRenderer.invoke(IPC.recentOpen, path),
+    remember: (path) => ipcRenderer.invoke(IPC.recentRemember, path)
   },
   onMenu: (callback) => {
     const handler = (_event: IpcRendererEvent, action: MenuAction): void => callback(action)

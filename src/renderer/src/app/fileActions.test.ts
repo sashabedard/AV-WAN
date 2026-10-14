@@ -3,14 +3,18 @@ import type { AvwanApi } from '../../../shared/api'
 import { isDirty, projectStore } from '../store/projectStore'
 import { sampleProject } from '../model/__fixtures__/sample'
 import { serializeProject } from '../model/file'
-import { fileNameOf, loadFromText, saveProjectAction } from './fileActions'
+import { fileNameOf, loadFromText, openProjectAction, saveProjectAction } from './fileActions'
 
 function fakeApi(file: Partial<AvwanApi['file']> = {}): AvwanApi {
   return {
     platform: 'darwin',
     isE2E: false,
     onMenu: () => () => undefined,
-    recent: { list: vi.fn(async () => []), open: vi.fn(async (path: string) => ({ path, text: '' })) },
+    recent: {
+      list: vi.fn(async () => []),
+      open: vi.fn(async (path: string) => ({ path, text: '' })),
+      remember: vi.fn(async () => undefined)
+    },
     file: {
       open: vi.fn(async () => null),
       read: vi.fn(async (path: string) => ({ path, text: '' })),
@@ -88,5 +92,21 @@ describe('fileActions', () => {
     expect(fileNameOf('/Users/x/lumen.avwan')).toBe('lumen.avwan')
     expect(fileNameOf('C:\\Projets\\lumen.avwan')).toBe('lumen.avwan')
     expect(fileNameOf(null)).toBe('Sans titre')
+  })
+
+  it('ne mémorise un fichier récent qu’après une ouverture valide', async () => {
+    const api = fakeApi()
+    vi.stubGlobal('window', { avwan: api, confirm: () => true })
+    expect(await loadFromText('/x/casse.avwan', 'pas du json')).toBe(false)
+    expect(api.recent.remember).not.toHaveBeenCalled()
+    expect(await loadFromText('/x/bon.avwan', serializeProject(sampleProject()))).toBe(true)
+    expect(api.recent.remember).toHaveBeenCalledWith('/x/bon.avwan')
+  })
+
+  it('montre une erreur d’ouverture sans le préfixe IPC d’Electron', async () => {
+    const api = fakeApi({ open: vi.fn(async () => Promise.reject(new Error("Error invoking remote method 'file:open': Error: Accès refusé (EACCES)."))) })
+    vi.stubGlobal('window', { avwan: api, confirm: () => true })
+    await openProjectAction()
+    expect(projectStore.getState().toast).toBe('Ouverture impossible : Accès refusé (EACCES).')
   })
 })

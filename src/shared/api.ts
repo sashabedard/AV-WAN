@@ -17,6 +17,7 @@ export interface AvwanApi {
   recent: {
     list(): Promise<string[]>
     open(path: string): Promise<OpenedFile>
+    remember(path: string): Promise<void>
   }
   onMenu(callback: (action: MenuAction) => void): () => void
 }
@@ -29,5 +30,6 @@ export const IPC = {
   backup: 'file:backup',
   recentList: 'recent:list',
   recentOpen: 'recent:open',
+  recentRemember: 'recent:remember',
   menu: 'menu'
 } as const

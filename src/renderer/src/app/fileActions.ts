@@ -1,5 +1,6 @@
 import { isDirty, projectStore } from '../store/projectStore'
 import { parseProjectFile, serializeProject } from '../model/file'
+import { ipcErrorMessage } from './ipcError'
 
 const DISCARD_QUESTION = 'Des modifications ne sont pas enregistrées. Continuer quand même ?'
 
@@ -38,6 +39,8 @@ export async function loadFromText(path: string, text: string): Promise<boolean>
     const kept = backupPath ? ` Copie de sauvegarde conservée : ${fileNameOf(backupPath)}` : ''
     s.showToast(`${res.warnings.join(' ')}${kept}`)
   }
+  // Le fichier est valide : il peut entrer dans les récents (un échec ici n'empêche pas l'ouverture).
+  void window.avwan.recent.remember(path).catch(() => undefined)
   return true
 }
 
@@ -47,7 +50,7 @@ export async function openProjectAction(): Promise<void> {
     const file = await window.avwan.file.open()
     if (file) await loadFromText(file.path, file.text)
   } catch (e) {
-    projectStore.getState().showToast(`Ouverture impossible : ${(e as Error).message}`)
+    projectStore.getState().showToast(`Ouverture impossible : ${ipcErrorMessage(e)}`)
   }
 }
 
@@ -57,7 +60,7 @@ export async function openRecentAction(path: string): Promise<void> {
     const file = await window.avwan.recent.open(path)
     await loadFromText(file.path, file.text)
   } catch (e) {
-    projectStore.getState().showToast(`Ouverture impossible : ${(e as Error).message}`)
+    projectStore.getState().showToast(`Ouverture impossible : ${ipcErrorMessage(e)}`)
   }
 }
 
@@ -70,7 +73,7 @@ export async function saveProjectAsAction(): Promise<void> {
     projectStore.setState({ readOnly: false })
     projectStore.getState().markSaved(path, snapshot)
   } catch (e) {
-    s.showToast(`Échec de l’enregistrement : ${(e as Error).message}`)
+    s.showToast(`Échec de l’enregistrement : ${ipcErrorMessage(e)}`)
   }
 }
 
@@ -83,6 +86,6 @@ export async function saveProjectAction(): Promise<void> {
     await window.avwan.file.save(path, serializeProject(snapshot))
     projectStore.getState().markSaved(path, snapshot)
   } catch (e) {
-    s.showToast(`Échec de l’enregistrement : ${(e as Error).message}`)
+    s.showToast(`Échec de l’enregistrement : ${ipcErrorMessage(e)}`)
   }
 }
