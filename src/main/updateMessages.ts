@@ -25,5 +25,6 @@ export function updateErrorMessage(e: unknown): string {
   const raw = e instanceof Error ? e.message : String(e)
   if (/ENOTFOUND|EAI_AGAIN|ECONNREFUSED|ECONNRESET|ETIMEDOUT|net::ERR_/.test(raw)) return 'Pas de connexion à Internet, ou GitHub est inaccessible.'
   if (/\b404\b/.test(raw)) return 'Aucune version publiée n’a été trouvée.'
-  return raw.split('\n')[0] ?? raw
+  if (/\b403\b/.test(raw)) return 'GitHub limite temporairement les vérifications. Réessayez plus tard.'
+  return `Erreur inattendue du service de mises à jour. (${(raw.split('\n')[0] ?? raw).slice(0, 80)})`
 }

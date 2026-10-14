@@ -16,6 +16,13 @@ describe('updateErrorMessage', () => {
     expect(updateErrorMessage(new Error('net::ERR_INTERNET_DISCONNECTED'))).toBe('Pas de connexion à Internet, ou GitHub est inaccessible.')
     expect(updateErrorMessage(new Error('getaddrinfo ENOTFOUND api.github.com'))).toBe('Pas de connexion à Internet, ou GitHub est inaccessible.')
     expect(updateErrorMessage(new Error('HttpError: 404 Not Found\n  at …'))).toBe('Aucune version publiée n’a été trouvée.')
-    expect(updateErrorMessage(new Error('Autre chose\nsur deux lignes'))).toBe('Autre chose')
+    expect(updateErrorMessage(new Error('HttpError: 403 Forbidden'))).toBe('GitHub limite temporairement les vérifications. Réessayez plus tard.')
+  })
+
+  it('garde un repli en français pour une erreur inconnue, première ligne tronquée', () => {
+    expect(updateErrorMessage(new Error('Autre chose\nsur deux lignes'))).toBe('Erreur inattendue du service de mises à jour. (Autre chose)')
+    const long = updateErrorMessage(new Error('x'.repeat(200)))
+    expect(long.startsWith('Erreur inattendue du service de mises à jour.')).toBe(true)
+    expect(long).toBe(`Erreur inattendue du service de mises à jour. (${'x'.repeat(80)})`)
   })
 })
