@@ -115,7 +115,7 @@ export async function listRecovery(dir: string, now: number = Date.now()): Promi
     if (!isRecoveryKey(key)) continue
     const doc = await readRecovery(dir, key)
     if (!doc || (await isStale(doc, now))) {
-      await discardRecovery(dir, key)
+      await discardRecovery(dir, key).catch(() => undefined)
       continue
     }
     out.push(entryOf(key, doc))
@@ -128,7 +128,7 @@ export async function findNewerRecovery(dir: string, path: string, now: number =
   const doc = await readRecovery(dir, key)
   if (!doc || doc.path !== path) return null
   if (await isStale(doc, now)) {
-    await discardRecovery(dir, key)
+    await discardRecovery(dir, key).catch(() => undefined)
     return null
   }
   return entryOf(key, doc)

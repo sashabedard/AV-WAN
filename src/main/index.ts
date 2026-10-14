@@ -2,7 +2,7 @@ import { app, BrowserWindow, dialog, ipcMain, shell } from 'electron'
 import { join } from 'node:path'
 import { IPC, type OpenRequest } from '../shared/api'
 import { APP_NAME, APP_SUBTITLE, RELEASES_URL } from '../shared/appInfo'
-import { discardLastRecoverySync, grants, registerIpc } from './ipc'
+import { discardLastRecoverySync, grants, registerIpc, resetRecoverySession } from './ipc'
 import { buildMenu } from './menu'
 import { loadRenderer } from './windows'
 import { registerExportIpc } from './exports'
@@ -83,7 +83,11 @@ function createWindow(): BrowserWindow {
   })
   // Une navigation validée (premier chargement, rechargement du menu Affichage) ou un plantage du rendu
   // oblige l'interface à signaler de nouveau qu'elle est prête ; un rechargement annulé ne change rien.
-  win.webContents.on('did-navigate', () => openQueue.reset())
+  // Le rechargement garde le même webContents : on lève aussi l'abandon de « Quitter sans enregistrer ».
+  win.webContents.on('did-navigate', () => {
+    openQueue.reset()
+    resetRecoverySession(win.webContents.id)
+  })
   win.webContents.on('render-process-gone', () => openQueue.reset())
   if (!isE2E) win.once('ready-to-show', () => win.show())
   win.webContents.setWindowOpenHandler(({ url }) => {

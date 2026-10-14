@@ -1,5 +1,5 @@
 import { afterAll, describe, expect, it } from 'vitest'
-import { existsSync, mkdtempSync, readdirSync, rmSync, utimesSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, rmSync, utimesSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import {
@@ -69,6 +69,13 @@ describe('écriture et liste', () => {
     writeFileSync(join(dir, 'notes.txt'), 'à garder')
     expect(await listRecovery(dir, NOW)).toEqual([])
     expect(readdirSync(dir).sort()).toEqual(['notes.txt'])
+  })
+
+  it('une copie impossible à effacer n’empêche pas de lister les autres', async () => {
+    const dir = tempDir()
+    mkdirSync(join(dir, 'u-dossier.json'))
+    await writeRecovery(dir, keyForUntitled('valide1'), doc(null, NOW - 60_000, 'Valide'))
+    expect(await listRecovery(dir, NOW)).toEqual([{ key: 'u-valide1', path: null, title: 'Valide', savedAt: iso(NOW - 60_000) }])
   })
 
   it('supprime une copie plus vieille que 30 jours', async () => {

@@ -45,6 +45,12 @@ export function discardLastRecoverySync(webContentsId: number): void {
   }
 }
 
+// Un rechargement garde le même webContents : la fenêtre doit pouvoir écrire de nouveau des copies.
+export function resetRecoverySession(webContentsId: number): void {
+  closedSenders.delete(webContentsId)
+  lastRecoveryKey.delete(webContentsId)
+}
+
 export function registerIpc(): void {
   ipcMain.handle(IPC.open, (event) =>
     frenchErrors(async (): Promise<OpenedFile | null> => {
@@ -136,6 +142,11 @@ export function registerIpc(): void {
       const key = path ? keyForPath(path) : keyForUntitled(doc.untitledId)
       if (closedSenders.has(event.sender.id)) return key
       await writeRecovery(recoveryDir(), key, { version: 1, path, title: doc.title, savedAt: new Date().toISOString(), text: doc.text })
+      // Abandon survenu pendant l'écriture : la copie qui vient d'atterrir ne doit pas survivre.
+      if (closedSenders.has(event.sender.id)) {
+        await discardRecovery(recoveryDir(), key)
+        return key
+      }
       lastRecoveryKey.set(event.sender.id, key)
       return key
     })
@@ -149,7 +160,7 @@ export function registerIpc(): void {
     })
   )
 
-  ipcMain.handle(IPC.recoveryList, (): Promise<RecoveryEntry[]> => listRecovery(recoveryDir()))
+  ipcMain.handle(IPC.recoveryList, () => frenchErrors((): Promise<RecoveryEntry[]> => listRecovery(recoveryDir())))
 
   ipcMain.handle(IPC.recoveryRestore, (_event, key: unknown) =>
     frenchErrors(async (): Promise<RestoredRecovery> => {
@@ -162,7 +173,9 @@ export function registerIpc(): void {
   )
 
   // Seulement pour un chemin déjà accordé (dialogue, récents, double-clic).
-  ipcMain.handle(IPC.recoveryFindNewer, (_event, path: unknown): Promise<RecoveryEntry | null> | null =>
-    typeof path === 'string' && grants.isGranted(path) ? findNewerRecovery(recoveryDir(), path) : null
+  ipcMain.handle(IPC.recoveryFindNewer, (_event, path: unknown) =>
+    frenchErrors(async (): Promise<RecoveryEntry | null> =>
+      typeof path === 'string' && grants.isGranted(path) ? findNewerRecovery(recoveryDir(), path) : null
+    )
   )
 }
