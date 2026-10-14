@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { createProjectStore, isDirty, linksOnRemovedPorts } from './projectStore'
 import { copyFragment } from '../model/clipboard'
+import { vlanPreset } from '../catalog/vlanPresets'
 import { sampleProject } from '../model/__fixtures__/sample'
 
 const store = () => createProjectStore(sampleProject())
@@ -253,6 +254,38 @@ describe('zones dans le store', () => {
     s.getState().loadProject(sampleProject(), null, { readOnly: true })
     s.getState().addZone({ x: 0, y: 0, w: 100, h: 100 })
     expect(s.getState().history.present.zones).toEqual([])
+    expect(s.getState().toast).toContain('lecture seule')
+  })
+})
+
+describe('VLAN dans le store', () => {
+  it('ajoute, modifie et annule', () => {
+    const s = store()
+    s.getState().addVlan(vlanPreset(30))
+    s.getState().updateVlan(30, { name: 'Dante principal' })
+    expect(s.getState().history.present.vlans.map((v) => v.name)).toEqual(['Dante principal', 'NDI'])
+    s.getState().undo()
+    expect(s.getState().history.present.vlans.map((v) => v.name)).toEqual(['Dante A', 'NDI'])
+  })
+
+  it('renumérote, ou explique pourquoi c’est refusé', () => {
+    const s = store()
+    expect(s.getState().changeVlanId(40, 41)).toBe(true)
+    expect(s.getState().history.present.devices[0]!.portState['1']!.nativeVlan).toBe(41)
+    s.getState().addVlan(vlanPreset(10))
+    expect(s.getState().changeVlanId(41, 10)).toBe(false)
+    expect(s.getState().toast).toBe('Le VLAN 10 existe déjà.')
+    expect(s.getState().changeVlanId(41, 5000)).toBe(false)
+    expect(s.getState().toast).toBe('Numéro de VLAN invalide : choisissez un nombre de 1 à 4094.')
+  })
+
+  it('retire un VLAN ; refuse les modifications en lecture seule', () => {
+    const s = store()
+    s.getState().removeVlan(40)
+    expect(s.getState().history.present.vlans).toEqual([])
+    s.getState().loadProject(sampleProject(), null, { readOnly: true })
+    s.getState().updateVlan(40, { name: 'Interdit' })
+    expect(s.getState().history.present.vlans[0]!.name).toBe('NDI')
     expect(s.getState().toast).toContain('lecture seule')
   })
 })

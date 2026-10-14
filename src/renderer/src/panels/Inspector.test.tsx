@@ -92,4 +92,17 @@ describe('Inspector', () => {
     render(<Inspector />)
     expect(screen.getByText('Zone : Zone 1')).toBeTruthy()
   })
+
+  it('demande d’ajouter un VLAN avant de choisir le mode Accès sur un projet sans VLAN', async () => {
+    const user = userEvent.setup()
+    const p = sampleProject()
+    p.vlans = []
+    p.devices[0]!.portState = {}
+    projectStore.getState().loadProject(p, null)
+    projectStore.getState().setSelection({ deviceIds: [], linkIds: ['l1'] })
+    render(<Inspector />)
+    await user.selectOptions(screen.getByLabelText('Mode VLAN'), 'access')
+    expect(projectStore.getState().toast).toBe('Ajoutez d’abord un VLAN au projet (onglet VLAN, à gauche).')
+    expect(project().devices[0]!.portState).toEqual({})
+  })
 })

@@ -1,11 +1,12 @@
 import { createStore, type StoreApi } from 'zustand/vanilla'
 import { useStore } from 'zustand'
-import type { Device, Link, PortRef, PortState, Project, SwitchSpec, Zone } from '../model/types'
+import type { Device, Link, PortRef, PortState, Project, SwitchSpec, Vlan, Zone } from '../model/types'
 import { createDevice, createProject, newId, type CreateDeviceOptions } from '../model/project'
 import { FAMILY_LABELS, canConnectPorts, canReconnect, connectorFamily, defaultMedium, findPort, nextCableId, sameRef } from '../model/rules'
 import { setLinkVlan as deriveSetLinkVlan, type VlanChoice } from '../model/derive'
 import { buildSwitchPorts } from '../catalog/switch'
 import { pasteFragment as pasteFragmentModel, type Fragment } from '../model/clipboard'
+import { addVlan as addVlanModel, changeVlanId as changeVlanIdModel, removeVlan as removeVlanModel, updateVlan as updateVlanModel, type VlanPatch } from '../model/vlans'
 import { assignZones, createZone, moveZones, placeDevices, removeZones, resizeZone as resizeZoneModel, zoneAround, zonesWithin, type ZoneRect } from '../model/zones'
 import { commit, initHistory, redo as historyRedo, undo as historyUndo, type History } from './history'
 
@@ -54,6 +55,10 @@ export interface ProjectState {
   updateDevice(id: string, patch: DevicePatch): void
   updateLink(id: string, patch: LinkPatch): void
   setLinkVlan(linkId: string, choice: VlanChoice): void
+  addVlan(vlan: Vlan): void
+  updateVlan(id: number, patch: VlanPatch): void
+  changeVlanId(from: number, to: number): boolean
+  removeVlan(id: number): void
   setPortState(deviceId: string, portId: string, patch: Partial<PortState>): void
   updateSwitchSpec(deviceId: string, spec: SwitchSpec): void
   updateMeta(patch: MetaPatch): void
@@ -227,6 +232,28 @@ export function createProjectStore(initial: Project = createProject()): StoreApi
       updateDevice: (id, patch) => apply((p) => ({ ...p, devices: p.devices.map((d) => (d.id === id ? { ...d, ...patch } : d)) })),
       updateLink: (id, patch) => apply((p) => ({ ...p, links: p.links.map((l) => (l.id === id ? { ...l, ...patch } : l)) })),
       setLinkVlan: (linkId, choice) => apply((p) => deriveSetLinkVlan(p, linkId, choice)),
+      addVlan: (vlan) => apply((p) => addVlanModel(p, vlan)),
+      updateVlan: (id, patch) => apply((p) => updateVlanModel(p, id, patch)),
+      changeVlanId: (from, to) => {
+        const p = get().history.present
+        if (from === to) return true
+        if (get().readOnly) {
+          apply((q) => q) // affiche le message de lecture seule
+          return false
+        }
+        const next = changeVlanIdModel(p, from, to)
+        if (!next) {
+          set({
+            toast: p.vlans.some((v) => v.id === to)
+              ? `Le VLAN ${to} existe déjà.`
+              : 'Numéro de VLAN invalide : choisissez un nombre de 1 à 4094.'
+          })
+          return false
+        }
+        apply(() => next)
+        return true
+      },
+      removeVlan: (id) => apply((p) => removeVlanModel(p, id)),
       setPortState: (deviceId, portId, patch) =>
         apply((p) => ({
           ...p,
