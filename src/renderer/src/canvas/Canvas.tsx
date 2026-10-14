@@ -2,13 +2,16 @@ import { useCallback, useEffect, useMemo, useRef, useState, type DragEvent, type
 import {
   Background,
   BackgroundVariant,
+  ConnectionLineType,
   ConnectionMode,
   ReactFlow,
   ReactFlowProvider,
   applyEdgeChanges,
   applyNodeChanges,
   useReactFlow,
+  type Connection,
   type EdgeChange,
+  type FinalConnectionState,
   type NodeChange,
   type OnNodeDrag,
   type OnSelectionChangeParams
@@ -19,6 +22,7 @@ import { useThemeMode } from '../theme/useThemeMode'
 import { TEMPLATE_MIME } from '../panels/Palette'
 import { analyzeLinks, createFlowCache, toFlowEdges, toFlowNodes, type CordFlowEdge, type DeviceFlowNode } from './toFlow'
 import { GRID, mergeEdges, mergeNodes, snapPoint } from './canvasHelpers'
+import { clientPoint, connectionRefs, dropOnDevice, makeIsValidConnection, nodeIdAt } from './connect'
 import { useAltKey } from './useAltKey'
 import { DeviceNode } from './DeviceNode'
 import { CordEdge } from './CordEdge'
@@ -31,6 +35,7 @@ const nodeTypes = { device: DeviceNode, switch: SwitchNode }
 const edgeTypes = { cord: CordEdge }
 const SNAP_GRID: [number, number] = [GRID, GRID]
 const DELETE_KEYS = ['Backspace', 'Delete']
+const CONNECTION_LINE_STYLE = { stroke: 'var(--accent)', strokeWidth: 3 }
 const PRO_OPTIONS = { hideAttribution: true }
 
 function CanvasInner() {
@@ -61,6 +66,24 @@ function CanvasInner() {
   }, [])
   const onDelete = useCallback(({ nodes: ns, edges: es }: { nodes: DeviceFlowNode[]; edges: CordFlowEdge[] }) => {
     projectStore.getState().removeElements(ns.map((n) => n.id), es.map((e) => e.id))
+  }, [])
+
+  const isValidConnection = useMemo(() => makeIsValidConnection(() => projectStore.getState().history.present), [])
+  const onConnect = useCallback((c: Connection) => {
+    const refs = connectionRefs(c)
+    if (refs) projectStore.getState().connect(refs[0], refs[1])
+  }, [])
+  const onConnectEnd = useCallback((event: MouseEvent | TouchEvent, state: FinalConnectionState) => {
+    if (state.isValid || !state.fromNode || !state.fromHandle?.id) return
+    const point = clientPoint(event)
+    if (!point) return
+    const targetId = nodeIdAt(document, point)
+    if (!targetId) return
+    const s = projectStore.getState()
+    const from = { deviceId: state.fromNode.id, portId: state.fromHandle.id }
+    const res = dropOnDevice(s.history.present, from, targetId)
+    if (res.ok) s.connect(from, res.to)
+    else if (res.message) s.showToast(res.message)
   }, [])
 
   const place = useCallback(
@@ -112,6 +135,12 @@ function CanvasInner() {
         edges={edges}
         edgeTypes={edgeTypes}
         connectionMode={ConnectionMode.Loose}
+        onConnect={onConnect}
+        onConnectEnd={onConnectEnd}
+        isValidConnection={isValidConnection}
+        connectionLineType={ConnectionLineType.SmoothStep}
+        connectionLineStyle={CONNECTION_LINE_STYLE}
+        nodesConnectable={!readOnly}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onNodeDragStop={onNodeDragStop}

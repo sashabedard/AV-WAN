@@ -3,6 +3,7 @@ import { Handle, Position, useUpdateNodeInternals, type NodeProps } from '@xyflo
 import type { Side } from '../model/types'
 import { POE_LABELS } from '../model/derive'
 import type { DeviceFlowNode } from './toFlow'
+import { usePortCompatibility } from './useConnectingFrom'
 import { DEVICE_NODE_HEIGHT, deviceNodeWidth, portOffset } from './nodeGeometry'
 
 const POSITION: Record<Side, Position> = { top: Position.Top, bottom: Position.Bottom, left: Position.Left, right: Position.Right }
@@ -13,6 +14,7 @@ function DeviceNodeImpl({ id, data, selected }: NodeProps<DeviceFlowNode>) {
   useEffect(() => {
     updateInternals(id)
   }, [id, side, device.ports.length, updateInternals])
+  const compat = usePortCompatibility(id)
   const width = deviceNodeWidth(device.ports.length)
   const horizontal = side === 'top' || side === 'bottom'
   const line1 = device.model ?? template?.name ?? 'Appareil'
@@ -25,6 +27,7 @@ function DeviceNodeImpl({ id, data, selected }: NodeProps<DeviceFlowNode>) {
       <span className="dn__line2">{line2}</span>
       {device.ports.map((p, i) => {
         const info = ports[p.id]
+        const state = compat(p.id)
         const offset = portOffset(i, device.ports.length, horizontal ? width : DEVICE_NODE_HEIGHT)
         const style = { ...(horizontal ? { left: offset } : { top: offset }), ...(info ? { '--plug': info.color } : {}) } as CSSProperties
         const kind = p.connector === 'sfp+' ? 'sfpp' : p.connector
@@ -34,7 +37,7 @@ function DeviceNodeImpl({ id, data, selected }: NodeProps<DeviceFlowNode>) {
             id={p.id}
             type="source"
             position={POSITION[side]}
-            className={`port port--${kind}${info ? ' port--linked' : ''}`}
+            className={`port port--${kind}${info ? ' port--linked' : ''}${state ? ` port--${state}` : ''}`}
             style={style}
             title={`${p.label} · ${p.connector.toUpperCase()}${p.poeIn ? ` · alimenté ${POE_LABELS[p.poeIn]}` : ''}`}
           />
