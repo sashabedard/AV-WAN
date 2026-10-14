@@ -33,6 +33,17 @@ describe('parseLibrary', () => {
 })
 
 describe('libraryStore', () => {
+  it('marque toujours la composante comme perso, même sans isCustom', async () => {
+    const api = fakeLibrary()
+    const store = createLibraryStore(() => api)
+    const { isCustom: _omit, ...bare } = tpl('custom-aaaaaa', 'Antenne')
+    await store.getState().save(bare)
+    expect(api.save).toHaveBeenCalledWith('custom-aaaaaa', expect.stringContaining('"isCustom": true'))
+    expect(store.getState().templates[0]?.isCustom).toBe(true)
+    await store.getState().replace('custom-aaaaaa', { ...bare, name: 'Antenne 2' })
+    expect(store.getState().templates[0]?.isCustom).toBe(true)
+  })
+
   it('charge, enregistre, remplace et supprime', async () => {
     const a = tpl('custom-aaaaaa', 'Antenne')
     const api = fakeLibrary([fileOf(a)])

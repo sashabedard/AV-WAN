@@ -39,11 +39,13 @@ export function createLibraryStore(api: () => LibraryApi): StoreApi<LibraryState
     load: async () => {
       set({ templates: parseLibrary(await api().list()) })
     },
-    save: async (template) => {
+    save: async (input) => {
+      const template = { ...input, isCustom: true }
       await api().save(template.id, toText(template))
       set({ templates: byName([...get().templates.filter((t) => t.id !== template.id), template]) })
     },
-    replace: async (oldId, template) => {
+    replace: async (oldId, input) => {
+      const template = { ...input, isCustom: true }
       await api().save(template.id, toText(template))
       if (oldId !== template.id) await api().remove(oldId)
       set({ templates: byName([...get().templates.filter((t) => t.id !== oldId && t.id !== template.id), template]) })
