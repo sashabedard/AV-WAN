@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { existsSync, mkdtempSync, readFileSync } from 'node:fs'
+import { copyFileSync, existsSync, mkdtempSync, readFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import ExcelJS from 'exceljs'
@@ -29,8 +29,17 @@ test('exporte le projet exemple en PDF vectoriel : schéma en Tabloïd, tableau 
     expect(pages[0]!.text).toContain('PIXELS')
     expect(pages[0]!.text).toContain('DMX')
     expect(pages[0]!.text).toMatch(new RegExp(`Page\\s*1\\s*/\\s*${pages.length}`))
+    expect(pages[0]!.text).toContain('Vue d’ensemble')
+    expect(pages[0]!.text).toContain('Détail p. 2')
+    expect(pages[0]!.text).toContain('Détail p. 3')
     expect(pages[1]!.text).toContain('Zone : Régie')
+    expect(pages[1]!.text).toContain('Salle p. 3')
+    expect(pages[1]!.text).not.toContain('CAM-1')
     expect(pages[2]!.text).toContain('Zone : Salle')
+    expect(pages[2]!.text).toContain('Régie p. 2')
+    expect(pages[2]!.text).not.toContain('MAC-1')
+    // Copie pour inspection manuelle, seulement si AVWAN_KEEP_PDF est défini.
+    if (process.env.AVWAN_KEEP_PDF) copyFileSync(path!, process.env.AVWAN_KEEP_PDF)
     const rest = pages.slice(3).map((p) => p.text).join(' ')
     for (const expected of [
       'Fiches par appareil',
