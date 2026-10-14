@@ -1,6 +1,7 @@
 // src/renderer/src/canvas/Legend.tsx
 import type { Project } from '../model/types'
 import { projectStore, useProject } from '../store/projectStore'
+import { uiStore, useUiStore } from '../store/uiStore'
 import { useThemeMode } from '../theme/useThemeMode'
 import { Segmented } from '../panels/Segmented'
 import { MEDIUM_KIND_LABELS, MEDIUM_KIND_ORDER, NEUTRAL, TRUNK, TYPE_COLORS } from './cordStyle'
@@ -16,6 +17,7 @@ export function Legend() {
   const project = useProject()
   const theme = useThemeMode()
   const mode = project.settings.colorMode
+  const focus = useUiStore((s) => s.focusVlan)
   return (
     <div className="legend nodrag nopan" aria-label="Légende">
       <span className="legend__title">Couleur</span>
@@ -24,10 +26,16 @@ export function Legend() {
         <ul className="legend__list">
           {project.vlans.map((v) => (
             <li key={v.id}>
-              <span className="legend__item">
+              <button
+                type="button"
+                className="legend__item"
+                aria-pressed={focus === v.id}
+                title={`Mettre en évidence le VLAN ${v.id}`}
+                onClick={() => uiStore.getState().setFocusVlan(focus === v.id ? null : v.id)}
+              >
                 <span className="legend__swatch" style={{ background: v.color[theme] }} />
                 {v.id} · {v.short}
-              </span>
+              </button>
             </li>
           ))}
           <li>

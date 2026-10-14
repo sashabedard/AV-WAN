@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { sampleProject } from './__fixtures__/sample'
-import { linkPoe, linkVlanView, setLinkVlan, switchPoeUsage, vlanEnds } from './derive'
+import { linkPoe, linkVlanIds, linkVlanView, setLinkVlan, switchPoeUsage, vlanEnds, vlanMembers } from './derive'
+import { VLAN_PRESETS } from '../catalog/vlanPresets'
 import { createDevice } from './project'
 import type { Project } from './types'
 
@@ -59,5 +60,25 @@ describe('linkPoe / switchPoeUsage', () => {
     const p = sampleProject()
     p.devices[1]!.ports[0]!.poeIn = 'af'
     expect(linkPoe(p, p.links[0]!).cls).toBe('af')
+  })
+})
+
+describe('linkVlanIds et vlanMembers', () => {
+  it('donne les VLAN d’un câble : accès, trunk explicite, trunk « tous », aucun', () => {
+    const p = { ...sampleProject(), vlans: [...VLAN_PRESETS] }
+    const l = p.links[0]!
+    expect(linkVlanIds(p, l)).toEqual([40])
+    p.devices[0]!.portState['1'] = { mode: 'trunk', nativeVlan: 10, taggedVlans: [40, 30, 40] }
+    expect(linkVlanIds(p, l)).toEqual([10, 30, 40])
+    p.devices[0]!.portState['1'] = { mode: 'trunk', taggedVlans: 'all' }
+    expect(linkVlanIds(p, l)).toEqual(VLAN_PRESETS.map((v) => v.id))
+    p.devices[0]!.portState['1'] = {}
+    expect(linkVlanIds(p, l)).toEqual([])
+  })
+
+  it('liste les appareils et câbles membres d’un VLAN', () => {
+    const p = sampleProject()
+    expect(vlanMembers(p, 40)).toEqual({ deviceIds: ['sw1', 'cam1'], linkIds: ['l1'] })
+    expect(vlanMembers(p, 30)).toEqual({ deviceIds: [], linkIds: [] })
   })
 })

@@ -4,6 +4,7 @@ import { cleanup, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { Legend } from './Legend'
 import { projectStore } from '../store/projectStore'
+import { uiStore } from '../store/uiStore'
 import { sampleProject } from '../model/__fixtures__/sample'
 
 beforeEach(() => {
@@ -24,5 +25,16 @@ describe('Legend', () => {
     await user.click(within(modes).getByRole('button', { name: 'Port' }))
     expect(screen.getByText(/ports et étiquettes toujours affichés/)).toBeTruthy()
     expect(projectStore.getState().history.past).toHaveLength(0)
+  })
+
+  it('cliquer un VLAN le met en évidence, cliquer de nouveau l’enlève', async () => {
+    const user = userEvent.setup()
+    render(<Legend />)
+    const ndi = screen.getByRole('button', { name: /40 · NDI/ })
+    await user.click(ndi)
+    expect(uiStore.getState().focusVlan).toBe(40)
+    expect(ndi.getAttribute('aria-pressed')).toBe('true')
+    await user.click(ndi)
+    expect(uiStore.getState().focusVlan).toBeNull()
   })
 })

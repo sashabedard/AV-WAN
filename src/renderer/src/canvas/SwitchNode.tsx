@@ -5,11 +5,13 @@ import { switchFacade } from './switchFacade'
 import { switchSummary } from '../catalog/switch'
 import { usePortCompatibility } from './useConnectingFrom'
 import { projectStore, useProjectStore } from '../store/projectStore'
+import { useUiStore } from '../store/uiStore'
 import { InlineName } from './InlineName'
 
 function SwitchNodeImpl({ id, data, selected }: NodeProps<DeviceFlowNode>) {
   const { device, ports, poeUsage } = data
   const readOnly = useProjectStore((s) => s.readOnly)
+  const dim = useUiStore((s) => s.focusVlan !== null && !data.vlans.includes(s.focusVlan))
   const [renaming, setRenaming] = useState(false)
   const facade = useMemo(() => switchFacade(device.ports), [device.ports])
   const compat = usePortCompatibility(id)
@@ -22,7 +24,7 @@ function SwitchNodeImpl({ id, data, selected }: NodeProps<DeviceFlowNode>) {
   const gradientId = `swg-${id}`
   const { width, height } = facade
   return (
-    <div className={`sw${selected ? ' sw--selected' : ''}`} style={{ width, height }} data-testid={`device-${device.name}`}>
+    <div className={`sw${selected ? ' sw--selected' : ''}${dim ? ' is-dim' : ''}`} style={{ width, height }} data-testid={`device-${device.name}`}>
       <svg className="sw__svg" width={width} height={height} aria-hidden="true">
         <defs>
           <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">

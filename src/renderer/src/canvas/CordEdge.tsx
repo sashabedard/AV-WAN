@@ -2,6 +2,7 @@ import { memo, useState } from 'react'
 import { EdgeLabelRenderer, Position, getSmoothStepPath, getStraightPath, type EdgeProps } from '@xyflow/react'
 import type { Side } from '../model/types'
 import type { CordFlowEdge } from './toFlow'
+import { useUiStore } from '../store/uiStore'
 import { bandRects, bootRect, outward } from './cordGeometry'
 
 const RADIUS = 9
@@ -22,6 +23,10 @@ function sideOf(position: Position): Side {
 
 function CordEdgeImpl({ sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition, data, selected }: EdgeProps<CordFlowEdge>) {
   const [hover, setHover] = useState(false)
+  const aId = data?.link.a.deviceId
+  const bId = data?.link.b.deviceId
+  const hot = useUiStore((s) => s.hoverDeviceId !== null && (s.hoverDeviceId === aId || s.hoverDeviceId === bId))
+  const focus = useUiStore((s) => s.focusVlan)
   if (!data) return null
   const { style, link, tag, portLabels } = data
   const [path, labelX, labelY] = style.straight
@@ -41,10 +46,11 @@ function CordEdgeImpl({ sourceX, sourceY, targetX, targetY, sourcePosition, targ
     [sourceX, sourceY, sideOf(sourcePosition)],
     [targetX, targetY, sideOf(targetPosition)]
   ]
-  const showTag = selected || hover || style.alwaysTag
+  const dim = focus !== null && !data.vlans.includes(focus)
+  const showTag = selected || hover || hot || style.alwaysTag
   return (
     <>
-      <g className={`cord${selected ? ' cord--selected' : ''}`} data-testid={`cord-${link.cableId}`}>
+      <g className={`cord${selected ? ' cord--selected' : ''}${dim ? ' cord--dim' : ''}${hot ? ' cord--hot' : ''}`} data-testid={`cord-${link.cableId}`}>
         {selected && <path d={path} className="cord__halo" strokeWidth={style.width + 7} />}
         {style.plugs && <path d={path} className="cord__shadow" strokeWidth={style.width + 3} transform="translate(0 1.5)" />}
         <path d={path} className="cord__main" stroke={style.color} strokeWidth={style.width} strokeDasharray={style.dash} />
@@ -65,7 +71,7 @@ function CordEdgeImpl({ sourceX, sourceY, targetX, targetY, sourcePosition, targ
       {(showTag || style.badge) && (
         <EdgeLabelRenderer>
           <div
-            className={`cord-tag${showTag ? '' : ' cord-tag--badge'}`}
+            className={`cord-tag${showTag ? '' : ' cord-tag--badge'}${dim ? ' cord-tag--dim' : ''}`}
             style={{ transform: `translate(-50%, -50%) translate(${labelX}px, ${labelY}px)` }}
           >
             {showTag ? `${tag}${style.extraBands > 0 ? ` · +${style.extraBands} VLAN` : ''}` : style.badge}

@@ -42,6 +42,27 @@ export function linkVlanView(project: Project, link: Link): LinkVlanView {
   return { kind: 'none' }
 }
 
+// Tous les VLAN qui passent sur un câble (pour la mise en évidence et les fiches VLAN).
+export function linkVlanIds(project: Project, link: Link): number[] {
+  const v = linkVlanView(project, link)
+  if (v.kind === 'access') return [v.vlan]
+  if (v.kind === 'none') return []
+  const tagged = v.tagged === 'all' ? project.vlans.map((x) => x.id) : v.tagged
+  return [...new Set([...(v.native !== undefined ? [v.native] : []), ...tagged])].sort((a, b) => a - b)
+}
+
+export function vlanMembers(project: Project, vlanId: number): { deviceIds: string[]; linkIds: string[] } {
+  const linkIds: string[] = []
+  const devices = new Set<string>()
+  for (const l of project.links) {
+    if (!linkVlanIds(project, l).includes(vlanId)) continue
+    linkIds.push(l.id)
+    devices.add(l.a.deviceId)
+    devices.add(l.b.deviceId)
+  }
+  return { deviceIds: project.devices.filter((d) => devices.has(d.id)).map((d) => d.id), linkIds }
+}
+
 export function setLinkVlan(project: Project, linkId: string, choice: VlanChoice): Project {
   const link = project.links.find((l) => l.id === linkId)
   if (!link) return project

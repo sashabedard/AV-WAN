@@ -61,3 +61,14 @@ describe('toFlowEdges', () => {
     expect(edge!.data!.portLabels).toEqual(['1', 'ETH'])
   })
 })
+
+describe('VLAN des nœuds et des arêtes', () => {
+  it('chaque nœud et chaque câble connaissent leurs VLAN', () => {
+    const p = sampleProject()
+    const analysis = analyzeLinks(p, 'dark')
+    const nodes = toFlowNodes(p, analysis, createFlowCache())
+    const [edge] = toFlowEdges(p, analysis, createFlowCache())
+    expect(nodes.map((n) => n.data.vlans)).toEqual([[40], [40]])
+    expect(edge!.data!.vlans).toEqual([40])
+  })
+})

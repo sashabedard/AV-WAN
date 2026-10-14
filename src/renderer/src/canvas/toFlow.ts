@@ -3,7 +3,7 @@ import type { Device, DeviceTemplate, Link, PortRef, Project, Side } from '../mo
 import { getTemplate } from '../catalog'
 import { resolvePortSide } from '../model/layout'
 import { findPort } from '../model/rules'
-import { POE_LABELS, linkPoe } from '../model/derive'
+import { POE_LABELS, linkPoe, linkVlanIds } from '../model/derive'
 import { cordStyle, type CordStyle, type ThemeMode } from './cordStyle'
 import { nodeSize } from './nodeGeometry'
 
@@ -22,9 +22,10 @@ export type DeviceNodeData = {
   side: Side
   ports: Record<string, PortInfo>
   poeUsage?: PoeUsage
+  vlans: number[]
 }
 export type DeviceFlowNode = Node<DeviceNodeData, 'device' | 'switch'>
-export type CordEdgeData = { link: Link; style: CordStyle; tag: string; portLabels: [string, string] }
+export type CordEdgeData = { link: Link; style: CordStyle; tag: string; portLabels: [string, string]; vlans: number[] }
 export type CordFlowEdge = Edge<CordEdgeData, 'cord'>
 
 export interface FlowCache {
@@ -35,6 +36,8 @@ export interface LinkAnalysis {
   ports: Map<string, Record<string, PortInfo>>
   poeUsed: Map<string, number>
   styles: Map<string, CordStyle>
+  linkVlans: Map<string, number[]>
+  deviceVlans: Map<string, number[]>
 }
 
 export function createFlowCache(): FlowCache {
@@ -45,9 +48,18 @@ export function analyzeLinks(project: Project, theme: ThemeMode): LinkAnalysis {
   const ports = new Map<string, Record<string, PortInfo>>()
   const poeUsed = new Map<string, number>()
   const styles = new Map<string, CordStyle>()
+  const linkVlans = new Map<string, number[]>()
+  const deviceSets = new Map<string, Set<number>>()
   for (const link of project.links) {
     const style = cordStyle(project, link, theme)
     styles.set(link.id, style)
+    const vlans = linkVlanIds(project, link)
+    linkVlans.set(link.id, vlans)
+    for (const end of [link.a, link.b]) {
+      const set = deviceSets.get(end.deviceId) ?? new Set<number>()
+      for (const v of vlans) set.add(v)
+      deviceSets.set(end.deviceId, set)
+    }
     const poe = linkPoe(project, link)
     if (poe.active && poe.pse) poeUsed.set(poe.pse.deviceId, (poeUsed.get(poe.pse.deviceId) ?? 0) + (poe.drawW ?? 0))
     for (const end of [link.a, link.b]) {
@@ -60,10 +72,17 @@ export function analyzeLinks(project: Project, theme: ThemeMode): LinkAnalysis {
       ports.set(end.deviceId, record)
     }
   }
-  return { ports, poeUsed, styles }
+  return {
+    ports,
+    poeUsed,
+    styles,
+    linkVlans,
+    deviceVlans: new Map([...deviceSets].map(([id, s]) => [id, [...s].sort((a, b) => a - b)]))
+  }
 }
 
 const NO_PORTS: Record<string, PortInfo> = {}
+const NO_VLANS: number[] = []
 
 export function toFlowNodes(project: Project, analysis: LinkAnalysis, cache: FlowCache): DeviceFlowNode[] {
   const out: DeviceFlowNode[] = []
@@ -72,13 +91,14 @@ export function toFlowNodes(project: Project, analysis: LinkAnalysis, cache: Flo
     alive.add(device.id)
     const side = resolvePortSide(project, device, nodeSize)
     const ports = analysis.ports.get(device.id) ?? NO_PORTS
+    const vlans = analysis.deviceVlans.get(device.id) ?? NO_VLANS
     const poeUsage: PoeUsage | undefined = device.switch
       ? {
           usedW: Math.round((analysis.poeUsed.get(device.id) ?? 0) * 10) / 10,
           ...(device.switch.poeBudgetW !== undefined ? { budgetW: device.switch.poeBudgetW } : {})
         }
       : undefined
-    const key = `${side}|${JSON.stringify(ports)}|${JSON.stringify(poeUsage ?? null)}`
+    const key = `${side}|${JSON.stringify(ports)}|${JSON.stringify(poeUsage ?? null)}|${vlans.join(',')}`
     const hit = cache.nodes.get(device.id)
     if (hit && hit.device === device && hit.key === key) {
       out.push(hit.node)
@@ -88,7 +108,7 @@ export function toFlowNodes(project: Project, analysis: LinkAnalysis, cache: Flo
       id: device.id,
       type: device.switch ? 'switch' : 'device',
       position: device.position,
-      data: { device, template: getTemplate(project, device.templateId), side, ports, ...(poeUsage ? { poeUsage } : {}) }
+      data: { device, template: getTemplate(project, device.templateId), side, ports, vlans, ...(poeUsage ? { poeUsage } : {}) }
     }
     cache.nodes.set(device.id, { key, device, node })
     out.push(node)
@@ -116,7 +136,8 @@ export function toFlowEdges(project: Project, analysis: LinkAnalysis, cache: Flo
     const tag = cordTag(project, link)
     const label = (r: PortRef): string => findPort(project, r)?.port.label ?? r.portId
     const portLabels: [string, string] = [label(link.a), label(link.b)]
-    const key = `${JSON.stringify(style)}|${tag}|${portLabels.join('|')}`
+    const vlans = analysis.linkVlans.get(link.id) ?? NO_VLANS
+    const key = `${JSON.stringify(style)}|${tag}|${portLabels.join('|')}|${vlans.join(',')}`
     const hit = cache.edges.get(link.id)
     if (hit && hit.link === link && hit.key === key) {
       out.push(hit.edge)
@@ -129,7 +150,7 @@ export function toFlowEdges(project: Project, analysis: LinkAnalysis, cache: Flo
       sourceHandle: link.a.portId,
       target: link.b.deviceId,
       targetHandle: link.b.portId,
-      data: { link, style, tag, portLabels }
+      data: { link, style, tag, portLabels, vlans }
     }
     cache.edges.set(link.id, { key, link, edge })
     out.push(edge)

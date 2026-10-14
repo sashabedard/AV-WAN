@@ -3,6 +3,7 @@ import { Handle, Position, useUpdateNodeInternals, type NodeProps } from '@xyflo
 import type { Side } from '../model/types'
 import { POE_LABELS } from '../model/derive'
 import { projectStore, useProjectStore } from '../store/projectStore'
+import { useUiStore } from '../store/uiStore'
 import { DeviceIcon } from '../icons/Icon'
 import type { DeviceFlowNode } from './toFlow'
 import { usePortCompatibility } from './useConnectingFrom'
@@ -14,6 +15,7 @@ const POSITION: Record<Side, Position> = { top: Position.Top, bottom: Position.B
 function DeviceNodeImpl({ id, data, selected }: NodeProps<DeviceFlowNode>) {
   const { device, template, side, ports } = data
   const readOnly = useProjectStore((s) => s.readOnly)
+  const dim = useUiStore((s) => s.focusVlan !== null && !data.vlans.includes(s.focusVlan))
   const [renaming, setRenaming] = useState(false)
   const updateInternals = useUpdateNodeInternals()
   useEffect(() => {
@@ -25,7 +27,7 @@ function DeviceNodeImpl({ id, data, selected }: NodeProps<DeviceFlowNode>) {
   const line1 = device.model ?? template?.name ?? 'Appareil'
   const line2 = device.ip?.address ? `${device.ip.address} · ${device.ip.mode === 'static' ? 'FIXE' : 'DHCP'}` : 'IP non définie'
   return (
-    <div className={`dn${selected ? ' dn--selected' : ''}`} style={{ width, height: DEVICE_NODE_HEIGHT }} data-testid={`device-${device.name}`}>
+    <div className={`dn${selected ? ' dn--selected' : ''}${dim ? ' is-dim' : ''}`} style={{ width, height: DEVICE_NODE_HEIGHT }} data-testid={`device-${device.name}`}>
       {renaming ? (
         <InlineName
           value={device.name}

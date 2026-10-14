@@ -115,6 +115,8 @@ function CanvasInner() {
     },
     [place]
   )
+  const onNodeMouseEnter = useCallback((_e: ReactMouseEvent, node: DeviceFlowNode) => uiStore.getState().setHoverDevice(node.id), [])
+  const onNodeMouseLeave = useCallback(() => uiStore.getState().setHoverDevice(null), [])
   const closeSearch = useCallback(() => uiStore.getState().closeSearch(), [])
   const onDragOver = useCallback((e: DragEvent) => {
     if (!e.dataTransfer.types.includes(TEMPLATE_MIME)) return
@@ -144,6 +146,7 @@ function CanvasInner() {
       if (e.key !== 'Escape') return
       uiStore.getState().setPendingTemplate(null)
       uiStore.getState().setPendingSwitch(null)
+      uiStore.getState().setFocusVlan(null)
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
@@ -169,6 +172,8 @@ function CanvasInner() {
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onNodeDragStop={onNodeDragStop}
+        onNodeMouseEnter={onNodeMouseEnter}
+        onNodeMouseLeave={onNodeMouseLeave}
         onSelectionChange={onSelectionChange}
         onDelete={onDelete}
         onPaneClick={onPaneClick}

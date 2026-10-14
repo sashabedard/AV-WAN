@@ -69,3 +69,9 @@
 .legend__item { display: flex; align-items: center; gap: 8px; width: 100%; padding: 3px 4px; border: 0; border-radius: 3px; background: none; text-align: left; font: 12px/1.2 var(--font-mono); color: var(--ink-2); }
 .legend__swatch { flex: none; width: 18px; height: 5px; border-radius: 2px; }
 .legend__note { margin: 10px 0 0; font-size: 12px; color: var(--muted); }
+
+.cord--dim, .cord-tag--dim, .dn.is-dim, .sw.is-dim { opacity: 0.2; }
+.cord--hot .cord__main { filter: drop-shadow(0 0 2.5px var(--accent)); }
+button.legend__item { cursor: pointer; }
+button.legend__item:hover { background: var(--surface-2); }
+.legend__item[aria-pressed='true'] { background: var(--accent-bg); color: var(--accent); }
