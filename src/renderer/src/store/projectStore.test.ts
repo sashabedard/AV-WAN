@@ -23,6 +23,17 @@ describe('projectStore', () => {
     expect(s.getState().toast).toContain('Branchement impossible')
   })
 
+  it('change de numéro de document à chaque nouveau projet ou ouverture, pas à chaque modification', () => {
+    const s = store()
+    const first = s.getState().docId
+    s.getState().updateMeta({ title: 'x' })
+    expect(s.getState().docId).toBe(first)
+    s.getState().loadProject(sampleProject(), null)
+    expect(s.getState().docId).toBe(first + 1)
+    s.getState().newProject()
+    expect(s.getState().docId).toBe(first + 2)
+  })
+
   it('un déplacement de plusieurs appareils est une seule entrée d’historique', () => {
     const s = store()
     s.getState().moveDevices([

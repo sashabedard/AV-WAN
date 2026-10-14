@@ -4,17 +4,21 @@ import {
   BackgroundVariant,
   ConnectionLineType,
   ConnectionMode,
+  Controls,
+  MiniMap,
   ReactFlow,
   ReactFlowProvider,
   applyEdgeChanges,
   applyNodeChanges,
+  useNodesInitialized,
   useReactFlow,
   type Connection,
   type EdgeChange,
   type FinalConnectionState,
   type NodeChange,
   type OnNodeDrag,
-  type OnSelectionChangeParams
+  type OnSelectionChangeParams,
+  type ReactFlowInstance
 } from '@xyflow/react'
 import { projectStore, useProject, useProjectStore } from '../store/projectStore'
 import { uiStore, useUiStore } from '../store/uiStore'
@@ -24,6 +28,9 @@ import { analyzeLinks, createFlowCache, toFlowEdges, toFlowNodes, type CordFlowE
 import { GRID, mergeEdges, mergeNodes, snapPoint } from './canvasHelpers'
 import { clientPoint, connectionRefs, dropOnDevice, makeIsValidConnection, nodeIdAt } from './connect'
 import { useAltKey } from './useAltKey'
+import { FIT_OPTIONS, registerViewport } from './viewport'
+import { arrowDelta, nudgeMoves } from './keyboard'
+import { isTextInput } from '../app/routeEditCommand'
 import { DeviceNode } from './DeviceNode'
 import { CordEdge } from './CordEdge'
 import { SwitchNode } from './SwitchNode'
@@ -41,6 +48,11 @@ const SNAP_GRID: [number, number] = [GRID, GRID]
 const DELETE_KEYS = ['Backspace', 'Delete']
 const CONNECTION_LINE_STYLE = { stroke: 'var(--accent)', strokeWidth: 3 }
 const PRO_OPTIONS = { hideAttribution: true }
+const MULTI_SELECT_KEYS = ['Shift', 'Meta', 'Control']
+const MINIMAP_STYLE = { left: 46 }
+function minimapNodeClass(node: DeviceFlowNode): string {
+  return node.type === 'switch' ? 'mm-rack' : 'mm-device'
+}
 
 function CanvasInner() {
   const project = useProject()
@@ -61,7 +73,27 @@ function CanvasInner() {
   const search = useUiStore((s) => s.search)
   const wrapper = useRef<HTMLDivElement>(null)
   const alt = useAltKey()
-  const { screenToFlowPosition } = useReactFlow()
+  const { screenToFlowPosition, fitView } = useReactFlow()
+  const onInit = useCallback((instance: ReactFlowInstance<DeviceFlowNode, CordFlowEdge>) => {
+    registerFlowInstance(instance)
+    registerViewport(instance)
+  }, [])
+
+  // Cadrer le contenu à l'ouverture d'un fichier (report du plan 1), une seule fois par document.
+  const docId = useProjectStore((s) => s.docId)
+  const nodesReady = useNodesInitialized()
+  const fittedDoc = useRef<number | null>(null)
+  useEffect(() => {
+    if (fittedDoc.current === docId) return
+    const p = projectStore.getState().history.present
+    if (p.devices.length === 0 && p.zones.length === 0) {
+      fittedDoc.current = docId
+      return
+    }
+    if (!nodesReady) return
+    fittedDoc.current = docId
+    void fitView(FIT_OPTIONS)
+  }, [docId, nodesReady, fitView])
 
   const onNodesChange = useCallback((changes: NodeChange<DeviceFlowNode>[]) => setNodes((ns) => applyNodeChanges(changes, ns)), [])
   const onNodeDragStop: OnNodeDrag<DeviceFlowNode> = useCallback((_event, _node, dragged) => {
@@ -93,8 +125,8 @@ function CanvasInner() {
   }, [])
 
   const place = useCallback(
-    (templateId: string, client: { x: number; y: number }) => {
-      const position = snapPoint(screenToFlowPosition(client), project.settings.snapToGrid)
+    (templateId: string, client: { x: number; y: number }, alt = false) => {
+      const position = snapPoint(screenToFlowPosition(client), project.settings.snapToGrid && !alt)
       if (templateId === 'switch') uiStore.getState().setPendingSwitch({ position, screen: client })
       else projectStore.getState().addDevice(templateId, position)
     },
@@ -128,7 +160,7 @@ function CanvasInner() {
       const id = e.dataTransfer.getData(TEMPLATE_MIME)
       if (!id) return
       e.preventDefault()
-      place(id, { x: e.clientX, y: e.clientY })
+      place(id, { x: e.clientX, y: e.clientY }, e.altKey)
     },
     [place]
   )
@@ -137,16 +169,24 @@ function CanvasInner() {
       const id = uiStore.getState().pendingTemplateId
       if (!id) return
       uiStore.getState().setPendingTemplate(null)
-      place(id, { x: e.clientX, y: e.clientY })
+      place(id, { x: e.clientX, y: e.clientY }, e.altKey)
     },
     [place]
   )
   useEffect(() => {
     const onKey = (e: KeyboardEvent): void => {
-      if (e.key !== 'Escape') return
-      uiStore.getState().setPendingTemplate(null)
-      uiStore.getState().setPendingSwitch(null)
-      uiStore.getState().setFocusVlan(null)
+      if (e.key === 'Escape') {
+        uiStore.getState().setPendingTemplate(null)
+        uiStore.getState().setPendingSwitch(null)
+        uiStore.getState().setFocusVlan(null)
+        return
+      }
+      const delta = arrowDelta(e.key, e.shiftKey)
+      if (!delta || e.metaKey || e.ctrlKey || e.altKey || isTextInput(document.activeElement)) return
+      const s = projectStore.getState()
+      if (s.readOnly || s.selection.deviceIds.length === 0) return
+      e.preventDefault()
+      s.moveDevices(nudgeMoves(s.history.present, s.selection.deviceIds, delta))
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
@@ -156,7 +196,9 @@ function CanvasInner() {
     <div ref={wrapper} className={`canvas${pendingTemplate ? ' canvas--placing' : ''}${project.settings.colorMode === 'port' ? ' canvas--port' : ''}`} onDoubleClick={onDoubleClick}>
       <ReactFlow<DeviceFlowNode, CordFlowEdge>
         nodes={nodes}
-        onInit={registerFlowInstance}
+        onInit={onInit}
+        multiSelectionKeyCode={MULTI_SELECT_KEYS}
+        disableKeyboardA11y
         onPaneMouseMove={onPaneMouseMove}
         nodeTypes={nodeTypes}
         edges={edges}
@@ -190,6 +232,8 @@ function CanvasInner() {
       >
         <Background id="minor" className="bg-minor" variant={BackgroundVariant.Lines} gap={GRID} lineWidth={0.5} />
         <Background id="major" className="bg-major" variant={BackgroundVariant.Lines} gap={GRID * 5} lineWidth={0.7} />
+        <Controls position="bottom-left" showInteractive={false} fitViewOptions={FIT_OPTIONS} />
+        <MiniMap position="bottom-left" style={MINIMAP_STYLE} pannable zoomable nodeClassName={minimapNodeClass} ariaLabel="Minicarte" />
       </ReactFlow>
       <Legend />
       {pendingSwitch && (

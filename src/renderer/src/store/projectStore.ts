@@ -20,6 +20,7 @@ export interface ProjectState {
   filePath: string | null
   savedRef: Project | null
   readOnly: boolean
+  docId: number
   selection: Selection
   toast: string | null
   newProject(): void
@@ -82,15 +83,16 @@ export function createProjectStore(initial: Project = createProject()): StoreApi
       filePath: null,
       savedRef: initial,
       readOnly: false,
+      docId: 0,
       selection: EMPTY_SELECTION,
       toast: null,
 
       newProject: () => {
         const p = createProject()
-        set({ history: initHistory(p), filePath: null, savedRef: p, readOnly: false, selection: EMPTY_SELECTION })
+        set({ history: initHistory(p), filePath: null, savedRef: p, readOnly: false, selection: EMPTY_SELECTION, docId: get().docId + 1 })
       },
       loadProject: (project, filePath, opts) =>
-        set({ history: initHistory(project), filePath, savedRef: project, readOnly: opts?.readOnly ?? false, selection: EMPTY_SELECTION }),
+        set({ history: initHistory(project), filePath, savedRef: project, readOnly: opts?.readOnly ?? false, selection: EMPTY_SELECTION, docId: get().docId + 1 }),
       markSaved: (filePath, saved) => set({ filePath, savedRef: saved ?? get().history.present }),
       apply,
 

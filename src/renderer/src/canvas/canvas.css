@@ -79,3 +79,17 @@ button.legend__item:hover { background: var(--surface-2); }
 .cord__bolt { fill: var(--led-poe); stroke: var(--paper); stroke-width: 0.8; stroke-linejoin: round; }
 .cord__more { fill: var(--muted); font: 600 8.5px var(--font-mono); }
 .cord__waves { fill: none; stroke-width: 1.6; stroke-linecap: round; }
+
+.react-flow {
+  --xy-minimap-background-color: var(--surface);
+  --xy-minimap-mask-background-color: color-mix(in srgb, var(--paper) 72%, transparent);
+  --xy-minimap-node-background-color: var(--muted);
+  --xy-controls-button-background-color: var(--surface);
+  --xy-controls-button-background-color-hover: var(--surface-2);
+  --xy-controls-button-color: var(--ink-2);
+  --xy-controls-button-color-hover: var(--accent);
+  --xy-controls-button-border-color: var(--line);
+}
+.react-flow__minimap { border: 1px solid var(--line); border-radius: 4px; overflow: hidden; }
+.react-flow__minimap-node.mm-rack { fill: var(--panel-top); }
+.react-flow__minimap-node.mm-device { fill: var(--muted); }

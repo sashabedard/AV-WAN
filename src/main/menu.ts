@@ -55,6 +55,10 @@ export function buildMenu(): void {
     {
       label: 'Affichage',
       submenu: [
+        { label: 'Cadrer tout', accelerator: 'CmdOrCtrl+0', click: () => send('fitView') },
+        { label: 'Zoom avant', accelerator: 'CmdOrCtrl+Plus', click: () => send('zoomIn') },
+        { label: 'Zoom arrière', accelerator: 'CmdOrCtrl+-', click: () => send('zoomOut') },
+        { type: 'separator' },
         { role: 'reload', label: 'Recharger' },
         { role: 'toggleDevTools', label: 'Outils de développement' },
         { type: 'separator' },
