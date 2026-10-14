@@ -24,7 +24,7 @@ export type DeviceNodeData = {
   poeUsage?: PoeUsage
 }
 export type DeviceFlowNode = Node<DeviceNodeData, 'device' | 'switch'>
-export type CordEdgeData = { link: Link; style: CordStyle; tag: string }
+export type CordEdgeData = { link: Link; style: CordStyle; tag: string; portLabels: [string, string] }
 export type CordFlowEdge = Edge<CordEdgeData, 'cord'>
 
 export interface FlowCache {
@@ -114,7 +114,9 @@ export function toFlowEdges(project: Project, analysis: LinkAnalysis, cache: Flo
     if (!style) continue
     alive.add(link.id)
     const tag = cordTag(project, link)
-    const key = `${JSON.stringify(style)}|${tag}`
+    const label = (r: PortRef): string => findPort(project, r)?.port.label ?? r.portId
+    const portLabels: [string, string] = [label(link.a), label(link.b)]
+    const key = `${JSON.stringify(style)}|${tag}|${portLabels.join('|')}`
     const hit = cache.edges.get(link.id)
     if (hit && hit.link === link && hit.key === key) {
       out.push(hit.edge)
@@ -127,7 +129,7 @@ export function toFlowEdges(project: Project, analysis: LinkAnalysis, cache: Flo
       sourceHandle: link.a.portId,
       target: link.b.deviceId,
       targetHandle: link.b.portId,
-      data: { link, style, tag }
+      data: { link, style, tag, portLabels }
     }
     cache.edges.set(link.id, { key, link, edge })
     out.push(edge)

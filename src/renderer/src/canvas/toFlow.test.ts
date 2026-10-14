@@ -54,4 +54,10 @@ describe('toFlowEdges', () => {
     expect(edge!.data!.style.color).toBe('#2563C9')
     expect(cordTag(p, p.links[0]!)).toBe('C-001 · SW-1:1 ⇄ CAM-1:ETH · PoE+')
   })
+
+  it('donne l’étiquette de port de chaque bout', () => {
+    const p = sampleProject()
+    const [edge] = toFlowEdges(p, analyzeLinks(p, 'dark'), createFlowCache())
+    expect(edge!.data!.portLabels).toEqual(['1', 'ETH'])
+  })
 })

@@ -36,6 +36,7 @@ export interface ProjectState {
   setPortState(deviceId: string, portId: string, patch: Partial<PortState>): void
   updateSwitchSpec(deviceId: string, spec: SwitchSpec): void
   updateMeta(patch: MetaPatch): void
+  setColorMode(mode: Project['settings']['colorMode']): void
   setSelection(selection: Selection): void
   undo(): void
   redo(): void
@@ -54,6 +55,14 @@ export function linksOnRemovedPorts(project: Project, deviceId: string, spec: Sw
   const keep = new Set(buildSwitchPorts(spec).map((p) => p.id))
   const gone = (r: PortRef): boolean => r.deviceId === deviceId && !keep.has(r.portId)
   return project.links.filter((l) => gone(l.a) || gone(l.b))
+}
+
+// ⌘Z ne revient pas sur l'affichage : on garde le mode de couleur courant après une annulation.
+export function keepColorMode(before: History<Project>, after: History<Project>): History<Project> {
+  if (after === before) return after
+  const mode = before.present.settings.colorMode
+  if (after.present.settings.colorMode === mode) return after
+  return { ...after, present: { ...after.present, settings: { ...after.present.settings, colorMode: mode } } }
 }
 
 export function createProjectStore(initial: Project = createProject()): StoreApi<ProjectState> {
@@ -165,9 +174,16 @@ export function createProjectStore(initial: Project = createProject()): StoreApi
         }),
 
       updateMeta: (patch) => apply((p) => ({ ...p, meta: { ...p.meta, ...patch } })),
+      // Préférence d'affichage enregistrée dans le fichier, mais jamais une entrée d'historique.
+      setColorMode: (mode) => {
+        const { history } = get()
+        const p = history.present
+        if (p.settings.colorMode === mode) return
+        set({ history: { ...history, present: { ...p, settings: { ...p.settings, colorMode: mode } } } })
+      },
       setSelection: (selection) => set({ selection }),
-      undo: () => set({ history: historyUndo(get().history) }),
-      redo: () => set({ history: historyRedo(get().history) }),
+      undo: () => set({ history: keepColorMode(get().history, historyUndo(get().history)) }),
+      redo: () => set({ history: keepColorMode(get().history, historyRedo(get().history)) }),
       showToast: (message) => set({ toast: message }),
       clearToast: () => set({ toast: null })
     }

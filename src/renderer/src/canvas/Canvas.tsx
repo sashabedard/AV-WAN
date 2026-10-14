@@ -27,6 +27,7 @@ import { useAltKey } from './useAltKey'
 import { DeviceNode } from './DeviceNode'
 import { CordEdge } from './CordEdge'
 import { SwitchNode } from './SwitchNode'
+import { Legend } from './Legend'
 import { QuickSearch } from '../panels/QuickSearch'
 import { canvasPointer, centreOf } from './pointer'
 import { SwitchConfigurator } from '../panels/SwitchConfigurator'
@@ -149,7 +150,7 @@ function CanvasInner() {
   }, [])
 
   return (
-    <div ref={wrapper} className={`canvas${pendingTemplate ? ' canvas--placing' : ''}`} onDoubleClick={onDoubleClick}>
+    <div ref={wrapper} className={`canvas${pendingTemplate ? ' canvas--placing' : ''}${project.settings.colorMode === 'port' ? ' canvas--port' : ''}`} onDoubleClick={onDoubleClick}>
       <ReactFlow<DeviceFlowNode, CordFlowEdge>
         nodes={nodes}
         onInit={registerFlowInstance}
@@ -185,6 +186,7 @@ function CanvasInner() {
         <Background id="minor" className="bg-minor" variant={BackgroundVariant.Lines} gap={GRID} lineWidth={0.5} />
         <Background id="major" className="bg-major" variant={BackgroundVariant.Lines} gap={GRID * 5} lineWidth={0.7} />
       </ReactFlow>
+      <Legend />
       {pendingSwitch && (
         <div
           className="popover"

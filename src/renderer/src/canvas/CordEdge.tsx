@@ -2,7 +2,7 @@ import { memo, useState } from 'react'
 import { EdgeLabelRenderer, Position, getSmoothStepPath, getStraightPath, type EdgeProps } from '@xyflow/react'
 import type { Side } from '../model/types'
 import type { CordFlowEdge } from './toFlow'
-import { bandRects, bootRect } from './cordGeometry'
+import { bandRects, bootRect, outward } from './cordGeometry'
 
 const RADIUS = 9
 const STUB = 14
@@ -23,7 +23,7 @@ function sideOf(position: Position): Side {
 function CordEdgeImpl({ sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition, data, selected }: EdgeProps<CordFlowEdge>) {
   const [hover, setHover] = useState(false)
   if (!data) return null
-  const { style, link, tag } = data
+  const { style, link, tag, portLabels } = data
   const [path, labelX, labelY] = style.straight
     ? getStraightPath({ sourceX, sourceY, targetX, targetY })
     : getSmoothStepPath({
@@ -41,7 +41,7 @@ function CordEdgeImpl({ sourceX, sourceY, targetX, targetY, sourcePosition, targ
     [sourceX, sourceY, sideOf(sourcePosition)],
     [targetX, targetY, sideOf(targetPosition)]
   ]
-  const showTag = selected || hover
+  const showTag = selected || hover || style.alwaysTag
   return (
     <>
       <g className={`cord${selected ? ' cord--selected' : ''}`} data-testid={`cord-${link.cableId}`}>
@@ -70,6 +70,19 @@ function CordEdgeImpl({ sourceX, sourceY, targetX, targetY, sourcePosition, targ
           >
             {showTag ? `${tag}${style.extraBands > 0 ? ` · +${style.extraBands} VLAN` : ''}` : style.badge}
           </div>
+          {style.alwaysTag &&
+            ends.map(([x, y, side], i) => {
+              const d = outward(side)
+              return (
+                <div
+                  key={`end-${i}`}
+                  className="cord-end"
+                  style={{ transform: `translate(-50%, -50%) translate(${x + d.x * 20}px, ${y + d.y * 20}px)` }}
+                >
+                  {portLabels[i]}
+                </div>
+              )
+            })}
         </EdgeLabelRenderer>
       )}
     </>

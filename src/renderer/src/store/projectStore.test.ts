@@ -109,4 +109,29 @@ describe('projectStore', () => {
     expect(s.getState().history.present.meta.title).toBe('Installation Lumen')
     expect(s.getState().toast).toContain('lecture seule')
   })
+
+  it('changer le mode de couleur ne crée aucune entrée d’historique, et ⌘Z ne le défait pas', () => {
+    const s = store()
+    s.getState().markSaved('/tmp/a.avwan')
+    s.getState().updateMeta({ title: 'Modifié' })
+    s.getState().setColorMode('type')
+    expect(s.getState().history.past).toHaveLength(1)
+    expect(isDirty(s.getState())).toBe(true)
+    s.getState().undo()
+    expect(s.getState().history.present.meta.title).toBe('Installation Lumen')
+    expect(s.getState().history.present.settings.colorMode).toBe('type')
+    s.getState().redo()
+    expect(s.getState().history.present.settings.colorMode).toBe('type')
+    const before = s.getState().history
+    s.getState().setColorMode('type')
+    expect(s.getState().history).toBe(before)
+  })
+
+  it('undo sans changement de mode garde l’instantané d’origine (l’état enregistré redevient propre)', () => {
+    const s = store()
+    s.getState().markSaved('/tmp/a.avwan')
+    s.getState().updateMeta({ title: 'Autre' })
+    s.getState().undo()
+    expect(isDirty(s.getState())).toBe(false)
+  })
 })
