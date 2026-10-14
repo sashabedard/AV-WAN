@@ -77,7 +77,7 @@ export function defaultMedium(c: Connector): Medium {
   }
 }
 
-// Ne réutilise jamais un numéro supprimé : l'étiquette physique existe peut-être déjà.
+// Prochain numéro après le plus élevé : ne comble pas les trous (un numéro supprimé au milieu ne revient pas). Le numéro du dernier câble, s'il est supprimé, peut être réattribué.
 export function nextCableId(project: Project): string {
   const prefix = project.settings.cableIdPrefix
   let max = 0

@@ -41,11 +41,13 @@ describe('defaultMedium, nextCableId, nextDeviceName', () => {
     expect(defaultMedium('dmx')).toBe('dmx')
   })
 
-  it("ne réutilise jamais un numéro de câble (les étiquettes sont peut-être déjà imprimées)", () => {
+  it('ne comble pas les trous : continue après le plus grand numéro existant', () => {
     const p = sampleProject()
     p.links.push({ ...p.links[0]!, id: 'l9', cableId: 'C-007' })
     expect(nextCableId(p)).toBe('C-008')
     expect(nextCableId({ ...p, links: [] })).toBe('C-001')
+    // Limite documentée : C-002 est un trou et n'est pas réutilisé.
+    expect(nextCableId({ ...p, links: [{ ...p.links[0]!, id: 'a', cableId: 'C-001' }, { ...p.links[0]!, id: 'b', cableId: 'C-003' }] })).toBe('C-004')
   })
 
   it('trouve le premier nom libre', () => {
