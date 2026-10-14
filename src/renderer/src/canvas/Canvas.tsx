@@ -4,8 +4,10 @@ import {
   BackgroundVariant,
   ReactFlow,
   ReactFlowProvider,
+  applyEdgeChanges,
   applyNodeChanges,
   useReactFlow,
+  type EdgeChange,
   type NodeChange,
   type OnNodeDrag,
   type OnSelectionChangeParams
@@ -14,13 +16,15 @@ import { projectStore, useProject, useProjectStore } from '../store/projectStore
 import { uiStore, useUiStore } from '../store/uiStore'
 import { useThemeMode } from '../theme/useThemeMode'
 import { TEMPLATE_MIME } from '../panels/Palette'
-import { analyzeLinks, createFlowCache, toFlowNodes, type CordFlowEdge, type DeviceFlowNode } from './toFlow'
-import { GRID, mergeNodes, snapPoint } from './canvasHelpers'
+import { analyzeLinks, createFlowCache, toFlowEdges, toFlowNodes, type CordFlowEdge, type DeviceFlowNode } from './toFlow'
+import { GRID, mergeEdges, mergeNodes, snapPoint } from './canvasHelpers'
 import { useAltKey } from './useAltKey'
 import { DeviceNode } from './DeviceNode'
+import { CordEdge } from './CordEdge'
 import './canvas.css'
 
 const nodeTypes = { device: DeviceNode, switch: DeviceNode }
+const edgeTypes = { cord: CordEdge }
 const SNAP_GRID: [number, number] = [GRID, GRID]
 const DELETE_KEYS = ['Backspace', 'Delete']
 const PRO_OPTIONS = { hideAttribution: true }
@@ -34,6 +38,10 @@ function CanvasInner() {
   const derivedNodes = useMemo(() => toFlowNodes(project, analysis, cache.current), [project, analysis])
   const [nodes, setNodes] = useState(derivedNodes)
   useEffect(() => setNodes((prev) => mergeNodes(derivedNodes, prev)), [derivedNodes])
+  const derivedEdges = useMemo(() => toFlowEdges(project, analysis, cache.current), [project, analysis])
+  const [edges, setEdges] = useState(derivedEdges)
+  useEffect(() => setEdges((prev) => mergeEdges(derivedEdges, prev)), [derivedEdges])
+  const onEdgesChange = useCallback((changes: EdgeChange<CordFlowEdge>[]) => setEdges((es) => applyEdgeChanges(changes, es)), [])
 
   const pendingTemplate = useUiStore((s) => s.pendingTemplateId)
   const alt = useAltKey()
@@ -95,7 +103,10 @@ function CanvasInner() {
       <ReactFlow<DeviceFlowNode, CordFlowEdge>
         nodes={nodes}
         nodeTypes={nodeTypes}
+        edges={edges}
+        edgeTypes={edgeTypes}
         onNodesChange={onNodesChange}
+        onEdgesChange={onEdgesChange}
         onNodeDragStop={onNodeDragStop}
         onSelectionChange={onSelectionChange}
         onDelete={onDelete}
