@@ -24,17 +24,44 @@ test('vue épinglée : cadre figé, sélection, recentrage, garde-fous, durée d
     await expect(pinned).toBeVisible()
     await expect(pinnedCam).toBeVisible()
 
-    // 2. Un câble tiré d'un port libre de SW-1 et lâché sur la vignette n'est pas créé.
+    // 2. Un câble tiré d'un port libre de SW-1 et lâché sur un port du canvas principal caché sous la vignette n'est pas créé.
     const linksBefore = (await project()).links.length
     const freePort = main.locator('.react-flow__node[data-id="ex-sw1"] .react-flow__handle[data-handleid="24"]')
+    const hiddenPort = main.locator('.react-flow__node[data-id="ex-sw2"] .react-flow__handle[data-handleid="7"]') // libre dans le projet exemple
     await expect(freePort).toBeVisible()
+    await expect(hiddenPort).toBeVisible()
+    // Déplacer la vignette par sa barre pour que le port de SW-2 se retrouve sous son corps.
+    const bodyCenter = await centerOf(pinned.locator('.pinned__body'))
+    const target = await centerOf(hiddenPort)
+    const bar = await centerOf(pinned.locator('.pinned__bar'))
+    const move = { x: target.x - bodyCenter.x, y: target.y - bodyCenter.y }
+    const dragBar = async (dx: number, dy: number): Promise<void> => {
+      await page.mouse.move(bar.x, bar.y)
+      await page.mouse.down()
+      await page.mouse.move(bar.x + dx, bar.y + dy, { steps: 10 })
+      await page.mouse.up()
+    }
+    await dragBar(move.x, move.y)
+    const [body, port] = await Promise.all([pinned.locator('.pinned__body').boundingBox(), hiddenPort.boundingBox()])
+    if (!body || !port) throw new Error('Corps de la vignette ou port introuvable')
+    expect(port.x).toBeGreaterThanOrEqual(body.x)
+    expect(port.y).toBeGreaterThanOrEqual(body.y)
+    expect(port.x + port.width).toBeLessThanOrEqual(body.x + body.width)
+    expect(port.y + port.height).toBeLessThanOrEqual(body.y + body.height)
     const from = await centerOf(freePort)
-    const to = await centerOf(pinned.locator('.pinned__body'))
+    const to = await centerOf(hiddenPort)
     await page.mouse.move(from.x, from.y)
     await page.mouse.down()
     await page.mouse.move(to.x, to.y, { steps: 15 })
+    await expect(page.locator('.canvas .react-flow__connectionline')).toHaveCount(1) // le glisser a vraiment commencé
     await page.mouse.up()
     expect((await project()).links).toHaveLength(linksBefore)
+    // Remettre la vignette à sa place (haut à droite) pour la suite.
+    const barNow = await centerOf(pinned.locator('.pinned__bar'))
+    await page.mouse.move(barNow.x, barNow.y)
+    await page.mouse.down()
+    await page.mouse.move(barNow.x - move.x, barNow.y - move.y, { steps: 10 })
+    await page.mouse.up()
 
     // 3. Zoomer la vue principale ne bouge pas la vignette.
     const pinnedBefore = await transformOf(page, '.pinned .react-flow__viewport')
