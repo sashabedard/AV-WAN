@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
 import type { SwitchSpec } from '../model/types'
 import { POE_CHOICES, SWITCH_PORT_COUNTS, defaultPoeBudget, switchSummary } from '../catalog/switch'
 import { Segmented } from './Segmented'
@@ -28,6 +28,11 @@ export function SwitchConfigurator({ initial, submitLabel, onSubmit, onCancel }:
     initial.poeBudgetW !== undefined && initial.poeBudgetW !== defaultPoeBudget(initial.portCount, initial.poe)
   )
   const [spec, setSpec] = useState<SwitchSpec>(() => withBudget(initial, touched))
+  const formRef = useRef<HTMLFormElement>(null)
+  // Focus sur la valeur choisie : Échap et les flèches fonctionnent sans clic préalable.
+  useEffect(() => {
+    formRef.current?.querySelector<HTMLElement>('[aria-pressed="true"]')?.focus()
+  }, [])
   const update = (patch: Partial<SwitchSpec>): void => setSpec((s) => withBudget({ ...s, ...patch }, touched))
   const submit = (e: FormEvent): void => {
     e.preventDefault()
@@ -35,6 +40,7 @@ export function SwitchConfigurator({ initial, submitLabel, onSubmit, onCancel }:
   }
   return (
     <form
+      ref={formRef}
       className="cfg"
       role="dialog"
       aria-label="Configurer le switch"

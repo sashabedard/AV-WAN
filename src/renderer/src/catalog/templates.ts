@@ -1,6 +1,6 @@
 import type { DeviceTemplate, IconRef } from '../model/types'
 import type { BuiltinIconName } from './iconNames'
-import { range, rj45, sfp, sfpPlus, simple, wifi } from './ports'
+import { patchPanelPorts, range, rj45, sfp, sfpPlus, simple, wifi } from './ports'
 import { DEFAULT_SWITCH_SPEC } from './switch'
 
 const ic = (name: BuiltinIconName): IconRef => ({ kind: 'builtin', name })
@@ -13,6 +13,7 @@ export const TEMPLATES: readonly DeviceTemplate[] = [
   { id: 'ptp-bridge', category: 'reseau', name: 'Pont sans fil point à point', code: 'PTP', icon: ic('ptp'), ports: [rj45('ETH', { poeDrawW: 11 }), { ...wifi(), id: 'AIR', label: 'Liaison radio' }] },
   { id: 'poe-injector', category: 'reseau', name: 'Injecteur PoE', code: 'INJ', icon: ic('injector'), ports: [rj45('IN', { label: 'DATA IN' }), rj45('OUT', { label: 'PoE OUT', poeOut: 'at' })] },
   { id: 'media-converter', category: 'reseau', name: 'Convertisseur de média', code: 'MC', icon: ic('converter'), ports: [rj45('ETH'), sfp('SFP')] },
+  { id: 'patch-panel-24', category: 'reseau', name: 'Panneau de brassage 24', code: 'PP', icon: ic('patch-panel'), ports: patchPanelPorts(24) },
   // Ordinateurs
   { id: 'laptop', category: 'ordinateur', name: 'Portable', code: 'PC', icon: ic('laptop'), ports: [rj45('ETH', { label: 'ETH (adapt.)' }), wifi(), simple('usb', 'USB1', 'USB-C')], defaults: { vlanId: 20 } },
   { id: 'media-pc', category: 'ordinateur', name: 'PC média (TouchDesigner, Resolume)', code: 'PC', icon: ic('desktop'), ports: [rj45('ETH1'), rj45('ETH2'), simple('usb', 'USB1'), simple('hdmi', 'HDMI1')], defaults: { vlanId: 40 } },
@@ -56,3 +57,6 @@ export const TEMPLATES: readonly DeviceTemplate[] = [
 ]
 
 export const TEMPLATES_BY_ID: ReadonlyMap<string, DeviceTemplate> = new Map(TEMPLATES.map((t) => [t.id, t]))
+
+// Gabarits dessinés comme une façade de rack (en plus des switchs, reconnus à leur spec).
+export const RACK_TEMPLATE_IDS: ReadonlySet<string> = new Set(['patch-panel-24'])

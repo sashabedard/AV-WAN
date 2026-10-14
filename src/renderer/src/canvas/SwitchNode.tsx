@@ -1,23 +1,32 @@
-import { memo, useEffect, useMemo } from 'react'
+import { memo, useEffect, useMemo, useState } from 'react'
 import { Handle, Position, useUpdateNodeInternals, type NodeProps } from '@xyflow/react'
 import type { DeviceFlowNode } from './toFlow'
-import { switchFacade } from './switchFacade'
+import { TAPE_X, facadeLabels, switchFacade } from './switchFacade'
 import { switchSummary } from '../catalog/switch'
+import { useEffectiveFocus } from './useEffectiveFocus'
 import { usePortCompatibility } from './useConnectingFrom'
+import { projectStore, useProjectStore } from '../store/projectStore'
+import { InlineName } from './InlineName'
 
 function SwitchNodeImpl({ id, data, selected }: NodeProps<DeviceFlowNode>) {
-  const { device, ports, poeUsage } = data
+  const { device, template, ports, poeUsage } = data
+  const readOnly = useProjectStore((s) => s.readOnly)
+  const focus = useEffectiveFocus()
+  const dim = focus !== null && !data.vlans.includes(focus)
+  const [renaming, setRenaming] = useState(false)
   const facade = useMemo(() => switchFacade(device.ports), [device.ports])
   const compat = usePortCompatibility(id)
   const updateInternals = useUpdateNodeInternals()
   useEffect(() => {
     updateInternals(id)
   }, [id, facade, updateInternals])
-  const title = `${device.name} · ${device.switch ? switchSummary(device.switch) : 'Switch'}`
+  const summary = device.switch ? switchSummary(device.switch) : (template?.name ?? '')
+  const labels = facadeLabels(device.name, summary, facade.width, poeUsage?.budgetW !== undefined ? { usedW: poeUsage.usedW, budgetW: poeUsage.budgetW } : undefined)
+  const fullTitle = summary ? `${device.name} · ${summary}` : device.name
   const gradientId = `swg-${id}`
   const { width, height } = facade
   return (
-    <div className={`sw${selected ? ' sw--selected' : ''}`} style={{ width, height }} data-testid={`device-${device.name}`}>
+    <div className={`sw${selected ? ' sw--selected' : ''}${dim ? ' is-dim' : ''}`} style={{ width, height }} data-testid={`device-${device.name}`}>
       <svg className="sw__svg" width={width} height={height} aria-hidden="true">
         <defs>
           <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
@@ -37,14 +46,14 @@ function SwitchNodeImpl({ id, data, selected }: NodeProps<DeviceFlowNode>) {
           <circle key={i} className="sw__screw" cx={cx} cy={cy} r={2} />
         ))}
         <g transform={`rotate(-0.6 ${width / 2} 13)`}>
-          <rect className="sw__tape" x={20} y={6} width={title.length * 5.8 + 12} height={14} rx={1} />
-          <text className="sw__tape-text" x={26} y={16.5}>
-            {title}
+          <rect className="sw__tape" x={TAPE_X} y={6} width={labels.tapeWidth} height={14} rx={1} />
+          <text className="sw__tape-text" x={TAPE_X + 6} y={16.5}>
+            {labels.tape}
           </text>
         </g>
-        {poeUsage?.budgetW !== undefined && (
+        {labels.poe && (
           <text className="sw__poe" x={width - 22} y={17} textAnchor="end">
-            PoE {poeUsage.usedW} / {poeUsage.budgetW} W
+            {labels.poe}
           </text>
         )}
         {facade.ports.map((p) => {
@@ -77,6 +86,26 @@ function SwitchNodeImpl({ id, data, selected }: NodeProps<DeviceFlowNode>) {
           )
         })}
       </svg>
+      {renaming ? (
+        <InlineName
+          value={device.name}
+          label="Nom de l’appareil"
+          className="inline-name--rack"
+          onCommit={(name) => projectStore.getState().updateDevice(id, { name })}
+          onDone={() => setRenaming(false)}
+        />
+      ) : (
+        <div
+          className="sw__tape-hit"
+          style={{ width: labels.tapeWidth }}
+          title={readOnly ? fullTitle : `${fullTitle} · double-clic pour renommer`}
+          onDoubleClick={(e) => {
+            if (readOnly) return
+            e.stopPropagation()
+            setRenaming(true)
+          }}
+        />
+      )}
       {facade.ports.map((p) => {
         const state = compat(p.id)
         return (

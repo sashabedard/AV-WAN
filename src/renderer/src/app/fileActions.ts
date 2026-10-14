@@ -51,6 +51,16 @@ export async function openProjectAction(): Promise<void> {
   }
 }
 
+export async function openRecentAction(path: string): Promise<void> {
+  if (!confirmDiscard()) return
+  try {
+    const file = await window.avwan.recent.open(path)
+    await loadFromText(file.path, file.text)
+  } catch (e) {
+    projectStore.getState().showToast(`Ouverture impossible : ${(e as Error).message}`)
+  }
+}
+
 export async function saveProjectAsAction(): Promise<void> {
   const s = projectStore.getState()
   const snapshot = s.history.present

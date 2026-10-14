@@ -23,3 +23,11 @@ export function range(prefix: string, from: number, to: number): string[] {
   for (let i = from; i <= to; i++) out.push(`${prefix}${i}`)
   return out
 }
+
+// Panneau de brassage : avant (A1…An, rangée du haut) et arrière (R1…Rn, rangée du bas).
+export function patchPanelPorts(count: number): PortDef[] {
+  const out: PortDef[] = []
+  for (let i = 1; i <= count; i++) out.push({ id: `A${i}`, label: `A${i}`, connector: 'rj45', speedMbps: 1000, row: 'top' })
+  for (let i = 1; i <= count; i++) out.push({ id: `R${i}`, label: `R${i}`, connector: 'rj45', speedMbps: 1000, row: 'bottom' })
+  return out
+}

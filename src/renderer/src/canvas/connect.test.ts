@@ -1,6 +1,6 @@
 // src/renderer/src/canvas/connect.test.ts
 import { describe, expect, it } from 'vitest'
-import { clientPoint, connectionRefs, dropOnDevice, makeIsValidConnection, nodeIdAt } from './connect'
+import { clientPoint, connectionRefs, dropOnDevice, makeIsValidConnection, nodeIdAt, reconnectEnd, dropReconnectOnDevice } from './connect'
 import { sampleProject } from '../model/__fixtures__/sample'
 import { createDevice } from '../model/project'
 import type { Project } from '../model/types'
@@ -42,5 +42,41 @@ describe('connect', () => {
     expect(nodeIdAt(doc, { x: 1, y: 2 })).toBe('sw1')
     expect(clientPoint({ clientX: 3, clientY: 4 } as MouseEvent)).toEqual({ x: 3, y: 4 })
     expect(clientPoint({ changedTouches: [{ clientX: 5, clientY: 6 }] } as unknown as TouchEvent)).toEqual({ x: 5, y: 6 })
+  })
+})
+
+describe('reconnectEnd', () => {
+  const link = { a: { deviceId: 'sw1', portId: '1' }, b: { deviceId: 'cam1', portId: 'ETH' } }
+
+  it('reconnaît le bout déplacé, quel que soit le sens de la connexion', () => {
+    expect(reconnectEnd(link, { source: 'sw1', sourceHandle: '1', target: 'cam2', targetHandle: 'ETH' })).toEqual({ end: 'b', to: { deviceId: 'cam2', portId: 'ETH' } })
+    expect(reconnectEnd(link, { source: 'sw1', sourceHandle: '3', target: 'cam1', targetHandle: 'ETH' })).toEqual({ end: 'a', to: { deviceId: 'sw1', portId: '3' } })
+    expect(reconnectEnd(link, { source: 'cam1', sourceHandle: 'ETH', target: 'sw1', targetHandle: '5' })).toEqual({ end: 'a', to: { deviceId: 'sw1', portId: '5' } })
+    expect(reconnectEnd(link, { source: 'sw2', sourceHandle: '4', target: 'sw1', targetHandle: '1' })).toEqual({ end: 'b', to: { deviceId: 'sw2', portId: '4' } })
+  })
+
+  it('ne rend rien si rien n’a bougé ou si aucun bout ne correspond', () => {
+    expect(reconnectEnd(link, { source: 'sw1', sourceHandle: '1', target: 'cam1', targetHandle: 'ETH' })).toBeNull()
+    expect(reconnectEnd(link, { source: 'x', sourceHandle: '1', target: 'y', targetHandle: '2' })).toBeNull()
+  })
+
+  it('valide un rebranchement en ignorant le câble déplacé', () => {
+    const p = sampleProject()
+    const valid = makeIsValidConnection(() => p, () => 'l1')
+    expect(valid({ source: 'sw1', sourceHandle: '2', target: 'cam1', targetHandle: 'ETH' })).toBe(true)
+    expect(valid({ source: 'sw1', sourceHandle: '1', target: 'cam1', targetHandle: 'HDMI' })).toBe(false)
+  })
+})
+
+describe('dropReconnectOnDevice', () => {
+  const fixed = { deviceId: 'cam1', portId: 'ETH' }
+
+  it('choisit un port libre compatible en écartant le câble déplacé', () => {
+    expect(dropReconnectOnDevice(sampleProject(), 'l1', fixed, 'sw1')).toEqual({ ok: true, end: 'a', to: { deviceId: 'sw1', portId: '1' } })
+  })
+
+  it('refuse le même appareil sans message, et un câble inconnu', () => {
+    expect(dropReconnectOnDevice(sampleProject(), 'l1', fixed, 'cam1')).toEqual({ ok: false, message: '' })
+    expect(dropReconnectOnDevice(sampleProject(), 'inconnu', fixed, 'sw1')).toEqual({ ok: false, message: '' })
   })
 })

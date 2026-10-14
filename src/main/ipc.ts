@@ -1,6 +1,9 @@
-import { BrowserWindow, dialog, ipcMain, type OpenDialogOptions, type SaveDialogOptions } from 'electron'
+import { app, BrowserWindow, dialog, ipcMain, type OpenDialogOptions, type SaveDialogOptions } from 'electron'
 import { IPC, type OpenedFile } from '../shared/api'
 import { FILE_EXTENSION } from '../shared/appInfo'
+import { join } from 'node:path'
+import { existingRecent, readRecent, rememberRecent } from './recent'
+import { assertRecentMember, createGrants } from './grants'
 import { atomicWriteFile, backupFile, readTextFile } from './fileIO'
 
 const filters = [{ name: 'Projet AV·WAN', extensions: [FILE_EXTENSION] }]
@@ -10,6 +13,18 @@ function assertProjectPath(path: string): void {
   if (!path.toLowerCase().endsWith(EXT)) throw new Error(`Extension attendue : ${EXT}`)
 }
 
+// Le renderer n'écrit et ne rouvre que des chemins accordés ici.
+const grants = createGrants()
+const isE2E = (): boolean => process.env['AVWAN_E2E'] === '1'
+
+const recentFile = (): string => join(app.getPath('userData'), 'recent.json')
+// La liste des récents ne doit jamais faire échouer une ouverture ou un enregistrement.
+const remember = (path: string): Promise<void> =>
+  rememberRecent(recentFile(), path).then(
+    () => undefined,
+    () => undefined
+  )
+
 export function registerIpc(): void {
   ipcMain.handle(IPC.open, async (event): Promise<OpenedFile | null> => {
     const win = BrowserWindow.fromWebContents(event.sender)
@@ -17,17 +32,27 @@ export function registerIpc(): void {
     const res = win ? await dialog.showOpenDialog(win, options) : await dialog.showOpenDialog(options)
     const path = res.filePaths[0]
     if (res.canceled || !path) return null
-    return { path, text: await readTextFile(path) }
+    const text = await readTextFile(path)
+    grants.grant(path)
+    await remember(path)
+    return { path, text }
   })
 
-  ipcMain.handle(IPC.read, async (_event, path: string): Promise<OpenedFile> => {
-    assertProjectPath(path)
-    return { path, text: await readTextFile(path) }
-  })
+  // Crochet de test : lecture directe d'un chemin, seulement quand l'app tourne en mode E2E.
+  if (isE2E()) {
+    ipcMain.handle(IPC.read, async (_event, path: string): Promise<OpenedFile> => {
+      assertProjectPath(path)
+      grants.grant(path)
+      return { path, text: await readTextFile(path) }
+    })
+  }
 
   ipcMain.handle(IPC.save, async (_event, path: string, text: string): Promise<string> => {
     assertProjectPath(path)
+    if (isE2E()) grants.grant(path)
+    grants.assertGranted(path)
     await atomicWriteFile(path, text)
+    await remember(path)
     return path
   })
 
@@ -41,11 +66,26 @@ export function registerIpc(): void {
     if (res.canceled || !res.filePath) return null
     const path = res.filePath.toLowerCase().endsWith(EXT) ? res.filePath : `${res.filePath}${EXT}`
     await atomicWriteFile(path, text)
+    grants.grant(path)
+    await remember(path)
     return path
+  })
+
+  ipcMain.handle(IPC.recentList, (): Promise<string[]> => existingRecent(recentFile()))
+
+  // Le renderer ne peut rouvrir que des chemins de la liste des récents.
+  ipcMain.handle(IPC.recentOpen, async (_event, path: string): Promise<OpenedFile> => {
+    assertProjectPath(path)
+    assertRecentMember(await readRecent(recentFile()), path)
+    const text = await readTextFile(path)
+    grants.grant(path)
+    await remember(path)
+    return { path, text }
   })
 
   ipcMain.handle(IPC.backup, async (_event, path: string): Promise<string> => {
     assertProjectPath(path)
+    grants.assertGranted(path)
     return backupFile(path)
   })
 }

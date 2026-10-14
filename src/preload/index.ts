@@ -11,6 +11,10 @@ const api: AvwanApi = {
     saveAs: (text, suggestedName) => ipcRenderer.invoke(IPC.saveAs, text, suggestedName),
     backup: (path) => ipcRenderer.invoke(IPC.backup, path)
   },
+  recent: {
+    list: () => ipcRenderer.invoke(IPC.recentList),
+    open: (path) => ipcRenderer.invoke(IPC.recentOpen, path)
+  },
   onMenu: (callback) => {
     const handler = (_event: IpcRendererEvent, action: MenuAction): void => callback(action)
     ipcRenderer.on(IPC.menu, handler)

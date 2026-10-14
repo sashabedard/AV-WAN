@@ -79,7 +79,8 @@ export function LinkForm({ link, project }: { link: Link; project: Project }) {
     if (mode === 'none') s().setLinkVlan(link.id, { kind: 'none' })
     else if (mode === 'access') {
       const vlan = view.kind === 'trunk' && view.native !== undefined ? view.native : project.vlans[0]?.id
-      if (vlan !== undefined) s().setLinkVlan(link.id, { kind: 'access', vlan })
+      if (vlan === undefined) s().showToast('Ajoutez d’abord un VLAN au projet (onglet VLAN, à gauche).')
+      else s().setLinkVlan(link.id, { kind: 'access', vlan })
     } else s().setLinkVlan(link.id, { kind: 'trunk', ...(view.kind === 'access' ? { native: view.vlan } : {}), tagged: 'all' })
   }
   return (

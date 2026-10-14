@@ -1,5 +1,4 @@
-export type MenuAction = 'new' | 'open' | 'save' | 'saveAs' | 'undo' | 'redo'
-
+export type MenuAction = 'new' | 'open' | 'save' | 'saveAs' | 'undo' | 'redo' | 'search' | 'fitView' | 'zoomIn' | 'zoomOut' | 'duplicate' | 'groupZone'
 export interface OpenedFile {
   path: string
   text: string
@@ -15,6 +14,10 @@ export interface AvwanApi {
     saveAs(text: string, suggestedName: string): Promise<string | null>
     backup(path: string): Promise<string>
   }
+  recent: {
+    list(): Promise<string[]>
+    open(path: string): Promise<OpenedFile>
+  }
   onMenu(callback: (action: MenuAction) => void): () => void
 }
 
@@ -24,5 +27,7 @@ export const IPC = {
   save: 'file:save',
   saveAs: 'file:saveAs',
   backup: 'file:backup',
+  recentList: 'recent:list',
+  recentOpen: 'recent:open',
   menu: 'menu'
 } as const

@@ -1,6 +1,7 @@
 import { TopBar } from './TopBar'
 import { Toast } from './Toast'
-import { Palette } from '../panels/Palette'
+import { Welcome } from './Welcome'
+import { Sidebar } from '../panels/Sidebar'
 import { Inspector } from '../panels/Inspector'
 import { Canvas } from '../canvas/Canvas'
 
@@ -8,8 +9,8 @@ export function AppShell() {
   return (
     <div className="shell">
       <TopBar />
-      <aside className="shell__left" aria-label="Palette">
-        <Palette />
+      <aside className="shell__left" aria-label="Panneau de gauche">
+        <Sidebar />
       </aside>
       <main className="shell__center">
         <Canvas />
@@ -18,6 +19,7 @@ export function AppShell() {
         <Inspector />
       </aside>
       <Toast />
+      <Welcome />
     </div>
   )
 }

@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { createProjectStore, isDirty, linksOnRemovedPorts } from './projectStore'
+import { copyFragment } from '../model/clipboard'
+import { vlanPreset } from '../catalog/vlanPresets'
 import { sampleProject } from '../model/__fixtures__/sample'
 
 const store = () => createProjectStore(sampleProject())
@@ -21,6 +23,17 @@ describe('projectStore', () => {
     expect(link).toMatchObject({ cableId: 'C-002', medium: 'cat6' })
     expect(s.getState().connect({ deviceId: id, portId: 'ETH' }, { deviceId: 'sw1', portId: '3' })).toBeNull()
     expect(s.getState().toast).toContain('Branchement impossible')
+  })
+
+  it('change de numéro de document à chaque nouveau projet ou ouverture, pas à chaque modification', () => {
+    const s = store()
+    const first = s.getState().docId
+    s.getState().updateMeta({ title: 'x' })
+    expect(s.getState().docId).toBe(first)
+    s.getState().loadProject(sampleProject(), null)
+    expect(s.getState().docId).toBe(first + 1)
+    s.getState().newProject()
+    expect(s.getState().docId).toBe(first + 2)
   })
 
   it('un déplacement de plusieurs appareils est une seule entrée d’historique', () => {
@@ -108,5 +121,197 @@ describe('projectStore', () => {
     s.getState().updateMeta({ title: 'Interdit' })
     expect(s.getState().history.present.meta.title).toBe('Installation Lumen')
     expect(s.getState().toast).toContain('lecture seule')
+  })
+
+  it('changer le mode de couleur ne crée aucune entrée d’historique, et ⌘Z ne le défait pas', () => {
+    const s = store()
+    s.getState().markSaved('/tmp/a.avwan')
+    s.getState().updateMeta({ title: 'Modifié' })
+    s.getState().setColorMode('type')
+    expect(s.getState().history.past).toHaveLength(1)
+    expect(isDirty(s.getState())).toBe(true)
+    s.getState().undo()
+    expect(s.getState().history.present.meta.title).toBe('Installation Lumen')
+    expect(s.getState().history.present.settings.colorMode).toBe('type')
+    s.getState().redo()
+    expect(s.getState().history.present.settings.colorMode).toBe('type')
+    const before = s.getState().history
+    s.getState().setColorMode('type')
+    expect(s.getState().history).toBe(before)
+  })
+
+  it('undo sans changement de mode garde l’instantané d’origine (l’état enregistré redevient propre)', () => {
+    const s = store()
+    s.getState().markSaved('/tmp/a.avwan')
+    s.getState().updateMeta({ title: 'Autre' })
+    s.getState().undo()
+    expect(isDirty(s.getState())).toBe(false)
+  })
+
+  it('rebranche un bout en une entrée d’historique et retire le coude manuel', () => {
+    const s = store()
+    s.getState().updateLink('l1', { elbow: { dx: 20, dy: 0 } })
+    expect(s.getState().reconnect('l1', 'a', { deviceId: 'sw1', portId: '3' })).toBe(true)
+    const l = s.getState().history.present.links[0]!
+    expect(l.a).toEqual({ deviceId: 'sw1', portId: '3' })
+    expect(l.elbow).toBeUndefined()
+    expect(s.getState().history.past).toHaveLength(2)
+    s.getState().undo()
+    expect(s.getState().history.present.links[0]!.a.portId).toBe('1')
+  })
+
+  it('refuse un port occupé ou incompatible, et la lecture seule', () => {
+    const s = store()
+    const id = s.getState().addDevice('dante-avio', { x: 0, y: 0 })
+    s.getState().connect({ deviceId: id, portId: 'ETH' }, { deviceId: 'sw1', portId: '2' })
+    expect(s.getState().reconnect('l1', 'a', { deviceId: 'sw1', portId: '2' })).toBe(false)
+    expect(s.getState().toast).toContain('Rebranchement impossible')
+    s.getState().loadProject(sampleProject(), null, { readOnly: true })
+    expect(s.getState().reconnect('l1', 'a', { deviceId: 'sw1', portId: '3' })).toBe(false)
+    expect(s.getState().history.present.links[0]!.a.portId).toBe('1')
+    expect(s.getState().toast).toContain('lecture seule')
+  })
+
+  it('colle un fragment en une entrée d’historique et sélectionne les copies', () => {
+    const s = store()
+    const f = copyFragment(s.getState().history.present, ['cam1'])!
+    const [id] = s.getState().pasteFragment(f, { x: 24, y: 24 })
+    expect(s.getState().history.past).toHaveLength(1)
+    expect(s.getState().selection).toEqual({ deviceIds: [id], linkIds: [] })
+  })
+
+  it('ne remplace pas la sélection par une sélection identique', () => {
+    const s = store()
+    s.getState().setSelection({ deviceIds: ['cam1'], linkIds: [] })
+    const before = s.getState().selection
+    s.getState().setSelection({ deviceIds: ['cam1'], linkIds: [] })
+    expect(s.getState().selection).toBe(before)
+  })
+})
+
+describe('zones dans le store', () => {
+  it('⌘G crée une zone autour de la sélection et y range les appareils, en une entrée', () => {
+    const s = store()
+    s.getState().setSelection({ deviceIds: ['cam1'], linkIds: [] })
+    const id = s.getState().zoneAroundSelection()!
+    const p = s.getState().history.present
+    expect(p.zones[0]).toMatchObject({ id, name: 'Zone 1', rect: { x: -24, y: 148, w: 224, h: 134 } })
+    expect(p.devices[1]!.zoneId).toBe(id)
+    expect(s.getState().history.past).toHaveLength(1)
+  })
+
+  it('⌘G sans sélection explique quoi faire', () => {
+    const s = store()
+    expect(s.getState().zoneAroundSelection()).toBeNull()
+    expect(s.getState().toast).toContain('Sélectionnez')
+  })
+
+  it('déposer un appareil dans une zone l’y range, dans la même entrée que le déplacement', () => {
+    const s = store()
+    const z = s.getState().addZone({ x: 400, y: 400, w: 400, h: 300 })
+    s.getState().moveDevices([{ id: 'cam1', position: { x: 500, y: 500 } }])
+    expect(s.getState().history.present.devices[1]!.zoneId).toBe(z)
+    expect(s.getState().history.past).toHaveLength(2)
+  })
+
+  it('déplacer une zone et un de ses membres sélectionné ne déplace pas le membre deux fois', () => {
+    const s = store()
+    s.getState().setSelection({ deviceIds: ['cam1'], linkIds: [] })
+    const z = s.getState().zoneAroundSelection()!
+    s.getState().moveSelection({ devices: [{ id: 'cam1', position: { x: 40, y: 200 } }], zones: [{ id: z, dx: 40, dy: 0 }] })
+    expect(s.getState().history.present.devices[1]!.position).toEqual({ x: 40, y: 200 })
+  })
+
+  it('un membre sélectionné suit le décalage de sa zone, même si la position demandée diffère', () => {
+    const s = store()
+    s.getState().setSelection({ deviceIds: ['cam1'], linkIds: [] })
+    const z = s.getState().zoneAroundSelection()!
+    s.getState().moveSelection({ devices: [{ id: 'cam1', position: { x: 500, y: 500 } }], zones: [{ id: z, dx: 40, dy: 0 }] })
+    expect(s.getState().history.present.devices[1]!.position).toEqual({ x: 40, y: 200 })
+  })
+
+  it('supprimer une zone garde ses appareils', () => {
+    const s = store()
+    s.getState().setSelection({ deviceIds: ['cam1'], linkIds: [] })
+    const z = s.getState().zoneAroundSelection()!
+    s.getState().removeElements([], [], [z])
+    const p = s.getState().history.present
+    expect(p.zones).toEqual([])
+    expect(p.devices).toHaveLength(2)
+    expect(p.devices[1]!.zoneId).toBeUndefined()
+  })
+
+  it('un déplacement dans un fichier du plan 1 ne crée aucun zoneId', () => {
+    const s = store()
+    s.getState().moveDevices([{ id: 'cam1', position: { x: 8, y: 208 } }])
+    const cam = s.getState().history.present.devices[1]!
+    expect(cam.position).toEqual({ x: 8, y: 208 })
+    expect('zoneId' in cam).toBe(false)
+  })
+
+  it('refuse de créer une zone en lecture seule', () => {
+    const s = store()
+    s.getState().loadProject(sampleProject(), null, { readOnly: true })
+    s.getState().addZone({ x: 0, y: 0, w: 100, h: 100 })
+    expect(s.getState().history.present.zones).toEqual([])
+    expect(s.getState().toast).toContain('lecture seule')
+  })
+})
+
+describe('VLAN dans le store', () => {
+  it('ajoute, modifie et annule', () => {
+    const s = store()
+    s.getState().addVlan(vlanPreset(30))
+    s.getState().updateVlan(30, { name: 'Dante principal' })
+    expect(s.getState().history.present.vlans.map((v) => v.name)).toEqual(['Dante principal', 'NDI'])
+    s.getState().undo()
+    expect(s.getState().history.present.vlans.map((v) => v.name)).toEqual(['Dante A', 'NDI'])
+  })
+
+  it('renumérote, ou explique pourquoi c’est refusé', () => {
+    const s = store()
+    expect(s.getState().changeVlanId(40, 41)).toBe(true)
+    expect(s.getState().history.present.devices[0]!.portState['1']!.nativeVlan).toBe(41)
+    s.getState().addVlan(vlanPreset(10))
+    expect(s.getState().changeVlanId(41, 10)).toBe(false)
+    expect(s.getState().toast).toBe('Le VLAN 10 existe déjà.')
+    expect(s.getState().changeVlanId(41, 5000)).toBe(false)
+    expect(s.getState().toast).toBe('Numéro de VLAN invalide : choisissez un nombre de 1 à 4094.')
+  })
+
+  it('une renumérotation est une seule annulation, qui rend l’ancien numéro aux ports', () => {
+    const s = store()
+    s.getState().changeVlanId(40, 41)
+    expect(s.getState().history.past).toHaveLength(1)
+    s.getState().undo()
+    expect(s.getState().history.present.vlans[0]!.id).toBe(40)
+    expect(s.getState().history.present.devices[0]!.portState['1']!.nativeVlan).toBe(40)
+  })
+
+  it('renumérote refuse en lecture seule, sans rien changer', () => {
+    const s = store()
+    s.getState().loadProject(sampleProject(), null, { readOnly: true })
+    const before = s.getState().history.present
+    expect(s.getState().changeVlanId(40, 41)).toBe(false)
+    expect(s.getState().toast).toContain('lecture seule')
+    expect(s.getState().history.present).toBe(before)
+  })
+
+  it('retire un VLAN ; refuse les modifications en lecture seule', () => {
+    const s = store()
+    s.getState().removeVlan(40)
+    expect(s.getState().history.present.vlans).toEqual([])
+    s.getState().loadProject(sampleProject(), null, { readOnly: true })
+    s.getState().updateVlan(40, { name: 'Interdit' })
+    expect(s.getState().history.present.vlans[0]!.name).toBe('NDI')
+    expect(s.getState().toast).toContain('lecture seule')
+  })
+
+  it('un changement de mode de couleur sur un fichier en lecture seule n’est pas une modification', () => {
+    const s = createProjectStore()
+    s.getState().loadProject(sampleProject(), null, { readOnly: true })
+    s.getState().setColorMode('type')
+    expect(s.getState().history.present.settings.colorMode).toBe('type')
+    expect(isDirty(s.getState())).toBe(false)
   })
 })

@@ -1,28 +1,31 @@
+/* src/renderer/src/theme/tokens.css
+   Une seule définition par jeton : light-dark(clair, sombre) suit color-scheme (Chromium 123+).
+   Thème système : color-scheme: light dark. Thème choisi : data-theme sur <html> force color-scheme. */
 :root {
   color-scheme: light dark;
   --font-display: 'Archivo Narrow', 'Arial Narrow', sans-serif;
   --font-mono: 'IBM Plex Mono', ui-monospace, Menlo, monospace;
 
-  /* Thème clair (défaut) */
-  --paper: #eeeae0;
-  --grid-minor: #e4ded0;
-  --grid-major: #d6cebb;
-  --surface: #f6f3eb;
-  --surface-2: #efebe2;
-  --line: #cfc8b8;
-  --tile-top: #fcfaf5;
-  --tile-bottom: #f4f0e7;
-  --tile-stroke: #1e1f22;
-  --ink: #1e1f22;
-  --ink-2: #2a2a27;
-  --muted: #6b675e;
-  --accent: #c2410c;
-  --accent-bg: #f6dccb;
-  --tape: #1e1f22;
-  --tape-ink: #f3efe4;
-  --trunk: #2b2e33;
-  --cord-shadow: rgba(0, 0, 0, 0.16);
-  --tile-shadow: rgba(0, 0, 0, 0.18);
+  --paper: light-dark(#eeeae0, #15181b);
+  --grid-minor: light-dark(#e4ded0, #1a1e22);
+  --grid-major: light-dark(#d6cebb, #242930);
+  --surface: light-dark(#f6f3eb, #111316);
+  --surface-2: light-dark(#efebe2, #1a1d21);
+  --line: light-dark(#cfc8b8, #24282d);
+  --tile-top: light-dark(#fcfaf5, #23272c);
+  --tile-bottom: light-dark(#f4f0e7, #1b1e22);
+  --tile-stroke: light-dark(#1e1f22, #343a41);
+  --ink: light-dark(#1e1f22, #ece7dc);
+  --ink-2: light-dark(#2a2a27, #c3c8ce);
+  --muted: light-dark(#6b675e, #858c94);
+  --accent: light-dark(#c2410c, #f2a93b);
+  --accent-bg: light-dark(#f6dccb, #2a2318);
+  --danger: light-dark(#b42318, #ff8a80);
+  --tape: light-dark(#1e1f22, #f3efe4);
+  --tape-ink: light-dark(#f3efe4, #141414);
+  --trunk: light-dark(#2b2e33, #eceae4);
+  --cord-shadow: light-dark(rgba(0, 0, 0, 0.16), rgba(0, 0, 0, 0.38));
+  --tile-shadow: light-dark(rgba(0, 0, 0, 0.18), rgba(0, 0, 0, 0.55));
 
   /* Matériel : identique dans les deux thèmes (un switch est anthracite) */
   --panel-top: #2c3137;
@@ -38,50 +41,18 @@
   --led-link: #5be38a;
   --led-poe: #f5a524;
   --led-off: #3a3f45;
+  --sfp-stroke: #5a616a;
+  --port-dim: rgba(0, 0, 0, 0.5);
+  /* Identité : les trois cordons de l'icône d'app */
+  --brand-red: #e5484d;
+  --brand-blue: #3e8ef7;
+  --brand-yellow: #f2c94c;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme='light']) {
-    --paper: #15181b;
-    --grid-minor: #1a1e22;
-    --grid-major: #242930;
-    --surface: #111316;
-    --surface-2: #1a1d21;
-    --line: #24282d;
-    --tile-top: #23272c;
-    --tile-bottom: #1b1e22;
-    --tile-stroke: #343a41;
-    --ink: #ece7dc;
-    --ink-2: #c3c8ce;
-    --muted: #858c94;
-    --accent: #f2a93b;
-    --accent-bg: #2a2318;
-    --tape: #f3efe4;
-    --tape-ink: #141414;
-    --trunk: #eceae4;
-    --cord-shadow: rgba(0, 0, 0, 0.38);
-    --tile-shadow: rgba(0, 0, 0, 0.55);
-  }
+:root[data-theme='light'] {
+  color-scheme: light;
 }
 
 :root[data-theme='dark'] {
-  --paper: #15181b;
-  --grid-minor: #1a1e22;
-  --grid-major: #242930;
-  --surface: #111316;
-  --surface-2: #1a1d21;
-  --line: #24282d;
-  --tile-top: #23272c;
-  --tile-bottom: #1b1e22;
-  --tile-stroke: #343a41;
-  --ink: #ece7dc;
-  --ink-2: #c3c8ce;
-  --muted: #858c94;
-  --accent: #f2a93b;
-  --accent-bg: #2a2318;
-  --tape: #f3efe4;
-  --tape-ink: #141414;
-  --trunk: #eceae4;
-  --cord-shadow: rgba(0, 0, 0, 0.38);
-  --tile-shadow: rgba(0, 0, 0, 0.55);
+  color-scheme: dark;
 }

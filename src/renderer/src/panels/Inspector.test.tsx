@@ -64,4 +64,57 @@ describe('Inspector', () => {
     act(() => projectStore.getState().setSelection({ deviceIds: ['sw1'], linkIds: [] }))
     expect(screen.getByRole('heading', { name: 'Switch' })).toBeTruthy()
   })
+
+  it('modifie une zone : nom, couleur, page séparée', async () => {
+    const user = userEvent.setup()
+    const s = projectStore.getState()
+    s.setSelection({ deviceIds: ['cam1'], linkIds: [] })
+    const id = s.zoneAroundSelection()!
+    s.setSelection({ deviceIds: [], linkIds: [], zoneIds: [id] })
+    render(<Inspector />)
+    const zone = () => project().zones[0]!
+    expect(screen.getByRole('heading', { name: 'Zone' })).toBeTruthy()
+    expect(screen.getByText(/1 appareil dans cette zone/)).toBeTruthy()
+    await user.clear(screen.getByLabelText('Nom de la zone'))
+    await user.type(screen.getByLabelText('Nom de la zone'), 'Régie{Enter}')
+    expect(zone().name).toBe('Régie')
+    await user.click(screen.getByRole('radio', { name: 'Vert' }))
+    expect(zone().color).toBe('#3DBE6E')
+    await user.click(screen.getByLabelText('Page séparée dans le PDF'))
+    expect(zone().ownPdfPage).toBe(true)
+  })
+
+  it('indique la zone d’un appareil', () => {
+    const s = projectStore.getState()
+    s.setSelection({ deviceIds: ['cam1'], linkIds: [] })
+    s.zoneAroundSelection()
+    s.setSelection({ deviceIds: ['cam1'], linkIds: [] })
+    render(<Inspector />)
+    expect(screen.getByText('Zone : Zone 1')).toBeTruthy()
+  })
+
+  it('demande d’ajouter un VLAN avant de choisir le mode Accès sur un projet sans VLAN', async () => {
+    const user = userEvent.setup()
+    const p = sampleProject()
+    p.vlans = []
+    p.devices[0]!.portState = {}
+    projectStore.getState().loadProject(p, null)
+    projectStore.getState().setSelection({ deviceIds: [], linkIds: ['l1'] })
+    render(<Inspector />)
+    await user.selectOptions(screen.getByLabelText('Mode VLAN'), 'access')
+    expect(projectStore.getState().toast).toBe('Ajoutez d’abord un VLAN au projet (onglet VLAN, à gauche).')
+    expect(project().devices[0]!.portState).toEqual({})
+  })
+
+  it('choisit le côté des prises et montre le VLAN de chaque port', async () => {
+    const user = userEvent.setup()
+    projectStore.getState().setSelection({ deviceIds: ['cam1'], linkIds: [] })
+    render(<Inspector />)
+    await user.selectOptions(screen.getByLabelText('Côté des prises'), 'left')
+    expect(project().devices[1]!.portSide).toBe('left')
+    act(() => projectStore.getState().setSelection({ deviceIds: ['sw1'], linkIds: [] }))
+    expect(screen.queryByLabelText('Côté des prises')).toBeNull()
+    const row = screen.getByText('CAM-1 · ETH').closest('tr')!
+    expect(within(row).getByText('A · 40')).toBeTruthy()
+  })
 })

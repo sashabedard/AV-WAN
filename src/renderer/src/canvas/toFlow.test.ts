@@ -1,7 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import { sampleProject } from '../model/__fixtures__/sample'
 import { createDevice, createProject } from '../model/project'
-import { analyzeLinks, cordTag, createFlowCache, toFlowEdges, toFlowNodes } from './toFlow'
+import { vlanPreset } from '../catalog/vlanPresets'
+import type { Project } from '../model/types'
+import { switchFacade } from './switchFacade'
+import { NEUTRAL } from './cordStyle'
+import { analyzeLinks, cordTag, createFlowCache, toFlowEdges, toFlowNodes, toFlowZones } from './toFlow'
 
 describe('toFlowNodes', () => {
   it('crée un nœud switch et un nœud appareil avec les infos de ports', () => {
@@ -12,6 +16,12 @@ describe('toFlowNodes', () => {
     expect(nodes[1]!.data.ports['ETH']).toEqual({ linkId: 'l1', color: '#3E8EF7', poe: false })
     expect(nodes[0]!.data.poeUsage).toEqual({ usedW: 25, budgetW: 60 })
     expect(nodes[1]!.data.side).toBe('top')
+  })
+
+  it('dessine le panneau de brassage comme une façade de rack', () => {
+    const p = createProject()
+    p.devices.push(createDevice(p, 'patch-panel-24', { x: 0, y: 0 }))
+    expect(toFlowNodes(p, analyzeLinks(p, 'dark'), createFlowCache())[0]!.type).toBe('switch')
   })
 
   it("réutilise le même objet nœud tant que rien ne change pour l'appareil", () => {
@@ -47,11 +57,82 @@ describe('toFlowNodes', () => {
 })
 
 describe('toFlowEdges', () => {
+  it('indique le bout qui fournit le PoE', () => {
+    const p = sampleProject()
+    const [edge] = toFlowEdges(p, analyzeLinks(p, 'dark'), createFlowCache())
+    expect(edge!.data!.poeAt).toBe('source')
+    const flipped = { ...p, links: [{ ...p.links[0]!, a: p.links[0]!.b, b: p.links[0]!.a }] }
+    expect(toFlowEdges(flipped, analyzeLinks(flipped, 'dark'), createFlowCache())[0]!.data!.poeAt).toBe('target')
+    const off = { ...p, devices: p.devices.map((d) => (d.id === 'sw1' ? { ...d, portState: { '1': { ...d.portState['1'], poeEnabled: false } } } : d)) }
+    expect(toFlowEdges(off, analyzeLinks(off, 'dark'), createFlowCache())[0]!.data!.poeAt).toBeNull()
+  })
+  it('mesure, depuis la poignée, la distance jusqu’au bord du nœud : positive sur une façade de rack, nulle sur une tuile', () => {
+    const p = sampleProject()
+    const edge = toFlowEdges(p, analyzeLinks(p, 'dark'), createFlowCache())[0]!
+    const sw = p.devices.find((d) => d.switch)!
+    const facade = switchFacade(sw.ports)
+    const port = facade.ports.find((f) => f.id === edge.sourceHandle)!
+    expect(edge.data!.exits[0]).toBe(facade.height - (port.y + port.h))
+    expect(edge.data!.exits[0]).toBeGreaterThan(0)
+    expect(edge.data!.exits[1]).toBe(0)
+  })
+
   it('relie les poignées de ports et décrit le câble', () => {
     const p = sampleProject()
     const [edge] = toFlowEdges(p, analyzeLinks(p, 'light'), createFlowCache())
     expect(edge).toMatchObject({ id: 'l1', type: 'cord', source: 'sw1', sourceHandle: '1', target: 'cam1', targetHandle: 'ETH' })
     expect(edge!.data!.style.color).toBe('#2563C9')
     expect(cordTag(p, p.links[0]!)).toBe('C-001 · SW-1:1 ⇄ CAM-1:ETH · PoE+')
+  })
+
+  it('donne l’étiquette de port de chaque bout', () => {
+    const p = sampleProject()
+    const [edge] = toFlowEdges(p, analyzeLinks(p, 'dark'), createFlowCache())
+    expect(edge!.data!.portLabels).toEqual(['1', 'ETH'])
+  })
+})
+
+describe('VLAN des nœuds et des arêtes', () => {
+  it('chaque nœud et chaque câble connaissent leurs VLAN', () => {
+    const p = sampleProject()
+    const analysis = analyzeLinks(p, 'dark')
+    const nodes = toFlowNodes(p, analysis, createFlowCache())
+    const [edge] = toFlowEdges(p, analysis, createFlowCache())
+    expect(nodes.map((n) => n.data.vlans)).toEqual([[40], [40]])
+    expect(edge!.data!.vlans).toEqual([40])
+  })
+})
+
+describe('radio Wi-Fi à plusieurs clients', () => {
+  function apWithClients(vlans: [number, number]): { p: Project; apId: string } {
+    let p: Project = { ...createProject(), vlans: [vlanPreset(20), vlanPreset(60)] }
+    const ap = createDevice(p, 'ap', { x: 0, y: 0 })
+    p = { ...p, devices: [ap] }
+    vlans.forEach((vlan, i) => {
+      const c = createDevice(p, 'esp32-devkit', { x: i * 200, y: 200 })
+      p = { ...p, devices: [...p.devices, { ...c, portState: { WIFI: { mode: 'access', nativeVlan: vlan } } }] }
+      p.links.push({ id: `w${i}`, cableId: `C-00${i + 1}`, a: { deviceId: c.id, portId: 'WIFI' }, b: { deviceId: ap.id, portId: 'WIFI' }, medium: 'wifi' })
+    })
+    return { p, apId: ap.id }
+  }
+
+  it('garde la couleur commune, ou passe au neutre si les VLAN diffèrent', () => {
+    const same = apWithClients([60, 60])
+    expect(analyzeLinks(same.p, 'dark').ports.get(same.apId)!['WIFI']!.color).toBe('#F2C94C')
+    const mixed = apWithClients([20, 60])
+    expect(analyzeLinks(mixed.p, 'dark').ports.get(mixed.apId)!['WIFI']!.color).toBe(NEUTRAL.dark)
+  })
+})
+
+describe('toFlowZones', () => {
+  it('fait un nœud de zone sous le reste, déplaçable par son titre, réutilisé tant qu’il ne change pas', () => {
+    const p = { ...sampleProject(), zones: [{ id: 'z1', name: 'Salle', color: '#3E8EF7', rect: { x: -24, y: 148, w: 224, h: 134 }, ownPdfPage: false }] }
+    const cache = createFlowCache()
+    const [node] = toFlowZones(p, cache)
+    expect(node).toMatchObject({ id: 'z1', type: 'zone', position: { x: -24, y: 148 }, width: 224, height: 134, zIndex: -1, dragHandle: '.zone__title' })
+    expect(node!.style?.pointerEvents).toBe('none') // le corps laisse passer les clics (le style inline de React Flow écraserait le CSS)
+    expect(toFlowZones({ ...p, meta: { ...p.meta, title: 'Autre' } }, cache)[0]).toBe(node)
+    expect(toFlowZones({ ...p, zones: [] }, cache)).toEqual([])
+    expect(cache.zones.size).toBe(0)
   })
 })

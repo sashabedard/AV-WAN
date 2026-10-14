@@ -1,4 +1,5 @@
 import type { Connector, Device, Link, Medium, PortDef, PortRef, Project } from './types'
+import { RACK_TEMPLATE_IDS } from '../catalog/templates'
 
 export type Family = 'ethernet' | 'optical' | 'wifi' | 'usb' | 'dmx' | 'pixel' | 'hdmi' | 'sdi' | 'serial'
 
@@ -65,6 +66,14 @@ export function canConnectPorts(project: Project, a: PortRef, b: PortRef): boole
   return !project.links.some((l) => (sameRef(l.a, a) && sameRef(l.b, b)) || (sameRef(l.a, b) && sameRef(l.b, a)))
 }
 
+// Rebrancher le bout `end` d'un câble sur `to` : on juge comme si le câble n'existait pas encore.
+export function canReconnect(project: Project, linkId: string, end: 'a' | 'b', to: PortRef): boolean {
+  const link = project.links.find((l) => l.id === linkId)
+  if (!link) return false
+  const fixed = end === 'a' ? link.b : link.a
+  return canConnectPorts({ ...project, links: project.links.filter((l) => l.id !== linkId) }, fixed, to)
+}
+
 export function defaultMedium(c: Connector): Medium {
   switch (c) {
     case 'rj45':
@@ -118,4 +127,8 @@ export function pickPort(project: Project, from: PortRef, targetDeviceId: string
     }
   }
   return best?.id
+}
+
+export function isRackDevice(device: Device): boolean {
+  return device.switch !== undefined || RACK_TEMPLATE_IDS.has(device.templateId)
 }

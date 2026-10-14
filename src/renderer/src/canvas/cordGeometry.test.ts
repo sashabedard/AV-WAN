@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { bandRects, bootRect } from './cordGeometry'
+import { BAND_PITCH, BAND_START, badgePoint, bandRects, elbowFromDrag, bandReach, beside, bootRect, stubLength, wavesPath } from './cordGeometry'
 
 describe('cordGeometry', () => {
   it('place la botte de la fiche à l’extérieur du port', () => {
@@ -14,5 +14,37 @@ describe('cordGeometry', () => {
     expect(second!.y).toBeCloseTo(64.8, 5)
     const [side] = bandRects(100, 50, 'left', ['#333333'], 4.5)
     expect(side).toEqual({ x: 86.8, y: 45.75, w: 2.4, h: 8.5, color: '#333333' })
+  })
+
+  it('mesure la portée des bagues et allonge le tronçon droit en conséquence', () => {
+    expect(bandReach(0)).toBe(0)
+    expect(bandReach(1)).toBe(BAND_START + 2)
+    expect(bandReach(6)).toBe(BAND_START + 5 * BAND_PITCH + 2)
+    expect(stubLength(0)).toBe(14)
+    expect(stubLength(6)).toBe(bandReach(6) + 6)
+  })
+
+  it('place un repère à côté du câble, le long de sa sortie', () => {
+    expect(beside(100, 50, 'bottom', 14, 9)).toEqual({ x: 91, y: 64 })
+    expect(beside(100, 50, 'right', 14, 9)).toEqual({ x: 114, y: 59 })
+  })
+
+  it('dessine les ondes Wi-Fi centrées sur un point', () => {
+    expect(wavesPath(10, 20)).toBe('M4 19A8 8 0 0 1 16 19M6.5 21.5A5 5 0 0 1 13.5 21.5')
+  })
+
+  it('convertit un glisser à l’écran en décalage de coude, selon le zoom', () => {
+    expect(elbowFromDrag({ dx: 10, dy: 0 }, { x: 30, y: -16 }, 2)).toEqual({ dx: 25, dy: -8 })
+    expect(elbowFromDrag({ dx: 0, dy: 0 }, { x: 0, y: 0 }, 1)).toEqual({ dx: 0, dy: 0 })
+  })
+
+  it('pose le badge de support sur le tronçon de sortie, hors du nœud', () => {
+    // Port du dessus : le badge est au-dessus du bord (y décroît), centré sur la sortie.
+    expect(badgePoint(100, 50, 'top', 0, 0)).toEqual({ x: 100, y: 50 - (stubLength(0) + 12) })
+    expect(badgePoint(100, 50, 'top', 6, 0).y).toBe(50 - (6 + stubLength(0) + 12))
+    // Port de gauche : décalé de la demi-largeur du badge pour ne pas mordre sur la tuile.
+    const left = badgePoint(100, 50, 'left', 0, 2)
+    expect(left.y).toBe(50)
+    expect(100 - left.x).toBe(stubLength(2) + 36)
   })
 })

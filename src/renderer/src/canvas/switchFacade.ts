@@ -28,24 +28,68 @@ const SFP_PITCH = 22
 const GAP_BEFORE_SFP = 14
 const PAD_RIGHT = 22
 
+type Row = 'top' | 'bottom'
+
+// Façade de rack (switch ou panneau de brassage). La colonne d'un port est son rang dans sa
+// rangée : 1/2, 3/4… pour un switch à deux rangées ; A1/R1, A2/R2… pour un panneau.
 export function switchFacade(ports: PortDef[]): Facade {
   const rj = ports.filter((p) => p.connector === 'rj45')
   const sfp = ports.filter((p) => p.connector !== 'rj45')
   const twoRows = rj.some((p) => p.row === 'top')
   const rowY = twoRows ? { top: 40, bottom: 62 } : { top: 34, bottom: 34 }
-  const cols = twoRows ? Math.ceil(rj.length / 2) : rj.length
-  const sfpCols = twoRows ? Math.ceil(sfp.length / 2) : sfp.length
-  const out: FacadePort[] = []
-  rj.forEach((p, i) => {
-    const col = twoRows ? Math.floor(i / 2) : i
-    const row = p.row === 'top' ? 'top' : 'bottom'
-    out.push({ id: p.id, label: p.label, kind: 'rj45', x: EAR + PAD_LEFT + col * PITCH, y: rowY[row], w: RJ_W, h: RJ_H, row })
-  })
+  const rowOf = (p: PortDef): Row => (twoRows && p.row === 'top' ? 'top' : 'bottom')
+  const columns = (list: PortDef[]): Array<{ p: PortDef; row: Row; col: number }> => {
+    const next = { top: 0, bottom: 0 }
+    return list.map((p) => {
+      const row = rowOf(p)
+      return { p, row, col: next[row]++ }
+    })
+  }
+  const rjCols = columns(rj)
+  const sfpColsList = columns(sfp)
+  const cols = Math.max(0, ...rjCols.map((c) => c.col + 1))
+  const sfpCols = Math.max(0, ...sfpColsList.map((c) => c.col + 1))
+  const out: FacadePort[] = rjCols.map(({ p, row, col }) => ({ id: p.id, label: p.label, kind: 'rj45', x: EAR + PAD_LEFT + col * PITCH, y: rowY[row], w: RJ_W, h: RJ_H, row }))
   const sfpX0 = EAR + PAD_LEFT + cols * PITCH + (sfp.length > 0 ? GAP_BEFORE_SFP : 0)
-  sfp.forEach((p, i) => {
-    const col = twoRows ? Math.floor(i / 2) : i
-    const row = p.row === 'top' ? 'top' : 'bottom'
+  for (const { p, row, col } of sfpColsList) {
     out.push({ id: p.id, label: p.label, kind: 'sfp+', x: sfpX0 + col * SFP_PITCH, y: rowY[row] + 1, w: SFP_W, h: SFP_H, row })
-  })
+  }
   return { width: sfpX0 + sfpCols * SFP_PITCH + PAD_RIGHT + EAR, height: twoRows ? 92 : 66, ports: out, twoRows }
+}
+
+// Distance entre la poignée d'un port (bord du port tourné vers la sortie du cordon) et le bord extérieur de la façade.
+export function facadeExit(facade: Facade, port: FacadePort): number {
+  return facade.twoRows && port.row === 'top' ? port.y : facade.height - (port.y + port.h)
+}
+
+export const TAPE_X = 20
+export const TAPE_CHAR_W = 5.8 // IBM Plex Mono 600 à 9,5 px
+export const POE_CHAR_W = 5.1 // IBM Plex Mono 500 à 8,5 px
+const TAPE_PAD = 12
+
+export interface FacadeLabels {
+  tape: string
+  tapeWidth: number
+  poe?: string
+}
+
+const labels = (tape: string, poe: string | undefined): FacadeLabels => ({ tape, tapeWidth: tape.length * TAPE_CHAR_W + TAPE_PAD, ...(poe ? { poe } : {}) })
+
+// Étiquette ruban et indicateur PoE sur la même ligne, sans jamais se chevaucher (report du plan 1).
+// Ordre de préférence : titre complet, avec l'indicateur long puis court ; nom seul, idem ; nom tronqué.
+export function facadeLabels(name: string, summary: string, facadeWidth: number, poe?: { usedW: number; budgetW: number }): FacadeLabels {
+  const full = summary ? `${name} · ${summary}` : name
+  const long = poe ? `PoE ${poe.usedW} / ${poe.budgetW} W` : undefined
+  const short = poe ? `${poe.usedW}/${poe.budgetW} W` : undefined
+  const fit = (poeText: string | undefined): number =>
+    Math.floor((facadeWidth - PAD_RIGHT - (poeText ? poeText.length * POE_CHAR_W + 10 : 0) - TAPE_X - TAPE_PAD) / TAPE_CHAR_W)
+  const candidates: Array<[string, string | undefined]> = [
+    [full, long],
+    [full, short],
+    [name, long],
+    [name, short]
+  ]
+  for (const [text, poeText] of candidates) if (text.length <= fit(poeText)) return labels(text, poeText)
+  const max = Math.max(2, fit(short))
+  return labels(`${name.slice(0, max - 1)}…`, short)
 }

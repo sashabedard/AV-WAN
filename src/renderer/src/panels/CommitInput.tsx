@@ -7,16 +7,26 @@ export interface CommitInputProps extends Omit<InputHTMLAttributes<HTMLInputElem
 }
 
 // Valide en quittant le champ (ou avec Entrée) : une seule entrée d'historique par modification.
+// Le brouillon n'est affiché que pendant l'édition ; ensuite le champ montre toujours `value` (le projet).
 export function CommitInput({ value, onCommit, ...rest }: CommitInputProps) {
   const [draft, setDraft] = useState(value)
+  const [editing, setEditing] = useState(false)
   const cancelled = useRef(false)
   useEffect(() => setDraft(value), [value])
   return (
     <input
       {...rest}
-      value={draft}
-      onChange={(e) => setDraft(e.target.value)}
+      value={editing ? draft : value}
+      onFocus={() => {
+        setDraft(value)
+        setEditing(true)
+      }}
+      onChange={(e) => {
+        setDraft(e.target.value)
+        setEditing(true)
+      }}
       onBlur={() => {
+        setEditing(false)
         if (cancelled.current) {
           cancelled.current = false
           return

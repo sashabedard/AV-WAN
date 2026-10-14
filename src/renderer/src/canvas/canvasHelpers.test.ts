@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { mergeEdges, mergeNodes, snapPoint } from './canvasHelpers'
+import { mergeEdges, mergeNodes, nodesMatchDerived, snapPoint, syncSelected } from './canvasHelpers'
 import type { CordFlowEdge, DeviceFlowNode } from './toFlow'
 
 const node = (id: string, extra: Partial<DeviceFlowNode> = {}) =>
@@ -24,5 +24,21 @@ describe('canvasHelpers', () => {
     const merged = mergeEdges([e('x'), e('y')], [e('x', true)])
     expect(merged[0]!.selected).toBe(true)
     expect(merged[1]!.selected).toBeUndefined()
+  })
+
+  it('reconnaît quand les nœuds de React Flow correspondent au projet dérivé', () => {
+    const a = node('a')
+    const b = node('b')
+    expect(nodesMatchDerived([a, b], [a, b])).toBe(true)
+    expect(nodesMatchDerived([a], [node('c', { position: a.position })])).toBe(false)
+    expect(nodesMatchDerived([a], [{ ...a, position: { x: 0, y: 0 } }])).toBe(false)
+    expect(nodesMatchDerived([a, b], [a])).toBe(false)
+  })
+
+  it('aligne la sélection locale sur celle du store sans recréer ce qui ne change pas', () => {
+    const items = [node('a'), node('b', { selected: true })]
+    const synced = syncSelected(items, new Set(['a']))
+    expect(synced.map((n) => n.selected)).toEqual([true, false])
+    expect(syncSelected(synced, new Set(['a']))).toBe(synced)
   })
 })

@@ -1,5 +1,6 @@
 import type { Device, Side } from '../model/types'
 import type { NodeSize } from '../model/layout'
+import { isRackDevice } from '../model/rules'
 import { switchFacade } from './switchFacade'
 
 export const DEVICE_NODE_HEIGHT = 58
@@ -15,9 +16,9 @@ export function deviceNodeWidth(portCount: number): number {
   return Math.max(176, 24 + portCount * 18)
 }
 
-// Taille exacte d'un nœud à l'écran (tuile d'appareil ou façade de switch).
+// Taille exacte d'un nœud à l'écran (tuile d'appareil ou façade de rack).
 export function nodeSize(device: Device): NodeSize {
-  if (!device.switch) return { w: deviceNodeWidth(device.ports.length), h: DEVICE_NODE_HEIGHT }
+  if (!isRackDevice(device)) return { w: deviceNodeWidth(device.ports.length), h: DEVICE_NODE_HEIGHT }
   const facade = switchFacade(device.ports)
   return { w: facade.width, h: facade.height }
 }

@@ -44,15 +44,23 @@ export function buildMenu(): void {
         { label: 'Annuler', accelerator: 'CmdOrCtrl+Z', click: () => send('undo') },
         { label: 'Rétablir', accelerator: 'Shift+CmdOrCtrl+Z', click: () => send('redo') },
         { type: 'separator' },
+        { label: 'Rechercher un appareil…', accelerator: 'CmdOrCtrl+K', click: () => send('search') },
+        { type: 'separator' },
         { role: 'cut', label: 'Couper' },
         { role: 'copy', label: 'Copier' },
         { role: 'paste', label: 'Coller' },
+        { label: 'Dupliquer', accelerator: 'CmdOrCtrl+D', click: () => send('duplicate') },
+        { label: 'Créer une zone autour de la sélection', accelerator: 'CmdOrCtrl+G', click: () => send('groupZone') },
         { role: 'selectAll', label: 'Tout sélectionner' }
       ]
     },
     {
       label: 'Affichage',
       submenu: [
+        { label: 'Cadrer tout', accelerator: 'CmdOrCtrl+0', click: () => send('fitView') },
+        { label: 'Zoom avant', accelerator: 'CmdOrCtrl+Plus', click: () => send('zoomIn') },
+        { label: 'Zoom arrière', accelerator: 'CmdOrCtrl+-', click: () => send('zoomOut') },
+        { type: 'separator' },
         { role: 'reload', label: 'Recharger' },
         { role: 'toggleDevTools', label: 'Outils de développement' },
         { type: 'separator' },
