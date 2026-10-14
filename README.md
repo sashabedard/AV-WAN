@@ -58,7 +58,7 @@ AV·WAN est gratuit, fonctionne hors ligne sur macOS et Windows, et est en fran�
 
 - **PDF vectoriel**, texte sélectionnable, cartouche et « page x / y » sur chaque page :
   1. schéma en Tabloïd (ou A3) paysage, avec sa légende, plus une page agrandie par zone marquée « page séparée » ;
-  2. fiches par appareil, une ligne par branchement (« ETH → SW-2 · port 1 · PoE+ actif (25 W) · VLAN 40 NDI · C-010 Cat6 12 m ») ;
+  2. fiches par appareil, une ligne par branchement (« ETH › SW-2 · port 1 · PoE+ actif (25 W) · VLAN 40 NDI · C-010 Cat6 12 m ») ;
   3. carte des ports de chaque switch : la façade colorée par VLAN natif, puis le tableau port par port ;
   4. liste de branchement ;
   5. fiches VLAN avec les réglages UniFi sous leurs noms exacts ;

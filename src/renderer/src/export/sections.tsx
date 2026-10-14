@@ -20,7 +20,7 @@ export function DeviceSheetsPage({ project }: { project: Project }) {
             <span className="ds__name">{s.name}</span>
             <span className="ds__kind">{[s.kind, s.model].filter(Boolean).join(' · ')}</span>
           </header>
-          <p className="ds__meta">{[`IP : ${s.ip}`, s.hostname && `Nom d’hôte : ${s.hostname}`, s.zone && `Zone : ${s.zone}`].filter(Boolean).join(' · ')}</p>
+          <p className="ds__meta">{[s.networked && `IP : ${s.ip}`, s.hostname && `Nom d’hôte : ${s.hostname}`, s.zone && `Zone : ${s.zone}`].filter(Boolean).join(' · ')}</p>
           {s.lines.length === 0 ? (
             <p className="ds__none">Aucun câble branché.</p>
           ) : (

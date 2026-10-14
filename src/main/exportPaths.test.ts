@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { csvPaths, safeFileName, withExtension } from './exportPaths'
+import { csvPaths, existingPaths, safeFileName, withExtension } from './exportPaths'
 
 describe('chemins d’export', () => {
   it('place les trois CSV à côté du nom choisi', () => {
@@ -20,5 +20,23 @@ describe('chemins d’export', () => {
   it('retire du nom proposé les caractères interdits sur macOS ou Windows', () => {
     expect(safeFileName('Régie: A/B *v2*')).toBe('Régie- A-B -v2-')
     expect(safeFileName('   ')).toBe('projet')
+  })
+
+  it('retire les caractères de contrôle', () => {
+    expect(safeFileName('a\u0000b\nc\u007fd')).toBe('a-b-c-d')
+  })
+
+  it('évite les noms réservés de Windows', () => {
+    expect(safeFileName('CON')).toBe('CON-projet')
+    expect(safeFileName('nul.txt')).toBe('nul.txt-projet')
+    expect(safeFileName('Lpt9')).toBe('Lpt9-projet')
+    expect(safeFileName('console')).toBe('console')
+    expect(safeFileName('COM10')).toBe('COM10')
+  })
+
+  it('liste les chemins qui existent déjà', () => {
+    const present = new Set(['/x/a-plan-ip.csv'])
+    expect(existingPaths(['/x/a-branchement.csv', '/x/a-plan-ip.csv'], (p) => present.has(p))).toEqual(['/x/a-plan-ip.csv'])
+    expect(existingPaths(['/x/zzz-inexistant.csv'])).toEqual([])
   })
 })

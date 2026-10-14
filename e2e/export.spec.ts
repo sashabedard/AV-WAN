@@ -34,7 +34,7 @@ test('exporte le projet exemple en PDF vectoriel : schéma en Tabloïd, tableau 
     const rest = pages.slice(3).map((p) => p.text).join(' ')
     for (const expected of [
       'Fiches par appareil',
-      'ETH → SW-2 · port 1',
+      'ETH › SW-2 · port 1',
       'Carte des ports',
       'PoE 123 / 150 W',
       'Liste de branchement',

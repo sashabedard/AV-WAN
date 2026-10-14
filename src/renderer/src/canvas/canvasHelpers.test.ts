@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { mergeEdges, mergeNodes, nodesMatchDerived, snapPoint, syncSelected } from './canvasHelpers'
+import { deviceIpLine, mergeEdges, mergeNodes, nodesMatchDerived, snapPoint, syncSelected } from './canvasHelpers'
 import type { CordFlowEdge, DeviceFlowNode } from './toFlow'
 
 const node = (id: string, extra: Partial<DeviceFlowNode> = {}) =>
@@ -40,5 +40,15 @@ describe('canvasHelpers', () => {
     const synced = syncSelected(items, new Set(['a']))
     expect(synced.map((n) => n.selected)).toEqual([true, false])
     expect(syncSelected(synced, new Set(['a']))).toBe(synced)
+  })
+})
+
+describe('deviceIpLine', () => {
+  it('dit DHCP quand l’appareil en DHCP n’a pas d’adresse, comme les fiches', () => {
+    expect(deviceIpLine({ address: '', mode: 'dhcp' })).toBe('DHCP')
+    expect(deviceIpLine({ address: '10.0.0.5', mode: 'dhcp' })).toBe('10.0.0.5 · DHCP')
+    expect(deviceIpLine({ address: '10.0.0.5', mode: 'static' })).toBe('10.0.0.5 · FIXE')
+    expect(deviceIpLine({ address: '', mode: 'static' })).toBe('IP non définie')
+    expect(deviceIpLine(undefined)).toBe('IP non définie')
   })
 })

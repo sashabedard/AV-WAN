@@ -18,6 +18,7 @@ if (new URLSearchParams(window.location.search).has('print')) {
   document.documentElement.dataset['theme'] = 'light'
   document.documentElement.dataset['print'] = ''
   void import('./export/PrintApp').then(({ PrintApp }) => createRoot(root).render(<PrintApp />))
+    .catch((e: unknown) => window.avwan.print.failed(e instanceof Error ? e.message : String(e)))
 } else {
   if (window.avwan.isE2E) installE2EHooks()
   applyPreference(loadPreference(safeLocalStorage()), document.documentElement)

@@ -17,15 +17,15 @@ const PADDING = 0.04
 // Le canvas pour l'impression : mêmes nœuds et cordons, aucune interaction (spec § 11.1). Cadre tout
 // le projet, ou une zone, puis appelle onReady une seule fois.
 export function StaticDiagram({ project, zone, onReady }: { project: Project; zone?: Zone; onReady: () => void }) {
-  const cache = useRef(createFlowCache())
+  const [cache] = useState(createFlowCache)
   const analysis = useMemo(() => analyzeLinks(project, 'light'), [project])
-  const derivedNodes = useMemo<FlowNode[]>(() => [...toFlowZones(project, cache.current), ...toFlowNodes(project, analysis, cache.current)], [project, analysis])
+  const derivedNodes = useMemo<FlowNode[]>(() => [...toFlowZones(project, cache), ...toFlowNodes(project, analysis, cache)], [project, analysis])
   // React Flow 12 renvoie les dimensions mesurées par onNodesChange : sans les appliquer aux nœuds,
   // useNodesInitialized() resterait faux et le PDF attendrait jusqu'au délai maximal (comme Canvas).
   const [nodes, setNodes] = useState(derivedNodes)
   useEffect(() => setNodes((prev) => mergeNodes(derivedNodes, prev)), [derivedNodes])
   const onNodesChange = useCallback((changes: NodeChange<FlowNode>[]) => setNodes((ns) => applyNodeChanges(changes, ns)), [])
-  const edges = useMemo<CordFlowEdge[]>(() => toFlowEdges(project, analysis, cache.current), [project, analysis])
+  const edges = useMemo<CordFlowEdge[]>(() => toFlowEdges(project, analysis, cache), [project, analysis])
   const initialized = useNodesInitialized()
   const flow = useReactFlow<FlowNode, CordFlowEdge>()
   const done = useRef(false)

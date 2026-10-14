@@ -52,7 +52,7 @@ export async function renderPdf(job: PrintJob, timeoutMs = PRINT_TIMEOUT_MS): Pr
     win.webContents.on('will-navigate', (e) => e.preventDefault())
     win.webContents.setWindowOpenHandler(() => ({ action: 'deny' }))
     win.webContents.on('render-process-gone', () => pending.get(id)?.settle(new Error('La fenêtre d’impression s’est arrêtée.')))
-    await loadRenderer(win, { print: '1' })
+    await Promise.race([loadRenderer(win, { print: '1' }), ready])
     await ready
     return await win.webContents.printToPDF({ preferCSSPageSize: true, printBackground: true })
   } finally {

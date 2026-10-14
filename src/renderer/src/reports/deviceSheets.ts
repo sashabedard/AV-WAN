@@ -4,6 +4,8 @@ import { getTemplate } from '../catalog'
 import { connection, type Connection } from './connections'
 import { DASH, compareText, ipLabel } from './format'
 
+const NETWORK_CONNECTORS = new Set<string>(['rj45', 'sfp', 'sfp+', 'wifi'])
+
 export interface DeviceSheetLine {
   port: string
   connection: Connection
@@ -16,15 +18,16 @@ export interface DeviceSheet {
   kind: string // nom du gabarit
   model?: string
   ip: string
+  networked: boolean // au moins une prise réseau (RJ45, SFP, SFP+, Wi-Fi) : sinon pas d’IP à afficher
   hostname?: string
   zone?: string
   note?: string
   lines: DeviceSheetLine[]
 }
 
-// « ETH → SW-2 · port 1 · PoE+ actif (25 W) · VLAN 40 NDI · C-010 Cat6 12 m »
+// « ETH › SW-2 · port 1 · PoE+ actif (25 W) · VLAN 40 NDI · C-010 Cat6 12 m »
 export function sheetLineText(port: string, c: Connection): string {
-  const parts = [`${port} → ${c.toLabel}`]
+  const parts = [`${port} › ${c.toLabel}`]
   if (c.poe.active) parts.push(c.poeLabel)
   if (c.vlan.kind === 'access') parts.push(`VLAN ${c.nativeLabel}`)
   if (c.vlan.kind === 'trunk') parts.push(`Trunk${c.nativeLabel !== DASH ? ` natif ${c.nativeLabel}` : ''} · étiquetés : ${c.taggedLabel}`)
@@ -56,6 +59,7 @@ export function deviceSheets(project: Project): DeviceSheet[] {
         kind: template?.name ?? device.templateId,
         ...(device.model ? { model: device.model } : {}),
         ip: ipLabel(device.ip),
+        networked: device.ports.some((p) => NETWORK_CONNECTORS.has(p.connector)),
         ...(device.hostname ? { hostname: device.hostname } : {}),
         ...(zone ? { zone } : {}),
         ...(device.note ? { note: device.note } : {}),

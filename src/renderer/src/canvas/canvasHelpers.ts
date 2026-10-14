@@ -1,7 +1,15 @@
 import type { Node } from '@xyflow/react'
 import type { CordFlowEdge } from './toFlow'
+import type { IpConfig } from '../model/types'
 
 export const GRID = 8
+
+// Deuxième ligne de la tuile d'un appareil : « adresse · FIXE/DHCP », « DHCP » sans adresse, sinon « IP non définie ».
+export function deviceIpLine(ip: IpConfig | undefined): string {
+  if (!ip) return 'IP non définie'
+  if (ip.address) return `${ip.address} · ${ip.mode === 'static' ? 'FIXE' : 'DHCP'}`
+  return ip.mode === 'dhcp' ? 'DHCP' : 'IP non définie'
+}
 
 export function snapPoint(p: { x: number; y: number }, on: boolean): { x: number; y: number } {
   return on ? { x: Math.round(p.x / GRID) * GRID, y: Math.round(p.y / GRID) * GRID } : { x: p.x, y: p.y }

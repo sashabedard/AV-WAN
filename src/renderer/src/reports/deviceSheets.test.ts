@@ -16,16 +16,19 @@ describe('deviceSheets', () => {
 
   it('décrit chaque branchement en une ligne (spec § 11.1, section 2)', () => {
     expect(sheet('CAM-1')).toMatchObject({ kind: 'Caméra PTZ NDI', ip: '10.40.0.21 statique', zone: 'Salle' })
-    expect(sheet('CAM-1').lines.map((l) => l.text)).toEqual(['ETH → SW-2 · port 1 · PoE+ actif (25 W) · VLAN 40 NDI · C-010 Cat6 12 m'])
+    expect(sheet('CAM-1').lines.map((l) => l.text)).toEqual(['ETH › SW-2 · port 1 · PoE+ actif (25 W) · VLAN 40 NDI · C-010 Cat6 12 m'])
     expect(sheet('AP-1').lines.map((l) => l.text)).toEqual([
-      'ETH → SW-2 · port 3 · PoE+ actif (21 W) · Trunk natif 10 Gestion · étiquetés : 10, 60 · C-012 Cat6 8 m',
-      'Wi-Fi → IOT-2 · Wi-Fi · VLAN 60 IoT / MQTT · C-016 Wi-Fi'
+      'ETH › SW-2 · port 3 · PoE+ actif (21 W) · Trunk natif 10 Gestion · étiquetés : 10, 60 · C-012 Cat6 8 m',
+      'Wi-Fi › IOT-2 · Wi-Fi · VLAN 60 IoT / MQTT · C-016 Wi-Fi'
     ])
     expect(sheet('PIX-1').lines.map((l) => l.text)).toEqual([
-      'ETH1 → SW-1 · port 12 · VLAN 50 Éclairage · C-008 Cat6 15 m',
-      'OUT1 → LED-1 · IN · C-017 Pixels 2 m'
+      'ETH1 › SW-1 · port 12 · VLAN 50 Éclairage · C-008 Cat6 15 m',
+      'OUT1 › LED-1 · IN · C-017 Pixels 2 m'
     ])
     expect(sheet('SPK-1').ip).toBe('DHCP')
+    expect(sheet('CAM-1').networked).toBe(true)
+    expect(sheet('FIX-1').networked).toBe(false)
+    expect(sheet('LED-1').networked).toBe(false)
   })
 
   it('ne contredit jamais la liste de branchement (spec § 1, critère 2)', () => {
