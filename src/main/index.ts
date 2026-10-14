@@ -8,7 +8,7 @@ import { loadRenderer } from './windows'
 import { registerExportIpc } from './exports'
 import { readTextFile } from './fileIO'
 import { frenchFsMessage } from './errors'
-import { checkForUpdatesManually, setupUpdater } from './updater'
+import { cancelInstallRequest, checkForUpdatesManually, setupUpdater } from './updater'
 import { createOpenQueue, pathsFromArgv } from './openRequests'
 
 const userData = process.env['AVWAN_USER_DATA']
@@ -111,6 +111,9 @@ function createWindow(): BrowserWindow {
       // Abandon volontaire : la copie de récupération de cette fenêtre ne doit pas être proposée au prochain lancement.
       discardLastRecoverySync(win.webContents.id)
       event.preventDefault()
+    } else {
+      // Annuler : l'installation demandée est abandonnée (une fermeture ordinaire installera en silence).
+      cancelInstallRequest()
     }
   })
   void loadRenderer(win)

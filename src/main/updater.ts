@@ -8,6 +8,12 @@ const CHECK_EVERY_MS = 4 * 60 * 60 * 1000
 
 let enabled = false
 let readyVersion: string | null = null
+let installRequested = false
+
+// « Annuler » dans la question sur les modifications non enregistrées : on n'installe plus à la fermeture.
+export function cancelInstallRequest(): void {
+  installRequested = false
+}
 
 function broadcastReady(version: string): void {
   for (const win of BrowserWindow.getAllWindows()) if (!win.isDestroyed()) win.webContents.send(IPC.updateReady, version)
@@ -19,7 +25,16 @@ export function setupUpdater(isE2E: boolean): void {
   ipcMain.handle(IPC.updatePending, () => readyVersion)
   ipcMain.on(IPC.updateInstall, () => {
     // La fermeture passe par la question sur les modifications non enregistrées (will-prevent-unload).
-    if (readyVersion) autoUpdater.quitAndInstall()
+    if (!readyVersion) return
+    installRequested = true
+    app.quit()
+  })
+  // Toutes les fenêtres ont accepté de se fermer : on peut lancer l'installeur et relancer l'app.
+  app.on('will-quit', (event) => {
+    if (!installRequested) return
+    installRequested = false
+    event.preventDefault()
+    autoUpdater.quitAndInstall(false, true)
   })
   if (!app.isPackaged || isE2E) return
   enabled = true
