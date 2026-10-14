@@ -52,6 +52,23 @@ AV·WAN est gratuit, fonctionne hors ligne sur macOS et Windows, et est en fran�
 | **Documenter** | Liste de branchement, fiches par appareil, carte des ports de chaque switch, fiches VLAN avec les réglages UniFi (IGMP Snooping, Querier, profil ProAV…), plan d'adressage IP, nomenclature. |
 | **Exporter** | PDF vectoriel en Tabloïd + Lettre (ou A3 + A4) avec un cartouche sur chaque page, CSV et Excel. |
 
+### Exports
+
+`⌘E` (ou le bouton **Exporter** en haut) ouvre la boîte d'export :
+
+- **PDF vectoriel**, texte sélectionnable, cartouche et « page x / y » sur chaque page :
+  1. schéma en Tabloïd (ou A3) paysage, avec sa légende, plus une page agrandie par zone marquée « page séparée » ;
+  2. fiches par appareil, une ligne par branchement (« ETH → SW-2 · port 1 · PoE+ actif (25 W) · VLAN 40 NDI · C-010 Cat6 12 m ») ;
+  3. carte des ports de chaque switch : la façade colorée par VLAN natif, puis le tableau port par port ;
+  4. liste de branchement ;
+  5. fiches VLAN avec les réglages UniFi sous leurs noms exacts ;
+  6. plan d'adressage IP, trié par VLAN puis par adresse ;
+  7. nomenclature : appareils, câbles par longueur arrondie au mètre, modules SFP+ déduits.
+- **CSV** pour Excel en français (séparateur « ; », UTF-8) : liste de branchement, plan IP et nomenclature, un fichier chacun.
+- **Classeur Excel** : les trois mêmes listes, une feuille chacune, en-têtes figés et filtres activés.
+
+Le PDF, le CSV et le classeur lisent les mêmes tableaux : ils ne se contredisent jamais.
+
 ## Lire un schéma AV·WAN
 
 | Ce que vous voyez | Ce que ça veut dire |
@@ -103,6 +120,7 @@ npm run typecheck    # TypeScript strict
 npm run e2e          # build, puis tests de bout en bout (Playwright + Electron)
 npm run peek         # capture d'écran de l'app, fenêtre jamais visible (test-results/peek.png)
 npm run captures     # régénère les captures du README depuis le projet exemple
+npm run rendu:maj    # met à jour les captures de référence du canvas (e2e/rendu.spec.ts-snapshots)
 npm run brand        # régénère l'icône d'app et les logos depuis build/icon.svg (macOS)
 npm run build        # build de production dans out/
 ```
@@ -117,17 +135,21 @@ Les installeurs `.dmg` et `.exe` arrivent avec le plan 4. L'app n'est pas signé
 ## Architecture
 
 ```
-src/main/        processus Electron : fichiers .avwan (écriture atomique), menu natif, IPC
+src/main/        processus Electron : fichiers .avwan (écriture atomique), menu natif, IPC,
+                 export PDF (fenêtre d'impression cachée), CSV et Excel
 src/preload/     pont sécurisé (sandbox, contextIsolation)
+src/shared/      types communs : API IPC, tableaux de données, options du PDF
 src/renderer/    l'interface React
   model/         le projet : schéma zod, règles de branchement, VLAN et PoE dérivés
   catalog/       gabarits d'appareils, configurateur de switch, VLAN prédéfinis
+  reports/       rapports purs : branchement, fiches, ports, VLAN, IP, nomenclature
+  export/        vue d'impression du PDF et boîte d'export
   store/         état du projet, historique d'annulation, sélection
   canvas/        React Flow : façade de switch, tuiles, cordons
   panels/        palette, inspecteur
 ```
 
-**Une seule source de vérité.** Le projet est un fichier JSON validé. Le canvas, l'inspecteur et le PDF n'en sont que des *vues*, ce qui les empêche de se contredire. `model/` et `catalog/` ne dépendent ni de l'interface ni d'Electron, et sont testés en quelques millisecondes.
+**Une seule source de vérité.** Le projet est un fichier JSON validé. Le canvas, l'inspecteur et le PDF n'en sont que des *vues*, ce qui les empêche de se contredire. `model/`, `catalog/` et `reports/` ne dépendent ni de l'interface ni d'Electron, et sont testés en quelques millisecondes.
 
 Pour aller plus loin :
 

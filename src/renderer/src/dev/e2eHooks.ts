@@ -9,6 +9,7 @@ import type { MenuAction } from '../../../shared/api'
 import type { PdfOptions } from '../../../shared/pdfOptions'
 import { exportPdfAction } from '../export/exportActions'
 import { makeStressProject } from './stress'
+import { makeRenderFixture } from './renderFixture'
 
 let flow: ReactFlowInstance<FlowNode, CordFlowEdge> | null = null
 
@@ -20,6 +21,7 @@ export interface E2EHooks {
   getProject(): Project
   select(selection: Selection): void
   loadStress(): void
+  loadRenderFixture(): void
   fitView(padding?: FitViewOptions['padding']): Promise<boolean>
   saveTo(path: string): Promise<void>
   openPath(path: string): Promise<boolean>
@@ -33,6 +35,7 @@ export function installE2EHooks(): void {
     select: (selection) => projectStore.getState().setSelection(selection),
     menu: (action) => handleMenuAction(action),
     loadStress: () => projectStore.getState().loadProject(makeStressProject(), null),
+    loadRenderFixture: () => projectStore.getState().loadProject(makeRenderFixture(), null),
     fitView: async (padding) => (flow ? flow.fitView({ padding: padding ?? 0.05 }) : false),
     saveTo: async (path) => {
       const snapshot = projectStore.getState().history.present
