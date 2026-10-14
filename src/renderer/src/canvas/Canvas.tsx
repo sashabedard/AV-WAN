@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type DragEvent, type
 import {
   Background,
   BackgroundVariant,
+  ConnectionMode,
   ReactFlow,
   ReactFlowProvider,
   applyEdgeChanges,
@@ -105,6 +106,7 @@ function CanvasInner() {
         nodeTypes={nodeTypes}
         edges={edges}
         edgeTypes={edgeTypes}
+        connectionMode={ConnectionMode.Loose}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onNodeDragStop={onNodeDragStop}
