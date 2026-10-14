@@ -333,3 +333,22 @@ describe('VLAN dans le store', () => {
     expect(isDirty(s.getState())).toBe(false)
   })
 })
+
+describe('documents restaurés et sans titre', () => {
+  it('un projet restauré est chargé comme modifié, relié à son fichier', () => {
+    const store = createProjectStore()
+    store.getState().loadProject(sampleProject(), '/x/a.avwan', { restored: true })
+    expect(isDirty(store.getState())).toBe(true)
+    expect(store.getState().filePath).toBe('/x/a.avwan')
+  })
+
+  it('chaque document reçoit un nouvel identifiant sans titre', () => {
+    const store = createProjectStore()
+    const first = store.getState().untitledId
+    expect(first).toMatch(/^[A-Za-z0-9_-]{6,40}$/)
+    store.getState().newProject()
+    const second = store.getState().untitledId
+    store.getState().loadProject(sampleProject(), null)
+    expect(new Set([first, second, store.getState().untitledId]).size).toBe(3)
+  })
+})

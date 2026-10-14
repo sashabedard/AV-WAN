@@ -4,6 +4,7 @@ import { useDocumentTitle } from './app/useDocumentTitle'
 import { useFileDropGuard } from './app/useFileDropGuard'
 import { useClipboardEvents } from './app/clipboardActions'
 import { useOpenRequests } from './app/useOpenRequests'
+import { useAutosave } from './app/autosave'
 
 export function App() {
   useMenuBridge()
@@ -11,5 +12,6 @@ export function App() {
   useFileDropGuard()
   useClipboardEvents()
   useOpenRequests()
+  useAutosave()
   return <AppShell />
 }

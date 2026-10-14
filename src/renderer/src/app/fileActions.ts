@@ -3,11 +3,16 @@ import { parseProjectFile, serializeProject } from '../model/file'
 import { ipcErrorMessage } from './ipcError'
 import type { OpenRequest } from '../../../shared/api'
 import { uiStore } from '../store/uiStore'
+import { autosave } from './autosave'
 
 const DISCARD_QUESTION = 'Des modifications ne sont pas enregistrées. Continuer quand même ?'
 
 function confirmDiscard(): boolean {
-  return !isDirty(projectStore.getState()) || window.confirm(DISCARD_QUESTION)
+  if (!isDirty(projectStore.getState())) return true
+  if (!window.confirm(DISCARD_QUESTION)) return false
+  // Abandon volontaire : la copie de récupération de ce document ne sert plus.
+  autosave.discardCurrent()
+  return true
 }
 
 export function fileNameOf(path: string | null): string {
@@ -85,6 +90,7 @@ export async function saveProjectAsAction(): Promise<void> {
     if (!path) return
     projectStore.setState({ readOnly: false })
     projectStore.getState().markSaved(path, snapshot)
+    autosave.saved()
   } catch (e) {
     s.showToast(`Échec de l’enregistrement : ${ipcErrorMessage(e)}`)
   }
@@ -98,6 +104,7 @@ export async function saveProjectAction(): Promise<void> {
   try {
     await window.avwan.file.save(path, serializeProject(snapshot))
     projectStore.getState().markSaved(path, snapshot)
+    autosave.saved()
   } catch (e) {
     s.showToast(`Échec de l’enregistrement : ${ipcErrorMessage(e)}`)
   }

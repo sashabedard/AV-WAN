@@ -3,7 +3,8 @@ import type { AvwanApi } from '../../../shared/api'
 import { isDirty, projectStore } from '../store/projectStore'
 import { sampleProject } from '../model/__fixtures__/sample'
 import { serializeProject } from '../model/file'
-import { fileNameOf, loadFromText, openProjectAction, openRequestAction, saveProjectAction } from './fileActions'
+import { fileNameOf, loadFromText, openProjectAction, openRecentAction, openRequestAction, saveProjectAction } from './fileActions'
+import { autosave } from './autosave'
 import { uiStore } from '../store/uiStore'
 
 function fakeApi(file: Partial<AvwanApi['file']> = {}): AvwanApi {
@@ -147,5 +148,28 @@ describe('openRequestAction (double-clic)', () => {
     vi.stubGlobal('window', { avwan: fakeApi(), confirm: () => true })
     expect(await openRequestAction({ path: '/x/absent.avwan', error: 'Fichier ou dossier introuvable (ENOENT).' })).toBe(false)
     expect(projectStore.getState().toast).toBe('Ouverture impossible : Fichier ou dossier introuvable (ENOENT).')
+  })
+})
+
+describe('copie de récupération et fichier', () => {
+  it('⌘S efface la copie du document', async () => {
+    const api = fakeApi()
+    vi.mocked(api.recovery.write).mockResolvedValue('f-0123456789abcdef')
+    vi.stubGlobal('window', { avwan: api, confirm: () => true })
+    projectStore.getState().updateMeta({ title: 'Modifié' })
+    await autosave.tick()
+    await saveProjectAction()
+    expect(api.recovery.discard).toHaveBeenCalledWith('f-0123456789abcdef')
+  })
+
+  it('abandonner les modifications pour ouvrir un autre fichier efface la copie', async () => {
+    const api = fakeApi()
+    vi.mocked(api.recovery.write).mockResolvedValue('f-fedcba9876543210')
+    vi.mocked(api.recent.open).mockResolvedValue({ path: '/x/b.avwan', text: serializeProject(sampleProject()) })
+    vi.stubGlobal('window', { avwan: api, confirm: () => true })
+    projectStore.getState().updateMeta({ title: 'Modifié' })
+    await autosave.tick()
+    await openRecentAction('/x/b.avwan')
+    expect(api.recovery.discard).toHaveBeenCalledWith('f-fedcba9876543210')
   })
 })

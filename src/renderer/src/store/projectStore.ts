@@ -36,10 +36,12 @@ export interface ProjectState {
   savedRef: Project | null
   readOnly: boolean
   docId: number
+  // Identifiant du document tant qu'il n'a pas de chemin : nomme sa copie de récupération (u-<id>).
+  untitledId: string
   selection: Selection
   toast: string | null
   newProject(): void
-  loadProject(project: Project, filePath: string | null, opts?: { readOnly?: boolean }): void
+  loadProject(project: Project, filePath: string | null, opts?: { readOnly?: boolean; restored?: boolean }): void
   markSaved(filePath: string, saved?: Project): void
   apply(fn: (p: Project) => Project): void
   addDevice(templateId: string, position: { x: number; y: number }, opts?: CreateDeviceOptions): string
@@ -112,16 +114,26 @@ export function createProjectStore(initial: Project = createProject()): StoreApi
       savedRef: initial,
       readOnly: false,
       docId: 0,
+      untitledId: newId(),
       selection: EMPTY_SELECTION,
       toast: null,
 
       newProject: () => {
         const p = createProject()
-        set({ history: initHistory(p), filePath: null, savedRef: p, readOnly: false, selection: EMPTY_SELECTION, docId: get().docId + 1 })
+        set({ history: initHistory(p), filePath: null, savedRef: p, readOnly: false, selection: EMPTY_SELECTION, docId: get().docId + 1, untitledId: newId() })
         uiStore.getState().resetForDocument()
       },
+      // restored : une copie de récupération, chargée comme « modifiée » (rien n'est encore enregistré).
       loadProject: (project, filePath, opts) => {
-        set({ history: initHistory(project), filePath, savedRef: project, readOnly: opts?.readOnly ?? false, selection: EMPTY_SELECTION, docId: get().docId + 1 })
+        set({
+          history: initHistory(project),
+          filePath,
+          savedRef: opts?.restored ? null : project,
+          readOnly: opts?.readOnly ?? false,
+          selection: EMPTY_SELECTION,
+          docId: get().docId + 1,
+          untitledId: newId()
+        })
         uiStore.getState().resetForDocument()
       },
       markSaved: (filePath, saved) => set({ filePath, savedRef: saved ?? get().history.present }),
