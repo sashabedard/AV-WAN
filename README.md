@@ -10,7 +10,7 @@
 </p>
 
 <p align="center">
-  <img alt="Statut : plan 2 terminé" src="https://img.shields.io/badge/statut-plan%202%20termin%C3%A9-F2A93B?style=flat-square&labelColor=1D2125">
+  <img alt="Statut : plan 3 terminé" src="https://img.shields.io/badge/statut-plan%203%20termin%C3%A9-F2A93B?style=flat-square&labelColor=1D2125">
   <img alt="macOS et Windows, hors ligne" src="https://img.shields.io/badge/macOS%20%C2%B7%20Windows-hors%20ligne-8E969F?style=flat-square&labelColor=1D2125">
   <img alt="Electron, React, React Flow" src="https://img.shields.io/badge/Electron%20%C2%B7%20React%20%C2%B7%20React%20Flow-3E8EF7?style=flat-square&labelColor=1D2125">
   <img alt="Interface en français" src="https://img.shields.io/badge/interface-fran%C3%A7ais-3DBE6E?style=flat-square&labelColor=1D2125">
@@ -105,7 +105,7 @@ Pourquoi séparer Dante, NDI et l'éclairage ? Leurs flux multicast tombent tous
 
 - [x] **Plan 1 — Fondations** : canvas, palette, façade de switch, cordons, branchement, inspecteur, fichier `.avwan`, annuler/rétablir, test de bout en bout et mesure de fluidité (150 appareils, 400 câbles).
 - [x] **Plan 2 — Canvas complet et identité** : **logo et icône d'app**, jeu d'icônes maison, zones (régie, salle, scène), panneau VLAN, modes de couleur *Type* et *Port*, recherche `⌘K`, projet exemple, **captures d'écran de ce README**.
-- [ ] **Plan 3 — Exports** : PDF vectoriel, CSV et Excel.
+- [x] **Plan 3 — Rapports et exports** : PDF vectoriel (schéma, pages de zone, fiches, cartes des ports, branchement, VLAN, plan IP, nomenclature), CSV et Excel, VLAN à travers le panneau de brassage.
 - [ ] **Plan 4 — Distribution** : `.dmg` universel et `.exe` avec leurs icônes, autosauvegarde et récupération, composantes perso avec import d'icône.
 
 ## Démarrer (développement)
