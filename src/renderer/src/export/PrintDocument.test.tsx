@@ -22,4 +22,23 @@ describe('PrintDocument', () => {
     expect(screen.getByText('Aucun câble dans le projet.')).toBeTruthy()
     expect(document.querySelector('.print style')!.textContent).toContain('@page sheet { size: 210mm 297mm; }')
   })
+
+  it('imprime les sections dans l’ordre de la spec, quel que soit l’ordre demandé', () => {
+    render(
+      <PrintDocument
+        project={createExampleProject(new Date(2026, 9, 13))}
+        options={{ sections: ['nomenclature', 'appareils', 'ip', 'vlans', 'ports', 'branchement'], format: 'na', zonePages: true }}
+        onReady={() => undefined}
+      />
+    )
+    expect(screen.getAllByRole('heading', { level: 2 }).map((h) => h.textContent)).toEqual([
+      'Fiches par appareil',
+      'Carte des ports · SW-1',
+      'Carte des ports · SW-2',
+      'Liste de branchement',
+      'Fiches VLAN',
+      'Plan d’adressage IP',
+      'Nomenclature'
+    ])
+  })
 })

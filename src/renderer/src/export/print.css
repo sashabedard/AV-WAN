@@ -44,3 +44,43 @@ html[data-print] #root { height: auto; background: #ffffff; }
 /* Première colonne = identifiant (câble, appareil) : jamais coupé à son trait d'union (« C- / 001 »). */
 .print .rt td:first-child { white-space: nowrap; }
 .print .rt__num { text-align: right; }
+
+/* Légende du schéma */
+.print .pl { display: flex; gap: 12pt; flex: 1; min-width: 0; overflow: hidden; padding: 6pt 8pt; border: 0.75pt solid #1e1f22; }
+.print .pl__col { min-width: 0; }
+.print .pl__title { margin-bottom: 3pt; font: 600 7pt/1 var(--font-mono); letter-spacing: 0.06em; color: #6b675e; }
+.print .pl__list { columns: 2; column-gap: 10pt; margin: 0; padding: 0; list-style: none; font: 7.5pt/1.5 var(--font-mono); }
+.print .pl__list li { display: flex; align-items: center; gap: 5pt; break-inside: avoid; }
+.print .pl__swatch { flex: none; width: 16pt; height: 4pt; border-radius: 1pt; }
+.print .pl__stroke { flex: none; }
+.print .pl__bolt { fill: var(--led-poe); stroke: #1e1f22; stroke-width: 0.6; }
+.print .pl__note { margin: 0; font: 7.5pt/1.4 var(--font-mono); }
+
+/* Fiches par appareil */
+.print .ds { break-inside: avoid; padding: 5pt 0 6pt; border-bottom: 0.5pt solid #d6cebb; }
+.print .ds__head { display: flex; gap: 8pt; align-items: baseline; }
+.print .ds__name { padding: 1pt 4pt; background: #1e1f22; color: #f3efe4; font: 600 8.5pt/1.2 var(--font-mono); }
+.print .ds__kind { font: 700 9pt/1.2 var(--font-display); }
+.print .ds__meta, .print .ds__none, .print .ds__note { margin: 3pt 0 0; font: 7.5pt/1.4 var(--font-mono); color: #4a4a46; }
+.print .ds__lines { margin: 3pt 0 0; padding-left: 12pt; font: 7.5pt/1.45 var(--font-mono); }
+
+/* Carte des ports */
+.print .pm__meta, .print .pm__key { margin: 0 0 4pt; font: 7.5pt/1.4 var(--font-mono); color: #4a4a46; }
+.print .pmf { display: block; width: 100%; height: auto; margin: 4pt 0 6pt; }
+.print .pmf__panel { fill: #f1eee6; stroke: #1e1f22; stroke-width: 0.8; }
+.print .pmf__port { stroke: #6b675e; stroke-width: 0.6; }
+.print .pmf__port--trunk { stroke: #1e1f22; stroke-width: 1.6; }
+.print .pmf__bolt { fill: var(--led-poe); stroke: #1e1f22; stroke-width: 0.5; }
+.print .pmf__num { fill: #4a4a46; font: 500 6px var(--font-mono); }
+
+/* Fiches VLAN */
+.print .vs { break-inside: avoid; padding: 6pt 0 8pt; border-bottom: 0.5pt solid #d6cebb; }
+.print .vs__head { display: flex; gap: 8pt; align-items: center; }
+.print .vs__swatch { width: 18pt; height: 6pt; border-radius: 1pt; }
+.print .vs__name { font: 700 10pt/1.2 var(--font-display); }
+.print .vs__short { font: 600 7.5pt/1 var(--font-mono); color: #6b675e; }
+.print .vs__cols { display: grid; grid-template-columns: 1fr 1.4fr; gap: 12pt; margin-top: 4pt; }
+.print .vs__dl { display: grid; grid-template-columns: auto 1fr; gap: 1pt 8pt; margin: 0; font: 7.5pt/1.4 var(--font-mono); }
+.print .vs__dl dt { color: #6b675e; }
+.print .vs__dl dd { margin: 0; }
+.print .vs__members, .print .vs__note { margin: 4pt 0 0; font: 7.5pt/1.4 var(--font-mono); }

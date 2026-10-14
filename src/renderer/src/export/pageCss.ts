@@ -23,7 +23,7 @@ export function footerLines(meta: Project['meta']): { left: string; center: stri
   }
 }
 
-const BOX = "font-family: 'IBM Plex Mono', monospace; font-size: 7.5pt; color: #4a4a46;"
+const BOX = "font-family: 'IBM Plex Mono', monospace; font-size: 6.5pt; color: #4a4a46;"
 
 // Règles @page : formats nommés et cartouche compact au pied de chaque page (spec § 11.1).
 export function pageCss(format: PdfFormat, meta: Project['meta']): string {

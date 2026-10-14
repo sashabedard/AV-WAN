@@ -12,21 +12,38 @@ test('exporte le projet exemple en PDF vectoriel : schéma en Tabloïd, tableau 
   const { app, page } = await launchApp({ keepWelcome: true, env: { AVWAN_E2E_EXPORT_DIR: dir } })
   try {
     await page.getByRole('dialog', { name: 'Accueil' }).getByRole('button', { name: /Projet exemple/ }).click()
-    const path = await page.evaluate(() => window.__avwan!.exportPdf({ sections: ['schema', 'branchement'], format: 'na', zonePages: false }))
+    const path = await page.evaluate(() =>
+      window.__avwan!.exportPdf({ sections: ['schema', 'appareils', 'ports', 'branchement', 'vlans', 'ip', 'nomenclature'], format: 'na', zonePages: true })
+    )
     expect(path).toBe(join(dir, 'Installation interactive (exemple).pdf'))
     const { pages, bytes } = await readPdf(path!)
     expect(hasRasterImage(bytes)).toBe(false)
-    expect(near(pages[0]!.width, 1224) && near(pages[0]!.height, 792)).toBe(true)
-    expect(pages.length).toBeGreaterThan(1)
-    for (const p of pages.slice(1)) expect(near(p.width, 612) && near(p.height, 792)).toBe(true)
+    // Schéma, puis les zones « Régie » et « Salle » (page séparée) en Tabloïd ; le reste en Lettre.
+    for (const p of pages.slice(0, 3)) expect(near(p.width, 1224) && near(p.height, 792)).toBe(true)
+    for (const p of pages.slice(3)) expect(near(p.width, 612) && near(p.height, 792)).toBe(true)
     expect(pages[0]!.text).toContain('SW-1')
-    expect(pages[0]!.text).toContain('CAM-1')
     expect(pages[0]!.text).toContain('Installation interactive (exemple)')
+    expect(pages[0]!.text).toContain('Trunk (bagues = VLAN)')
     expect(pages[0]!.text).toMatch(new RegExp(`Page\\s*1\\s*/\\s*${pages.length}`))
-    const tables = pages.slice(1).map((p) => p.text).join(' ')
-    expect(tables).toContain('Liste de branchement')
-    expect(tables).toContain('C-001')
-    expect(tables).toContain('C-018')
+    expect(pages[1]!.text).toContain('Zone : Régie')
+    expect(pages[2]!.text).toContain('Zone : Salle')
+    const rest = pages.slice(3).map((p) => p.text).join(' ')
+    for (const expected of [
+      'Fiches par appareil',
+      'ETH → SW-2 · port 1',
+      'Carte des ports',
+      'PoE 123 / 150 W',
+      'Liste de branchement',
+      'C-018',
+      'Fiches VLAN',
+      'IGMP Snooping',
+      'Plan d’adressage IP',
+      '10.40.0.21',
+      'Nomenclature',
+      'Module SFP+ multimode'
+    ]) {
+      expect(rest, expected).toContain(expected)
+    }
     // La fenêtre d'impression est détruite, et aucune fenêtre n'a jamais été visible.
     expect(await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows().map((w) => w.isVisible()))).toEqual([false])
   } finally {
