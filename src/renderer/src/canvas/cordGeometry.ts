@@ -44,6 +44,14 @@ export function beside(x: number, y: number, side: Side, dist: number, offset: n
   return { x: x + d.x * dist - d.y * offset, y: y + d.y * dist + d.x * offset }
 }
 
+// Où poser le badge de support (« PIXELS », « DMX ») : sur le tronçon de sortie du côté cible, hors du nœud.
+// Le milieu du tracé tombe sur la tuile quand le câble la contourne (cordon court).
+// `exit` : distance entre la poignée et le bord du nœud ; en bout horizontal, on décale de la demi-largeur du badge.
+export function badgePoint(x: number, y: number, side: Side, exit: number, bands: number): { x: number; y: number } {
+  const half = outward(side).x === 0 ? 12 : 36
+  return beside(x, y, side, exit + stubLength(bands) + half, 0)
+}
+
 // Éclair de 10 px de haut centré sur (0, 0) : placé avec transform="translate(x y)".
 export const BOLT_PATH = 'M1 -5L-3 1H0L-1 5L3 -1H0Z'
 

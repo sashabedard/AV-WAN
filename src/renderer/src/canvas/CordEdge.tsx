@@ -2,9 +2,10 @@ import { memo, useRef, useState } from 'react'
 import { EdgeLabelRenderer, Position, getSmoothStepPath, getStraightPath, useStore as useFlowStore, type EdgeProps } from '@xyflow/react'
 import type { Side } from '../model/types'
 import type { CordFlowEdge } from './toFlow'
+import { useEffectiveFocus } from './useEffectiveFocus'
 import { useUiStore } from '../store/uiStore'
 import { projectStore, useProjectStore } from '../store/projectStore'
-import { BOLT_PATH, bandReach, bandRects, beside, bootRect, elbowFromDrag, outward, stubLength, wavesPath } from './cordGeometry'
+import { BOLT_PATH, badgePoint, bandReach, bandRects, beside, bootRect, elbowFromDrag, outward, stubLength, wavesPath } from './cordGeometry'
 
 const RADIUS = 9
 
@@ -72,7 +73,7 @@ function CordEdgeImpl({ sourceX, sourceY, targetX, targetY, sourcePosition, targ
   const aId = data?.link.a.deviceId
   const bId = data?.link.b.deviceId
   const hot = useUiStore((s) => s.hoverDeviceId !== null && (s.hoverDeviceId === aId || s.hoverDeviceId === bId))
-  const focus = useUiStore((s) => s.focusVlan)
+  const focus = useEffectiveFocus()
   const [draft, setDraft] = useState<Elbow | null>(null)
   const readOnly = useProjectStore((s) => s.readOnly)
   if (!data) return null
@@ -101,6 +102,8 @@ function CordEdgeImpl({ sourceX, sourceY, targetX, targetY, sourcePosition, targ
     return [p.x, p.y, side]
   })
   const dim = focus !== null && !data.vlans.includes(focus)
+  // Le badge de support va sur la sortie du port cible : le milieu d'un cordon court contourne la tuile et tombe dessus.
+  const badgeAt = style.straight ? { x: labelX, y: labelY } : badgePoint(targetX, targetY, ends[1]![2], data.exits[1] ?? 0, style.bands.length)
   const showTag = selected || hover || hot || style.alwaysTag
   const grip = selected && !style.straight && !readOnly
   return (
@@ -144,7 +147,7 @@ function CordEdgeImpl({ sourceX, sourceY, targetX, targetY, sourcePosition, targ
         <EdgeLabelRenderer>
           <div
             className={`cord-tag${showTag ? '' : ' cord-tag--badge'}${dim ? ' cord-tag--dim' : ''}`}
-            style={{ transform: `translate(-50%, ${grip ? '-170%' : '-50%'}) translate(${labelX}px, ${labelY}px)` }}
+            style={{ transform: `translate(-50%, ${grip ? '-170%' : '-50%'}) translate(${showTag ? labelX : badgeAt.x}px, ${showTag ? labelY : badgeAt.y}px)` }}
           >
             {showTag ? `${tag}${style.extraBands > 0 ? ` · +${style.extraBands} VLAN` : ''}` : style.badge}
           </div>
