@@ -10,7 +10,8 @@ export const TEMPLATES: readonly DeviceTemplate[] = [
   { id: 'switch', category: 'reseau', name: 'Switch', code: 'SW', icon: ic('switch'), ports: [], switch: DEFAULT_SWITCH_SPEC, defaults: { vlanId: 10 } },
   { id: 'gateway', category: 'reseau', name: 'Passerelle / routeur', code: 'GW', icon: ic('gateway'), ports: [rj45('WAN', { speedMbps: 2500 }), ...range('LAN', 1, 4).map((id) => rj45(id))], defaults: { vlanId: 10 } },
   { id: 'ap', category: 'reseau', name: "Point d'accès Wi-Fi", code: 'AP', icon: ic('ap'), ports: [rj45('ETH', { speedMbps: 2500, poeIn: 'at', poeDrawW: 21 }), wifi()], defaults: { vlanId: 10 } },
-  { id: 'ptp-bridge', category: 'reseau', name: 'Pont sans fil point à point', code: 'PTP', icon: ic('ptp'), ports: [rj45('ETH', { poeDrawW: 11 }), { ...wifi(), id: 'AIR', label: 'Liaison radio' }] },
+  // PoE passif 24/48 V non modélisé (amendement 3) : pas de consommation affichée.
+  { id: 'ptp-bridge', category: 'reseau', name: 'Pont sans fil point à point', code: 'PTP', icon: ic('ptp'), ports: [rj45('ETH'), { ...wifi(), id: 'AIR', label: 'Liaison radio' }] },
   { id: 'poe-injector', category: 'reseau', name: 'Injecteur PoE', code: 'INJ', icon: ic('injector'), ports: [rj45('IN', { label: 'DATA IN' }), rj45('OUT', { label: 'PoE OUT', poeOut: 'at' })] },
   { id: 'media-converter', category: 'reseau', name: 'Convertisseur de média', code: 'MC', icon: ic('converter'), ports: [rj45('ETH'), sfp('SFP')] },
   { id: 'patch-panel-24', category: 'reseau', name: 'Panneau de brassage 24', code: 'PP', icon: ic('patch-panel'), ports: patchPanelPorts(24) },

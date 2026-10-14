@@ -1,9 +1,9 @@
-// src/renderer/src/catalog/exampleProject.ts
+// src/renderer/src/samples/exampleProject.ts
 import type { Device, Link, Project } from '../model/types'
 import { createDevice, createProject } from '../model/project'
 import { setLinkVlan, type VlanChoice } from '../model/derive'
 import { assignZones } from '../model/zones'
-import { vlanPreset } from './vlanPresets'
+import { vlanPreset } from '../catalog/vlanPresets'
 
 export const EXAMPLE_TITLE = 'Installation interactive (exemple)'
 

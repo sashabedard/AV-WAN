@@ -1,7 +1,7 @@
 // src/renderer/src/app/Welcome.tsx
 import { useEffect, useState } from 'react'
 import { APP_SUBTITLE } from '../../../shared/appInfo'
-import { createExampleProject } from '../catalog/exampleProject'
+import { createExampleProject } from '../samples/exampleProject'
 import { projectStore } from '../store/projectStore'
 import { uiStore, useUiStore } from '../store/uiStore'
 import { BrandMark } from './BrandMark'

@@ -7,7 +7,7 @@ import type { AvwanApi } from '../../../shared/api'
 import { Welcome } from './Welcome'
 import { isDirty, projectStore } from '../store/projectStore'
 import { uiStore } from '../store/uiStore'
-import { EXAMPLE_TITLE } from '../catalog/exampleProject'
+import { EXAMPLE_TITLE } from '../samples/exampleProject'
 import { serializeProject } from '../model/file'
 import { sampleProject } from '../model/__fixtures__/sample'
 
