@@ -13,6 +13,7 @@
     "typecheck": "tsc -p tsconfig.json",
     "test": "vitest run",
     "test:watch": "vitest",
+    "peek": "electron-vite build && AVWAN_PEEK=1 playwright test e2e/peek.spec.ts",
     "e2e": "electron-vite build && playwright test"
   },
   "devDependencies": {

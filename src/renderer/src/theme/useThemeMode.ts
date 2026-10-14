@@ -13,7 +13,13 @@ export function useThemeMode(): ThemeMode {
     const mq = window.matchMedia('(prefers-color-scheme: dark)')
     const onChange = (): void => setMode(currentMode())
     mq.addEventListener('change', onChange)
-    return () => mq.removeEventListener('change', onChange)
+    // La bascule de thème modifie data-theme sur <html> : on suit aussi l'attribut.
+    const observer = new MutationObserver(onChange)
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] })
+    return () => {
+      mq.removeEventListener('change', onChange)
+      observer.disconnect()
+    }
   }, [])
   return mode
 }

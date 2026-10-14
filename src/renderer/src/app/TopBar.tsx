@@ -1,5 +1,6 @@
 import { isDirty, useProjectStore } from '../store/projectStore'
 import { fileNameOf } from './fileActions'
+import { ThemeToggle } from './ThemeToggle'
 
 export function TopBar() {
   const filePath = useProjectStore((s) => s.filePath)
@@ -19,6 +20,8 @@ export function TopBar() {
         {fileNameOf(filePath)}
       </span>
       {readOnly && <span className="topbar__badge">Lecture seule</span>}
+      <span className="topbar__spacer" />
+      <ThemeToggle />
     </header>
   )
 }

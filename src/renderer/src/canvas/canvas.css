@@ -33,7 +33,7 @@
 .sw__tape-text { fill: var(--hw-tape-ink); font: 600 9.5px var(--font-mono); }
 .sw__poe { fill: var(--port-num); font: 500 8.5px var(--font-mono); }
 .sw__port { fill: var(--port-fill); stroke: var(--port-stroke); stroke-width: 0.8; }
-.sw__port--sfp { stroke: #5a616a; }
+.sw__port--sfp { stroke: var(--sfp-stroke); }
 .sw__led { fill: var(--led-off); }
 .sw__led--link { fill: var(--led-link); }
 .sw__led--poe { fill: var(--led-poe); }
@@ -41,7 +41,7 @@
 .react-flow__handle.sw__handle { min-width: 0; min-height: 0; border: none; border-radius: 2px; background: transparent; }
 .react-flow__handle.sw__handle:hover { box-shadow: 0 0 0 1.5px var(--accent); }
 .react-flow__handle.sw__handle.port--compatible { box-shadow: 0 0 0 2px var(--accent); }
-.react-flow__handle.sw__handle.port--dim { background: rgba(0, 0, 0, 0.5); }
+.react-flow__handle.sw__handle.port--dim { background: var(--port-dim); }
 
 /* Cordons */
 .cord path { fill: none; }
