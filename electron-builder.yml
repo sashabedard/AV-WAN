@@ -1,0 +1,52 @@
+# Empaquetage d'AV·WAN (electron-builder 26). Sorties dans release/ (ignoré par git).
+appId: io.github.sashabedard.avwan
+productName: AV·WAN
+copyright: © 2026 Sasha Bédard
+directories:
+  output: release
+  buildResources: build
+files:
+  - out/**
+  - package.json
+asar: true
+
+# Double-clic sur un .avwan (CFBundleDocumentTypes sur macOS, HKCU\Software\Classes sur Windows).
+fileAssociations:
+  - ext: avwan
+    name: Projet AV·WAN
+    description: Projet AV·WAN
+    role: Editor
+    icon: icon
+
+mac:
+  target:
+    - target: dmg
+      arch: universal
+    - target: zip
+      arch: universal
+  category: public.app-category.productivity
+  minimumSystemVersion: '13.0'
+  hardenedRuntime: true
+  gatekeeperAssess: false
+  entitlements: build/entitlements.mac.plist
+  entitlementsInherit: build/entitlements.mac.plist
+  artifactName: AV-WAN-${version}-${arch}.${ext}
+
+win:
+  target:
+    - target: nsis
+      arch: x64
+
+nsis:
+  oneClick: true
+  perMachine: false
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: AV·WAN
+  artifactName: AV-WAN-${version}-setup.${ext}
+
+# Mises à jour automatiques : app-update.yml dans l'app, latest*.yml à côté des installeurs.
+publish:
+  provider: github
+  owner: sashabedard
+  repo: AV-WAN

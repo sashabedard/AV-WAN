@@ -5,7 +5,10 @@
   "description": "AV·WAN — Audio-Vidéo · Wiring, Addressing, Networking",
   "author": "Sasha Bédard",
   "homepage": "https://github.com/sashabedard/AV-WAN",
-  "repository": { "type": "git", "url": "https://github.com/sashabedard/AV-WAN.git" },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sashabedard/AV-WAN.git"
+  },
   "private": true,
   "main": "./out/main/index.js",
   "scripts": {
@@ -13,6 +16,9 @@
     "dev": "electron-vite dev",
     "build": "electron-vite build",
     "preview": "electron-vite preview",
+    "dist": "electron-vite build && electron-builder --mac --publish never",
+    "dist:win": "electron-vite build && electron-builder --win --publish never",
+    "dist:dir": "electron-vite build && CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --mac dir --universal --publish never -c.mac.identity=- -c.mac.hardenedRuntime=false",
     "typecheck": "tsc -p tsconfig.json",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -34,6 +40,7 @@
     "@vitejs/plugin-react": "~5.2.0",
     "@xyflow/react": "~12.12.0",
     "electron": "~44.7.1",
+    "electron-builder": "~26.15.3",
     "electron-vite": "~5.0.0",
     "jsdom": "~30.1.2",
     "nanoid": "~6.0.2",
