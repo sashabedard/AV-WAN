@@ -1,7 +1,8 @@
 // src/renderer/src/model/clipboard.ts
 import { z } from 'zod'
-import type { Device, Link, Project } from './types'
-import { DeviceSchema, LinkSchema } from './schema'
+import type { Device, DeviceTemplate, Link, Project } from './types'
+import { DeviceSchema, DeviceTemplateSchema, LinkSchema } from './schema'
+import { withTemplate } from './customTemplate'
 import { canConnectPorts, nextCableId } from './rules'
 import { newId } from './project'
 
@@ -10,26 +11,35 @@ export const FRAGMENT_MIME = 'application/x-avwan-fragment'
 export interface Fragment {
   devices: Device[]
   links: Link[]
+  // Composantes perso des appareils copiés : le collage les embarque dans le projet cible.
+  templates?: DeviceTemplate[]
 }
 
-const FragmentSchema = z.object({ avwanFragment: z.literal(1), devices: z.array(DeviceSchema), links: z.array(LinkSchema) })
+const FragmentSchema = z.object({
+  avwanFragment: z.literal(1),
+  devices: z.array(DeviceSchema),
+  links: z.array(LinkSchema),
+  templates: z.array(DeviceTemplateSchema).optional()
+})
 
 export function copyFragment(project: Project, deviceIds: readonly string[]): Fragment | null {
   const ids = new Set(deviceIds)
   const devices = project.devices.filter((d) => ids.has(d.id))
   if (devices.length === 0) return null
   const links = project.links.filter((l) => ids.has(l.a.deviceId) && ids.has(l.b.deviceId))
-  return structuredClone({ devices, links })
+  const used = new Set(devices.map((d) => d.templateId))
+  const templates = project.templates.filter((t) => used.has(t.id))
+  return structuredClone({ devices, links, templates })
 }
 
 export function serializeFragment(f: Fragment): string {
-  return JSON.stringify({ avwanFragment: 1, devices: f.devices, links: f.links })
+  return JSON.stringify({ avwanFragment: 1, devices: f.devices, links: f.links, templates: f.templates ?? [] })
 }
 
 export function parseFragment(text: string): Fragment | null {
   try {
     const r = FragmentSchema.safeParse(JSON.parse(text))
-    return r.success ? { devices: r.data.devices, links: r.data.links } : null
+    return r.success ? { devices: r.data.devices, links: r.data.links, templates: r.data.templates ?? [] } : null
   } catch {
     return null
   }
@@ -51,7 +61,7 @@ export function pasteFragment(
   offset: { x: number; y: number },
   makeId: () => string = newId
 ): { project: Project; deviceIds: string[]; linkIds: string[] } {
-  let p = project
+  let p = (fragment.templates ?? []).reduce(withTemplate, project)
   const idMap = new Map<string, string>()
   const deviceIds: string[] = []
   for (const d of fragment.devices) {

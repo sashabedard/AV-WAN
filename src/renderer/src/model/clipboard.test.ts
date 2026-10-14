@@ -2,6 +2,8 @@
 import { describe, expect, it } from 'vitest'
 import { copyFragment, nextCopyName, parseFragment, pasteFragment, serializeFragment } from './clipboard'
 import { sampleProject } from './__fixtures__/sample'
+import { blankDraft, templateFromDraft, withTemplate } from './customTemplate'
+import { createDevice } from './project'
 
 const ids = (): (() => string) => {
   let n = 0
@@ -11,7 +13,7 @@ const ids = (): (() => string) => {
 describe('copyFragment', () => {
   it('copie les appareils choisis et seulement les câbles entre eux', () => {
     const p = sampleProject()
-    expect(copyFragment(p, ['cam1'])).toEqual({ devices: [p.devices[1]], links: [] })
+    expect(copyFragment(p, ['cam1'])).toEqual({ devices: [p.devices[1]], links: [], templates: [] })
     expect(copyFragment(p, ['sw1', 'cam1'])!.links.map((l) => l.id)).toEqual(['l1'])
     expect(copyFragment(p, [])).toBeNull()
   })
@@ -56,5 +58,35 @@ describe('parseFragment', () => {
     expect(parseFragment('{pas du json')).toBeNull()
     expect(parseFragment(JSON.stringify({ devices: [], links: [] }))).toBeNull()
     expect(parseFragment(JSON.stringify({ avwanFragment: 1, devices: 'non', links: [] }))).toBeNull()
+  })
+})
+
+describe('composantes perso dans le presse-papiers', () => {
+  const lidar = templateFromDraft({ ...blankDraft(), name: 'Capteur LiDAR', code: 'LID', ports: [{ label: 'ETH', connector: 'rj45', poe: 'none' }] }, 'custom-lidar00001')
+
+  function sourceWithLidar() {
+    const p = withTemplate(sampleProject(), lidar)
+    const device = createDevice(p, lidar.id, { x: 0, y: 0 }, { id: 'lid1' })
+    return { ...p, devices: [...p.devices, device] }
+  }
+
+  it('la copie emporte la composante, et le collage l’ajoute au projet qui ne l’a pas', () => {
+    const fragment = copyFragment(sourceWithLidar(), ['lid1'])!
+    expect(fragment.templates).toEqual([lidar])
+    const target = { ...sampleProject(), templates: [] }
+    const { project } = pasteFragment(target, parseFragment(serializeFragment(fragment))!, { x: 40, y: 40 })
+    expect(project.templates).toEqual([lidar])
+    expect(project.devices.at(-1)!.templateId).toBe(lidar.id)
+  })
+
+  it('ne duplique pas une composante déjà présente', () => {
+    const source = sourceWithLidar()
+    const { project } = pasteFragment(source, copyFragment(source, ['lid1'])!, { x: 40, y: 40 })
+    expect(project.templates).toEqual([lidar])
+  })
+
+  it('relit un fragment sans composantes (copié par une version précédente)', () => {
+    const old = JSON.stringify({ avwanFragment: 1, devices: [], links: [] })
+    expect(parseFragment(old)).toEqual({ devices: [], links: [], templates: [] })
   })
 })
