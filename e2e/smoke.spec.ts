@@ -20,10 +20,15 @@ test('placer, brancher, régler un VLAN, enregistrer et rouvrir', async () => {
   const sw = project.devices[0]!
   const cam = project.devices[1]!
 
-  // Glisser la prise ETH de la caméra et la lâcher sur l'oreille du switch (loin des ports)
+  // Glisser la prise ETH de la caméra et la lâcher sur l'oreille du switch (loin des ports).
+  // React Flow garde un nœud neuf en visibility: hidden tant qu'il ne l'a pas mesuré : un appui à ce
+  // moment traverse la prise et fait glisser le canvas. On attend que les deux nœuds soient mesurés.
   const handle = page.locator(`.react-flow__node[data-id="${cam.id}"] .react-flow__handle[data-handleid="ETH"]`)
+  const switchNode = page.locator(`.react-flow__node[data-id="${sw.id}"]`)
+  await expect(handle).toBeVisible()
+  await expect(switchNode).toBeVisible()
   const hb = await handle.boundingBox()
-  const sb = await page.locator(`.react-flow__node[data-id="${sw.id}"]`).boundingBox()
+  const sb = await switchNode.boundingBox()
   if (!hb || !sb) throw new Error('Éléments introuvables')
   await page.mouse.move(hb.x + hb.width / 2, hb.y + hb.height / 2)
   await page.mouse.down()
