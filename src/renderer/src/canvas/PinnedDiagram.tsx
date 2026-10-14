@@ -78,6 +78,8 @@ export function PinnedDiagram({ rect }: { rect: PinnedRect }) {
           zoomOnScroll={false}
           zoomOnPinch={false}
           zoomOnDoubleClick={false}
+          panActivationKeyCode={null}
+          zoomActivationKeyCode={null}
           selectionOnDrag={false}
           deleteKeyCode={null}
           selectionKeyCode={null}
