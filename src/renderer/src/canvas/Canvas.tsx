@@ -29,6 +29,7 @@ import { CordEdge } from './CordEdge'
 import { SwitchNode } from './SwitchNode'
 import { SwitchConfigurator } from '../panels/SwitchConfigurator'
 import { DEFAULT_SWITCH_SPEC } from '../catalog/switch'
+import { registerFlowInstance } from '../dev/e2eHooks'
 import './canvas.css'
 
 const nodeTypes = { device: DeviceNode, switch: SwitchNode }
@@ -131,6 +132,7 @@ function CanvasInner() {
     <div className={`canvas${pendingTemplate ? ' canvas--placing' : ''}`}>
       <ReactFlow<DeviceFlowNode, CordFlowEdge>
         nodes={nodes}
+        onInit={registerFlowInstance}
         nodeTypes={nodeTypes}
         edges={edges}
         edgeTypes={edgeTypes}
