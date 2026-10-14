@@ -8,6 +8,7 @@ import type { DeviceFlowNode } from './toFlow'
 import { useEffectiveFocus } from './useEffectiveFocus'
 import { usePortCompatibility } from './useConnectingFrom'
 import { InlineName } from './InlineName'
+import { deviceIpLine } from './canvasHelpers'
 import { DEVICE_NODE_HEIGHT, TAPE_TOP_MAX_WIDTH, deviceNodeWidth, devicePortOffset } from './nodeGeometry'
 
 const POSITION: Record<Side, Position> = { top: Position.Top, bottom: Position.Bottom, left: Position.Left, right: Position.Right }
@@ -26,7 +27,7 @@ function DeviceNodeImpl({ id, data, selected }: NodeProps<DeviceFlowNode>) {
   const width = deviceNodeWidth(device.ports.length)
   const horizontal = side === 'top' || side === 'bottom'
   const line1 = device.model ?? template?.name ?? 'Appareil'
-  const line2 = device.ip?.address ? `${device.ip.address} · ${device.ip.mode === 'static' ? 'FIXE' : 'DHCP'}` : 'IP non définie'
+  const line2 = deviceIpLine(device.ip)
   return (
     <div className={`dn${selected ? ' dn--selected' : ''}${dim ? ' is-dim' : ''}`} style={{ width, height: DEVICE_NODE_HEIGHT }} data-testid={`device-${device.name}`}>
       {renaming ? (

@@ -27,6 +27,13 @@ describe('fileIO', () => {
     await backupFile(file)
     expect(readFileSync(join(dir, 'lumen.bak.avwan'), 'utf8')).toBe('v0')
   })
+
+  it('écrit aussi des octets (PDF, classeur) de façon atomique', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'avwan-io-'))
+    const file = join(dir, 'plan.pdf')
+    await atomicWriteFile(file, new Uint8Array([0x25, 0x50, 0x44, 0x46]))
+    expect(readFileSync(file).toString('latin1')).toBe('%PDF')
+  })
 })
 
 describe('atomicWriteFile : échecs', () => {

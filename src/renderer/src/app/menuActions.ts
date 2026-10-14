@@ -6,6 +6,7 @@ import { newProjectAction, openProjectAction, saveProjectAction, saveProjectAsAc
 import { fitAll, zoomIn, zoomOut } from '../canvas/viewport'
 import { isTextInput, routeUndoRedo } from './routeEditCommand'
 import { duplicateSelection } from './clipboardActions'
+import { exportCsvAction, exportXlsxAction } from '../export/exportActions'
 
 // Point d'entrée unique des commandes du menu natif (et des tests de bout en bout).
 export function handleMenuAction(action: MenuAction): void {
@@ -50,6 +51,15 @@ export function handleMenuAction(action: MenuAction): void {
       break
     case 'groupZone':
       projectStore.getState().zoneAroundSelection()
+      break
+    case 'exportPdf':
+      uiStore.getState().setExportOpen(true)
+      break
+    case 'exportCsv':
+      void exportCsvAction()
+      break
+    case 'exportXlsx':
+      void exportXlsxAction()
       break
   }
 }

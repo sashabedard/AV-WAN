@@ -5,6 +5,7 @@ import userEvent from '@testing-library/user-event'
 import { TopBar } from './TopBar'
 import { Toast } from './Toast'
 import { projectStore } from '../store/projectStore'
+import { uiStore } from '../store/uiStore'
 import { sampleProject } from '../model/__fixtures__/sample'
 
 beforeEach(() => projectStore.getState().loadProject(sampleProject(), '/x/lumen.avwan'))
@@ -50,5 +51,13 @@ describe('Toast', () => {
     render(<Toast />)
     act(() => projectStore.getState().showToast('Branchement impossible.'))
     expect(screen.getByRole('status').textContent).toBe('Branchement impossible.')
+  })
+
+  it('ouvre la boîte d’export', async () => {
+    const user = userEvent.setup()
+    uiStore.getState().setExportOpen(false)
+    render(<TopBar />)
+    await user.click(screen.getByRole('button', { name: 'Exporter' }))
+    expect(uiStore.getState().exportOpen).toBe(true)
   })
 })

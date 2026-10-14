@@ -2,6 +2,7 @@ import { isDirty, useProjectStore } from '../store/projectStore'
 import { fileNameOf } from './fileActions'
 import { BrandMark } from './BrandMark'
 import { ThemeToggle } from './ThemeToggle'
+import { uiStore } from '../store/uiStore'
 
 export function TopBar() {
   const filePath = useProjectStore((s) => s.filePath)
@@ -23,6 +24,9 @@ export function TopBar() {
       </span>
       {readOnly && <span className="topbar__badge">Lecture seule</span>}
       <span className="topbar__spacer" />
+      <button type="button" className="topbar__btn" title="Exporter le PDF, le CSV ou le classeur Excel (⌘E)" onClick={() => uiStore.getState().setExportOpen(true)}>
+        Exporter
+      </button>
       <ThemeToggle />
     </header>
   )

@@ -1,0 +1,12 @@
+/* src/renderer/src/export/export.css */
+.xd { position: fixed; inset: 0; z-index: 60; display: grid; place-items: center; background: color-mix(in srgb, var(--paper) 70%, transparent); }
+.xd__card { display: grid; gap: 14px; width: 400px; max-width: calc(100vw - 32px); padding: 20px 22px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); box-shadow: 0 18px 48px var(--tile-shadow); color: var(--ink); }
+.xd__title { margin: 0; font: 700 18px/1.2 var(--font-display); letter-spacing: 0.04em; }
+.xd__group { display: grid; gap: 4px; margin: 0; padding: 0; border: 0; }
+.xd__legend { margin-bottom: 4px; padding: 0; font: 600 10px/1 var(--font-mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+.xd__check { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--ink-2); }
+.xd__check input { accent-color: var(--accent); }
+.xd__check:has(input:disabled) { color: var(--muted); }
+.xd__actions { display: flex; justify-content: flex-end; gap: 8px; }
+.xd__data { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding-top: 12px; border-top: 1px solid var(--line); }
+.xd__data .xd__legend { flex-basis: 100%; }

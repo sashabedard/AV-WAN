@@ -1,5 +1,5 @@
 import type { Link, Medium, PoeClass, PortRef, Project } from './types'
-import { findDevice, findPort, isSwitchLike } from './rules'
+import { findDevice, findPort, isSwitchLike, linksOnPort, passThroughPeer } from './rules'
 
 export type LinkVlanView =
   | { kind: 'access'; vlan: number }
@@ -15,8 +15,13 @@ export function isNetworkMedium(m: Medium): boolean {
   return NETWORK_MEDIA.has(m)
 }
 
-// Les extrémités qui portent le réglage VLAN du câble.
+// Les extrémités qui portent le réglage VLAN du câble. Un câble sans bout « switch » qui arrive sur un
+// panneau de brassage suit la prise jumelle (avant An ⇄ arrière Rn) jusqu'au câble suivant.
 export function vlanEnds(project: Project, link: Link): PortRef[] {
+  return vlanEndsVia(project, link, new Set([link.id]))
+}
+
+function vlanEndsVia(project: Project, link: Link, seen: Set<string>): PortRef[] {
   if (!isNetworkMedium(link.medium)) return []
   const ends = [link.a, link.b]
   const switchLike = (r: PortRef): boolean => {
@@ -27,7 +32,24 @@ export function vlanEnds(project: Project, link: Link): PortRef[] {
     const client = ends.find((r) => findDevice(project, r.deviceId) !== undefined && !switchLike(r))
     return [client ?? link.a]
   }
-  return ends.filter(switchLike)
+  const direct = ends.filter(switchLike)
+  if (direct.length > 0) return direct
+  for (const end of ends) {
+    const next = passThroughLink(project, end, seen)
+    if (!next) continue
+    seen.add(next.id)
+    const found = vlanEndsVia(project, next, seen)
+    if (found.length > 0) return found
+  }
+  return []
+}
+
+// Le câble branché sur la prise jumelle d'un panneau de brassage, s'il n'a pas déjà été parcouru.
+function passThroughLink(project: Project, ref: PortRef, seen: ReadonlySet<string>): Link | undefined {
+  const device = findDevice(project, ref.deviceId)
+  const peer = device ? passThroughPeer(device, ref.portId) : undefined
+  if (!device || !peer) return undefined
+  return linksOnPort(project, { deviceId: device.id, portId: peer }).find((l) => !seen.has(l.id))
 }
 
 export function linkVlanView(project: Project, link: Link): LinkVlanView {

@@ -1,4 +1,4 @@
-// src/renderer/src/catalog/exampleProject.test.ts
+// src/renderer/src/samples/exampleProject.test.ts
 import { describe, expect, it } from 'vitest'
 import { EXAMPLE_TITLE, createExampleProject } from './exampleProject'
 import { ProjectSchema } from '../model/schema'

@@ -117,4 +117,20 @@ describe('Inspector', () => {
     const row = screen.getByText('CAM-1 · ETH').closest('tr')!
     expect(within(row).getByText('A · 40')).toBeTruthy()
   })
+
+  it('montre où est réglé le VLAN d’un câble qui passe par un panneau de brassage', async () => {
+    const user = userEvent.setup()
+    const s = projectStore.getState()
+    const pp = s.addDevice('patch-panel-24', { x: 0, y: 100 })
+    s.removeElements([], ['l1'])
+    s.connect({ deviceId: 'sw1', portId: '1' }, { deviceId: pp, portId: 'A1' })
+    const l2 = s.connect({ deviceId: pp, portId: 'R1' }, { deviceId: 'cam1', portId: 'ETH' })!
+    s.setSelection({ deviceIds: [], linkIds: [l2] })
+    render(<Inspector />)
+    // Le port 1 du switch garde son réglage (accès 40) : le câble en aval le montre.
+    expect(screen.getByTestId('link-vlan-via').textContent).toBe('Réglé sur SW-1 · 1 : ce câble passe par un panneau de brassage.')
+    expect((screen.getByLabelText('VLAN d’accès') as HTMLSelectElement).value).toBe('40')
+    await user.selectOptions(screen.getByLabelText('Mode VLAN'), 'trunk')
+    expect(project().devices.find((d) => d.id === 'sw1')!.portState['1']).toEqual({ mode: 'trunk', nativeVlan: 40, taggedVlans: 'all' })
+  })
 })

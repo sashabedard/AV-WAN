@@ -1,6 +1,7 @@
 // src/renderer/src/store/uiStore.ts
 import { createStore } from 'zustand/vanilla'
 import { useStore } from 'zustand'
+import type { PdfSection } from '../../../shared/pdfOptions'
 
 export type XY = { x: number; y: number }
 
@@ -27,6 +28,11 @@ export interface UiState {
   setPendingZone(on: boolean): void
   openSearch(at: XY | null): void
   closeSearch(): void
+  exportOpen: boolean
+  setExportOpen(on: boolean): void
+  // Dernier choix de sections (pour la session) : la boîte le reprend au prochain export.
+  lastPdfChoice: { sections: PdfSection[]; zonePages: boolean } | null
+  rememberPdfChoice(choice: { sections: PdfSection[]; zonePages: boolean }): void
   resetForDocument(): void
 }
 
@@ -52,6 +58,10 @@ export const uiStore = createStore<UiState>()((set) => ({
   setPendingSwitch: (value) => set({ pendingSwitch: value }),
   openSearch: (at) => set({ search: { at } }),
   closeSearch: () => set({ search: null }),
+  exportOpen: false,
+  setExportOpen: (on) => set({ exportOpen: on }),
+  lastPdfChoice: null,
+  rememberPdfChoice: (choice) => set({ lastPdfChoice: choice }),
   // Un autre document remplace le courant : tout l'état transitoire qui s'y rapportait est remis à zéro.
   resetForDocument: () =>
     set({

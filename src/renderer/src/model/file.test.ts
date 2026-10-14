@@ -40,4 +40,10 @@ describe('serializeProject / parseProjectFile', () => {
     const r = parseProjectFile(serializeProject(p))
     expect(r.ok && r.warnings).toHaveLength(1)
   })
+
+  it('explique un fichier invalide en français', () => {
+    const res = parseProjectFile(JSON.stringify({ schemaVersion: 1, meta: { title: 3 } }))
+    expect(res.ok).toBe(false)
+    if (!res.ok) expect(res.error).toMatch(/^Fichier invalide : .*Entrée invalide/)
+  })
 })

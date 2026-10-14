@@ -1,5 +1,8 @@
 import { z } from 'zod'
 
+// Messages de validation en français (amendements du plan 1 : plus d'anglais dans les toasts).
+z.config(z.locales.fr())
+
 export const VlanIdSchema = z.number().int().min(1).max(4094)
 export const PoeClassSchema = z.enum(['af', 'at', 'bt'])
 export const ConnectorSchema = z.enum(['rj45', 'sfp', 'sfp+', 'wifi', 'usb', 'dmx', 'pixel', 'hdmi', 'sdi', 'serial'])

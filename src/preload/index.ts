@@ -13,7 +13,18 @@ const api: AvwanApi = {
   },
   recent: {
     list: () => ipcRenderer.invoke(IPC.recentList),
-    open: (path) => ipcRenderer.invoke(IPC.recentOpen, path)
+    open: (path) => ipcRenderer.invoke(IPC.recentOpen, path),
+    remember: (path) => ipcRenderer.invoke(IPC.recentRemember, path)
+  },
+  export: {
+    pdf: (projectText, options, suggestedName) => ipcRenderer.invoke(IPC.exportPdf, projectText, options, suggestedName),
+    csv: (tables, suggestedName) => ipcRenderer.invoke(IPC.exportCsv, tables, suggestedName),
+    xlsx: (tables, suggestedName) => ipcRenderer.invoke(IPC.exportXlsx, tables, suggestedName)
+  },
+  print: {
+    job: () => ipcRenderer.invoke(IPC.printJob),
+    ready: () => ipcRenderer.send(IPC.printReady),
+    failed: (message) => ipcRenderer.send(IPC.printFailed, message)
   },
   onMenu: (callback) => {
     const handler = (_event: IpcRendererEvent, action: MenuAction): void => callback(action)

@@ -1,5 +1,5 @@
 import type { Connector, Device, Link, Medium, PortDef, PortRef, Project } from './types'
-import { RACK_TEMPLATE_IDS } from '../catalog/templates'
+import { PATCH_PANEL_TEMPLATE_IDS, RACK_TEMPLATE_IDS } from '../catalog/templates'
 
 export type Family = 'ethernet' | 'optical' | 'wifi' | 'usb' | 'dmx' | 'pixel' | 'hdmi' | 'sdi' | 'serial'
 
@@ -131,4 +131,13 @@ export function pickPort(project: Project, from: PortRef, targetDeviceId: string
 
 export function isRackDevice(device: Device): boolean {
   return device.switch !== undefined || RACK_TEMPLATE_IDS.has(device.templateId)
+}
+
+// Prise jumelle dans un panneau de brassage (avant A3 ⇄ arrière R3), ou undefined hors d'un panneau.
+export function passThroughPeer(device: Device, portId: string): string | undefined {
+  if (!PATCH_PANEL_TEMPLATE_IDS.has(device.templateId)) return undefined
+  const m = /^([AR])(\d+)$/.exec(portId)
+  if (!m) return undefined
+  const peer = `${m[1] === 'A' ? 'R' : 'A'}${m[2]}`
+  return device.ports.some((p) => p.id === peer) ? peer : undefined
 }

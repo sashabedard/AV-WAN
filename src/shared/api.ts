@@ -1,7 +1,16 @@
-export type MenuAction = 'new' | 'open' | 'save' | 'saveAs' | 'undo' | 'redo' | 'search' | 'fitView' | 'zoomIn' | 'zoomOut' | 'duplicate' | 'groupZone'
+import type { PdfOptions } from './pdfOptions'
+import type { DataTable } from './tables'
+
+export type MenuAction = 'new' | 'open' | 'save' | 'saveAs' | 'undo' | 'redo' | 'search' | 'fitView' | 'zoomIn' | 'zoomOut' | 'duplicate' | 'groupZone' | 'exportPdf' | 'exportCsv' | 'exportXlsx'
 export interface OpenedFile {
   path: string
   text: string
+}
+
+// Travail confié à la fenêtre d'impression cachée : le projet sérialisé et les options choisies.
+export interface PrintJob {
+  projectText: string
+  options: PdfOptions
 }
 
 export interface AvwanApi {
@@ -17,6 +26,17 @@ export interface AvwanApi {
   recent: {
     list(): Promise<string[]>
     open(path: string): Promise<OpenedFile>
+    remember(path: string): Promise<void>
+  }
+  export: {
+    pdf(projectText: string, options: PdfOptions, suggestedName: string): Promise<string | null>
+    csv(tables: DataTable[], suggestedName: string): Promise<string[] | null>
+    xlsx(tables: DataTable[], suggestedName: string): Promise<string | null>
+  }
+  print: {
+    job(): Promise<PrintJob>
+    ready(): void
+    failed(message: string): void
   }
   onMenu(callback: (action: MenuAction) => void): () => void
 }
@@ -29,5 +49,12 @@ export const IPC = {
   backup: 'file:backup',
   recentList: 'recent:list',
   recentOpen: 'recent:open',
+  recentRemember: 'recent:remember',
+  exportPdf: 'export:pdf',
+  exportCsv: 'export:csv',
+  exportXlsx: 'export:xlsx',
+  printJob: 'print:job',
+  printReady: 'print:ready',
+  printFailed: 'print:failed',
   menu: 'menu'
 } as const

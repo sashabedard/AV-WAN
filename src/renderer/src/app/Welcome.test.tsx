@@ -7,14 +7,14 @@ import type { AvwanApi } from '../../../shared/api'
 import { Welcome } from './Welcome'
 import { isDirty, projectStore } from '../store/projectStore'
 import { uiStore } from '../store/uiStore'
-import { EXAMPLE_TITLE } from '../catalog/exampleProject'
+import { EXAMPLE_TITLE } from '../samples/exampleProject'
 import { serializeProject } from '../model/file'
 import { sampleProject } from '../model/__fixtures__/sample'
 
 const open = vi.fn()
 beforeEach(() => {
   open.mockResolvedValue({ path: '/x/lumen.avwan', text: serializeProject(sampleProject()) })
-  window.avwan = { recent: { list: vi.fn().mockResolvedValue(['/x/lumen.avwan']), open } } as unknown as AvwanApi
+  window.avwan = { recent: { list: vi.fn().mockResolvedValue(['/x/lumen.avwan']), open, remember: vi.fn().mockResolvedValue(undefined) } } as unknown as AvwanApi
   projectStore.getState().newProject()
   uiStore.getState().setWelcome(true)
 })

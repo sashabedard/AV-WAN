@@ -15,6 +15,7 @@
     "test:watch": "vitest",
     "peek": "electron-vite build && AVWAN_PEEK=1 playwright test e2e/peek.spec.ts",
     "e2e": "electron-vite build && playwright test",
+    "rendu:maj": "electron-vite build && playwright test e2e/rendu.spec.ts --update-snapshots",
     "captures": "electron-vite build && AVWAN_CAPTURES=1 playwright test e2e/captures.spec.ts",
     "brand": "AVWAN_E2E=1 electron scripts/brand/render.cjs"
   },
@@ -33,6 +34,7 @@
     "electron-vite": "~5.0.0",
     "jsdom": "~30.1.2",
     "nanoid": "~6.0.2",
+    "pdfjs-dist": "~6.3.289",
     "react": "~19.3.0",
     "react-dom": "~19.3.0",
     "typescript": "~6.0.3",
@@ -40,5 +42,8 @@
     "vitest": "~5.0.4",
     "zod": "~4.6.7",
     "zustand": "~5.0.15"
+  },
+  "dependencies": {
+    "exceljs": "~4.4.0"
   }
 }

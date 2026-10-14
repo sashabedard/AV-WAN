@@ -7,6 +7,24 @@ import { sampleProject } from '../model/__fixtures__/sample'
 const store = () => createProjectStore(sampleProject())
 
 describe('projectStore', () => {
+  it('change le format du PDF sans entrée d’historique, et ⌘Z ne le défait pas', () => {
+    const s = store()
+    s.getState().updateMeta({ title: 'Avant' })
+    s.getState().setPageFormat('iso')
+    expect(s.getState().history.past).toHaveLength(1)
+    s.getState().undo()
+    expect(s.getState().history.present.meta.title).toBe('Installation Lumen')
+    expect(s.getState().history.present.settings.pageFormat).toBe('iso')
+  })
+
+  it('en lecture seule, change le format sans rendre le fichier « modifié »', () => {
+    const s = store()
+    s.getState().loadProject(sampleProject(), null, { readOnly: true })
+    s.getState().setPageFormat('iso')
+    expect(s.getState().history.present.settings.pageFormat).toBe('iso')
+    expect(isDirty(s.getState())).toBe(false)
+  })
+
   it('ajoute un appareil, puis annule', () => {
     const s = store()
     const id = s.getState().addDevice('dante-avio', { x: 10, y: 20 })

@@ -6,7 +6,10 @@ import { serializeProject } from '../model/file'
 import { loadFromText } from '../app/fileActions'
 import { handleMenuAction } from '../app/menuActions'
 import type { MenuAction } from '../../../shared/api'
+import type { PdfOptions } from '../../../shared/pdfOptions'
+import { exportPdfAction } from '../export/exportActions'
 import { makeStressProject } from './stress'
+import { makeRenderFixture } from './renderFixture'
 
 let flow: ReactFlowInstance<FlowNode, CordFlowEdge> | null = null
 
@@ -18,10 +21,12 @@ export interface E2EHooks {
   getProject(): Project
   select(selection: Selection): void
   loadStress(): void
+  loadRenderFixture(): void
   fitView(padding?: FitViewOptions['padding']): Promise<boolean>
   saveTo(path: string): Promise<void>
   openPath(path: string): Promise<boolean>
   menu(action: MenuAction): void
+  exportPdf(options: PdfOptions): Promise<string | null>
 }
 
 export function installE2EHooks(): void {
@@ -30,6 +35,7 @@ export function installE2EHooks(): void {
     select: (selection) => projectStore.getState().setSelection(selection),
     menu: (action) => handleMenuAction(action),
     loadStress: () => projectStore.getState().loadProject(makeStressProject(), null),
+    loadRenderFixture: () => projectStore.getState().loadProject(makeRenderFixture(), null),
     fitView: async (padding) => (flow ? flow.fitView({ padding: padding ?? 0.05 }) : false),
     saveTo: async (path) => {
       const snapshot = projectStore.getState().history.present
@@ -39,6 +45,7 @@ export function installE2EHooks(): void {
     openPath: async (path) => {
       const file = await window.avwan.file.read(path)
       return loadFromText(file.path, file.text)
-    }
+    },
+    exportPdf: (options) => exportPdfAction(options)
   }
 }
