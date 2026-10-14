@@ -22,9 +22,12 @@ import { GRID, mergeEdges, mergeNodes, snapPoint } from './canvasHelpers'
 import { useAltKey } from './useAltKey'
 import { DeviceNode } from './DeviceNode'
 import { CordEdge } from './CordEdge'
+import { SwitchNode } from './SwitchNode'
+import { SwitchConfigurator } from '../panels/SwitchConfigurator'
+import { DEFAULT_SWITCH_SPEC } from '../catalog/switch'
 import './canvas.css'
 
-const nodeTypes = { device: DeviceNode, switch: DeviceNode }
+const nodeTypes = { device: DeviceNode, switch: SwitchNode }
 const edgeTypes = { cord: CordEdge }
 const SNAP_GRID: [number, number] = [GRID, GRID]
 const DELETE_KEYS = ['Backspace', 'Delete']
@@ -45,6 +48,7 @@ function CanvasInner() {
   const onEdgesChange = useCallback((changes: EdgeChange<CordFlowEdge>[]) => setEdges((es) => applyEdgeChanges(changes, es)), [])
 
   const pendingTemplate = useUiStore((s) => s.pendingTemplateId)
+  const pendingSwitch = useUiStore((s) => s.pendingSwitch)
   const alt = useAltKey()
   const { screenToFlowPosition } = useReactFlow()
 
@@ -62,7 +66,8 @@ function CanvasInner() {
   const place = useCallback(
     (templateId: string, client: { x: number; y: number }) => {
       const position = snapPoint(screenToFlowPosition(client), project.settings.snapToGrid)
-      projectStore.getState().addDevice(templateId, position)
+      if (templateId === 'switch') uiStore.getState().setPendingSwitch({ position, screen: client })
+      else projectStore.getState().addDevice(templateId, position)
     },
     [screenToFlowPosition, project.settings.snapToGrid]
   )
@@ -127,6 +132,22 @@ function CanvasInner() {
         <Background id="minor" className="bg-minor" variant={BackgroundVariant.Lines} gap={GRID} lineWidth={0.5} />
         <Background id="major" className="bg-major" variant={BackgroundVariant.Lines} gap={GRID * 5} lineWidth={0.7} />
       </ReactFlow>
+      {pendingSwitch && (
+        <div
+          className="popover"
+          style={{ left: Math.min(pendingSwitch.screen.x, window.innerWidth - 340), top: Math.min(pendingSwitch.screen.y, window.innerHeight - 400) }}
+        >
+          <SwitchConfigurator
+            initial={DEFAULT_SWITCH_SPEC}
+            submitLabel="Créer"
+            onCancel={() => uiStore.getState().setPendingSwitch(null)}
+            onSubmit={(spec) => {
+              projectStore.getState().addDevice('switch', pendingSwitch.position, { switchSpec: spec })
+              uiStore.getState().setPendingSwitch(null)
+            }}
+          />
+        </div>
+      )}
     </div>
   )
 }
