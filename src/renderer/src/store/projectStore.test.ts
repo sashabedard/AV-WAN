@@ -187,3 +187,64 @@ describe('projectStore', () => {
     expect(s.getState().selection).toBe(before)
   })
 })
+
+describe('zones dans le store', () => {
+  it('⌘G crée une zone autour de la sélection et y range les appareils, en une entrée', () => {
+    const s = store()
+    s.getState().setSelection({ deviceIds: ['cam1'], linkIds: [] })
+    const id = s.getState().zoneAroundSelection()!
+    const p = s.getState().history.present
+    expect(p.zones[0]).toMatchObject({ id, name: 'Zone 1', rect: { x: -24, y: 148, w: 224, h: 134 } })
+    expect(p.devices[1]!.zoneId).toBe(id)
+    expect(s.getState().history.past).toHaveLength(1)
+  })
+
+  it('⌘G sans sélection explique quoi faire', () => {
+    const s = store()
+    expect(s.getState().zoneAroundSelection()).toBeNull()
+    expect(s.getState().toast).toContain('Sélectionnez')
+  })
+
+  it('déposer un appareil dans une zone l’y range, dans la même entrée que le déplacement', () => {
+    const s = store()
+    const z = s.getState().addZone({ x: 400, y: 400, w: 400, h: 300 })
+    s.getState().moveDevices([{ id: 'cam1', position: { x: 500, y: 500 } }])
+    expect(s.getState().history.present.devices[1]!.zoneId).toBe(z)
+    expect(s.getState().history.past).toHaveLength(2)
+  })
+
+  it('déplacer une zone et un de ses membres sélectionné ne déplace pas le membre deux fois', () => {
+    const s = store()
+    s.getState().setSelection({ deviceIds: ['cam1'], linkIds: [] })
+    const z = s.getState().zoneAroundSelection()!
+    s.getState().moveSelection({ devices: [{ id: 'cam1', position: { x: 40, y: 200 } }], zones: [{ id: z, dx: 40, dy: 0 }] })
+    expect(s.getState().history.present.devices[1]!.position).toEqual({ x: 40, y: 200 })
+  })
+
+  it('supprimer une zone garde ses appareils', () => {
+    const s = store()
+    s.getState().setSelection({ deviceIds: ['cam1'], linkIds: [] })
+    const z = s.getState().zoneAroundSelection()!
+    s.getState().removeElements([], [], [z])
+    const p = s.getState().history.present
+    expect(p.zones).toEqual([])
+    expect(p.devices).toHaveLength(2)
+    expect(p.devices[1]!.zoneId).toBeUndefined()
+  })
+
+  it('un déplacement dans un fichier du plan 1 ne crée aucun zoneId', () => {
+    const s = store()
+    s.getState().moveDevices([{ id: 'cam1', position: { x: 8, y: 208 } }])
+    const cam = s.getState().history.present.devices[1]!
+    expect(cam.position).toEqual({ x: 8, y: 208 })
+    expect('zoneId' in cam).toBe(false)
+  })
+
+  it('refuse de créer une zone en lecture seule', () => {
+    const s = store()
+    s.getState().loadProject(sampleProject(), null, { readOnly: true })
+    s.getState().addZone({ x: 0, y: 0, w: 100, h: 100 })
+    expect(s.getState().history.present.zones).toEqual([])
+    expect(s.getState().toast).toContain('lecture seule')
+  })
+})

@@ -1,11 +1,12 @@
 import { createStore, type StoreApi } from 'zustand/vanilla'
 import { useStore } from 'zustand'
-import type { Device, Link, PortRef, PortState, Project, SwitchSpec } from '../model/types'
+import type { Device, Link, PortRef, PortState, Project, SwitchSpec, Zone } from '../model/types'
 import { createDevice, createProject, newId, type CreateDeviceOptions } from '../model/project'
 import { FAMILY_LABELS, canConnectPorts, canReconnect, connectorFamily, defaultMedium, findPort, nextCableId, sameRef } from '../model/rules'
 import { setLinkVlan as deriveSetLinkVlan, type VlanChoice } from '../model/derive'
 import { buildSwitchPorts } from '../catalog/switch'
 import { pasteFragment as pasteFragmentModel, type Fragment } from '../model/clipboard'
+import { assignZones, createZone, moveZones, placeDevices, removeZones, resizeZone as resizeZoneModel, zoneAround, type ZoneRect } from '../model/zones'
 import { commit, initHistory, redo as historyRedo, undo as historyUndo, type History } from './history'
 
 export interface Selection {
@@ -21,6 +22,11 @@ export function sameSelection(a: Selection, b: Selection): boolean {
 export type DevicePatch = Partial<Pick<Device, 'name' | 'model' | 'ip' | 'hostname' | 'note' | 'portSide'>>
 export type LinkPatch = Partial<Pick<Link, 'cableId' | 'medium' | 'lengthM' | 'jacketColor' | 'wifi' | 'note' | 'elbow'>>
 export type MetaPatch = Partial<Project['meta']>
+export type ZonePatch = Partial<Pick<Zone, 'name' | 'color' | 'ownPdfPage'>>
+export interface SelectionMoves {
+  devices: Array<{ id: string; position: { x: number; y: number } }>
+  zones: Array<{ id: string; dx: number; dy: number }>
+}
 
 export interface ProjectState {
   history: History<Project>
@@ -36,7 +42,12 @@ export interface ProjectState {
   apply(fn: (p: Project) => Project): void
   addDevice(templateId: string, position: { x: number; y: number }, opts?: CreateDeviceOptions): string
   moveDevices(moves: Array<{ id: string; position: { x: number; y: number } }>): void
-  removeElements(deviceIds: string[], linkIds: string[]): void
+  moveSelection(moves: SelectionMoves): void
+  removeElements(deviceIds: string[], linkIds: string[], zoneIds?: string[]): void
+  addZone(rect: ZoneRect, name?: string): string
+  zoneAroundSelection(): string | null
+  updateZone(id: string, patch: ZonePatch): void
+  resizeZone(id: string, rect: ZoneRect): void
   pasteFragment(fragment: Fragment, offset: { x: number; y: number }): string[]
   connect(a: PortRef, b: PortRef): string | null
   reconnect(linkId: string, end: 'a' | 'b', to: PortRef): boolean
@@ -110,23 +121,21 @@ export function createProjectStore(initial: Project = createProject()): StoreApi
         apply((p) => {
           const device = createDevice(p, templateId, position, opts)
           id = device.id
-          return { ...p, devices: [...p.devices, device] }
+          return assignZones({ ...p, devices: [...p.devices, device] }, [device.id])
         })
         return id
       },
 
-      moveDevices: (moves) =>
+      // Un glisser = une entrée : zones déplacées avec leurs membres, puis appareils libres, puis appartenance.
+      moveSelection: ({ devices, zones }) =>
         apply((p) => {
-          const target = new Map(moves.map((m) => [m.id, m.position]))
-          let changed = false
-          const devices = p.devices.map((d) => {
-            const pos = target.get(d.id)
-            if (!pos || (pos.x === d.position.x && pos.y === d.position.y)) return d
-            changed = true
-            return { ...d, position: { x: pos.x, y: pos.y } }
-          })
-          return changed ? { ...p, devices } : p
+          const moving = new Set(zones.filter((z) => z.dx !== 0 || z.dy !== 0).map((z) => z.id))
+          const members = new Set(p.devices.filter((d) => d.zoneId !== undefined && moving.has(d.zoneId)).map((d) => d.id))
+          const own = devices.filter((m) => !members.has(m.id))
+          const q = placeDevices(moveZones(p, zones), own)
+          return own.length > 0 ? assignZones(q, own.map((m) => m.id)) : q
         }),
+      moveDevices: (moves) => get().moveSelection({ devices: moves, zones: [] }),
 
       pasteFragment: (fragment, offset) => {
         let deviceIds: string[] = []
@@ -135,23 +144,48 @@ export function createProjectStore(initial: Project = createProject()): StoreApi
           const r = pasteFragmentModel(p, fragment, offset)
           deviceIds = r.deviceIds
           linkIds = r.linkIds
-          return r.deviceIds.length > 0 ? r.project : p
+          return r.deviceIds.length > 0 ? assignZones(r.project, r.deviceIds) : p
         })
         if (deviceIds.length > 0) set({ selection: { deviceIds, linkIds } })
         return deviceIds
       },
 
-      removeElements: (deviceIds, linkIds) => {
+      removeElements: (deviceIds, linkIds, zoneIds = []) => {
         const ds = new Set(deviceIds)
         const ls = new Set(linkIds)
-        if (ds.size === 0 && ls.size === 0) return
-        apply((p) => ({
-          ...p,
-          devices: p.devices.filter((d) => !ds.has(d.id)),
-          links: p.links.filter((l) => !ls.has(l.id) && !ds.has(l.a.deviceId) && !ds.has(l.b.deviceId))
-        }))
+        if (ds.size === 0 && ls.size === 0 && zoneIds.length === 0) return
+        apply((p) =>
+          removeZones(
+            {
+              ...p,
+              devices: p.devices.filter((d) => !ds.has(d.id)),
+              links: p.links.filter((l) => !ls.has(l.id) && !ds.has(l.a.deviceId) && !ds.has(l.b.deviceId))
+            },
+            zoneIds
+          )
+        )
         set({ selection: EMPTY_SELECTION })
       },
+
+      addZone: (rect, name) => {
+        let id = ''
+        apply((p) => {
+          const zone = createZone(p, rect, name ? { name } : {})
+          id = zone.id
+          return assignZones({ ...p, zones: [...p.zones, zone] })
+        })
+        return get().history.present.zones.some((z) => z.id === id) ? id : ''
+      },
+      zoneAroundSelection: () => {
+        const rect = zoneAround(get().history.present, get().selection.deviceIds)
+        if (!rect) {
+          set({ toast: 'Sélectionnez au moins un appareil pour créer une zone autour.' })
+          return null
+        }
+        return get().addZone(rect) || null
+      },
+      updateZone: (id, patch) => apply((p) => ({ ...p, zones: p.zones.map((z) => (z.id === id ? { ...z, ...patch } : z)) })),
+      resizeZone: (id, rect) => apply((p) => resizeZoneModel(p, id, rect)),
 
       connect: (a, b) => {
         const p = get().history.present
