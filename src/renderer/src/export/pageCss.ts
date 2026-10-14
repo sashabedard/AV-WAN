@@ -9,9 +9,11 @@ export const PAGE_FORMATS: Record<PdfFormat, { diagram: string; sheet: string; m
   iso: { diagram: '420mm 297mm', sheet: '210mm 297mm', margin: '10mm 10mm 15mm', drawingW: '400mm', drawingH: '272mm' }
 }
 
-// Chaîne CSS entre guillemets : antislash et guillemets échappés, sauts de ligne remplacés par une espace.
+// Chaîne CSS entre guillemets : antislash et guillemets échappés. Tout caractère de contrôle (saut de ligne,
+// saut de page \f, tabulation, NUL…) devient une espace : un \f ou un \r\n terminerait la chaîne, et le
+// reste du texte (venu du fichier .avwan) serait lu comme des règles CSS.
 export function cssString(s: string): string {
-  return `"${s.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/[\r\n]+/g, ' ')}"`
+  return `"${s.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/[\u0000-\u001F\u007F]+/g, ' ')}"`
 }
 
 export function footerLines(meta: Project['meta']): { left: string; center: string } {

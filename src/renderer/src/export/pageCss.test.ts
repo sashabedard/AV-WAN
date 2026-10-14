@@ -25,4 +25,9 @@ describe('pageCss', () => {
   it('échappe antislash et sauts de ligne', () => {
     expect(cssString('a\\b\nc')).toBe('"a\\\\b c"')
   })
+
+  it('neutralise tout caractère de contrôle : un saut de page (\\f) ne termine pas la chaîne CSS', () => {
+    expect(cssString('a\fb')).toBe('"a b"')
+    expect(cssString('a\u0000b\tc\u007Fd')).toBe('"a b c d"')
+  })
 })
