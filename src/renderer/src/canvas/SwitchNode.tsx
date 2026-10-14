@@ -5,12 +5,13 @@ import { TAPE_X, facadeLabels, switchFacade } from './switchFacade'
 import { switchSummary } from '../catalog/switch'
 import { useEffectiveFocus } from './useEffectiveFocus'
 import { usePortCompatibility } from './useConnectingFrom'
-import { projectStore, useProjectStore } from '../store/projectStore'
+import { projectStore } from '../store/projectStore'
+import { useLocked } from './staticView'
 import { InlineName } from './InlineName'
 
 function SwitchNodeImpl({ id, data, selected }: NodeProps<DeviceFlowNode>) {
   const { device, template, ports, poeUsage } = data
-  const readOnly = useProjectStore((s) => s.readOnly)
+  const readOnly = useLocked()
   const focus = useEffectiveFocus()
   const dim = focus !== null && !data.vlans.includes(focus)
   const [renaming, setRenaming] = useState(false)

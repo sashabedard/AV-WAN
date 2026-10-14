@@ -2,7 +2,8 @@ import { memo, useEffect, useState, type CSSProperties } from 'react'
 import { Handle, Position, useUpdateNodeInternals, type NodeProps } from '@xyflow/react'
 import type { Side } from '../model/types'
 import { POE_LABELS } from '../model/derive'
-import { projectStore, useProjectStore } from '../store/projectStore'
+import { projectStore } from '../store/projectStore'
+import { useLocked } from './staticView'
 import { DeviceIcon } from '../icons/Icon'
 import type { DeviceFlowNode } from './toFlow'
 import { useEffectiveFocus } from './useEffectiveFocus'
@@ -15,7 +16,7 @@ const POSITION: Record<Side, Position> = { top: Position.Top, bottom: Position.B
 
 function DeviceNodeImpl({ id, data, selected }: NodeProps<DeviceFlowNode>) {
   const { device, template, side, ports } = data
-  const readOnly = useProjectStore((s) => s.readOnly)
+  const readOnly = useLocked()
   const focus = useEffectiveFocus()
   const dim = focus !== null && !data.vlans.includes(focus)
   const [renaming, setRenaming] = useState(false)
