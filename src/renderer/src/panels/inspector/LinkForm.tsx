@@ -1,7 +1,7 @@
 // src/renderer/src/panels/inspector/LinkForm.tsx
 import type { Link, Medium, Project } from '../../model/types'
 import { projectStore } from '../../store/projectStore'
-import { connectorFamily, findPort } from '../../model/rules'
+import { connectorFamily, findPort, sameRef } from '../../model/rules'
 import { POE_LABELS, isNetworkMedium, linkPoe, linkVlanView, vlanEnds, type LinkVlanView } from '../../model/derive'
 import { MEDIUM_LABELS, mediaForFamily } from '../../catalog/labels'
 import { CommitInput } from '../CommitInput'
@@ -74,6 +74,9 @@ export function LinkForm({ link, project }: { link: Link; project: Project }) {
   const family = a ? connectorFamily(a.port.connector) : 'ethernet'
   const view = linkVlanView(project, link)
   const ends = vlanEnds(project, link)
+  // Le réglage est sur un port de switch en amont : le câble passe par un panneau de brassage.
+  const via = ends.find((e) => !sameRef(e, link.a) && !sameRef(e, link.b))
+  const viaPort = via ? findPort(project, via) : undefined
   const poe = linkPoe(project, link)
   const setMode = (mode: 'none' | 'access' | 'trunk'): void => {
     if (mode === 'none') s().setLinkVlan(link.id, { kind: 'none' })
@@ -157,6 +160,11 @@ export function LinkForm({ link, project }: { link: Link; project: Project }) {
           </p>
         ) : (
           <>
+            {viaPort && (
+              <p className="insp__note" data-testid="link-vlan-via">
+                Réglé sur {viaPort.device.name} · {viaPort.port.label} : ce câble passe par un panneau de brassage.
+              </p>
+            )}
             <label className="field">
               <span className="field__label">Mode</span>
               <select className="input" aria-label="Mode VLAN" value={view.kind} onChange={(e) => setMode(e.target.value as 'none' | 'access' | 'trunk')}>

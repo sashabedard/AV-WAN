@@ -61,3 +61,6 @@ export const TEMPLATES_BY_ID: ReadonlyMap<string, DeviceTemplate> = new Map(TEMP
 
 // Gabarits dessinés comme une façade de rack (en plus des switchs, reconnus à leur spec).
 export const RACK_TEMPLATE_IDS: ReadonlySet<string> = new Set(['patch-panel-24'])
+
+// Panneaux de brassage : la prise avant An et la prise arrière Rn sont reliées dans le panneau.
+export const PATCH_PANEL_TEMPLATE_IDS: ReadonlySet<string> = new Set(['patch-panel-24'])

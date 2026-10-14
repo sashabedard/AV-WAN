@@ -4,6 +4,7 @@ import { linkPoe, linkVlanIds, linkVlanView, setLinkVlan, switchPoeUsage, vlanEn
 import { VLAN_PRESETS } from '../catalog/vlanPresets'
 import { createDevice } from './project'
 import type { Project } from './types'
+import { passThroughPeer } from './rules'
 
 describe('linkVlanView / setLinkVlan', () => {
   it('lit le VLAN sur le port côté switch', () => {
@@ -80,5 +81,76 @@ describe('linkVlanIds et vlanMembers', () => {
     const p = sampleProject()
     expect(vlanMembers(p, 40)).toEqual({ deviceIds: ['sw1', 'cam1'], linkIds: ['l1'] })
     expect(vlanMembers(p, 30)).toEqual({ deviceIds: [], linkIds: [] })
+  })
+})
+
+describe('VLAN de passage par un panneau de brassage', () => {
+  // SW-1 port 1 → PP-1 A1 (l1) ; PP-1 R1 → caméra (l2). Le port 1 du switch est en accès VLAN 40.
+  function withPanel(): Project {
+    const p: Project = sampleProject()
+    const pp = createDevice(p, 'patch-panel-24', { x: 0, y: 100 }, { id: 'pp' })
+    return {
+      ...p,
+      devices: [...p.devices, pp],
+      links: [
+        { id: 'l1', cableId: 'C-001', a: { deviceId: 'sw1', portId: '1' }, b: { deviceId: 'pp', portId: 'A1' }, medium: 'cat6' },
+        { id: 'l2', cableId: 'C-002', a: { deviceId: 'pp', portId: 'R1' }, b: { deviceId: 'cam1', portId: 'ETH' }, medium: 'cat6' }
+      ]
+    }
+  }
+
+  it('lit le VLAN du port de switch en amont du panneau', () => {
+    const p = withPanel()
+    expect(vlanEnds(p, p.links[1]!)).toEqual([{ deviceId: 'sw1', portId: '1' }])
+    expect(linkVlanView(p, p.links[1]!)).toEqual({ kind: 'access', vlan: 40 })
+    expect(vlanMembers(p, 40).deviceIds).toEqual(['sw1', 'cam1', 'pp'])
+  })
+
+  it('écrit le réglage sur ce port de switch : les deux câbles changent ensemble', () => {
+    const p = setLinkVlan(withPanel(), 'l2', { kind: 'access', vlan: 10 })
+    expect(p.devices.find((d) => d.id === 'sw1')!.portState['1']).toEqual({ mode: 'access', nativeVlan: 10 })
+    expect(linkVlanView(p, p.links[0]!)).toEqual({ kind: 'access', vlan: 10 })
+    expect(p.devices.find((d) => d.id === 'pp')!.portState).toEqual({})
+  })
+
+  it('reste sans VLAN quand rien n’est branché en face', () => {
+    const p = withPanel()
+    const q = { ...p, links: [p.links[1]!] }
+    expect(vlanEnds(q, q.links[0]!)).toEqual([])
+    expect(linkVlanView(q, q.links[0]!)).toEqual({ kind: 'none' })
+  })
+
+  it('traverse deux panneaux à la suite et ne boucle jamais', () => {
+    let p: Project = withPanel()
+    const pp2 = createDevice(p, 'patch-panel-24', { x: 0, y: 200 }, { id: 'pp2' })
+    // SW-1:1 → PP-1:A1 ; PP-1:R1 → PP-2:A1 ; PP-2:R1 → caméra.
+    p = {
+      ...p,
+      devices: [...p.devices, pp2],
+      links: [
+        p.links[0]!,
+        { id: 'l2', cableId: 'C-002', a: { deviceId: 'pp', portId: 'R1' }, b: { deviceId: 'pp2', portId: 'A1' }, medium: 'cat6' },
+        { id: 'l3', cableId: 'C-003', a: { deviceId: 'pp2', portId: 'R1' }, b: { deviceId: 'cam1', portId: 'ETH' }, medium: 'cat6' }
+      ]
+    }
+    expect(linkVlanView(p, p.links[2]!)).toEqual({ kind: 'access', vlan: 40 })
+    // Boucle fermée entre deux panneaux, sans switch : aucune extrémité, et le calcul se termine.
+    const loop: Project = {
+      ...p,
+      links: [
+        { id: 'x1', cableId: 'C-010', a: { deviceId: 'pp', portId: 'R2' }, b: { deviceId: 'pp2', portId: 'A2' }, medium: 'cat6' },
+        { id: 'x2', cableId: 'C-011', a: { deviceId: 'pp2', portId: 'R2' }, b: { deviceId: 'pp', portId: 'A2' }, medium: 'cat6' }
+      ]
+    }
+    expect(vlanEnds(loop, loop.links[0]!)).toEqual([])
+  })
+
+  it('n’ouvre aucun passage hors d’un panneau de brassage', () => {
+    const p = sampleProject()
+    expect(passThroughPeer(p.devices[0]!, '1')).toBeUndefined()
+    const pp = createDevice(p, 'patch-panel-24', { x: 0, y: 0 })
+    expect(passThroughPeer(pp, 'A7')).toBe('R7')
+    expect(passThroughPeer(pp, 'R24')).toBe('A24')
+    expect(passThroughPeer(pp, 'A25')).toBeUndefined()
   })
 })
