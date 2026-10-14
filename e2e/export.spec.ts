@@ -1,7 +1,8 @@
 import { expect, test } from '@playwright/test'
-import { mkdtempSync } from 'node:fs'
+import { existsSync, mkdtempSync, readFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import ExcelJS from 'exceljs'
 import { launchApp } from './helpers'
 import { hasRasterImage, near, readPdf } from './pdf'
 
@@ -65,6 +66,28 @@ test('exporte un projet vide en A3 + A4 sans attendre', async () => {
     expect(near(pages[1]!.width, 595) && near(pages[1]!.height, 842)).toBe(true)
     expect(pages[0]!.text).toContain('Aucun appareil sur le schéma.')
     expect(pages[1]!.text).toContain('Aucun câble dans le projet.')
+  } finally {
+    await app.close()
+  }
+})
+
+test('exporte les trois listes en CSV pour Excel, puis le classeur', async () => {
+  const dir = exportDir()
+  const { app, page } = await launchApp({ keepWelcome: true, env: { AVWAN_E2E_EXPORT_DIR: dir } })
+  try {
+    await page.getByRole('dialog', { name: 'Accueil' }).getByRole('button', { name: /Projet exemple/ }).click()
+    const stem = join(dir, 'Installation interactive (exemple)')
+    await page.evaluate(() => window.__avwan!.menu('exportCsv'))
+    await expect.poll(() => existsSync(`${stem}-nomenclature.csv`)).toBe(true)
+    const csv = readFileSync(`${stem}-branchement.csv`, 'utf8')
+    expect(csv.startsWith('\ufeffCâble;De;Vers;Médium;Longueur (m);PoE;Mode;VLAN natif;VLAN étiquetés;Note\r\n')).toBe(true)
+    expect(csv).toContain('\r\nC-010;CAM-1 · ETH;SW-2 · port 1;Cat6;12;PoE+ actif (25 W);Accès;40 NDI;—;\r\n')
+    expect(existsSync(`${stem}-plan-ip.csv`)).toBe(true)
+    await page.evaluate(() => window.__avwan!.menu('exportXlsx'))
+    await expect.poll(() => existsSync(`${stem}.xlsx`)).toBe(true)
+    const wb = new ExcelJS.Workbook()
+    await wb.xlsx.readFile(`${stem}.xlsx`)
+    expect(wb.worksheets.map((w) => w.name)).toEqual(['Liste de branchement', 'Plan d’adressage IP', 'Nomenclature'])
   } finally {
     await app.close()
   }

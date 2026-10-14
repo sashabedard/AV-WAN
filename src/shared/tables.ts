@@ -27,3 +27,26 @@ export function toCsv(table: DataTable): string {
   const lines = [table.columns.map((c) => csvCell(c.label)), ...table.rows.map((r) => r.map(csvCell))].map((cells) => cells.join(';'))
   return `﻿${lines.join('\r\n')}\r\n`
 }
+
+const SAFE_ID = /^[a-z0-9-]{1,40}$/
+
+// Ce que le processus principal accepte d'écrire : la forme exacte d'un DataTable, et un identifiant
+// sûr dans un nom de fichier (ni « / » ni « .. »).
+export function isDataTables(x: unknown): x is DataTable[] {
+  const isCell = (c: unknown): boolean => c === null || typeof c === 'string' || typeof c === 'number'
+  return (
+    Array.isArray(x) &&
+    x.every(
+      (t) =>
+        typeof t === 'object' &&
+        t !== null &&
+        typeof t.id === 'string' &&
+        SAFE_ID.test(t.id) &&
+        typeof t.title === 'string' &&
+        Array.isArray(t.columns) &&
+        t.columns.every((c: unknown) => typeof c === 'object' && c !== null && typeof (c as { label?: unknown }).label === 'string') &&
+        Array.isArray(t.rows) &&
+        t.rows.every((r: unknown) => Array.isArray(r) && r.every(isCell))
+    )
+  )
+}

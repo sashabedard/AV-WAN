@@ -14,3 +14,9 @@ export function withExtension(path: string, kind: ExportKind): string {
 export function safeFileName(name: string): string {
   return name.replace(/[\\/:*?"<>|]+/g, '-').trim() || 'projet'
 }
+
+// Un fichier par liste, à côté du nom choisi : « lumen.csv » → « lumen-branchement.csv »… (décision 2).
+export function csvPaths(target: string, ids: string[]): string[] {
+  const stem = target.replace(/\.csv$/i, '')
+  return ids.map((id) => `${stem}-${id}.csv`)
+}

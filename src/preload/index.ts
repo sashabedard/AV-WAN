@@ -17,7 +17,9 @@ const api: AvwanApi = {
     remember: (path) => ipcRenderer.invoke(IPC.recentRemember, path)
   },
   export: {
-    pdf: (projectText, options, suggestedName) => ipcRenderer.invoke(IPC.exportPdf, projectText, options, suggestedName)
+    pdf: (projectText, options, suggestedName) => ipcRenderer.invoke(IPC.exportPdf, projectText, options, suggestedName),
+    csv: (tables, suggestedName) => ipcRenderer.invoke(IPC.exportCsv, tables, suggestedName),
+    xlsx: (tables, suggestedName) => ipcRenderer.invoke(IPC.exportXlsx, tables, suggestedName)
   },
   print: {
     job: () => ipcRenderer.invoke(IPC.printJob),

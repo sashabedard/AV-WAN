@@ -4,7 +4,7 @@ import { PDF_FORMAT_LABELS, PDF_SECTIONS, type PdfFormat, type PdfOptions, type 
 import { projectStore, useProject } from '../store/projectStore'
 import { uiStore, useUiStore } from '../store/uiStore'
 import { Segmented } from '../panels/Segmented'
-import { exportPdfAction } from './exportActions'
+import { exportCsvAction, exportPdfAction, exportXlsxAction } from './exportActions'
 import './export.css'
 
 const FORMATS = (['na', 'iso'] as const).map((value) => ({ value, label: PDF_FORMAT_LABELS[value] }))
@@ -12,15 +12,17 @@ const ALL_SECTIONS = PDF_SECTIONS.map((s) => s.id)
 
 interface Props {
   onExport?: (options: PdfOptions) => unknown
+  onCsv?: () => unknown
+  onXlsx?: () => unknown
 }
 
-// Boîte « Exporter le PDF » (spec § 11.1) : sections, format, pages de zone.
-export function ExportDialog({ onExport = exportPdfAction }: Props) {
+// Boîte « Exporter » (spec § 11) : le PDF (sections, format, pages de zone), ou les listes en CSV et en Excel.
+export function ExportDialog({ onExport = exportPdfAction, onCsv = exportCsvAction, onXlsx = exportXlsxAction }: Props) {
   const open = useUiStore((s) => s.exportOpen)
-  return open ? <ExportForm onExport={onExport} /> : null
+  return open ? <ExportForm onExport={onExport} onCsv={onCsv} onXlsx={onXlsx} /> : null
 }
 
-function ExportForm({ onExport }: Required<Props>) {
+function ExportForm({ onExport, onCsv, onXlsx }: Required<Props>) {
   const project = useProject()
   const last = useUiStore((s) => s.lastPdfChoice)
   const [sections, setSections] = useState<ReadonlySet<PdfSection>>(() => new Set(last?.sections ?? ALL_SECTIONS))
@@ -77,6 +79,29 @@ function ExportForm({ onExport }: Required<Props>) {
         <div className="xd__group">
           <span className="xd__legend">Format</span>
           <Segmented ariaLabel="Format des pages" options={FORMATS} value={format} onChange={setFormat} />
+        </div>
+        <div className="xd__data">
+          <span className="xd__legend">Listes (branchement, plan IP, nomenclature)</span>
+          <button
+            type="button"
+            className="btn"
+            onClick={() => {
+              close()
+              void onCsv()
+            }}
+          >
+            CSV…
+          </button>
+          <button
+            type="button"
+            className="btn"
+            onClick={() => {
+              close()
+              void onXlsx()
+            }}
+          >
+            Excel…
+          </button>
         </div>
         <div className="xd__actions">
           <button type="button" className="btn" onClick={close}>

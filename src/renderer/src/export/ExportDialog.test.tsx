@@ -56,6 +56,19 @@ describe('ExportDialog', () => {
     expect(uiStore.getState().lastPdfChoice).toEqual({ sections: ALL.filter((s) => s !== 'nomenclature'), zonePages: true })
   })
 
+  it('exporte aussi les listes en CSV ou en Excel', async () => {
+    const user = userEvent.setup()
+    const onCsv = vi.fn()
+    const onXlsx = vi.fn()
+    render(<ExportDialog onExport={vi.fn()} onCsv={onCsv} onXlsx={onXlsx} />)
+    await user.click(screen.getByRole('button', { name: 'CSV…' }))
+    expect(onCsv).toHaveBeenCalledTimes(1)
+    expect(uiStore.getState().exportOpen).toBe(false)
+    uiStore.getState().setExportOpen(true)
+    await user.click(await screen.findByRole('button', { name: 'Excel…' }))
+    expect(onXlsx).toHaveBeenCalledTimes(1)
+  })
+
   it('se ferme avec Échap sans rien exporter', async () => {
     const user = userEvent.setup()
     const onExport = vi.fn()

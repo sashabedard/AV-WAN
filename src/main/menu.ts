@@ -37,6 +37,8 @@ export function buildMenu(): void {
         { label: 'Enregistrer sous…', accelerator: 'Shift+CmdOrCtrl+S', click: () => send('saveAs') },
         { type: 'separator' },
         { label: 'Exporter le PDF…', accelerator: 'CmdOrCtrl+E', click: () => send('exportPdf') },
+        { label: 'Exporter les listes en CSV…', click: () => send('exportCsv') },
+        { label: 'Exporter les listes en Excel…', click: () => send('exportXlsx') },
         ...quitItems
       ]
     },

@@ -1,6 +1,7 @@
 import type { PdfOptions } from './pdfOptions'
+import type { DataTable } from './tables'
 
-export type MenuAction = 'new' | 'open' | 'save' | 'saveAs' | 'undo' | 'redo' | 'search' | 'fitView' | 'zoomIn' | 'zoomOut' | 'duplicate' | 'groupZone' | 'exportPdf'
+export type MenuAction = 'new' | 'open' | 'save' | 'saveAs' | 'undo' | 'redo' | 'search' | 'fitView' | 'zoomIn' | 'zoomOut' | 'duplicate' | 'groupZone' | 'exportPdf' | 'exportCsv' | 'exportXlsx'
 export interface OpenedFile {
   path: string
   text: string
@@ -29,6 +30,8 @@ export interface AvwanApi {
   }
   export: {
     pdf(projectText: string, options: PdfOptions, suggestedName: string): Promise<string | null>
+    csv(tables: DataTable[], suggestedName: string): Promise<string[] | null>
+    xlsx(tables: DataTable[], suggestedName: string): Promise<string | null>
   }
   print: {
     job(): Promise<PrintJob>
@@ -48,6 +51,8 @@ export const IPC = {
   recentOpen: 'recent:open',
   recentRemember: 'recent:remember',
   exportPdf: 'export:pdf',
+  exportCsv: 'export:csv',
+  exportXlsx: 'export:xlsx',
   printJob: 'print:job',
   printReady: 'print:ready',
   printFailed: 'print:failed',
