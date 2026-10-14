@@ -26,7 +26,8 @@ function centre(device: Device, sizeOf: SizeOf): { x: number; y: number } {
   return { x: device.position.x + w / 2, y: device.position.y + h / 2 }
 }
 
-// Côté « auto » : face à la moyenne des voisins branchés (de centre à centre) ; en bas s'il n'y en a aucun.
+// Côté « auto » : face aux voisins branchés, de centre à centre. Chaque voisin pèse 1 / distance :
+// un voisin proche l'emporte sur un voisin lointain (report du plan 2). En bas s'il n'y en a aucun.
 export function resolvePortSide(project: Project, device: Device, sizeOf: SizeOf = estimateNodeSize): Side {
   if (device.portSide !== 'auto') return device.portSide
   const self = centre(device, sizeOf)
@@ -39,8 +40,13 @@ export function resolvePortSide(project: Project, device: Device, sizeOf: SizeOf
     const peer = project.devices.find((d) => d.id === peerId)
     if (!peer) continue
     const other = centre(peer, sizeOf)
-    dx += other.x - self.x
-    dy += other.y - self.y
+    const ox = other.x - self.x
+    const oy = other.y - self.y
+    const d2 = ox * ox + oy * oy
+    if (d2 === 0) continue // voisin superposé : aucune direction
+    // Vecteur unitaire vers le voisin, divisé par la distance : (ox, oy) / d².
+    dx += ox / d2
+    dy += oy / d2
     n++
   }
   if (n === 0) return 'bottom'
