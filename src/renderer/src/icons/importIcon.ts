@@ -17,7 +17,12 @@ const ATTRIBUTES = new Set([
   'fill', 'fill-rule', 'fill-opacity', 'clip-rule', 'stroke', 'stroke-width', 'stroke-linecap', 'stroke-linejoin',
   'stroke-miterlimit', 'stroke-dasharray', 'stroke-dashoffset', 'stroke-opacity', 'opacity', 'transform'
 ])
-const UNSAFE_VALUE = /url\s*\(|javascript:|expression\s*\(/i
+// La barre oblique inverse est refusée : CSS lit « u\rl( » comme « url( ».
+const UNSAFE_VALUE = /url\s*\(|javascript:|expression\s*\(|\\/i
+// Propriétés de peinture acceptées dans un attribut style.
+const STYLE_PROPERTIES = new Set(['fill', 'fill-rule', 'fill-opacity', 'clip-rule', 'stroke', 'stroke-width', 'stroke-linecap', 'stroke-linejoin', 'stroke-miterlimit', 'stroke-dasharray', 'stroke-dashoffset', 'stroke-opacity', 'opacity'])
+// Imbrication maximale : au-delà, la copie devient quadratique dans jsdom et fait déborder la pile.
+const MAX_DEPTH = 64
 const NO_PAINT = new Set(['none', 'transparent'])
 const PNG_SIGNATURE = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]
 
@@ -53,9 +58,18 @@ export function sanitizeSvg(text: string): CleanSvg | null {
       if (attr.namespaceURI !== null || !ATTRIBUTES.has(attr.name) || UNSAFE_VALUE.test(attr.value)) continue
       to.setAttribute(attr.name, attr.value)
     }
+    // Inkscape range la peinture dans style : on la convertit en attributs, et elle l'emporte (précédence CSS).
+    for (const declaration of (from.getAttribute('style') ?? '').split(';')) {
+      const colon = declaration.indexOf(':')
+      if (colon < 0) continue
+      const property = declaration.slice(0, colon).trim().toLowerCase()
+      const value = declaration.slice(colon + 1).replace(/!important\s*$/i, '').trim()
+      if (STYLE_PROPERTIES.has(property) && value !== '' && !UNSAFE_VALUE.test(value)) to.setAttribute(property, value)
+    }
   }
   // fill et stroke se transmettent aux enfants : on suit la valeur effective pour juger « monochrome ».
-  const walk = (from: Element, to: Element, fill: string, stroke: string): void => {
+  const walk = (from: Element, to: Element, fill: string, stroke: string, depth = 0): void => {
+    if (depth > MAX_DEPTH) throw new Error('SVG trop imbriqué')
     for (const child of Array.from(from.children)) {
       if (child.namespaceURI !== ns || !ELEMENTS.has(child.localName)) continue
       const copy = out.createElementNS(SVG_NS, child.localName)
@@ -73,7 +87,7 @@ export function sanitizeSvg(text: string): CleanSvg | null {
           const c = normalizeColor(paint)
           if (!NO_PAINT.has(c)) colors.add(c)
         }
-      } else walk(child, copy, f, s)
+      } else walk(child, copy, f, s, depth + 1)
       to.appendChild(copy)
     }
   }
@@ -85,7 +99,7 @@ export function sanitizeSvg(text: string): CleanSvg | null {
   outRoot.removeAttribute('width')
   outRoot.removeAttribute('height')
   walk(root, outRoot, outRoot.getAttribute('fill') ?? 'black', outRoot.getAttribute('stroke') ?? 'none')
-  if (shapes === 0) return null
+  if (shapes === 0 || colors.size === 0) return null
   return { svg: new XMLSerializer().serializeToString(out), monochrome: colors.size <= 1 }
 }
 
@@ -94,7 +108,12 @@ export function importIconFile(_name: string, bytes: Uint8Array): IconImport {
   if (isPng(bytes)) return { ok: true, icon: { kind: 'image', dataUri: `data:image/png;base64,${base64(bytes)}` } }
   const text = new TextDecoder('utf-8').decode(bytes)
   if (!/<svg[\s>]/i.test(text)) return { ok: false, error: 'Ce fichier n’est ni un SVG ni un PNG.' }
-  const clean = sanitizeSvg(text)
+  let clean: CleanSvg | null = null
+  try {
+    clean = sanitizeSvg(text)
+  } catch {
+    clean = null // SVG pathologique (imbrication extrême) : refus, pas d'exception
+  }
   if (!clean) return { ok: false, error: 'Ce SVG ne contient aucune forme utilisable.' }
   const dataUri = `data:image/svg+xml;base64,${base64(new TextEncoder().encode(clean.svg))}`
   return { ok: true, icon: { kind: 'image', dataUri, ...(clean.monochrome ? { tint: true } : {}) } }

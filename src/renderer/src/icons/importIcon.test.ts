@@ -25,6 +25,30 @@ describe('sanitizeSvg', () => {
     expect(clean!.svg).toContain('stroke="#000"')
   })
 
+  it('retire une valeur dont url( est écrit avec une barre oblique inverse', () => {
+    const out = sanitizeSvg(`<svg ${NS}><path d="M1 1" stroke="#000" fill="u\\rl(https://x/y)"/></svg>`)!.svg
+    expect(out).not.toContain('\\')
+    expect(out).not.toContain('x/y')
+  })
+
+  it('convertit le style en attributs, le style l’emporte, les valeurs dangereuses sont retirées', () => {
+    const ink = sanitizeSvg(`<svg ${NS}><path style="fill:none;stroke:#e30613;stroke-width:2" d="M2 2L22 22"/></svg>`)!
+    expect(ink.svg).toContain('stroke="#e30613"')
+    expect(ink.svg).toContain('fill="none"')
+    expect(ink.svg).toContain('stroke-width="2"')
+    expect(ink.svg).not.toContain('style')
+    expect(ink.monochrome).toBe(true)
+    for (const style of ['fill:u\\rl(x)', 'fill:url(#g)', 'behavior:url(x)']) {
+      const out = sanitizeSvg(`<svg ${NS}><path d="M1 1" stroke="#000" style="${style}"/></svg>`)!.svg
+      expect(out).not.toMatch(/style|url|behavior|\\/)
+    }
+    expect(sanitizeSvg(`<svg ${NS}><path fill="#000" style="fill:#e11 !important" d="M1 1"/></svg>`)!.svg).toContain('fill="#e11"')
+  })
+
+  it('refuse un SVG sans aucune peinture visible', () => {
+    expect(sanitizeSvg(`<svg ${NS}><path d="M1 1" fill="none"/></svg>`)).toBeNull()
+  })
+
   it('ajoute un viewBox depuis width et height, sinon 0 0 24 24, et retire la taille fixe', () => {
     const sized = sanitizeSvg(`<svg ${NS} width="48" height="32"><rect width="10" height="10"/></svg>`)!.svg
     expect(sized).toContain('viewBox="0 0 48 32"')
@@ -62,6 +86,13 @@ describe('importIconFile', () => {
     expect(importIconFile('gros.png', new Uint8Array(ICON_MAX_BYTES + 1))).toEqual({ ok: false, error: 'L’icône dépasse 256 Ko.' })
     expect(importIconFile('notes.txt', enc('bonjour'))).toEqual({ ok: false, error: 'Ce fichier n’est ni un SVG ni un PNG.' })
     expect(importIconFile('vide.svg', enc(`<svg ${NS}></svg>`))).toEqual({ ok: false, error: 'Ce SVG ne contient aucune forme utilisable.' })
+  })
+})
+
+describe('SVG pathologique', () => {
+  it('est refusé sans exception', () => {
+    const deep = `<svg ${NS}>${'<g>'.repeat(2000)}<path d="M1 1"/>${'</g>'.repeat(2000)}</svg>`
+    expect(importIconFile('profond.svg', enc(deep))).toEqual({ ok: false, error: 'Ce SVG ne contient aucune forme utilisable.' })
   })
 })
 
