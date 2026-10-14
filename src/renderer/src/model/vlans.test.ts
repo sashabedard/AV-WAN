@@ -35,6 +35,14 @@ describe('vlans', () => {
     expect(q.devices[1]).toBe(p.devices[1])
   })
 
+  it('ne laisse pas deux fois le même VLAN étiqueté après une renumérotation', () => {
+    const p = sampleProject()
+    p.vlans = [vlanPreset(40)]
+    p.devices[0]!.portState['2'] = { mode: 'trunk', taggedVlans: [10, 40] }
+    const q = changeVlanId(p, 40, 10)!
+    expect(q.devices[0]!.portState['2']).toEqual({ mode: 'trunk', taggedVlans: [10] })
+  })
+
   it('refuse un numéro pris, hors de 1 à 4094, ou un VLAN inconnu', () => {
     const p = addVlan(sampleProject(), vlanPreset(10))
     expect(changeVlanId(p, 40, 10)).toBeNull()

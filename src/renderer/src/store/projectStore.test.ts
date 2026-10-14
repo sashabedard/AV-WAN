@@ -279,6 +279,24 @@ describe('VLAN dans le store', () => {
     expect(s.getState().toast).toBe('Numéro de VLAN invalide : choisissez un nombre de 1 à 4094.')
   })
 
+  it('une renumérotation est une seule annulation, qui rend l’ancien numéro aux ports', () => {
+    const s = store()
+    s.getState().changeVlanId(40, 41)
+    expect(s.getState().history.past).toHaveLength(1)
+    s.getState().undo()
+    expect(s.getState().history.present.vlans[0]!.id).toBe(40)
+    expect(s.getState().history.present.devices[0]!.portState['1']!.nativeVlan).toBe(40)
+  })
+
+  it('renumérote refuse en lecture seule, sans rien changer', () => {
+    const s = store()
+    s.getState().loadProject(sampleProject(), null, { readOnly: true })
+    const before = s.getState().history.present
+    expect(s.getState().changeVlanId(40, 41)).toBe(false)
+    expect(s.getState().toast).toContain('lecture seule')
+    expect(s.getState().history.present).toBe(before)
+  })
+
   it('retire un VLAN ; refuse les modifications en lecture seule', () => {
     const s = store()
     s.getState().removeVlan(40)

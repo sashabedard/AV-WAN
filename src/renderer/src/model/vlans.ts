@@ -62,7 +62,7 @@ export function changeVlanId(project: Project, from: number, to: number): Projec
           {
             ...st,
             ...(st.nativeVlan !== undefined ? { nativeVlan: remap(st.nativeVlan) } : {}),
-            ...(Array.isArray(st.taggedVlans) ? { taggedVlans: st.taggedVlans.map(remap).sort((a, b) => a - b) } : {})
+            ...(Array.isArray(st.taggedVlans) ? { taggedVlans: [...new Set(st.taggedVlans.map(remap))].sort((a, b) => a - b) } : {})
           }
         ]
       })
