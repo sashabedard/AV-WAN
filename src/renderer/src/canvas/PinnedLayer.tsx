@@ -24,11 +24,12 @@ export function PinnedView() {
     observer.observe(el)
     return () => observer.disconnect()
   }, [])
-  // La boîte garde sa place d'une épingle à l'autre ; quand le canvas change de taille, elle y est ramenée.
+  // La place par défaut (haut-droit) se calcule à chaque ouverture ; vignette ouverte, « Recadrer » la garde
+  // et un changement de taille du canvas ne fait que la ramener à l'intérieur.
   useEffect(() => {
     if (!bounds) return
-    setBox((b) => (b ? clampVignette(b, bounds) : defaultPlacement(bounds)))
-  }, [bounds])
+    setBox((b) => (!rect ? null : b ? clampVignette(b, bounds) : defaultPlacement(bounds)))
+  }, [bounds, rect])
   return (
     <div ref={layer} className="pinned-layer">
       {rect && bounds && box && (
