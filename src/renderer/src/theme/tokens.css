@@ -61,7 +61,6 @@
     --trunk: #eceae4;
     --cord-shadow: rgba(0, 0, 0, 0.38);
     --tile-shadow: rgba(0, 0, 0, 0.55);
-    --led-off: #2c3137;
   }
 }
 
@@ -85,5 +84,4 @@
   --trunk: #eceae4;
   --cord-shadow: rgba(0, 0, 0, 0.38);
   --tile-shadow: rgba(0, 0, 0, 0.55);
-  --led-off: #2c3137;
 }
