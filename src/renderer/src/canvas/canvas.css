@@ -98,7 +98,6 @@ button.legend__item:hover { background: var(--surface-2); }
 .react-flow__edgeupdater { cursor: crosshair; }
 
 /* Zones : sous les cordons, le corps laisse passer les clics ; seuls le titre et les poignées réagissent. */
-.react-flow__node.react-flow__node-zone { pointer-events: none; }
 .react-flow__node-zone .zone__title,
 .react-flow__node-zone .react-flow__resize-control,
 .react-flow__node-zone .inline-name { pointer-events: all; }

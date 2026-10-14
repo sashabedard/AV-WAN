@@ -184,6 +184,7 @@ export function toFlowZones(project: Project, cache: FlowCache): ZoneFlowNode[] 
       height: zone.rect.h,
       zIndex: -1,
       dragHandle: '.zone__title',
+      style: { pointerEvents: 'none' }, // le style inline de React Flow (pointer-events: all) écraserait le CSS : le corps laisse passer les clics
       data: { zone }
     }
     cache.zones.set(zone.id, { zone, node })

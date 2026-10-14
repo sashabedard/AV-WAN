@@ -112,6 +112,7 @@ describe('toFlowZones', () => {
     const cache = createFlowCache()
     const [node] = toFlowZones(p, cache)
     expect(node).toMatchObject({ id: 'z1', type: 'zone', position: { x: -24, y: 148 }, width: 224, height: 134, zIndex: -1, dragHandle: '.zone__title' })
+    expect(node!.style?.pointerEvents).toBe('none') // le corps laisse passer les clics (le style inline de React Flow écraserait le CSS)
     expect(toFlowZones({ ...p, meta: { ...p.meta, title: 'Autre' } }, cache)[0]).toBe(node)
     expect(toFlowZones({ ...p, zones: [] }, cache)).toEqual([])
     expect(cache.zones.size).toBe(0)
