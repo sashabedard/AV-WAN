@@ -58,6 +58,25 @@ describe('projectStore', () => {
     expect(s.getState().history.present.links).toHaveLength(2)
   })
 
+  it('les câbles retirés sont exactement ceux annoncés par linksOnRemovedPorts, et il reste 4 ports', () => {
+    const s = store()
+    s.getState().updateSwitchSpec('sw1', { portCount: 8, poe: 'at', poeBudgetW: 120, sfpPlus: 0, managed: true })
+    const a = s.getState().addDevice('dante-avio', { x: 0, y: 0 })
+    const b = s.getState().addDevice('dante-avio', { x: 0, y: 100 })
+    s.getState().connect({ deviceId: a, portId: 'ETH' }, { deviceId: 'sw1', portId: '6' })
+    s.getState().connect({ deviceId: b, portId: 'ETH' }, { deviceId: 'sw1', portId: '8' })
+    const four = { portCount: 4 as const, poe: 'at' as const, poeBudgetW: 60, sfpPlus: 0 as const, managed: true }
+    const before = s.getState().history.present
+    const announced = linksOnRemovedPorts(before, 'sw1', four).map((l) => l.id)
+    expect(announced).toHaveLength(2)
+    s.getState().updateSwitchSpec('sw1', four)
+    const after = s.getState().history.present
+    const remaining = new Set(after.links.map((l) => l.id))
+    const missing = before.links.map((l) => l.id).filter((id) => !remaining.has(id))
+    expect(missing.sort()).toEqual([...announced].sort())
+    expect(after.devices.find((d) => d.id === 'sw1')!.ports).toHaveLength(4)
+  })
+
   it('règle le VLAN d’un câble sur le port du switch', () => {
     const s = store()
     s.getState().setLinkVlan('l1', { kind: 'access', vlan: 10 })

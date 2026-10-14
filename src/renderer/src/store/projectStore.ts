@@ -156,11 +156,11 @@ export function createProjectStore(initial: Project = createProject()): StoreApi
           const ports = buildSwitchPorts(spec)
           const keep = new Set(ports.map((x) => x.id))
           const portState = Object.fromEntries(Object.entries(device.portState).filter(([k]) => keep.has(k)))
-          const gone = (r: PortRef): boolean => r.deviceId === deviceId && !keep.has(r.portId)
+          const removed = new Set(linksOnRemovedPorts(p, deviceId, spec).map((l) => l.id))
           return {
             ...p,
             devices: p.devices.map((d) => (d.id === deviceId ? { ...d, switch: spec, ports, portState } : d)),
-            links: p.links.filter((l) => !gone(l.a) && !gone(l.b))
+            links: p.links.filter((l) => !removed.has(l.id))
           }
         }),
 
