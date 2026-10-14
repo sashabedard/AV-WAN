@@ -1,0 +1,57 @@
+.canvas { position: absolute; inset: 0; }
+.canvas--placing .react-flow__pane { cursor: crosshair; }
+.react-flow { background: var(--paper); }
+.bg-minor path { stroke: var(--grid-minor); }
+.bg-major path { stroke: var(--grid-major); }
+.react-flow__node { font-family: var(--font-mono); }
+
+/* Appareil (tuile) */
+.dn { position: relative; border-radius: 5px; border: 1px solid var(--tile-stroke); background: linear-gradient(var(--tile-top), var(--tile-bottom)); box-shadow: 0 3px 8px var(--tile-shadow); color: var(--ink); }
+.dn--selected, .sw--selected { outline: 1.5px solid var(--accent); outline-offset: 4px; }
+.dn__tape { position: absolute; top: -7px; left: 8px; max-width: calc(100% - 52px); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; background: var(--tape); color: var(--tape-ink); font: 600 11px/1 var(--font-mono); padding: 2px 6px 3px; transform: rotate(-0.6deg); }
+.dn__code { position: absolute; top: 8px; right: 8px; border: 1px solid var(--muted); color: var(--muted); font: 500 9px/1 var(--font-mono); padding: 2px 4px; }
+.dn__line1 { position: absolute; left: 10px; right: 44px; top: 21px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11px; color: var(--ink-2); }
+.dn__line2 { position: absolute; left: 10px; right: 10px; top: 37px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 10.5px; color: var(--muted); }
+
+/* Prises d'un appareil */
+.react-flow__handle.port { width: 10px; height: 8px; min-width: 0; min-height: 0; border-radius: 2px; border: 1px solid var(--muted); background: var(--surface-2); opacity: 0; transition: opacity 0.12s; }
+.dn:hover .react-flow__handle.port,
+.react-flow__handle.port--linked,
+.react-flow__handle.port--compatible,
+.react-flow__handle.port--origin { opacity: 1; }
+.react-flow__handle.port--linked { background: var(--plug); border-color: var(--plug); }
+.react-flow__handle.port--compatible { box-shadow: 0 0 0 2px var(--accent); }
+.react-flow__handle.port--dim { opacity: 0.12; }
+
+/* Switch (façade) */
+.sw { position: relative; filter: drop-shadow(0 3px 4px var(--tile-shadow)); }
+.sw__svg { display: block; overflow: visible; }
+.sw__ear { fill: var(--panel-ear); stroke: var(--panel-stroke); }
+.sw__panel { stroke: var(--panel-stroke); }
+.sw__screw { fill: var(--screw); }
+.sw__tape { fill: var(--hw-tape); }
+.sw__tape-text { fill: var(--hw-tape-ink); font: 600 9.5px var(--font-mono); }
+.sw__poe { fill: var(--port-num); font: 500 8.5px var(--font-mono); }
+.sw__port { fill: var(--port-fill); stroke: var(--port-stroke); stroke-width: 0.8; }
+.sw__port--sfp { stroke: #5a616a; }
+.sw__led { fill: var(--led-off); }
+.sw__led--link { fill: var(--led-link); }
+.sw__led--poe { fill: var(--led-poe); }
+.sw__num { fill: var(--port-num); font: 500 7.5px var(--font-mono); }
+.react-flow__handle.sw__handle { min-width: 0; min-height: 0; border: none; border-radius: 2px; background: transparent; }
+.react-flow__handle.sw__handle:hover { box-shadow: 0 0 0 1.5px var(--accent); }
+.react-flow__handle.sw__handle.port--compatible { box-shadow: 0 0 0 2px var(--accent); }
+.react-flow__handle.sw__handle.port--dim { background: rgba(0, 0, 0, 0.5); }
+
+/* Cordons */
+.cord path { fill: none; }
+.cord__main, .cord__shadow, .cord__halo { stroke-linecap: round; stroke-linejoin: round; }
+.cord__shadow { stroke: var(--cord-shadow); }
+.cord__inner { stroke: var(--paper); }
+.cord__halo { stroke: var(--accent); stroke-opacity: 0.35; }
+.cord__hit { stroke: transparent; pointer-events: stroke; }
+.cord-tag { position: absolute; z-index: 10; pointer-events: none; white-space: nowrap; background: var(--hw-tape); color: var(--hw-tape-ink); font: 600 10.5px/1 var(--font-mono); padding: 3px 6px; border-radius: 2px; box-shadow: 0 2px 6px var(--tile-shadow); }
+.cord-tag--badge { background: var(--surface); color: var(--muted); border: 1px solid var(--line); box-shadow: none; font-weight: 500; }
+
+/* Popover (configurateur de switch) */
+.popover { position: fixed; z-index: 40; }
