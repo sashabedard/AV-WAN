@@ -5,6 +5,7 @@ import { resolvePortSide } from '../model/layout'
 import { findPort } from '../model/rules'
 import { POE_LABELS, linkPoe } from '../model/derive'
 import { cordStyle, type CordStyle, type ThemeMode } from './cordStyle'
+import { nodeSize } from './nodeGeometry'
 
 export interface PortInfo {
   linkId: string
@@ -69,7 +70,7 @@ export function toFlowNodes(project: Project, analysis: LinkAnalysis, cache: Flo
   const alive = new Set<string>()
   for (const device of project.devices) {
     alive.add(device.id)
-    const side = resolvePortSide(project, device)
+    const side = resolvePortSide(project, device, nodeSize)
     const ports = analysis.ports.get(device.id) ?? NO_PORTS
     const poeUsage: PoeUsage | undefined = device.switch
       ? {
