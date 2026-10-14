@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useRef, useState, type KeyboardEvent } from 'react'
 import { TEMPLATES } from '../catalog/templates'
 import { CATEGORY_LABELS, CATEGORY_ORDER } from '../catalog/categories'
 import { BUILTIN_ICON_NAMES } from '../catalog/iconNames'
@@ -73,6 +73,12 @@ function EditorForm({ editing }: { editing: DeviceTemplate | null }) {
   const addBatch = (): void => {
     const n = Math.max(1, Math.min(MAX_PORTS, Math.floor(Number(batchCount)) || 1))
     patch({ ports: addPortBatch(draft.ports, batchConnector, n) })
+  }
+  // Entrée ajoute les ports (comme « Ajouter ») au lieu de soumettre le formulaire.
+  const onBatchKey = (e: KeyboardEvent<HTMLInputElement>): void => {
+    if (e.key !== 'Enter') return
+    e.preventDefault()
+    addBatch()
   }
   const importIcon = async (file: File): Promise<void> => {
     const res = importIconFile(file.name, new Uint8Array(await file.arrayBuffer()))
@@ -257,7 +263,7 @@ function EditorForm({ editing }: { editing: DeviceTemplate | null }) {
             </table>
           )}
           <div className="ce__batch">
-            <input type="number" min={1} max={MAX_PORTS} aria-label="Nombre de ports" value={batchCount} onChange={(e) => setBatchCount(e.target.value)} />
+            <input type="number" min={1} max={MAX_PORTS} aria-label="Nombre de ports" value={batchCount} onChange={(e) => setBatchCount(e.target.value)} onKeyDown={onBatchKey} />
             <span aria-hidden="true">×</span>
             <select aria-label="Connecteur à ajouter" value={batchConnector} onChange={(e) => setBatchConnector(e.target.value as Connector)}>
               {CONNECTORS.map((c) => (

@@ -75,6 +75,17 @@ describe('ComponentEditor', () => {
     expect(container.querySelector('.ce__preview .icon--mask')).toBeTruthy()
   })
 
+  it('Entrée dans « Nombre de ports » ajoute les ports sans enregistrer', async () => {
+    const user = userEvent.setup()
+    render(<ComponentEditor />)
+    await fillValid(user)
+    await user.clear(screen.getByLabelText('Nombre de ports'))
+    await user.type(screen.getByLabelText('Nombre de ports'), '3{Enter}')
+    expect(screen.getByLabelText('Nom du port 3')).toBeTruthy()
+    expect(save).not.toHaveBeenCalled()
+    expect(uiStore.getState().componentEditor).not.toBeNull()
+  })
+
   it('Enregistrer ajoute la composante à la bibliothèque et ferme la boîte', async () => {
     const user = userEvent.setup()
     render(<ComponentEditor />)
