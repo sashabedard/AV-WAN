@@ -31,6 +31,8 @@ function createWindow(): BrowserWindow {
     void shell.openExternal(url)
     return { action: 'deny' }
   })
+  // L'app ne navigue jamais (un fichier lâché sur la fenêtre la remplacerait sinon).
+  win.webContents.on('will-navigate', (e) => e.preventDefault())
   // Le renderer pose onbeforeunload quand le projet est modifié ; on demande ici.
   win.webContents.on('will-prevent-unload', (event) => {
     const choice = dialog.showMessageBoxSync(win, {
