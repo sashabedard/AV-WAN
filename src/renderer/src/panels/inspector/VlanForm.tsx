@@ -31,7 +31,10 @@ function Toggle({ label, checked, onChange }: { label: string; checked: boolean;
 
 export function VlanForm({ vlan, project }: { vlan: Vlan; project: Project }) {
   const s = projectStore.getState
-  const up = (patch: VlanPatch): void => s().updateVlan(vlan.id, patch)
+  const up = (patch: VlanPatch): void => {
+    const changed = (Object.keys(patch) as Array<keyof VlanPatch>).some((k) => JSON.stringify(patch[k]) !== JSON.stringify(vlan[k]))
+    if (changed) s().updateVlan(vlan.id, patch)
+  }
   const unifi = (patch: Partial<Unifi>): void => up({ unifi: { ...vlan.unifi, ...patch } })
   const members = vlanMembers(project, vlan.id)
   const nd = members.deviceIds.length
@@ -151,7 +154,7 @@ export function VlanForm({ vlan, project }: { vlan: Vlan; project: Project }) {
         onClick={() => {
           if (!window.confirm(`Retirer le VLAN ${vlan.id} du projet ? Les ports qui l’utilisent gardent leur réglage.`)) return
           s().removeVlan(vlan.id)
-          uiStore.getState().setInspectVlan(null)
+          if (!s().history.present.vlans.some((v) => v.id === vlan.id)) uiStore.getState().setInspectVlan(null)
         }}
       >
         Retirer ce VLAN

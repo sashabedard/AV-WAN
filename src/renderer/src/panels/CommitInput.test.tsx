@@ -31,4 +31,15 @@ describe('CommitInput', () => {
     expect(onCommit).toHaveBeenCalledTimes(1)
     expect(onCommit).toHaveBeenCalledWith('10.40.0.21')
   })
+
+  it('revient à la valeur du projet quand la validation est refusée', async () => {
+    const user = userEvent.setup()
+    const onCommit = vi.fn()
+    render(<CommitInput aria-label="Nom" value="SW-1" onCommit={onCommit} />)
+    const input = screen.getByLabelText<HTMLInputElement>('Nom')
+    await user.clear(input)
+    await user.type(input, 'REFUSE{Enter}')
+    expect(onCommit).toHaveBeenCalledWith('REFUSE')
+    expect(input.value).toBe('SW-1')
+  })
 })

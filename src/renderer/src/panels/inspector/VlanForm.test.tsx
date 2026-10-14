@@ -67,4 +67,50 @@ describe('fiche VLAN', () => {
     expect(vlan(40)).toBeUndefined()
     expect(uiStore.getState().inspectVlanId).toBeNull()
   })
+
+  it('un numéro refusé revient à la valeur du projet', async () => {
+    const user = userEvent.setup()
+    projectStore.getState().addVlan(vlanPreset(10))
+    render(<Inspector />)
+    const id = screen.getByLabelText<HTMLInputElement>('Numéro du VLAN')
+    await user.clear(id)
+    await user.type(id, '10{Enter}')
+    expect(projectStore.getState().toast).toBe('Le VLAN 10 existe déjà.')
+    expect(id.value).toBe('40')
+  })
+
+  it('en lecture seule, un nom modifié est refusé et le champ revient', async () => {
+    const user = userEvent.setup()
+    projectStore.getState().loadProject(sampleProject(), null, { readOnly: true })
+    uiStore.getState().setInspectVlan(40)
+    render(<Inspector />)
+    const name = screen.getByLabelText<HTMLInputElement>('Nom du VLAN')
+    const original = name.value
+    await user.clear(name)
+    await user.type(name, 'Autre{Enter}')
+    expect(projectStore.getState().toast).toBeTruthy()
+    expect(name.value).toBe(original)
+    expect(vlan(40)!.name).toBe(original)
+  })
+
+  it('une modification sans effet ne crée pas d’entrée d’historique', async () => {
+    const user = userEvent.setup()
+    render(<Inspector />)
+    const before = projectStore.getState().history.past.length
+    const short = screen.getByLabelText('Nom court')
+    await user.clear(short)
+    await user.type(short, 'ndi{Enter}')
+    expect(projectStore.getState().history.past.length).toBe(before)
+  })
+
+  it('en lecture seule, retirer le VLAN laisse la fiche ouverte', async () => {
+    const user = userEvent.setup()
+    projectStore.getState().loadProject(sampleProject(), null, { readOnly: true })
+    uiStore.getState().setInspectVlan(40)
+    vi.spyOn(window, 'confirm').mockReturnValue(true)
+    render(<Inspector />)
+    await user.click(screen.getByRole('button', { name: 'Retirer ce VLAN' }))
+    expect(vlan(40)).toBeTruthy()
+    expect(uiStore.getState().inspectVlanId).toBe(40)
+  })
 })

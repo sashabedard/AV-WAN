@@ -58,7 +58,7 @@ export function VlanPanel() {
                 onClick={() => {
                   projectStore.getState().addVlan(vlanPreset(p.id))
                   setAdding(false)
-                  inspect(p.id)
+                  if (projectStore.getState().history.present.vlans.some((v) => v.id === p.id)) inspect(p.id)
                 }}
               >
                 {p.id} · {p.name}
@@ -73,7 +73,7 @@ export function VlanPanel() {
                 const v = blankVlan(projectStore.getState().history.present)
                 projectStore.getState().addVlan(v)
                 setAdding(false)
-                inspect(v.id)
+                if (projectStore.getState().history.present.vlans.some((x) => x.id === v.id)) inspect(v.id)
               }}
             >
               VLAN vide
