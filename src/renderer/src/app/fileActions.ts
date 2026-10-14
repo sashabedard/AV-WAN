@@ -29,10 +29,15 @@ export async function loadFromText(path: string, text: string): Promise<boolean>
     s.showToast(res.error)
     return false
   }
-  if (res.migratedFrom !== undefined) await window.avwan.file.backup(path)
+  // Copie de l'original avant qu'un enregistrement ne l'écrase (migration ou câbles retirés).
+  let backupPath: string | null = null
+  if (res.migratedFrom !== undefined || res.warnings.length > 0) backupPath = await window.avwan.file.backup(path)
   s.loadProject(res.project, res.readOnly ? null : path, { readOnly: res.readOnly })
   if (res.readOnly) s.showToast('Ce fichier vient d’une version plus récente d’AV·WAN : ouvert en lecture seule.')
-  else if (res.warnings.length > 0) s.showToast(res.warnings.join(' '))
+  else if (res.warnings.length > 0) {
+    const kept = backupPath ? ` Copie de sauvegarde conservée : ${fileNameOf(backupPath)}` : ''
+    s.showToast(`${res.warnings.join(' ')}${kept}`)
+  }
   return true
 }
 

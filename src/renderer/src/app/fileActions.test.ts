@@ -55,6 +55,27 @@ describe('fileActions', () => {
     expect(projectStore.getState().filePath).toBeNull()
   })
 
+  it('garde une copie de sauvegarde quand des câbles invalides sont retirés', async () => {
+    const backup = vi.fn(async (path: string) => path.replace(/\.avwan$/, '.bak.avwan'))
+    const api = fakeApi({ backup })
+    vi.stubGlobal('window', { avwan: api, confirm: () => true })
+    const p = sampleProject()
+    p.links.push({ id: 'l2', cableId: 'C-002', a: { deviceId: 'fantome', portId: 'ETH' }, b: { deviceId: 'sw1', portId: '2' }, medium: 'cat6' })
+    expect(await loadFromText('/tmp/orphelin.avwan', serializeProject(p))).toBe(true)
+    expect(backup).toHaveBeenCalledTimes(1)
+    expect(backup).toHaveBeenCalledWith('/tmp/orphelin.avwan')
+    expect(projectStore.getState().history.present.links).toHaveLength(1)
+    expect(projectStore.getState().toast).toContain('C-002')
+    expect(projectStore.getState().toast).toContain('Copie de sauvegarde conservée : orphelin.bak.avwan')
+  })
+
+  it('ne fait pas de copie de sauvegarde pour un fichier sain', async () => {
+    const api = fakeApi()
+    vi.stubGlobal('window', { avwan: api, confirm: () => true })
+    expect(await loadFromText('/tmp/sain.avwan', serializeProject(sampleProject()))).toBe(true)
+    expect(api.file.backup).not.toHaveBeenCalled()
+  })
+
   it("n'ouvre pas un fichier invalide et garde le projet courant", async () => {
     vi.stubGlobal('window', { avwan: fakeApi(), confirm: () => true })
     expect(await loadFromText('/tmp/casse.avwan', '{')).toBe(false)
