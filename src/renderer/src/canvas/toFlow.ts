@@ -2,9 +2,9 @@ import type { Edge, Node } from '@xyflow/react'
 import type { Device, DeviceTemplate, Link, PortRef, Project, Side } from '../model/types'
 import { getTemplate } from '../catalog'
 import { resolvePortSide } from '../model/layout'
-import { findPort } from '../model/rules'
+import { findPort, sameRef } from '../model/rules'
 import { POE_LABELS, linkPoe, linkVlanIds } from '../model/derive'
-import { cordStyle, type CordStyle, type ThemeMode } from './cordStyle'
+import { NEUTRAL, cordStyle, type CordStyle, type ThemeMode } from './cordStyle'
 import { nodeSize } from './nodeGeometry'
 
 export interface PortInfo {
@@ -25,7 +25,7 @@ export type DeviceNodeData = {
   vlans: number[]
 }
 export type DeviceFlowNode = Node<DeviceNodeData, 'device' | 'switch'>
-export type CordEdgeData = { link: Link; style: CordStyle; tag: string; portLabels: [string, string]; vlans: number[] }
+export type CordEdgeData = { link: Link; style: CordStyle; tag: string; portLabels: [string, string]; vlans: number[]; poeAt: 'source' | 'target' | null }
 export type CordFlowEdge = Edge<CordEdgeData, 'cord'>
 
 export interface FlowCache {
@@ -37,6 +37,7 @@ export interface LinkAnalysis {
   poeUsed: Map<string, number>
   styles: Map<string, CordStyle>
   linkVlans: Map<string, number[]>
+  poeAt: Map<string, 'source' | 'target'>
   deviceVlans: Map<string, number[]>
 }
 
@@ -49,6 +50,7 @@ export function analyzeLinks(project: Project, theme: ThemeMode): LinkAnalysis {
   const poeUsed = new Map<string, number>()
   const styles = new Map<string, CordStyle>()
   const linkVlans = new Map<string, number[]>()
+  const poeAt = new Map<string, 'source' | 'target'>()
   const deviceSets = new Map<string, Set<number>>()
   for (const link of project.links) {
     const style = cordStyle(project, link, theme)
@@ -61,12 +63,14 @@ export function analyzeLinks(project: Project, theme: ThemeMode): LinkAnalysis {
       deviceSets.set(end.deviceId, set)
     }
     const poe = linkPoe(project, link)
+    if (poe.active && poe.pse) poeAt.set(link.id, sameRef(poe.pse, link.a) ? 'source' : 'target')
     if (poe.active && poe.pse) poeUsed.set(poe.pse.deviceId, (poeUsed.get(poe.pse.deviceId) ?? 0) + (poe.drawW ?? 0))
     for (const end of [link.a, link.b]) {
       const record = ports.get(end.deviceId) ?? {}
+      const prev = record[end.portId] // radio de point d'accès : plusieurs liens sur la même prise
       record[end.portId] = {
-        linkId: link.id,
-        color: style.color,
+        linkId: prev?.linkId ?? link.id,
+        color: prev && prev.color !== style.color ? NEUTRAL[theme] : style.color,
         poe: poe.active && poe.pse?.deviceId === end.deviceId && poe.pse.portId === end.portId
       }
       ports.set(end.deviceId, record)
@@ -77,6 +81,7 @@ export function analyzeLinks(project: Project, theme: ThemeMode): LinkAnalysis {
     poeUsed,
     styles,
     linkVlans,
+    poeAt,
     deviceVlans: new Map([...deviceSets].map(([id, s]) => [id, [...s].sort((a, b) => a - b)]))
   }
 }
@@ -137,7 +142,8 @@ export function toFlowEdges(project: Project, analysis: LinkAnalysis, cache: Flo
     const label = (r: PortRef): string => findPort(project, r)?.port.label ?? r.portId
     const portLabels: [string, string] = [label(link.a), label(link.b)]
     const vlans = analysis.linkVlans.get(link.id) ?? NO_VLANS
-    const key = `${JSON.stringify(style)}|${tag}|${portLabels.join('|')}|${vlans.join(',')}`
+    const poeAt = analysis.poeAt.get(link.id) ?? null
+    const key = `${JSON.stringify(style)}|${tag}|${portLabels.join('|')}|${vlans.join(',')}|${poeAt}`
     const hit = cache.edges.get(link.id)
     if (hit && hit.link === link && hit.key === key) {
       out.push(hit.edge)
@@ -150,7 +156,7 @@ export function toFlowEdges(project: Project, analysis: LinkAnalysis, cache: Flo
       sourceHandle: link.a.portId,
       target: link.b.deviceId,
       targetHandle: link.b.portId,
-      data: { link, style, tag, portLabels, vlans }
+      data: { link, style, tag, portLabels, vlans, poeAt }
     }
     cache.edges.set(link.id, { key, link, edge })
     out.push(edge)

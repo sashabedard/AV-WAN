@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import { sampleProject } from '../model/__fixtures__/sample'
 import { createDevice, createProject } from '../model/project'
+import { vlanPreset } from '../catalog/vlanPresets'
+import type { Project } from '../model/types'
+import { NEUTRAL } from './cordStyle'
 import { analyzeLinks, cordTag, createFlowCache, toFlowEdges, toFlowNodes } from './toFlow'
 
 describe('toFlowNodes', () => {
@@ -47,6 +50,15 @@ describe('toFlowNodes', () => {
 })
 
 describe('toFlowEdges', () => {
+  it('indique le bout qui fournit le PoE', () => {
+    const p = sampleProject()
+    const [edge] = toFlowEdges(p, analyzeLinks(p, 'dark'), createFlowCache())
+    expect(edge!.data!.poeAt).toBe('source')
+    const flipped = { ...p, links: [{ ...p.links[0]!, a: p.links[0]!.b, b: p.links[0]!.a }] }
+    expect(toFlowEdges(flipped, analyzeLinks(flipped, 'dark'), createFlowCache())[0]!.data!.poeAt).toBe('target')
+    const off = { ...p, devices: p.devices.map((d) => (d.id === 'sw1' ? { ...d, portState: { '1': { ...d.portState['1'], poeEnabled: false } } } : d)) }
+    expect(toFlowEdges(off, analyzeLinks(off, 'dark'), createFlowCache())[0]!.data!.poeAt).toBeNull()
+  })
   it('relie les poignées de ports et décrit le câble', () => {
     const p = sampleProject()
     const [edge] = toFlowEdges(p, analyzeLinks(p, 'light'), createFlowCache())
@@ -70,5 +82,26 @@ describe('VLAN des nœuds et des arêtes', () => {
     const [edge] = toFlowEdges(p, analysis, createFlowCache())
     expect(nodes.map((n) => n.data.vlans)).toEqual([[40], [40]])
     expect(edge!.data!.vlans).toEqual([40])
+  })
+})
+
+describe('radio Wi-Fi à plusieurs clients', () => {
+  function apWithClients(vlans: [number, number]): { p: Project; apId: string } {
+    let p: Project = { ...createProject(), vlans: [vlanPreset(20), vlanPreset(60)] }
+    const ap = createDevice(p, 'ap', { x: 0, y: 0 })
+    p = { ...p, devices: [ap] }
+    vlans.forEach((vlan, i) => {
+      const c = createDevice(p, 'esp32-devkit', { x: i * 200, y: 200 })
+      p = { ...p, devices: [...p.devices, { ...c, portState: { WIFI: { mode: 'access', nativeVlan: vlan } } }] }
+      p.links.push({ id: `w${i}`, cableId: `C-00${i + 1}`, a: { deviceId: c.id, portId: 'WIFI' }, b: { deviceId: ap.id, portId: 'WIFI' }, medium: 'wifi' })
+    })
+    return { p, apId: ap.id }
+  }
+
+  it('garde la couleur commune, ou passe au neutre si les VLAN diffèrent', () => {
+    const same = apWithClients([60, 60])
+    expect(analyzeLinks(same.p, 'dark').ports.get(same.apId)!['WIFI']!.color).toBe('#F2C94C')
+    const mixed = apWithClients([20, 60])
+    expect(analyzeLinks(mixed.p, 'dark').ports.get(mixed.apId)!['WIFI']!.color).toBe(NEUTRAL.dark)
   })
 })

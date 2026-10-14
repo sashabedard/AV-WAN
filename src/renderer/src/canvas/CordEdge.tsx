@@ -3,10 +3,9 @@ import { EdgeLabelRenderer, Position, getSmoothStepPath, getStraightPath, type E
 import type { Side } from '../model/types'
 import type { CordFlowEdge } from './toFlow'
 import { useUiStore } from '../store/uiStore'
-import { bandRects, bootRect, outward } from './cordGeometry'
+import { BOLT_PATH, bandReach, bandRects, beside, bootRect, outward, stubLength, wavesPath } from './cordGeometry'
 
 const RADIUS = 9
-const STUB = 14
 
 function sideOf(position: Position): Side {
   switch (position) {
@@ -39,7 +38,7 @@ function CordEdgeImpl({ sourceX, sourceY, targetX, targetY, sourcePosition, targ
         targetY,
         targetPosition,
         borderRadius: RADIUS,
-        offset: STUB,
+        offset: stubLength(style.bands.length),
         ...(link.elbow ? { centerX: (sourceX + targetX) / 2 + link.elbow.dx, centerY: (sourceY + targetY) / 2 + link.elbow.dy } : {})
       })
   const ends: Array<[number, number, Side]> = [
@@ -66,6 +65,23 @@ function CordEdgeImpl({ sourceX, sourceY, targetX, targetY, sourcePosition, targ
               <rect key={`band-${i}-${j}`} x={b.x} y={b.y} width={b.w} height={b.h} fill={b.color} />
             ))
           )}
+        {data.poeAt &&
+          (() => {
+            const [x, y, side] = ends[data.poeAt === 'source' ? 0 : 1]!
+            const p = beside(x, y, side, Math.max(14, bandReach(style.bands.length) + 10), 9)
+            return <path className="cord__bolt" d={BOLT_PATH} transform={`translate(${p.x} ${p.y})`} />
+          })()}
+        {style.extraBands > 0 &&
+          (() => {
+            const [x, y, side] = ends[0]!
+            const p = beside(x, y, side, bandReach(style.bands.length) + 9, -10)
+            return (
+              <text className="cord__more" x={p.x} y={p.y} textAnchor="middle" dominantBaseline="central">
+                +{style.extraBands}
+              </text>
+            )
+          })()}
+        {style.straight && link.medium === 'wifi' && <path className="cord__waves" d={wavesPath(labelX, labelY - 9)} style={{ stroke: style.color }} />}
         <path d={path} className="cord__hit" strokeWidth={16} onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)} />
       </g>
       {(showTag || style.badge) && (
