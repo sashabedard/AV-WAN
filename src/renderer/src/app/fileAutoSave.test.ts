@@ -118,16 +118,23 @@ describe('écriture automatique dans le fichier', () => {
     expect(deps.save).not.toHaveBeenCalled()
   })
 
-  it('lecture seule : aucune écriture', async () => {
+  it('lecture seule : aucune écriture à la perte de focus', async () => {
     const { store, deps, auto } = setup()
     // Copie restaurée d'une version plus récente : modifiée (rien d'enregistré) mais en lecture seule.
     store.getState().loadProject(sampleProject(), '/x/a.avwan', { readOnly: true, restored: true })
-    store.getState().updateMeta({ title: 'Refusé' })
-    store.getState().setColorMode('type')
-    await vi.advanceTimersByTimeAsync(FILE_AUTOSAVE_DELAY_MS * 2)
+    expect(isDirty(store.getState())).toBe(true)
     await auto.flush()
     expect(deps.save).not.toHaveBeenCalled()
     expect(deps.createDefault).not.toHaveBeenCalled()
+  })
+
+  it('lecture seule à l’échéance du délai : aucune écriture', async () => {
+    const { store, deps } = setup()
+    store.getState().updateMeta({ title: 'Salle B' })
+    store.setState({ readOnly: true }) // vérifié au moment d'écrire, pas seulement à la modification
+    expect(isDirty(store.getState())).toBe(true)
+    await vi.advanceTimersByTimeAsync(FILE_AUTOSAVE_DELAY_MS * 2)
+    expect(deps.save).not.toHaveBeenCalled()
   })
 
   it('projet sans chemin : le fichier est créé dans Documents › AV·WAN, puis les écritures y vont', async () => {
