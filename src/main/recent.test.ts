@@ -1,11 +1,25 @@
 // src/main/recent.test.ts
-import { describe, expect, it } from 'vitest'
-import { mkdtempSync, writeFileSync } from 'node:fs'
+import { afterAll, describe, expect, it } from 'vitest'
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { RECENT_MAX, existingRecent, parseRecent, pushRecent, readRecent, rememberRecent } from './recent'
 
+const dirs: string[] = []
+afterAll(() => {
+  for (const d of dirs) rmSync(d, { recursive: true, force: true })
+})
+
 describe('fichiers récents', () => {
+  it('rend [] pour un fichier absent ou corrompu', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'avwan-recent-'))
+    dirs.push(dir)
+    expect(await readRecent(join(dir, 'absent.json'))).toEqual([])
+    const bad = join(dir, 'bad.json')
+    writeFileSync(bad, '{pas du json')
+    expect(await readRecent(bad)).toEqual([])
+  })
+
   it('met le dernier ouvert en tête, sans doublon, 8 au plus', () => {
     let list: string[] = []
     for (let i = 0; i < 10; i++) list = pushRecent(list, `/p/${i}.avwan`)
@@ -23,6 +37,7 @@ describe('fichiers récents', () => {
 
   it('écrit la liste et ne rend que les fichiers qui existent encore', async () => {
     const dir = mkdtempSync(join(tmpdir(), 'avwan-recent-'))
+    dirs.push(dir)
     const file = join(dir, 'recent.json')
     const kept = join(dir, 'a.avwan')
     writeFileSync(kept, '{}')
