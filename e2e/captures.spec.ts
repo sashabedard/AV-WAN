@@ -1,18 +1,20 @@
 import { test, type Page } from '@playwright/test'
 import { launchApp } from './helpers'
 
-// Cadre le projet à l'écart de la légende (bas droite) et de la minicarte (bas gauche).
+// Les nombres seuls sont des ratios dans React Flow : on passe des « px » explicites.
 const px = (n: number): `${number}px` => `${n}px`
 
+// Cadre le projet au-dessus de la légende (bas droite) et de la minicarte (bas gauche) : on réserve
+// leur place en bas, mesurée sur la page.
 async function frameClearOfOverlays(page: Page): Promise<void> {
-  const box = async (selector: string) => (await page.locator(selector).boundingBox()) ?? { width: 0, height: 0 }
-  const legend = await box('.legend')
-  const minimap = await box('.react-flow__minimap')
-  const gutter = 24 // les nombres seuls sont des ratios dans React Flow : on passe des « px » explicites
-  await page.evaluate(
-    (pad) => window.__avwan!.fitView(pad),
-    { top: px(gutter), left: px(gutter), right: px(Math.ceil(legend.width) + 2 * gutter), bottom: px(Math.ceil(minimap.height) + 2 * gutter) }
-  )
+  const pane = await page.locator('.react-flow').boundingBox()
+  const legend = await page.locator('.legend').boundingBox()
+  const minimap = await page.locator('.react-flow__minimap').boundingBox()
+  if (!pane) throw new Error('Canvas introuvable')
+  const tops = [legend, minimap].flatMap((b) => (b ? [b.y] : []))
+  const gutter = 28
+  const bottom = Math.ceil(pane.y + pane.height - Math.min(...tops)) + gutter
+  await page.evaluate((pad) => window.__avwan!.fitView(pad), { top: px(gutter), left: px(gutter), right: px(gutter), bottom: px(bottom) })
 }
 
 // Captures du README : projet exemple, une caméra sélectionnée, thèmes sombre et clair.
