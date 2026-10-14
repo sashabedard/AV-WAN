@@ -1,4 +1,5 @@
-import type { Medium } from '../model/types'
+import type { Connector, Medium } from '../model/types'
+import type { PoeChoice } from '../model/customTemplate'
 import type { Family } from '../model/rules'
 
 export const MEDIUM_LABELS: Record<Medium, string> = {
@@ -20,4 +21,27 @@ const MEDIA_BY_FAMILY: Record<Family, Medium[]> = {
 
 export function mediaForFamily(family: Family): Medium[] {
   return MEDIA_BY_FAMILY[family]
+}
+
+export const CONNECTOR_LABELS: Record<Connector, string> = {
+  rj45: 'RJ45',
+  sfp: 'SFP',
+  'sfp+': 'SFP+',
+  wifi: 'Wi-Fi',
+  usb: 'USB',
+  dmx: 'DMX',
+  pixel: 'Pixels',
+  hdmi: 'HDMI',
+  sdi: 'SDI',
+  serial: 'Série'
+}
+
+export const POE_CHOICE_LABELS: Record<PoeChoice, string> = {
+  none: 'Aucun',
+  'in-af': 'Reçoit PoE (af)',
+  'in-at': 'Reçoit PoE+ (at)',
+  'in-bt': 'Reçoit PoE++ (bt)',
+  'out-af': 'Fournit PoE (af)',
+  'out-at': 'Fournit PoE+ (at)',
+  'out-bt': 'Fournit PoE++ (bt)'
 }
