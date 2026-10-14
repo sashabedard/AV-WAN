@@ -38,7 +38,8 @@ export const SwitchSpecSchema = z.object({
 
 export const IconRefSchema = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('builtin'), name: z.string() }),
-  z.object({ kind: z.literal('image'), dataUri: z.string().startsWith('data:image/') })
+  // tint : SVG monochrome importé, affiché en currentColor (masque CSS), comme les icônes maison.
+  z.object({ kind: z.literal('image'), dataUri: z.string().startsWith('data:image/'), tint: z.boolean().optional() })
 ])
 
 export const DeviceTemplateSchema = z.object({
