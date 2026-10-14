@@ -1,5 +1,11 @@
-import { app, BrowserWindow, shell } from 'electron'
+import { app, BrowserWindow, dialog, shell } from 'electron'
 import { join } from 'node:path'
+import { registerIpc } from './ipc'
+import { buildMenu } from './menu'
+
+const userData = process.env['AVWAN_USER_DATA']
+if (userData) app.setPath('userData', userData)
+const isE2E = process.env['AVWAN_E2E'] === '1'
 
 function createWindow(): BrowserWindow {
   const win = new BrowserWindow({
@@ -14,13 +20,26 @@ function createWindow(): BrowserWindow {
       preload: join(__dirname, '../preload/index.js'),
       contextIsolation: true,
       nodeIntegration: false,
-      sandbox: true
+      sandbox: true,
+      backgroundThrottling: !isE2E
     }
   })
   win.once('ready-to-show', () => win.show())
   win.webContents.setWindowOpenHandler(({ url }) => {
     void shell.openExternal(url)
     return { action: 'deny' }
+  })
+  // Le renderer pose onbeforeunload quand le projet est modifié ; on demande ici.
+  win.webContents.on('will-prevent-unload', (event) => {
+    const choice = dialog.showMessageBoxSync(win, {
+      type: 'question',
+      buttons: ['Quitter sans enregistrer', 'Annuler'],
+      defaultId: 1,
+      cancelId: 1,
+      message: 'Des modifications ne sont pas enregistrées.',
+      detail: 'Elles seront perdues si vous quittez maintenant.'
+    })
+    if (choice === 0) event.preventDefault()
   })
   const devUrl = process.env['ELECTRON_RENDERER_URL']
   if (devUrl) void win.loadURL(devUrl)
@@ -29,6 +48,8 @@ function createWindow(): BrowserWindow {
 }
 
 void app.whenReady().then(() => {
+  registerIpc()
+  buildMenu()
   createWindow()
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
