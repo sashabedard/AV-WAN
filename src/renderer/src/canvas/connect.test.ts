@@ -1,6 +1,6 @@
 // src/renderer/src/canvas/connect.test.ts
 import { describe, expect, it } from 'vitest'
-import { clientPoint, connectionRefs, dropOnDevice, makeIsValidConnection, nodeIdAt, reconnectEnd } from './connect'
+import { clientPoint, connectionRefs, dropOnDevice, makeIsValidConnection, nodeIdAt, reconnectEnd, dropReconnectOnDevice } from './connect'
 import { sampleProject } from '../model/__fixtures__/sample'
 import { createDevice } from '../model/project'
 import type { Project } from '../model/types'
@@ -65,5 +65,18 @@ describe('reconnectEnd', () => {
     const valid = makeIsValidConnection(() => p, () => 'l1')
     expect(valid({ source: 'sw1', sourceHandle: '2', target: 'cam1', targetHandle: 'ETH' })).toBe(true)
     expect(valid({ source: 'sw1', sourceHandle: '1', target: 'cam1', targetHandle: 'HDMI' })).toBe(false)
+  })
+})
+
+describe('dropReconnectOnDevice', () => {
+  const fixed = { deviceId: 'cam1', portId: 'ETH' }
+
+  it('choisit un port libre compatible en écartant le câble déplacé', () => {
+    expect(dropReconnectOnDevice(sampleProject(), 'l1', fixed, 'sw1')).toEqual({ ok: true, end: 'a', to: { deviceId: 'sw1', portId: '1' } })
+  })
+
+  it('refuse le même appareil sans message, et un câble inconnu', () => {
+    expect(dropReconnectOnDevice(sampleProject(), 'l1', fixed, 'cam1')).toEqual({ ok: false, message: '' })
+    expect(dropReconnectOnDevice(sampleProject(), 'inconnu', fixed, 'sw1')).toEqual({ ok: false, message: '' })
   })
 })

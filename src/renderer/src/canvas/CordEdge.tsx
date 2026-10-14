@@ -30,6 +30,11 @@ function ElbowGrip({ x, y, start, onDraft, onCommit, onReset }: { x: number; y: 
   const origin = useRef<{ x: number; y: number } | null>(null)
   const at = (e: { clientX: number; clientY: number }): Elbow =>
     elbowFromDrag(start, { x: e.clientX - (origin.current?.x ?? e.clientX), y: e.clientY - (origin.current?.y ?? e.clientY) }, zoom)
+  const cancel = (): void => {
+    if (!origin.current) return
+    origin.current = null
+    onDraft(null)
+  }
   return (
     <EdgeLabelRenderer>
       <div
@@ -51,6 +56,8 @@ function ElbowGrip({ x, y, start, onDraft, onCommit, onReset }: { x: number; y: 
           onDraft(null)
           if (next.dx !== start.dx || next.dy !== start.dy) onCommit(next)
         }}
+        onPointerCancel={cancel}
+        onLostPointerCapture={cancel}
         onDoubleClick={(e) => {
           e.stopPropagation()
           onReset()
@@ -158,7 +165,9 @@ function CordEdgeImpl({ sourceX, sourceY, targetX, targetY, sourcePosition, targ
           start={link.elbow ?? NO_ELBOW}
           onDraft={setDraft}
           onCommit={(e) => projectStore.getState().updateLink(link.id, { elbow: e })}
-          onReset={() => projectStore.getState().updateLink(link.id, { elbow: undefined })}
+          onReset={() => {
+            if (link.elbow) projectStore.getState().updateLink(link.id, { elbow: undefined })
+          }}
         />
       )}
     </>

@@ -57,6 +57,20 @@ export function nodeIdAt(doc: Pick<Document, 'elementFromPoint'>, point: { x: nu
   return el?.closest('.react-flow__node')?.getAttribute('data-id') ?? null
 }
 
+// Même chose pour un rebranchement : le câble déplacé est mis de côté, `fixed` est le bout qui reste.
+export function dropReconnectOnDevice(
+  project: Project,
+  linkId: string,
+  fixed: PortRef,
+  targetId: string
+): { ok: true; end: 'a' | 'b'; to: PortRef } | { ok: false; message: string } {
+  const link = project.links.find((l) => l.id === linkId)
+  if (!link) return { ok: false, message: '' }
+  const end = sameRef(link.a, fixed) ? 'b' : 'a'
+  const res = dropOnDevice({ ...project, links: project.links.filter((l) => l.id !== linkId) }, fixed, targetId)
+  return res.ok ? { ok: true, end, to: res.to } : res
+}
+
 export function dropOnDevice(
   project: Project,
   from: PortRef,

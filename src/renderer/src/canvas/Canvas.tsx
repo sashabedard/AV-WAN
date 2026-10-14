@@ -26,7 +26,7 @@ import { useThemeMode } from '../theme/useThemeMode'
 import { TEMPLATE_MIME } from '../panels/Palette'
 import { analyzeLinks, createFlowCache, toFlowEdges, toFlowNodes, type CordFlowEdge, type DeviceFlowNode } from './toFlow'
 import { GRID, mergeEdges, mergeNodes, nodesMatchDerived, snapPoint } from './canvasHelpers'
-import { clientPoint, connectionRefs, dropOnDevice, makeIsValidConnection, nodeIdAt, reconnectEnd } from './connect'
+import { clientPoint, connectionRefs, dropOnDevice, makeIsValidConnection, nodeIdAt, reconnectEnd, dropReconnectOnDevice } from './connect'
 import { useAltKey } from './useAltKey'
 import { FIT_OPTIONS, registerViewport } from './viewport'
 import { arrowDelta, nudgeMoves } from './keyboard'
@@ -132,6 +132,13 @@ function CanvasInner() {
     if (!targetId) return
     const s = projectStore.getState()
     const from = { deviceId: state.fromNode.id, portId: state.fromHandle.id }
+    const reconnecting = uiStore.getState().reconnectingLinkId
+    if (reconnecting) {
+      const r = dropReconnectOnDevice(s.history.present, reconnecting, from, targetId)
+      if (r.ok) s.reconnect(reconnecting, r.end, r.to)
+      else if (r.message) s.showToast(r.message)
+      return
+    }
     const res = dropOnDevice(s.history.present, from, targetId)
     if (res.ok) s.connect(from, res.to)
     else if (res.message) s.showToast(res.message)
