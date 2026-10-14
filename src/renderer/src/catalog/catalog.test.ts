@@ -9,7 +9,7 @@ import { DeviceTemplateSchema } from '../model/schema'
 describe('TEMPLATES', () => {
   it('a des identifiants uniques, des gabarits valides et des icônes connues', () => {
     expect(new Set(TEMPLATES.map((t) => t.id)).size).toBe(TEMPLATES.length)
-    expect(TEMPLATES.length).toBe(39)
+    expect(TEMPLATES.length).toBe(40)
     for (const t of TEMPLATES) {
       expect(DeviceTemplateSchema.safeParse(t).success, t.id).toBe(true)
       expect(t.icon.kind === 'builtin' && (BUILTIN_ICON_NAMES as readonly string[]).includes(t.icon.name), t.id).toBe(true)
@@ -69,5 +69,14 @@ describe('getTemplate', () => {
     expect(getTemplate({ templates: [custom] }, custom.id)?.name).toBe('Ma passerelle')
     expect(getTemplate({ templates: [] }, 'ptz-ndi')?.code).toBe('CAM')
     expect(getTemplate({ templates: [] }, 'inconnu')).toBeUndefined()
+  })
+
+  it('décrit le panneau de brassage : 24 ports avant en haut, 24 arrière en bas, sans PoE', () => {
+    const pp = TEMPLATES.find((t) => t.id === 'patch-panel-24')!
+    expect(pp).toMatchObject({ category: 'reseau', code: 'PP', icon: { kind: 'builtin', name: 'patch-panel' } })
+    expect(pp.ports).toHaveLength(48)
+    expect(pp.ports[0]).toMatchObject({ id: 'A1', label: 'A1', connector: 'rj45', row: 'top' })
+    expect(pp.ports[24]).toMatchObject({ id: 'R1', label: 'R1', connector: 'rj45', row: 'bottom' })
+    expect(pp.ports.some((p) => p.poeOut || p.poeIn)).toBe(false)
   })
 })

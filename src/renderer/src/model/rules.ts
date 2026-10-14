@@ -1,4 +1,5 @@
 import type { Connector, Device, Link, Medium, PortDef, PortRef, Project } from './types'
+import { RACK_TEMPLATE_IDS } from '../catalog/templates'
 
 export type Family = 'ethernet' | 'optical' | 'wifi' | 'usb' | 'dmx' | 'pixel' | 'hdmi' | 'sdi' | 'serial'
 
@@ -126,4 +127,8 @@ export function pickPort(project: Project, from: PortRef, targetDeviceId: string
     }
   }
   return best?.id
+}
+
+export function isRackDevice(device: Device): boolean {
+  return device.switch !== undefined || RACK_TEMPLATE_IDS.has(device.templateId)
 }

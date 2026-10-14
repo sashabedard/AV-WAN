@@ -3,6 +3,7 @@ import { sampleProject } from '../model/__fixtures__/sample'
 import { createDevice, createProject } from '../model/project'
 import { vlanPreset } from '../catalog/vlanPresets'
 import type { Project } from '../model/types'
+import { switchFacade } from './switchFacade'
 import { NEUTRAL } from './cordStyle'
 import { analyzeLinks, cordTag, createFlowCache, toFlowEdges, toFlowNodes, toFlowZones } from './toFlow'
 
@@ -15,6 +16,12 @@ describe('toFlowNodes', () => {
     expect(nodes[1]!.data.ports['ETH']).toEqual({ linkId: 'l1', color: '#3E8EF7', poe: false })
     expect(nodes[0]!.data.poeUsage).toEqual({ usedW: 25, budgetW: 60 })
     expect(nodes[1]!.data.side).toBe('top')
+  })
+
+  it('dessine le panneau de brassage comme une façade de rack', () => {
+    const p = createProject()
+    p.devices.push(createDevice(p, 'patch-panel-24', { x: 0, y: 0 }))
+    expect(toFlowNodes(p, analyzeLinks(p, 'dark'), createFlowCache())[0]!.type).toBe('switch')
   })
 
   it("réutilise le même objet nœud tant que rien ne change pour l'appareil", () => {
@@ -59,6 +66,17 @@ describe('toFlowEdges', () => {
     const off = { ...p, devices: p.devices.map((d) => (d.id === 'sw1' ? { ...d, portState: { '1': { ...d.portState['1'], poeEnabled: false } } } : d)) }
     expect(toFlowEdges(off, analyzeLinks(off, 'dark'), createFlowCache())[0]!.data!.poeAt).toBeNull()
   })
+  it('mesure, depuis la poignée, la distance jusqu’au bord du nœud : positive sur une façade de rack, nulle sur une tuile', () => {
+    const p = sampleProject()
+    const edge = toFlowEdges(p, analyzeLinks(p, 'dark'), createFlowCache())[0]!
+    const sw = p.devices.find((d) => d.switch)!
+    const facade = switchFacade(sw.ports)
+    const port = facade.ports.find((f) => f.id === edge.sourceHandle)!
+    expect(edge.data!.exits[0]).toBe(facade.height - (port.y + port.h))
+    expect(edge.data!.exits[0]).toBeGreaterThan(0)
+    expect(edge.data!.exits[1]).toBe(0)
+  })
+
   it('relie les poignées de ports et décrit le câble', () => {
     const p = sampleProject()
     const [edge] = toFlowEdges(p, analyzeLinks(p, 'light'), createFlowCache())

@@ -1,4 +1,5 @@
-import type { Device, Project, Side } from './types'
+import type { Device, PortDef, Project, Side } from './types'
+import { isRackDevice } from './rules'
 
 export interface NodeSize {
   w: number
@@ -9,14 +10,15 @@ export type SizeOf = (device: Device) => NodeSize
 // Estimation pure de la taille d'un nœud à l'écran. Le canvas passe sa géométrie exacte
 // (nodeGeometry.ts, switchFacade.ts) ; ces formules en sont la copie, sans dépendre du canvas.
 export function estimateNodeSize(device: Device): NodeSize {
-  if (!device.switch) return { w: Math.max(176, 24 + device.ports.length * 18), h: 58 }
+  if (!isRackDevice(device)) return { w: Math.max(176, 24 + device.ports.length * 18), h: 58 }
   const rj = device.ports.filter((p) => p.connector === 'rj45')
-  const sfp = device.ports.length - rj.length
+  const sfp = device.ports.filter((p) => p.connector !== 'rj45')
   const twoRows = rj.some((p) => p.row === 'top')
-  const cols = twoRows ? Math.ceil(rj.length / 2) : rj.length
-  const sfpCols = twoRows ? Math.ceil(sfp / 2) : sfp
+  // Colonnes = la rangée la plus longue (copie de canvas/switchFacade.ts, sans dépendre du canvas).
+  const perRow = (list: PortDef[]): number =>
+    twoRows ? Math.max(list.filter((p) => p.row === 'top').length, list.filter((p) => p.row !== 'top').length) : list.length
   // oreille 12 + marge 28 + pas 20 par colonne RJ45 (+ 14 + 22 par colonne SFP+) + marge 22 + oreille 12
-  return { w: 12 + 28 + cols * 20 + (sfp > 0 ? 14 + sfpCols * 22 : 0) + 22 + 12, h: twoRows ? 92 : 66 }
+  return { w: 12 + 28 + perRow(rj) * 20 + (sfp.length > 0 ? 14 + perRow(sfp) * 22 : 0) + 22 + 12, h: twoRows ? 92 : 66 }
 }
 
 function centre(device: Device, sizeOf: SizeOf): { x: number; y: number } {

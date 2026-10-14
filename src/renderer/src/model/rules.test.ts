@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { sampleProject } from './__fixtures__/sample'
-import { canConnectPorts, canReconnect, defaultMedium, isPortFree, nextCableId, nextDeviceName, pickPort } from './rules'
-import { createDevice } from './project'
+import { isRackDevice, canConnectPorts, canReconnect, defaultMedium, isPortFree, nextCableId, nextDeviceName, pickPort } from './rules'
+import { createDevice, createProject } from './project'
 import type { Project } from './types'
 
 function withDevices(p: Project, ...templateIds: string[]): Project {
@@ -79,5 +79,14 @@ describe('canReconnect', () => {
     expect(canReconnect(p, 'l1', 'b', { deviceId: 'cam1', portId: 'HDMI' })).toBe(false)
     expect(canReconnect(p, 'l1', 'b', { deviceId: 'sw1', portId: '2' })).toBe(false)
     expect(canReconnect(p, 'inconnu', 'a', { deviceId: 'sw1', portId: '2' })).toBe(false)
+  })
+})
+
+describe('isRackDevice', () => {
+  it('reconnaît les façades de rack : switch et panneau de brassage', () => {
+    const p = createProject()
+    expect(isRackDevice(createDevice(p, 'switch', { x: 0, y: 0 }))).toBe(true)
+    expect(isRackDevice(createDevice(p, 'patch-panel-24', { x: 0, y: 0 }))).toBe(true)
+    expect(isRackDevice(createDevice(p, 'ptz-ndi', { x: 0, y: 0 }))).toBe(false)
   })
 })

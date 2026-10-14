@@ -2,10 +2,11 @@ import type { Edge, Node } from '@xyflow/react'
 import type { Device, DeviceTemplate, Link, PortRef, Project, Side, Zone } from '../model/types'
 import { getTemplate } from '../catalog'
 import { resolvePortSide } from '../model/layout'
-import { findPort, sameRef } from '../model/rules'
+import { findPort, isRackDevice, sameRef } from '../model/rules'
 import { POE_LABELS, linkPoe, linkVlanIds } from '../model/derive'
 import { NEUTRAL, cordStyle, type CordStyle, type ThemeMode } from './cordStyle'
 import { nodeSize } from './nodeGeometry'
+import { facadeExit, switchFacade } from './switchFacade'
 
 export interface PortInfo {
   linkId: string
@@ -28,7 +29,7 @@ export type DeviceFlowNode = Node<DeviceNodeData, 'device' | 'switch'>
 export type ZoneNodeData = { zone: Zone }
 export type ZoneFlowNode = Node<ZoneNodeData, 'zone'>
 export type FlowNode = DeviceFlowNode | ZoneFlowNode
-export type CordEdgeData = { link: Link; style: CordStyle; tag: string; portLabels: [string, string]; vlans: number[]; poeAt: 'source' | 'target' | null }
+export type CordEdgeData = { link: Link; style: CordStyle; tag: string; portLabels: [string, string]; vlans: number[]; poeAt: 'source' | 'target' | null; exits: [number, number] }
 export type CordFlowEdge = Edge<CordEdgeData, 'cord'>
 
 export interface FlowCache {
@@ -115,7 +116,7 @@ export function toFlowNodes(project: Project, analysis: LinkAnalysis, cache: Flo
     }
     const node: DeviceFlowNode = {
       id: device.id,
-      type: device.switch ? 'switch' : 'device',
+      type: isRackDevice(device) ? 'switch' : 'device',
       position: device.position,
       data: { device, template: getTemplate(project, device.templateId), side, ports, vlans, ...(poeUsage ? { poeUsage } : {}) }
     }
@@ -135,6 +136,16 @@ export function cordTag(project: Project, link: Link): string {
   return `${link.cableId} · ${end(link.a)} ⇄ ${end(link.b)}${poe.active && poe.cls ? ` · ${POE_LABELS[poe.cls]}` : ''}`
 }
 
+// Distance, le long de la sortie du cordon, entre la poignée et le bord extérieur du nœud : 0 pour une tuile
+// (poignée sur le bord), positive pour un port de façade de rack (la poignée est sur le port, dans la façade).
+export function cordExit(project: Project, ref: PortRef): number {
+  const found = findPort(project, ref)
+  if (!found || !isRackDevice(found.device)) return 0
+  const facade = switchFacade(found.device.ports)
+  const port = facade.ports.find((p) => p.id === ref.portId)
+  return port ? facadeExit(facade, port) : 0
+}
+
 export function toFlowEdges(project: Project, analysis: LinkAnalysis, cache: FlowCache): CordFlowEdge[] {
   const out: CordFlowEdge[] = []
   const alive = new Set<string>()
@@ -147,7 +158,8 @@ export function toFlowEdges(project: Project, analysis: LinkAnalysis, cache: Flo
     const portLabels: [string, string] = [label(link.a), label(link.b)]
     const vlans = analysis.linkVlans.get(link.id) ?? NO_VLANS
     const poeAt = analysis.poeAt.get(link.id) ?? null
-    const key = `${JSON.stringify(style)}|${tag}|${portLabels.join('|')}|${vlans.join(',')}|${poeAt}`
+    const exits: [number, number] = [cordExit(project, link.a), cordExit(project, link.b)]
+    const key = `${JSON.stringify(style)}|${tag}|${portLabels.join('|')}|${vlans.join(',')}|${poeAt}|${exits.join(',')}`
     const hit = cache.edges.get(link.id)
     if (hit && hit.link === link && hit.key === key) {
       out.push(hit.edge)
@@ -160,7 +172,7 @@ export function toFlowEdges(project: Project, analysis: LinkAnalysis, cache: Flo
       sourceHandle: link.a.portId,
       target: link.b.deviceId,
       targetHandle: link.b.portId,
-      data: { link, style, tag, portLabels, vlans, poeAt }
+      data: { link, style, tag, portLabels, vlans, poeAt, exits }
     }
     cache.edges.set(link.id, { key, link, edge })
     out.push(edge)

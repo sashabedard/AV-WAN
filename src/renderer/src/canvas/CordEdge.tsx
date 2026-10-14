@@ -88,13 +88,18 @@ function CordEdgeImpl({ sourceX, sourceY, targetX, targetY, sourcePosition, targ
         targetY,
         targetPosition,
         borderRadius: RADIUS,
-        offset: stubLength(style.bands.length),
+        offset: stubLength(style.bands.length) + Math.max(...data.exits),
         ...(elbow ? { centerX: (sourceX + targetX) / 2 + elbow.dx, centerY: (sourceY + targetY) / 2 + elbow.dy } : {})
       })
   const ends: Array<[number, number, Side]> = [
     [sourceX, sourceY, sideOf(sourcePosition)],
     [targetX, targetY, sideOf(targetPosition)]
   ]
+  // Bagues, éclair et « +n » se mesurent depuis le bord extérieur du nœud, pas depuis la poignée (sur un port de façade, elle est dans la façade).
+  const marks = ends.map(([x, y, side], i): [number, number, Side] => {
+    const p = beside(x, y, side, data.exits[i] ?? 0, 0)
+    return [p.x, p.y, side]
+  })
   const dim = focus !== null && !data.vlans.includes(focus)
   const showTag = selected || hover || hot || style.alwaysTag
   const grip = selected && !style.straight && !readOnly
@@ -111,20 +116,20 @@ function CordEdgeImpl({ sourceX, sourceY, targetX, targetY, sourcePosition, targ
             return <rect key={`boot-${i}`} x={r.x} y={r.y} width={r.w} height={r.h} rx={1.5} fill={style.color} />
           })}
         {style.bands.length > 0 &&
-          ends.flatMap(([x, y, side], i) =>
+          marks.flatMap(([x, y, side], i) =>
             bandRects(x, y, side, style.bands, style.width).map((b, j) => (
               <rect key={`band-${i}-${j}`} x={b.x} y={b.y} width={b.w} height={b.h} fill={b.color} />
             ))
           )}
         {data.poeAt &&
           (() => {
-            const [x, y, side] = ends[data.poeAt === 'source' ? 0 : 1]!
+            const [x, y, side] = marks[data.poeAt === 'source' ? 0 : 1]!
             const p = beside(x, y, side, Math.max(14, bandReach(style.bands.length) + 10), 9)
             return <path className="cord__bolt" d={BOLT_PATH} transform={`translate(${p.x} ${p.y})`} />
           })()}
         {style.extraBands > 0 &&
           (() => {
-            const [x, y, side] = ends[0]!
+            const [x, y, side] = marks[0]!
             const p = beside(x, y, side, bandReach(style.bands.length) + 9, -10)
             return (
               <text className="cord__more" x={p.x} y={p.y} textAnchor="middle" dominantBaseline="central">
