@@ -105,4 +105,16 @@ describe('Inspector', () => {
     expect(projectStore.getState().toast).toBe('Ajoutez d’abord un VLAN au projet (onglet VLAN, à gauche).')
     expect(project().devices[0]!.portState).toEqual({})
   })
+
+  it('choisit le côté des prises et montre le VLAN de chaque port', async () => {
+    const user = userEvent.setup()
+    projectStore.getState().setSelection({ deviceIds: ['cam1'], linkIds: [] })
+    render(<Inspector />)
+    await user.selectOptions(screen.getByLabelText('Côté des prises'), 'left')
+    expect(project().devices[1]!.portSide).toBe('left')
+    act(() => projectStore.getState().setSelection({ deviceIds: ['sw1'], linkIds: [] }))
+    expect(screen.queryByLabelText('Côté des prises')).toBeNull()
+    const row = screen.getByText('CAM-1 · ETH').closest('tr')!
+    expect(within(row).getByText('A · 40')).toBeTruthy()
+  })
 })

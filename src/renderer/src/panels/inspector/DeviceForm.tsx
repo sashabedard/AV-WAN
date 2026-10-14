@@ -1,14 +1,15 @@
 // src/renderer/src/panels/inspector/DeviceForm.tsx
 import { useState } from 'react'
-import type { Device, Project } from '../../model/types'
+import type { Device, PortSide, Project } from '../../model/types'
 import { linksOnRemovedPorts, projectStore } from '../../store/projectStore'
-import { findPort, linksOnPort } from '../../model/rules'
+import { isRackDevice } from '../../model/rules'
 import { switchPoeUsage } from '../../model/derive'
 import { getTemplate } from '../../catalog'
 import { switchSummary } from '../../catalog/switch'
 import { CommitInput } from '../CommitInput'
 import { Segmented } from '../Segmented'
 import { SwitchConfigurator } from '../SwitchConfigurator'
+import { peersOf, portVlanSummary } from './format'
 
 function SwitchSection({ device, project }: { device: Device; project: Project }) {
   const [editing, setEditing] = useState(false)
@@ -47,13 +48,6 @@ export function DeviceForm({ device, project }: { device: Device; project: Proje
   const s = projectStore.getState
   const template = getTemplate(project, device.templateId)
   const ipMode = device.ip?.mode ?? 'dhcp'
-  const peerOf = (portId: string): string => {
-    const link = linksOnPort(project, { deviceId: device.id, portId })[0]
-    if (!link) return '—'
-    const other = link.a.deviceId === device.id && link.a.portId === portId ? link.b : link.a
-    const found = findPort(project, other)
-    return found ? `${found.device.name} · ${found.port.label}` : '—'
-  }
   return (
     <div>
       <h2 className="insp__title">{template?.name ?? 'Appareil'}</h2>
@@ -98,6 +92,18 @@ export function DeviceForm({ device, project }: { device: Device; project: Proje
         <span className="field__label">Note</span>
         <CommitInput className="input" aria-label="Note" value={device.note ?? ''} onCommit={(v) => s().updateDevice(device.id, { note: v.trim() || undefined })} />
       </label>
+      {!isRackDevice(device) && (
+        <label className="field">
+          <span className="field__label">Côté des prises</span>
+          <select className="input" aria-label="Côté des prises" value={device.portSide} onChange={(e) => s().updateDevice(device.id, { portSide: e.target.value as PortSide })}>
+            <option value="auto">Automatique (face aux câbles)</option>
+            <option value="top">Haut</option>
+            <option value="bottom">Bas</option>
+            <option value="left">Gauche</option>
+            <option value="right">Droite</option>
+          </select>
+        </label>
+      )}
       <p className="insp__note">Zone : {project.zones.find((z) => z.id === device.zoneId)?.name ?? 'aucune'}</p>
       <SwitchSection device={device} project={project} />
       <section className="insp__section">
@@ -107,6 +113,7 @@ export function DeviceForm({ device, project }: { device: Device; project: Proje
             <tr>
               <th>Port</th>
               <th>Branché à</th>
+              <th>VLAN</th>
               <th>PoE</th>
             </tr>
           </thead>
@@ -114,7 +121,8 @@ export function DeviceForm({ device, project }: { device: Device; project: Proje
             {device.ports.map((p) => (
               <tr key={p.id}>
                 <td>{p.label}</td>
-                <td>{peerOf(p.id)}</td>
+                <td>{peersOf(project, device, p.id)}</td>
+                <td>{portVlanSummary(device.portState[p.id])}</td>
                 <td>
                   {p.poeOut ? (
                     <input

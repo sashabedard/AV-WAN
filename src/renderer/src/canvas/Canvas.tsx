@@ -42,6 +42,8 @@ import { QuickSearch } from '../panels/QuickSearch'
 import { canvasPointer, centreOf } from './pointer'
 import { SwitchConfigurator } from '../panels/SwitchConfigurator'
 import { DEFAULT_SWITCH_SPEC } from '../catalog/switch'
+import { clampPopover } from './popover'
+import { useDismissOnOutside } from '../panels/useDismiss'
 import { registerFlowInstance } from '../dev/e2eHooks'
 import './canvas.css'
 
@@ -54,6 +56,7 @@ const PRO_OPTIONS = { hideAttribution: true }
 const MULTI_SELECT_KEYS = ['Shift', 'Meta', 'Control']
 const MINIMAP_STYLE = { left: 46 }
 const RECONNECT_RADIUS = 12
+const POPOVER_SIZE = { w: 336, h: 420 }
 const isZone = (n: { type?: string }): boolean => n.type === 'zone'
 function minimapNodeClass(node: FlowNode): string {
   if (node.type === 'zone') return 'mm-zone'
@@ -84,6 +87,9 @@ function CanvasInner() {
   const pendingZone = useUiStore((s) => s.pendingZone)
   const search = useUiStore((s) => s.search)
   const wrapper = useRef<HTMLDivElement>(null)
+  const popover = useRef<HTMLDivElement>(null)
+  const cancelSwitch = useCallback(() => uiStore.getState().setPendingSwitch(null), [])
+  useDismissOnOutside(popover, pendingSwitch !== null, cancelSwitch)
   const alt = useAltKey()
   const { screenToFlowPosition, fitView } = useReactFlow()
   const onInit = useCallback((instance: ReactFlowInstance<FlowNode, CordFlowEdge>) => {
@@ -325,16 +331,20 @@ function CanvasInner() {
       <Legend />
       {pendingSwitch && (
         <div
+          ref={popover}
           className="popover"
-          style={{ left: Math.min(pendingSwitch.screen.x, window.innerWidth - 340), top: Math.min(pendingSwitch.screen.y, window.innerHeight - 400) }}
+          style={(() => {
+            const pos = clampPopover(pendingSwitch.screen, POPOVER_SIZE, { w: window.innerWidth, h: window.innerHeight })
+            return { left: pos.left, top: pos.top }
+          })()}
         >
           <SwitchConfigurator
             initial={DEFAULT_SWITCH_SPEC}
             submitLabel="Créer"
-            onCancel={() => uiStore.getState().setPendingSwitch(null)}
+            onCancel={cancelSwitch}
             onSubmit={(spec) => {
               projectStore.getState().addDevice('switch', pendingSwitch.position, { switchSpec: spec })
-              uiStore.getState().setPendingSwitch(null)
+              cancelSwitch()
             }}
           />
         </div>

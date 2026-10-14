@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { cleanup, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { SwitchConfigurator, withBudget } from './SwitchConfigurator'
+import { DEFAULT_SWITCH_SPEC } from '../catalog/switch'
 
 afterEach(cleanup)
 
@@ -50,5 +51,14 @@ describe('withBudget', () => {
   it('applique le budget par défaut, sauf saisie manuelle', () => {
     expect(withBudget({ portCount: 48, poe: 'bt', sfpPlus: 4, managed: true }, false).poeBudgetW).toBe(1000)
     expect(withBudget({ portCount: 48, poe: 'bt', poeBudgetW: 500, sfpPlus: 4, managed: true }, true).poeBudgetW).toBe(500)
+  })
+
+  it('prend le focus à l’ouverture : Échap annule tout de suite', async () => {
+    const user = userEvent.setup()
+    const onCancel = vi.fn()
+    render(<SwitchConfigurator initial={DEFAULT_SWITCH_SPEC} submitLabel="Créer" onSubmit={vi.fn()} onCancel={onCancel} />)
+    expect(document.activeElement?.textContent).toBe('8')
+    await user.keyboard('{Escape}')
+    expect(onCancel).toHaveBeenCalledTimes(1)
   })
 })
