@@ -14,8 +14,7 @@ jobs:
     name: Typecheck et tests unitaires
     runs-on: ubuntu-latest
     env:
-      # Les tests n'ont pas besoin du binaire Electron ; mêmes dates qu'en local.
-      ELECTRON_SKIP_BINARY_DOWNLOAD: '1'
+      # Mêmes dates qu'en local.
       TZ: America/Montreal
     steps:
       - uses: actions/checkout@v7
