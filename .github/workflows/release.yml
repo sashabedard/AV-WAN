@@ -86,7 +86,7 @@ jobs:
       - name: Lancer l’app empaquetée une fois
         shell: bash
         run: |
-          AVWAN_EXECUTABLE="$PWD/release/mac-universal/AV·WAN.app/Contents/MacOS/AV·WAN" npx playwright test e2e/smoke.spec.ts
+          AVWAN_EXECUTABLE="$PWD/release/mac-universal/AV·WAN.app/Contents/MacOS/AV·WAN" npx playwright test e2e/launch.spec.ts
 
       - run: npm run guide
 
