@@ -15,7 +15,7 @@ function assertProjectPath(path: string): void {
 }
 
 // Le renderer n'écrit et ne rouvre que des chemins accordés ici.
-const grants = createGrants()
+export const grants = createGrants()
 const isE2E = (): boolean => process.env['AVWAN_E2E'] === '1'
 
 const recentFile = (): string => join(app.getPath('userData'), 'recent.json')

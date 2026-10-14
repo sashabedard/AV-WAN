@@ -1,6 +1,8 @@
 import { isDirty, projectStore } from '../store/projectStore'
 import { parseProjectFile, serializeProject } from '../model/file'
 import { ipcErrorMessage } from './ipcError'
+import type { OpenRequest } from '../../../shared/api'
+import { uiStore } from '../store/uiStore'
 
 const DISCARD_QUESTION = 'Des modifications ne sont pas enregistrées. Continuer quand même ?'
 
@@ -62,6 +64,17 @@ export async function openRecentAction(path: string): Promise<void> {
   } catch (e) {
     projectStore.getState().showToast(`Ouverture impossible : ${ipcErrorMessage(e)}`)
   }
+}
+
+// Fichier ouvert par le système (double-clic, Dock, 2e instance) : même chemin que ⌘O.
+export async function openRequestAction(request: OpenRequest): Promise<boolean> {
+  if ('error' in request) {
+    projectStore.getState().showToast(`Ouverture impossible : ${request.error}`)
+    return false
+  }
+  if (!confirmDiscard()) return false
+  uiStore.getState().setWelcome(false)
+  return loadFromText(request.path, request.text)
 }
 
 export async function saveProjectAsAction(): Promise<void> {

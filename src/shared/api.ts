@@ -7,6 +7,9 @@ export interface OpenedFile {
   text: string
 }
 
+// Fichier à ouvrir envoyé par le processus principal (double-clic, Dock, 2e instance).
+export type OpenRequest = { path: string; text: string } | { path: string; error: string }
+
 // Travail confié à la fenêtre d'impression cachée : le projet sérialisé et les options choisies.
 export interface PrintJob {
   projectText: string
@@ -39,6 +42,8 @@ export interface AvwanApi {
     failed(message: string): void
   }
   onMenu(callback: (action: MenuAction) => void): () => void
+  onOpenRequest(callback: (request: OpenRequest) => void): () => void
+  rendererReady(): void
 }
 
 export const IPC = {
@@ -56,5 +61,7 @@ export const IPC = {
   printJob: 'print:job',
   printReady: 'print:ready',
   printFailed: 'print:failed',
+  openRequest: 'app:openRequest',
+  rendererReady: 'app:rendererReady',
   menu: 'menu'
 } as const

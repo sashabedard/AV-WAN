@@ -1,18 +1,61 @@
-import { app, BrowserWindow, dialog, shell } from 'electron'
-import { APP_NAME, APP_SUBTITLE, RELEASES_URL } from '../shared/appInfo'
+import { app, BrowserWindow, dialog, ipcMain, shell } from 'electron'
 import { join } from 'node:path'
-import { registerIpc } from './ipc'
+import { IPC, type OpenRequest } from '../shared/api'
+import { APP_NAME, APP_SUBTITLE, RELEASES_URL } from '../shared/appInfo'
+import { grants, registerIpc } from './ipc'
 import { buildMenu } from './menu'
 import { loadRenderer } from './windows'
 import { registerExportIpc } from './exports'
+import { readTextFile } from './fileIO'
+import { frenchFsMessage } from './errors'
+import { createOpenQueue, pathsFromArgv } from './openRequests'
 
 const userData = process.env['AVWAN_USER_DATA']
 if (userData) app.setPath('userData', userData)
 const isE2E = process.env['AVWAN_E2E'] === '1'
 // En mode test, aucune fenêtre ni icône Dock ne doit apparaître à l'écran.
 if (isE2E) app.dock?.hide()
-// Icône d'app en développement ; une fois empaquetée, electron-builder fournit l'ICNS ou l'ICO (plan 4).
+// Icône d'app en développement ; une fois empaquetée, electron-builder fournit l'ICNS ou l'ICO.
 const devIcon = join(__dirname, '../../build/icon.png')
+
+// Une seule instance de l'app empaquetée : un double-clic sur un .avwan rejoint la fenêtre déjà ouverte.
+// En développement et en e2e, chaque lancement a son propre userData et doit pouvoir démarrer.
+const primary = !app.isPackaged || app.requestSingleInstanceLock()
+
+let mainWindow: BrowserWindow | null = null
+
+// Fichiers à ouvrir (double-clic, Dock, 2e instance) : ils attendent que l'interface soit prête.
+const openQueue = createOpenQueue((path) => void deliverOpen(path))
+
+async function deliverOpen(path: string): Promise<void> {
+  const win = mainWindow
+  if (!win || win.isDestroyed()) return
+  let request: OpenRequest
+  try {
+    const text = await readTextFile(path)
+    // Le double-clic dans le Finder ou l'Explorateur vaut consentement : ⌘S pourra écrire ce fichier.
+    grants.grant(path)
+    request = { path, text }
+  } catch (e) {
+    request = { path, error: frenchFsMessage(e) }
+  }
+  if (!win.isDestroyed()) win.webContents.send(IPC.openRequest, request)
+}
+
+function bringToFront(win: BrowserWindow): void {
+  if (isE2E) return
+  if (win.isMinimized()) win.restore()
+  win.show()
+  win.focus()
+}
+
+function requestOpen(paths: readonly string[]): void {
+  if (paths.length === 0) return
+  for (const path of paths) openQueue.push(path)
+  if (!app.isReady()) return
+  if (!mainWindow || mainWindow.isDestroyed()) createWindow()
+  else bringToFront(mainWindow)
+}
 
 function createWindow(): BrowserWindow {
   const win = new BrowserWindow({
@@ -32,6 +75,14 @@ function createWindow(): BrowserWindow {
       backgroundThrottling: !isE2E
     }
   })
+  mainWindow = win
+  openQueue.reset()
+  win.on('closed', () => {
+    if (mainWindow === win) mainWindow = null
+    openQueue.reset()
+  })
+  // Un rechargement (menu Affichage) doit de nouveau signaler que l'interface est prête.
+  win.webContents.on('did-start-loading', () => openQueue.reset())
   if (!isE2E) win.once('ready-to-show', () => win.show())
   win.webContents.setWindowOpenHandler(({ url }) => {
     void shell.openExternal(url)
@@ -62,18 +113,41 @@ function showAbout(): void {
   void (win ? dialog.showMessageBox(win, options) : dialog.showMessageBox(options))
 }
 
-void app.whenReady().then(() => {
-  if (process.platform === 'darwin' && !app.isPackaged && !isE2E) app.dock?.setIcon(devIcon)
-  registerIpc()
-  registerExportIpc()
-  app.setAboutPanelOptions({ applicationName: APP_NAME, applicationVersion: app.getVersion(), version: '', credits: APP_SUBTITLE })
-  buildMenu({ about: showAbout, releases: () => void shell.openExternal(RELEASES_URL) })
-  createWindow()
-  app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) createWindow()
+if (!primary) {
+  // Une autre instance tourne déjà : elle a reçu notre argv (second-instance).
+  app.quit()
+} else {
+  // macOS : double-clic, ou fichier lâché sur l'icône du Dock. Peut arriver avant « ready ».
+  app.on('open-file', (event, path) => {
+    event.preventDefault()
+    requestOpen(pathsFromArgv([path]))
   })
-})
+  // Windows : un double-clic quand l'app est déjà ouverte lance une 2e instance, qui nous passe son argv.
+  app.on('second-instance', (_event, argv) => {
+    const paths = pathsFromArgv(argv.slice(1))
+    if (paths.length > 0) requestOpen(paths)
+    else if (mainWindow) bringToFront(mainWindow)
+  })
+  // Windows : l'app lancée par un double-clic reçoit le chemin dans son argv.
+  if (process.platform !== 'darwin') for (const path of pathsFromArgv(process.argv.slice(1))) openQueue.push(path)
 
-app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') app.quit()
-})
+  ipcMain.on(IPC.rendererReady, (event) => {
+    if (mainWindow && event.sender === mainWindow.webContents) openQueue.ready()
+  })
+
+  void app.whenReady().then(() => {
+    if (process.platform === 'darwin' && !app.isPackaged && !isE2E) app.dock?.setIcon(devIcon)
+    registerIpc()
+    registerExportIpc()
+    app.setAboutPanelOptions({ applicationName: APP_NAME, applicationVersion: app.getVersion(), version: '', credits: APP_SUBTITLE })
+    buildMenu({ about: showAbout, releases: () => void shell.openExternal(RELEASES_URL) })
+    createWindow()
+    app.on('activate', () => {
+      if (BrowserWindow.getAllWindows().length === 0) createWindow()
+    })
+  })
+
+  app.on('window-all-closed', () => {
+    if (process.platform !== 'darwin') app.quit()
+  })
+}

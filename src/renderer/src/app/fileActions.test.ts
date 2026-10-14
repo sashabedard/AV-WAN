@@ -3,13 +3,16 @@ import type { AvwanApi } from '../../../shared/api'
 import { isDirty, projectStore } from '../store/projectStore'
 import { sampleProject } from '../model/__fixtures__/sample'
 import { serializeProject } from '../model/file'
-import { fileNameOf, loadFromText, openProjectAction, saveProjectAction } from './fileActions'
+import { fileNameOf, loadFromText, openProjectAction, openRequestAction, saveProjectAction } from './fileActions'
+import { uiStore } from '../store/uiStore'
 
 function fakeApi(file: Partial<AvwanApi['file']> = {}): AvwanApi {
   return {
     platform: 'darwin',
     isE2E: false,
     onMenu: () => () => undefined,
+    onOpenRequest: () => () => undefined,
+    rendererReady: vi.fn(),
     recent: {
       list: vi.fn(async () => []),
       open: vi.fn(async (path: string) => ({ path, text: '' })),
@@ -110,5 +113,31 @@ describe('fileActions', () => {
     vi.stubGlobal('window', { avwan: api, confirm: () => true })
     await openProjectAction()
     expect(projectStore.getState().toast).toBe('Ouverture impossible : Accès refusé (EACCES).')
+  })
+})
+
+describe('openRequestAction (double-clic)', () => {
+  it('ouvre le fichier et ferme l’accueil', async () => {
+    vi.stubGlobal('window', { avwan: fakeApi(), confirm: () => true })
+    uiStore.getState().setWelcome(true)
+    const project = { ...sampleProject(), meta: { ...sampleProject().meta, title: 'Salle B' } }
+    expect(await openRequestAction({ path: '/x/salle-b.avwan', text: serializeProject(project) })).toBe(true)
+    expect(projectStore.getState().filePath).toBe('/x/salle-b.avwan')
+    expect(projectStore.getState().history.present.meta.title).toBe('Salle B')
+    expect(uiStore.getState().welcome).toBe(false)
+  })
+
+  it('demande avant de remplacer un projet modifié, et ne touche à rien si on refuse', async () => {
+    vi.stubGlobal('window', { avwan: fakeApi(), confirm: () => false })
+    projectStore.getState().updateMeta({ title: 'Pas enregistré' })
+    expect(await openRequestAction({ path: '/x/salle-b.avwan', text: serializeProject(sampleProject()) })).toBe(false)
+    expect(projectStore.getState().filePath).toBe('/tmp/a.avwan')
+    expect(projectStore.getState().history.present.meta.title).toBe('Pas enregistré')
+  })
+
+  it('affiche l’erreur de lecture en français', async () => {
+    vi.stubGlobal('window', { avwan: fakeApi(), confirm: () => true })
+    expect(await openRequestAction({ path: '/x/absent.avwan', error: 'Fichier ou dossier introuvable (ENOENT).' })).toBe(false)
+    expect(projectStore.getState().toast).toBe('Ouverture impossible : Fichier ou dossier introuvable (ENOENT).')
   })
 })

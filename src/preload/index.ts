@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer, type IpcRendererEvent } from 'electron'
-import { IPC, type AvwanApi, type MenuAction } from '../shared/api'
+import { IPC, type AvwanApi, type MenuAction, type OpenRequest } from '../shared/api'
 
 const api: AvwanApi = {
   platform: process.platform,
@@ -32,7 +32,15 @@ const api: AvwanApi = {
     return () => {
       ipcRenderer.removeListener(IPC.menu, handler)
     }
-  }
+  },
+  onOpenRequest: (callback) => {
+    const handler = (_event: IpcRendererEvent, request: OpenRequest): void => callback(request)
+    ipcRenderer.on(IPC.openRequest, handler)
+    return () => {
+      ipcRenderer.removeListener(IPC.openRequest, handler)
+    }
+  },
+  rendererReady: () => ipcRenderer.send(IPC.rendererReady)
 }
 
 contextBridge.exposeInMainWorld('avwan', api)
