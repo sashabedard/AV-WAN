@@ -214,6 +214,20 @@ describe('restauration', () => {
     expect(await restoreRecoveryAction('f-0123456789abcdef')).toBe(true)
     expect(projectStore.getState().readOnly).toBe(true)
     expect(projectStore.getState().filePath).toBeNull()
+    expect(projectStore.getState().toast).toBe('Version récupérée restaurée en lecture seule : elle vient d’une version plus récente d’AV·WAN. Utilisez « Enregistrer sous… ».')
+  })
+
+  it('une copie dont le fichier a disparu se restaure sans titre ; ⌘S passe par « Enregistrer sous »', async () => {
+    const api = fakeApi()
+    vi.mocked(api.recovery.restore).mockResolvedValue({ key: 'f-0123456789abcdef', path: null, text: serializeProject(sampleProject()) })
+    vi.stubGlobal('window', { avwan: api, confirm: () => true })
+    expect(await restoreRecoveryAction('f-0123456789abcdef')).toBe(true)
+    expect(projectStore.getState().filePath).toBeNull()
+    expect(isDirty(projectStore.getState())).toBe(true)
+    expect(projectStore.getState().toast).toBe('Version récupérée restaurée. Enregistrez-la pour la garder.')
+    await saveProjectAction()
+    expect(api.file.saveAs).toHaveBeenCalled()
+    expect(api.file.save).not.toHaveBeenCalled()
   })
 
   it('ouvrir un fichier qui a une copie plus récente propose de la restaurer', async () => {

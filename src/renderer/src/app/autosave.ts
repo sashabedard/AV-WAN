@@ -38,8 +38,10 @@ export function createAutosave(store: StoreApi<ProjectState>, api: RecoveryBridg
   const write = async (): Promise<void> => {
     const s = store.getState()
     const present = s.history.present
-    if (!isDirty(s) || present === lastWritten) return
-    const key = await api.write({ path: s.readOnly ? null : s.filePath, untitledId: s.untitledId, title: present.meta.title, text: serializeProject(present) })
+    // Un document en lecture seule ne peut pas être modifié (apply() le bloque) : le réécrire
+    // transformerait une copie d'une version plus récente en copie de la version courante.
+    if (s.readOnly || !isDirty(s) || present === lastWritten) return
+    const key = await api.write({ path: s.filePath, untitledId: s.untitledId, title: present.meta.title, text: serializeProject(present) })
     const after = store.getState()
     // Enregistré ou abandonné pendant l'écriture : cette copie ne sert plus.
     if (after.docId !== s.docId || !isDirty(after)) {

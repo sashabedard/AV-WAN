@@ -34,11 +34,11 @@ describe('autosauvegarde', () => {
     expect(api.write).toHaveBeenCalledTimes(2)
   })
 
-  it('un fichier en lecture seule est rangé sans chemin', async () => {
+  it('un document en lecture seule n’est jamais écrit', async () => {
     const { store, api, autosave } = setup()
     store.getState().loadProject(sampleProject(), '/x/a.avwan', { readOnly: true, restored: true })
     await autosave.tick()
-    expect(api.write).toHaveBeenCalledWith(expect.objectContaining({ path: null }))
+    expect(api.write).not.toHaveBeenCalled()
   })
 
   it('après un enregistrement, la copie est effacée', async () => {

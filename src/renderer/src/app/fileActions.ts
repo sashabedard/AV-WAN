@@ -63,7 +63,13 @@ export async function restoreRecoveryAction(key: string): Promise<boolean> {
     autosave.adopt(restored.key)
     uiStore.getState().setWelcome(false)
     const where = restored.path && !res.readOnly ? ` Enregistrez pour la garder dans ${fileNameOf(restored.path)}.` : ' Enregistrez-la pour la garder.'
-    projectStore.getState().showToast(`Version récupérée restaurée.${where}`)
+    projectStore
+      .getState()
+      .showToast(
+        res.readOnly
+          ? 'Version récupérée restaurée en lecture seule : elle vient d’une version plus récente d’AV·WAN. Utilisez « Enregistrer sous… ».'
+          : `Version récupérée restaurée.${where}`
+      )
     return true
   } catch (e) {
     s.showToast(`Restauration impossible : ${ipcErrorMessage(e)}`)
