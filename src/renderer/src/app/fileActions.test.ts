@@ -153,6 +153,25 @@ describe('openRequestAction (double-clic)', () => {
     expect(await openRequestAction({ path: '/x/absent.avwan', error: 'Fichier ou dossier introuvable (ENOENT).' })).toBe(false)
     expect(projectStore.getState().toast).toBe('Ouverture impossible : Fichier ou dossier introuvable (ENOENT).')
   })
+
+  it('un fichier invalide laisse l’accueil ouvert et affiche l’erreur', async () => {
+    vi.stubGlobal('window', { avwan: fakeApi(), confirm: () => true })
+    uiStore.getState().setWelcome(true)
+    expect(await openRequestAction({ path: '/x/casse.avwan', text: '{' })).toBe(false)
+    expect(uiStore.getState().welcome).toBe(true)
+    expect(projectStore.getState().toast).toContain('JSON')
+  })
+
+  it('une exception pendant l’ouverture devient un toast, accueil ouvert', async () => {
+    const backup = vi.fn(async () => { throw new Error('disque plein') })
+    vi.stubGlobal('window', { avwan: fakeApi({ backup }), confirm: () => true })
+    uiStore.getState().setWelcome(true)
+    const p = sampleProject()
+    p.links.push({ id: 'l2', cableId: 'C-002', a: { deviceId: 'fantome', portId: 'ETH' }, b: { deviceId: 'sw1', portId: '2' }, medium: 'cat6' })
+    expect(await openRequestAction({ path: '/x/orphelin.avwan', text: serializeProject(p) })).toBe(false)
+    expect(uiStore.getState().welcome).toBe(true)
+    expect(projectStore.getState().toast).toContain('Ouverture impossible')
+  })
 })
 
 describe('copie de récupération et fichier', () => {

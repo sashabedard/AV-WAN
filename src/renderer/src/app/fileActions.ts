@@ -128,8 +128,14 @@ export async function openRequestAction(request: OpenRequest): Promise<boolean> 
     return false
   }
   if (!confirmDiscard()) return false
-  uiStore.getState().setWelcome(false)
-  return loadWithRecovery(request)
+  try {
+    const opened = await loadWithRecovery(request)
+    if (opened) uiStore.getState().setWelcome(false)
+    return opened
+  } catch (e) {
+    projectStore.getState().showToast(`Ouverture impossible : ${ipcErrorMessage(e)}`)
+    return false
+  }
 }
 
 export async function saveProjectAsAction(): Promise<void> {
