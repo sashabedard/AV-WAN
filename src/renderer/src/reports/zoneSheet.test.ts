@@ -65,4 +65,12 @@ describe('zoneSheet', () => {
     const sheet = zoneSheet(lonely, zone('Régie'), pages)
     expect(sheet.renvois.some((r) => r.label.includes('PIX-1') && r.label.endsWith(' · p. 1'))).toBe(true)
   })
+
+  it('un lien Wi-Fi qui sort de la zone est un renvoi comme un câble', () => {
+    const wifi = project.links.find((l) => l.medium === 'wifi')!
+    const moved = { ...project, devices: project.devices.map((d) => (d.id === wifi.a.deviceId ? { ...d, zoneId: zone('Scène').id } : d)) }
+    const sheet = zoneSheet(moved, zone('Salle'), pages)
+    expect(sheet.linkIds.has(wifi.id)).toBe(false)
+    expect(sheet.renvois.find((r) => r.linkId === wifi.id)?.label).toMatch(/Scène p\. 1$/)
+  })
 })

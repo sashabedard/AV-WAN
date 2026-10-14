@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { layoutStubs, unionRect, type StubInput } from './renvoiLayout'
+import { fallbackInput, layoutStubs, unionRect, type StubInput } from './renvoiLayout'
 
 const at = (key: string, x: number, label = 'C-001 › SW-2 · SFP+1 · Salle p. 3'): StubInput => ({ key, linkId: key, deviceId: 'd', x, y: 100, side: 'bottom', node: { x: 0, y: 80, w: 200, h: 40 }, label })
 
@@ -25,5 +25,23 @@ describe('layoutStubs', () => {
     const [top] = layoutStubs([{ ...at('t', 30), side: 'top' }])
     expect([top!.x1, top!.y1]).toEqual([30, 80])
     expect(top!.y2).toBeLessThan(80)
+  })
+
+  it('empile sans recouvrement les étiquettes des côtés gauche et droit', () => {
+    for (const side of ['left', 'right'] as const) {
+      const s = layoutStubs([0, 1, 2].map((i) => ({ ...at(`p${i}`, 0), side, y: 100 + i * 4 })))
+      const sorted = [...s].sort((a, b) => a.box.y - b.box.y)
+      for (let i = 1; i < sorted.length; i++) expect(sorted[i]!.box.y).toBeGreaterThanOrEqual(sorted[i - 1]!.box.y + sorted[i - 1]!.box.h)
+    }
+  })
+
+  it('port introuvable : part du milieu du bord bas du nœud', () => {
+    const { x, y, side, ...rest } = at('f', 0)
+    void x
+    void y
+    void side
+    const [f] = layoutStubs([fallbackInput(rest)])
+    expect([f!.x1, f!.y1]).toEqual([100, 120])
+    expect(f!.box.y).toBe(f!.y2)
   })
 })

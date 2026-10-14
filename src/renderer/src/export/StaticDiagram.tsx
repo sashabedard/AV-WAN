@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { ConnectionMode, ReactFlow, ViewportPortal, useNodesInitialized, useReactFlow } from '@xyflow/react'
-import type { Project, Side, Zone } from '../model/types'
-import { type CordFlowEdge, type FlowNode } from '../canvas/toFlow'
+import type { Project, Zone } from '../model/types'
+import type { CordFlowEdge, FlowNode } from '../canvas/toFlow'
 import { useStaticFlow } from '../canvas/useStaticFlow'
 import { StaticViewContext } from '../canvas/staticView'
 import { DeviceNode } from '../canvas/DeviceNode'
@@ -9,15 +9,13 @@ import { SwitchNode } from '../canvas/SwitchNode'
 import { ZoneNode } from '../canvas/ZoneNode'
 import { CordEdge } from '../canvas/CordEdge'
 import { zoneSheet } from '../reports/zoneSheet'
-import { layoutStubs, unionRect, type Stub, type StubInput } from './renvoiLayout'
+import { fallbackInput, layoutStubs, unionRect, type Stub, type StubInput } from './renvoiLayout'
 import '../canvas/canvas.css'
 
 const nodeTypes = { device: DeviceNode, switch: SwitchNode, zone: ZoneNode }
 const edgeTypes = { cord: CordEdge }
 const PRO_OPTIONS = { hideAttribution: true }
 const PADDING = 0.04
-
-const SIDES: Record<string, Side> = { top: 'top', bottom: 'bottom', left: 'left', right: 'right' }
 
 // Le canvas pour l'impression : mêmes nœuds et cordons, aucune interaction (spec § 11.1). Cadre tout
 // le projet, ou une zone (seulement ses appareils et ses câbles, avec des renvois pour ceux qui sortent),
@@ -50,21 +48,18 @@ export function StaticDiagram({ project, zone, pages, onReady }: { project: Proj
       const inputs: StubInput[] = []
       for (const r of sheet.renvois) {
         const internal = flow.getInternalNode(r.deviceId)
-        const bounds = internal?.internals.handleBounds
+        if (!internal) continue
+        const bounds = internal.internals.handleBounds
         const h = [...(bounds?.source ?? []), ...(bounds?.target ?? [])].find((x) => x.id === r.portId)
-        if (!internal || !h) continue
-        const side = SIDES[h.position]
-        if (!side) continue
-        inputs.push({
+        const { x: nx, y: ny } = internal.internals.positionAbsolute
+        const base = {
           key: `${r.linkId}|${r.deviceId}|${r.portId}`,
           linkId: r.linkId,
           deviceId: r.deviceId,
-          x: internal.internals.positionAbsolute.x + h.x + h.width / 2,
-          y: internal.internals.positionAbsolute.y + h.y + h.height / 2,
-          side,
-          node: { x: internal.internals.positionAbsolute.x, y: internal.internals.positionAbsolute.y, w: internal.measured.width ?? 0, h: internal.measured.height ?? 0 },
+          node: { x: nx, y: ny, w: internal.measured.width ?? 0, h: internal.measured.height ?? 0 },
           label: r.label
-        })
+        }
+        inputs.push(h ? { ...base, x: nx + h.x + h.width / 2, y: ny + h.y + h.height / 2, side: h.position } : fallbackInput(base))
       }
       const laid = layoutStubs(inputs)
       setStubs(laid)
@@ -80,8 +75,8 @@ export function StaticDiagram({ project, zone, pages, onReady }: { project: Proj
       () => onReady(),
       () => onReady()
     )
-  }, [initialized, nodes.length, zone, sheet, project, flow, onReady])
-  const styleOf = (linkId: string) => flowAll.edges.find((e) => e.id === linkId)?.data?.style
+  }, [initialized, nodes.length, zone, sheet, flow, onReady])
+  const styles = useMemo(() => new Map(flowAll.edges.map((e) => [e.id, e.data?.style])), [flowAll.edges])
   const detail = !zone ? project.zones.filter((z) => pages.has(z.id)) : []
   return (
     <StaticViewContext.Provider value={true}>
@@ -116,7 +111,7 @@ export function StaticDiagram({ project, zone, pages, onReady }: { project: Proj
           {stubs.length > 0 && (
             <svg className="renvoi-stubs" width={1} height={1}>
               {stubs.map((s) => {
-                const st = styleOf(s.linkId)
+                const st = styles.get(s.linkId)
                 return (
                   <line
                     key={s.key}

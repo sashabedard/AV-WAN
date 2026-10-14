@@ -5,6 +5,7 @@ import { outward, type Rect } from '../canvas/cordGeometry'
 export const STUB_BASE = 26 // longueur du premier bout de câble, au-delà du bord du nœud
 export const STUB_STEP = 17 // allongement de chaque bout suivant d'un même côté (escalier)
 export const LABEL_H = 15
+const LABEL_GAP = 2
 const CHAR_W = 6.8
 const LABEL_PAD = 12
 
@@ -45,19 +46,25 @@ export function layoutStubs(inputs: StubInput[]): Stub[] {
     const vertical = outward(side).x === 0
     // Rang 0 = bout le plus court : le plus à droite (haut/bas), le plus proche de l'appareil en bas à gauche (côtés).
     const sorted = [...group].sort((a, b) => (vertical ? b.x - a.x : b.y - a.y) || a.key.localeCompare(b.key))
-    sorted.forEach((s, rank) => {
+    // Côtés gauche et droit : les étiquettes sont empilées du haut vers le bas, sans jamais se recouvrir.
+    let prevBottom = -Infinity
+    const sideOrder = vertical ? sorted : [...group].sort((a, b) => a.y - b.y || a.key.localeCompare(b.key))
+    sideOrder.forEach((s) => {
       const d = outward(s.side)
       const x1 = d.x === 0 ? s.x : d.x > 0 ? s.node.x + s.node.w : s.node.x
       const y1 = d.y === 0 ? s.y : d.y > 0 ? s.node.y + s.node.h : s.node.y
-      const len = STUB_BASE + rank * STUB_STEP
+      const len = STUB_BASE + (vertical ? sorted.indexOf(s) * STUB_STEP : 0)
       const x2 = x1 + d.x * len
       const y2 = y1 + d.y * len
       const w = labelWidth(s.label)
       let box: Rect
       if (s.side === 'bottom') box = { x: x2 - 4, y: y2, w, h: LABEL_H }
       else if (s.side === 'top') box = { x: x2 - 4, y: y2 - LABEL_H, w, h: LABEL_H }
-      else if (s.side === 'right') box = { x: x2, y: y2 - LABEL_H / 2, w, h: LABEL_H }
-      else box = { x: x2 - w, y: y2 - LABEL_H / 2, w, h: LABEL_H }
+      else {
+        const y = Math.max(y2 - LABEL_H / 2, prevBottom + LABEL_GAP)
+        prevBottom = y + LABEL_H
+        box = { x: s.side === 'right' ? x2 : x2 - w, y, w, h: LABEL_H }
+      }
       out.push({ ...s, x1, y1, x2, y2, box })
     })
   }
@@ -76,4 +83,9 @@ export function unionRect(base: Rect, boxes: Rect[]): Rect {
     y1 = Math.max(y1, b.y + b.h)
   }
   return { x: x0, y: y0, w: x1 - x0, h: y1 - y0 }
+}
+
+// Poignée introuvable : le renvoi part du milieu du bord bas du nœud, pour que l'étiquette apparaisse toujours.
+export function fallbackInput(base: Omit<StubInput, 'x' | 'y' | 'side'>): StubInput {
+  return { ...base, x: base.node.x + base.node.w / 2, y: base.node.y + base.node.h, side: 'bottom' }
 }
