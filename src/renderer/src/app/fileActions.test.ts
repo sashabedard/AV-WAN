@@ -271,6 +271,17 @@ describe('restauration', () => {
     expect(projectStore.getState().filePath).toBe('/x/b.avwan')
     expect(isDirty(projectStore.getState())).toBe(false)
   })
+
+  it('refuser la copie puis échouer à ouvrir le fichier garde la copie', async () => {
+    const api = fakeApi()
+    const entry = { key: 'f-0123456789abcdef', path: '/x/b.avwan', title: 'B', savedAt: new Date().toISOString() }
+    vi.mocked(api.recent.open).mockResolvedValue({ path: '/x/b.avwan', text: '{' })
+    vi.mocked(api.recovery.findNewer).mockResolvedValue(entry)
+    vi.stubGlobal('window', { avwan: api, confirm: () => false })
+    await openRecentAction('/x/b.avwan')
+    expect(api.recovery.discard).not.toHaveBeenCalled()
+    expect(projectStore.getState().toast).toContain('JSON')
+  })
 })
 
 describe('enregistrer un projet avec des composantes', () => {

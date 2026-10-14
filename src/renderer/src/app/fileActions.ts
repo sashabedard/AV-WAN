@@ -93,7 +93,10 @@ async function loadWithRecovery(file: OpenedFile): Promise<boolean> {
   if (newer) {
     const question = `Une version récupérée de ${fileNameOf(file.path)}, plus récente que le fichier (${timeAgo(newer.savedAt)}), existe. Restaurer cette version ?`
     if (window.confirm(question)) return restoreRecoveryAction(newer.key)
-    void window.avwan.recovery.discard(newer.key).catch(() => undefined)
+    // La copie n'est effacée qu'une fois le fichier ouvert : s'il est illisible, il reste la copie.
+    const opened = await loadFromText(file.path, file.text)
+    if (opened) void window.avwan.recovery.discard(newer.key).catch(() => undefined)
+    return opened
   }
   return loadFromText(file.path, file.text)
 }
