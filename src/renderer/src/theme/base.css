@@ -91,3 +91,11 @@ textarea {
 .welcome__file { width: 100%; padding: 5px 6px; border: 0; border-radius: 3px; background: none; text-align: left; font: 12.5px var(--font-mono); color: var(--ink-2); cursor: pointer; }
 .welcome__file:hover { background: var(--accent-bg); color: var(--accent); }
 .welcome__pun { margin: 22px 0 0; font: 500 11px/1 var(--font-mono); color: var(--muted); text-align: center; }
+
+/* Bandeau de récupération (accueil) */
+.recovery { margin: 0 0 18px; padding: 10px 12px; border: 1px solid var(--accent); border-radius: 6px; background: var(--accent-bg); }
+.recovery .welcome__h { color: var(--accent); }
+.recovery ul { display: grid; gap: 6px; list-style: none; margin: 0; padding: 0; }
+.recovery__row { display: flex; align-items: center; gap: 8px; font-size: 12.5px; }
+.recovery__what { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--ink); }
+.recovery__when { color: var(--muted); font: 500 11px var(--font-mono); }

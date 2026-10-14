@@ -6,6 +6,7 @@ import { projectStore } from '../store/projectStore'
 import { uiStore, useUiStore } from '../store/uiStore'
 import { BrandMark } from './BrandMark'
 import { fileNameOf, openProjectAction, openRecentAction } from './fileActions'
+import { RecoveryBanner } from './RecoveryBanner'
 
 export function Welcome() {
   const open = useUiStore((s) => s.welcome)
@@ -30,6 +31,7 @@ export function Welcome() {
         </h1>
         <p className="welcome__sub">{APP_SUBTITLE}</p>
         <p className="welcome__tagline">Planifier. Brancher. Documenter.</p>
+        <RecoveryBanner />
         <div className="welcome__actions">
           <button
             type="button"

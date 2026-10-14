@@ -3,7 +3,7 @@ import type { AvwanApi } from '../../../shared/api'
 import { isDirty, projectStore } from '../store/projectStore'
 import { sampleProject } from '../model/__fixtures__/sample'
 import { serializeProject } from '../model/file'
-import { fileNameOf, loadFromText, openProjectAction, openRecentAction, openRequestAction, saveProjectAction } from './fileActions'
+import { fileNameOf, loadFromText, openProjectAction, openRecentAction, openRequestAction, restoreRecoveryAction, saveProjectAction } from './fileActions'
 import { autosave } from './autosave'
 import { uiStore } from '../store/uiStore'
 
@@ -182,5 +182,75 @@ describe('copie de récupération et fichier', () => {
     await openProjectAction()
     expect(api.recovery.discard).not.toHaveBeenCalled()
     expect(projectStore.getState().filePath).toBe('/tmp/a.avwan')
+  })
+})
+
+describe('restauration', () => {
+  it('Restaurer recharge la copie comme modifiée, reliée à son fichier', async () => {
+    const api = fakeApi()
+    vi.mocked(api.recovery.restore).mockResolvedValue({ key: 'f-0123456789abcdef', path: '/x/salle-b.avwan', text: serializeProject(sampleProject()) })
+    vi.stubGlobal('window', { avwan: api, confirm: () => true })
+    uiStore.getState().setWelcome(true)
+    expect(await restoreRecoveryAction('f-0123456789abcdef')).toBe(true)
+    expect(projectStore.getState().filePath).toBe('/x/salle-b.avwan')
+    expect(isDirty(projectStore.getState())).toBe(true)
+    expect(uiStore.getState().welcome).toBe(false)
+  })
+
+  it('une copie illisible affiche l’erreur et ne touche pas au projet', async () => {
+    const api = fakeApi()
+    vi.mocked(api.recovery.restore).mockResolvedValue({ key: 'u-abcdef', path: null, text: '{pas du json' })
+    vi.stubGlobal('window', { avwan: api, confirm: () => true })
+    expect(await restoreRecoveryAction('u-abcdef')).toBe(false)
+    expect(projectStore.getState().filePath).toBe('/tmp/a.avwan')
+    expect(projectStore.getState().toast).toMatch(/^Restauration impossible : Fichier illisible/)
+  })
+
+  it('une copie d’une version plus récente se restaure en lecture seule', async () => {
+    const api = fakeApi()
+    const future = JSON.stringify({ ...sampleProject(), schemaVersion: 2 })
+    vi.mocked(api.recovery.restore).mockResolvedValue({ key: 'f-0123456789abcdef', path: '/x/salle-b.avwan', text: future })
+    vi.stubGlobal('window', { avwan: api, confirm: () => true })
+    expect(await restoreRecoveryAction('f-0123456789abcdef')).toBe(true)
+    expect(projectStore.getState().readOnly).toBe(true)
+    expect(projectStore.getState().filePath).toBeNull()
+  })
+
+  it('ouvrir un fichier qui a une copie plus récente propose de la restaurer', async () => {
+    const api = fakeApi()
+    const entry = { key: 'f-0123456789abcdef', path: '/x/b.avwan', title: 'B', savedAt: new Date().toISOString() }
+    vi.mocked(api.recent.open).mockResolvedValue({ path: '/x/b.avwan', text: serializeProject(sampleProject()) })
+    vi.mocked(api.recovery.findNewer).mockResolvedValue(entry)
+    vi.mocked(api.recovery.restore).mockResolvedValue({ key: entry.key, path: '/x/b.avwan', text: serializeProject(sampleProject()) })
+    const confirm = vi.fn(() => true)
+    vi.stubGlobal('window', { avwan: api, confirm })
+    await openRecentAction('/x/b.avwan')
+    expect(confirm).toHaveBeenCalledWith(expect.stringContaining('Une version récupérée de b.avwan'))
+    expect(api.recovery.restore).toHaveBeenCalledWith(entry.key)
+    expect(isDirty(projectStore.getState())).toBe(true)
+  })
+
+  it('rouvrir le fichier déjà ouvert ne propose pas sa propre copie', async () => {
+    const api = fakeApi()
+    vi.mocked(api.recent.open).mockResolvedValue({ path: '/tmp/a.avwan', text: serializeProject(sampleProject()) })
+    vi.mocked(api.recovery.findNewer).mockResolvedValue({ key: 'f-0123456789abcdef', path: '/tmp/a.avwan', title: 'A', savedAt: new Date().toISOString() })
+    const confirm = vi.fn(() => true)
+    vi.stubGlobal('window', { avwan: api, confirm })
+    await openRecentAction('/tmp/a.avwan')
+    expect(api.recovery.findNewer).not.toHaveBeenCalled()
+    expect(confirm).not.toHaveBeenCalled()
+  })
+
+  it('refuser la copie ouvre le fichier tel quel et efface la copie', async () => {
+    const api = fakeApi()
+    const entry = { key: 'f-0123456789abcdef', path: '/x/b.avwan', title: 'B', savedAt: new Date().toISOString() }
+    vi.mocked(api.recent.open).mockResolvedValue({ path: '/x/b.avwan', text: serializeProject(sampleProject()) })
+    vi.mocked(api.recovery.findNewer).mockResolvedValue(entry)
+    vi.stubGlobal('window', { avwan: api, confirm: () => false })
+    await openRecentAction('/x/b.avwan')
+    expect(api.recovery.restore).not.toHaveBeenCalled()
+    expect(api.recovery.discard).toHaveBeenCalledWith(entry.key)
+    expect(projectStore.getState().filePath).toBe('/x/b.avwan')
+    expect(isDirty(projectStore.getState())).toBe(false)
   })
 })
