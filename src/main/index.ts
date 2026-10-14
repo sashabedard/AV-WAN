@@ -6,6 +6,8 @@ import { buildMenu } from './menu'
 const userData = process.env['AVWAN_USER_DATA']
 if (userData) app.setPath('userData', userData)
 const isE2E = process.env['AVWAN_E2E'] === '1'
+// En mode test, aucune fenêtre ni icône Dock ne doit apparaître à l'écran.
+if (isE2E) app.dock?.hide()
 
 function createWindow(): BrowserWindow {
   const win = new BrowserWindow({
@@ -24,7 +26,7 @@ function createWindow(): BrowserWindow {
       backgroundThrottling: !isE2E
     }
   })
-  win.once('ready-to-show', () => win.show())
+  if (!isE2E) win.once('ready-to-show', () => win.show())
   win.webContents.setWindowOpenHandler(({ url }) => {
     void shell.openExternal(url)
     return { action: 'deny' }
