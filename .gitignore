@@ -8,3 +8,5 @@ release/
 
 # OS
 .DS_Store
+test-results/
+playwright-report/

@@ -1,0 +1,43 @@
+import { describe, expect, it } from 'vitest'
+import { parseProjectFile, serializeProject } from './file'
+import { sampleProject } from './__fixtures__/sample'
+
+describe('serializeProject / parseProjectFile', () => {
+  it('fait un aller-retour fidèle, accents compris', () => {
+    const p = sampleProject()
+    p.devices[0]!.name = 'RÉGIE-Ç'
+    const r = parseProjectFile(serializeProject(p))
+    expect(r.ok && r.project).toEqual(p)
+    expect(r.ok && r.readOnly).toBe(false)
+  })
+
+  it('refuse un JSON cassé avec un message en français', () => {
+    const r = parseProjectFile('{ "schemaVersion": 1, ')
+    expect(r).toEqual({ ok: false, error: 'Fichier illisible : ce n’est pas du JSON valide.' })
+  })
+
+  it('refuse un fichier qui n’est pas un projet', () => {
+    const r = parseProjectFile('{"hello": "world"}')
+    expect(r.ok).toBe(false)
+  })
+
+  it('indique le champ fautif quand la structure est invalide', () => {
+    const p = sampleProject() as unknown as { vlans: Array<{ id: number }> }
+    p.vlans[0]!.id = 0
+    const r = parseProjectFile(JSON.stringify(p))
+    expect(!r.ok && r.error).toContain('vlans.0.id')
+  })
+
+  it('ouvre en lecture seule un fichier de version plus récente', () => {
+    const text = serializeProject(sampleProject()).replace('"schemaVersion": 1', '"schemaVersion": 2')
+    const r = parseProjectFile(text)
+    expect(r.ok && r.readOnly).toBe(true)
+  })
+
+  it('remonte les avertissements du nettoyage', () => {
+    const p = sampleProject()
+    p.links.push({ id: 'x', cableId: 'C-009', a: { deviceId: 'nope', portId: 'A' }, b: { deviceId: 'sw1', portId: '2' }, medium: 'cat6' })
+    const r = parseProjectFile(serializeProject(p))
+    expect(r.ok && r.warnings).toHaveLength(1)
+  })
+})

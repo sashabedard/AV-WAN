@@ -1,0 +1,112 @@
+import { describe, expect, it } from 'vitest'
+import { createProjectStore, isDirty, linksOnRemovedPorts } from './projectStore'
+import { sampleProject } from '../model/__fixtures__/sample'
+
+const store = () => createProjectStore(sampleProject())
+
+describe('projectStore', () => {
+  it('ajoute un appareil, puis annule', () => {
+    const s = store()
+    const id = s.getState().addDevice('dante-avio', { x: 10, y: 20 })
+    expect(s.getState().history.present.devices.find((d) => d.id === id)?.name).toBe('DNT-1')
+    s.getState().undo()
+    expect(s.getState().history.present.devices).toHaveLength(2)
+  })
+
+  it('branche avec un ID de câble et un médium par défaut, et refuse un port occupé', () => {
+    const s = store()
+    const id = s.getState().addDevice('dante-avio', { x: 0, y: 0 })
+    const linkId = s.getState().connect({ deviceId: id, portId: 'ETH' }, { deviceId: 'sw1', portId: '2' })
+    const link = s.getState().history.present.links.find((l) => l.id === linkId)
+    expect(link).toMatchObject({ cableId: 'C-002', medium: 'cat6' })
+    expect(s.getState().connect({ deviceId: id, portId: 'ETH' }, { deviceId: 'sw1', portId: '3' })).toBeNull()
+    expect(s.getState().toast).toContain('Branchement impossible')
+  })
+
+  it('un déplacement de plusieurs appareils est une seule entrée d’historique', () => {
+    const s = store()
+    s.getState().moveDevices([
+      { id: 'sw1', position: { x: 100, y: 100 } },
+      { id: 'cam1', position: { x: 100, y: 300 } }
+    ])
+    expect(s.getState().history.past).toHaveLength(1)
+    s.getState().undo()
+    expect(s.getState().history.present.devices[0]!.position).toEqual({ x: 0, y: 0 })
+  })
+
+  it('supprimer un appareil supprime ses câbles et vide la sélection', () => {
+    const s = store()
+    s.getState().setSelection({ deviceIds: ['cam1'], linkIds: [] })
+    s.getState().removeElements(['cam1'], [])
+    expect(s.getState().history.present.links).toHaveLength(0)
+    expect(s.getState().selection).toEqual({ deviceIds: [], linkIds: [] })
+  })
+
+  it('passer de 8 à 4 ports retire le câble branché sur le port 6', () => {
+    const s = store()
+    s.getState().updateSwitchSpec('sw1', { portCount: 8, poe: 'at', poeBudgetW: 120, sfpPlus: 0, managed: true })
+    const id = s.getState().addDevice('dante-avio', { x: 0, y: 0 })
+    s.getState().connect({ deviceId: id, portId: 'ETH' }, { deviceId: 'sw1', portId: '6' })
+    s.getState().setPortState('sw1', '6', { note: 'à retirer' })
+    const four = { portCount: 4 as const, poe: 'at' as const, poeBudgetW: 60, sfpPlus: 0 as const, managed: true }
+    expect(linksOnRemovedPorts(s.getState().history.present, 'sw1', four).map((l) => l.b.portId)).toEqual(['6'])
+    s.getState().updateSwitchSpec('sw1', four)
+    const p = s.getState().history.present
+    expect(p.links.map((l) => l.id)).toEqual(['l1'])
+    expect(p.devices[0]!.portState['6']).toBeUndefined()
+    s.getState().undo()
+    expect(s.getState().history.present.links).toHaveLength(2)
+  })
+
+  it('les câbles retirés sont exactement ceux annoncés par linksOnRemovedPorts, et il reste 4 ports', () => {
+    const s = store()
+    s.getState().updateSwitchSpec('sw1', { portCount: 8, poe: 'at', poeBudgetW: 120, sfpPlus: 0, managed: true })
+    const a = s.getState().addDevice('dante-avio', { x: 0, y: 0 })
+    const b = s.getState().addDevice('dante-avio', { x: 0, y: 100 })
+    s.getState().connect({ deviceId: a, portId: 'ETH' }, { deviceId: 'sw1', portId: '6' })
+    s.getState().connect({ deviceId: b, portId: 'ETH' }, { deviceId: 'sw1', portId: '8' })
+    const four = { portCount: 4 as const, poe: 'at' as const, poeBudgetW: 60, sfpPlus: 0 as const, managed: true }
+    const before = s.getState().history.present
+    const announced = linksOnRemovedPorts(before, 'sw1', four).map((l) => l.id)
+    expect(announced).toHaveLength(2)
+    s.getState().updateSwitchSpec('sw1', four)
+    const after = s.getState().history.present
+    const remaining = new Set(after.links.map((l) => l.id))
+    const missing = before.links.map((l) => l.id).filter((id) => !remaining.has(id))
+    expect(missing.sort()).toEqual([...announced].sort())
+    expect(after.devices.find((d) => d.id === 'sw1')!.ports).toHaveLength(4)
+  })
+
+  it('règle le VLAN d’un câble sur le port du switch', () => {
+    const s = store()
+    s.getState().setLinkVlan('l1', { kind: 'access', vlan: 10 })
+    expect(s.getState().history.present.devices[0]!.portState['1']).toEqual({ mode: 'access', nativeVlan: 10 })
+  })
+
+  it("suit l'état « modifié » et l'annulation jusqu'à l'état enregistré", () => {
+    const s = store()
+    s.getState().markSaved('/tmp/a.avwan')
+    expect(isDirty(s.getState())).toBe(false)
+    s.getState().updateMeta({ title: 'Autre' })
+    expect(isDirty(s.getState())).toBe(true)
+    s.getState().undo()
+    expect(isDirty(s.getState())).toBe(false)
+  })
+
+  it("ouvrir un projet réinitialise l'historique : on ne revient jamais au projet précédent", () => {
+    const s = store()
+    s.getState().updateMeta({ title: 'Avant' })
+    s.getState().loadProject({ ...sampleProject(), meta: { ...sampleProject().meta, title: 'Ouvert' } }, '/tmp/b.avwan')
+    s.getState().undo()
+    expect(s.getState().history.present.meta.title).toBe('Ouvert')
+    expect(s.getState().filePath).toBe('/tmp/b.avwan')
+  })
+
+  it('refuse toute modification en lecture seule', () => {
+    const s = store()
+    s.getState().loadProject(sampleProject(), null, { readOnly: true })
+    s.getState().updateMeta({ title: 'Interdit' })
+    expect(s.getState().history.present.meta.title).toBe('Installation Lumen')
+    expect(s.getState().toast).toContain('lecture seule')
+  })
+})

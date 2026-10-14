@@ -1,0 +1,87 @@
+:root {
+  color-scheme: light dark;
+  --font-display: 'Archivo Narrow', 'Arial Narrow', sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, Menlo, monospace;
+
+  /* Thème clair (défaut) */
+  --paper: #eeeae0;
+  --grid-minor: #e4ded0;
+  --grid-major: #d6cebb;
+  --surface: #f6f3eb;
+  --surface-2: #efebe2;
+  --line: #cfc8b8;
+  --tile-top: #fcfaf5;
+  --tile-bottom: #f4f0e7;
+  --tile-stroke: #1e1f22;
+  --ink: #1e1f22;
+  --ink-2: #2a2a27;
+  --muted: #6b675e;
+  --accent: #c2410c;
+  --accent-bg: #f6dccb;
+  --tape: #1e1f22;
+  --tape-ink: #f3efe4;
+  --trunk: #2b2e33;
+  --cord-shadow: rgba(0, 0, 0, 0.16);
+  --tile-shadow: rgba(0, 0, 0, 0.18);
+
+  /* Matériel : identique dans les deux thèmes (un switch est anthracite) */
+  --panel-top: #2c3137;
+  --panel-bottom: #1d2125;
+  --panel-stroke: #3b4148;
+  --panel-ear: #2a2f35;
+  --port-fill: #0b0d0f;
+  --port-stroke: #454b53;
+  --port-num: #737a83;
+  --screw: #0e1012;
+  --hw-tape: #f3efe4;
+  --hw-tape-ink: #141414;
+  --led-link: #5be38a;
+  --led-poe: #f5a524;
+  --led-off: #3a3f45;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --paper: #15181b;
+    --grid-minor: #1a1e22;
+    --grid-major: #242930;
+    --surface: #111316;
+    --surface-2: #1a1d21;
+    --line: #24282d;
+    --tile-top: #23272c;
+    --tile-bottom: #1b1e22;
+    --tile-stroke: #343a41;
+    --ink: #ece7dc;
+    --ink-2: #c3c8ce;
+    --muted: #858c94;
+    --accent: #f2a93b;
+    --accent-bg: #2a2318;
+    --tape: #f3efe4;
+    --tape-ink: #141414;
+    --trunk: #eceae4;
+    --cord-shadow: rgba(0, 0, 0, 0.38);
+    --tile-shadow: rgba(0, 0, 0, 0.55);
+  }
+}
+
+:root[data-theme='dark'] {
+  --paper: #15181b;
+  --grid-minor: #1a1e22;
+  --grid-major: #242930;
+  --surface: #111316;
+  --surface-2: #1a1d21;
+  --line: #24282d;
+  --tile-top: #23272c;
+  --tile-bottom: #1b1e22;
+  --tile-stroke: #343a41;
+  --ink: #ece7dc;
+  --ink-2: #c3c8ce;
+  --muted: #858c94;
+  --accent: #f2a93b;
+  --accent-bg: #2a2318;
+  --tape: #f3efe4;
+  --tape-ink: #141414;
+  --trunk: #eceae4;
+  --cord-shadow: rgba(0, 0, 0, 0.38);
+  --tile-shadow: rgba(0, 0, 0, 0.55);
+}
