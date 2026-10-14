@@ -164,12 +164,14 @@ export function registerIpc(): void {
 
   ipcMain.handle(IPC.recoveryList, () => frenchErrors((): Promise<RecoveryEntry[]> => listRecovery(recoveryDir())))
 
-  ipcMain.handle(IPC.recoveryRestore, (_event, key: unknown) =>
+  ipcMain.handle(IPC.recoveryRestore, (event, key: unknown) =>
     frenchErrors(async (): Promise<RestoredRecovery> => {
       if (!isRecoveryKey(key)) throw new Error('Clé de récupération invalide.')
       const restored = await prepareRestore(recoveryDir(), key)
       if (!restored) throw new Error('Cette copie de récupération n’existe plus.')
       if (restored.path) grants.grant(restored.path)
+      // Quitter sans enregistrer juste après la restauration doit aussi effacer cette copie.
+      lastRecoveryKey.set(event.sender.id, key)
       return restored
     })
   )
