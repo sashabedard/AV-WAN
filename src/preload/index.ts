@@ -64,6 +64,17 @@ const api: AvwanApi = {
     return () => {
       ipcRenderer.removeListener(IPC.updateReady, handler)
     }
+  },
+  window: {
+    setTitleBarColors: (colors) => ipcRenderer.send(IPC.windowTitleBarColors, colors),
+    showMenu: (x, y) => ipcRenderer.send(IPC.windowShowMenu, { x, y }),
+    onFullscreen: (callback) => {
+      const handler = (_event: IpcRendererEvent, fullscreen: boolean): void => callback(fullscreen)
+      ipcRenderer.on(IPC.windowFullscreen, handler)
+      return () => {
+        ipcRenderer.removeListener(IPC.windowFullscreen, handler)
+      }
+    }
   }
 }
 

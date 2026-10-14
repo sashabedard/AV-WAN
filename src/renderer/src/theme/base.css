@@ -58,6 +58,16 @@ textarea {
 .topbar__spacer { flex: 1; }
 .topbar__btn { padding: 4px 10px; border: 1px solid var(--line); border-radius: 3px; background: var(--surface-2); color: var(--ink-2); font: 500 11px/1 var(--font-mono); letter-spacing: 0.04em; text-transform: uppercase; cursor: pointer; }
 .topbar__btn:hover { border-color: var(--accent); color: var(--accent); }
+/* Fenêtre sans barre de titre : la barre de l'app sert de poignée et accueille les contrôles natifs.
+   Les éléments cliquables (et les boîtes posées par-dessus) sont exclus de la poignée. */
+.topbar { -webkit-app-region: drag; user-select: none; }
+.topbar button, .topbar input, .topbar select, .topbar a { -webkit-app-region: no-drag; }
+.welcome, .xd, .ce, .qs__backdrop { -webkit-app-region: no-drag; }
+:root[data-platform='darwin'] .topbar { padding-left: 84px; }
+:root[data-platform='darwin'][data-fullscreen] .topbar { padding-left: 16px; }
+:root[data-platform]:not([data-platform='darwin']) .topbar { padding-left: 8px; padding-right: calc(100vw - env(titlebar-area-x, 0px) - env(titlebar-area-width, 100vw) + 12px); }
+.topbar__menu { display: grid; place-items: center; width: 32px; height: 32px; border: 0; border-radius: 4px; background: none; color: var(--ink-2); cursor: pointer; }
+.topbar__menu:hover { background: var(--surface-2); color: var(--ink); }
 
 .toast {
   position: fixed;

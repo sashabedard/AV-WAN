@@ -87,6 +87,12 @@ export interface AvwanApi {
     install(): void
   }
   onUpdateReady(callback: (version: string) => void): () => void
+  // Fenêtre sans barre de titre : couleurs des boutons Windows, menu ☰, plein écran (pastilles macOS masquées).
+  window: {
+    setTitleBarColors(colors: { color: string; symbolColor: string }): void
+    showMenu(x: number, y: number): void
+    onFullscreen(callback: (fullscreen: boolean) => void): () => void
+  }
 }
 
 export const IPC = {
@@ -117,5 +123,8 @@ export const IPC = {
   updateReady: 'update:ready',
   updatePending: 'update:pending',
   updateInstall: 'update:install',
+  windowTitleBarColors: 'window:titleBarColors',
+  windowShowMenu: 'window:showMenu',
+  windowFullscreen: 'window:fullscreen',
   menu: 'menu'
 } as const

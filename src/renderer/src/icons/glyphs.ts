@@ -64,7 +64,7 @@ export const GLYPHS: Record<BuiltinIconName, readonly string[]> = {
   generic: [rr(4, 5, 16, 14, 2), 'M8 15H16', dot(8, 9.5), 'M11 9.5H16']
 }
 
-export type UiIconName = 'search' | 'zone' | 'vlan' | 'devices' | 'sun' | 'moon' | 'system' | 'plus' | 'close' | 'bolt' | 'wifi' | 'chevron-down' | 'pin'
+export type UiIconName = 'search' | 'zone' | 'vlan' | 'devices' | 'sun' | 'moon' | 'system' | 'plus' | 'close' | 'bolt' | 'wifi' | 'chevron-down' | 'pin' | 'menu'
 export type IconName = BuiltinIconName | UiIconName
 
 export const UI_GLYPHS: Record<UiIconName, readonly string[]> = {
@@ -80,7 +80,8 @@ export const UI_GLYPHS: Record<UiIconName, readonly string[]> = {
   bolt: ['M13 2.5L5.5 13H11.5L10.5 21.5L18.5 10.5H12.5Z'],
   wifi: ['M4.5 9.5A10.5 10.5 0 0 1 19.5 9.5', 'M7.5 12.75A6.25 6.25 0 0 1 16.5 12.75', dot(12, 16.5)],
   'chevron-down': ['M6 9L12 15L18 9'],
-  pin: ['M9 3.5H15', 'M10 3.5V9.5L7 13.5H17L14 9.5V3.5', 'M12 13.5V20.5']
+  pin: ['M9 3.5H15', 'M10 3.5V9.5L7 13.5H17L14 9.5V3.5', 'M12 13.5V20.5'],
+  menu: ['M4 7H20', 'M4 12H20', 'M4 17H20']
 }
 
 export function isBuiltinIcon(name: string): name is BuiltinIconName {
