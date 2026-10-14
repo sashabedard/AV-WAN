@@ -185,4 +185,8 @@ C'est l'acronyme d'**A**udio-**V**idéo · **W**iring, **A**ddressing, **N**etwo
 
 ## Licence
 
-À définir.
+© 2026 Sasha Bédard. Tous droits réservés. Voir [LICENSE](LICENSE).
+
+- **L'application** est gratuite pour tout usage, y compris professionnel, téléchargée depuis la page [Releases](https://github.com/sashabedard/AV-WAN/releases).
+- **Le code source** est publié pour consultation seulement : le copier, le modifier ou le redistribuer demande une permission écrite.
+- **Mention obligatoire** pour toute présentation ou publication : « AV·WAN — © 2026 Sasha Bédard — https://github.com/sashabedard/AV-WAN ».

@@ -1,0 +1,62 @@
+AV·WAN — Licence d'utilisation
+
+Copyright © 2026 Sasha Bédard. Tous droits réservés.
+
+
+1. Le code source
+
+Le code source d'AV·WAN est publié pour consultation seulement. Sauf permission
+écrite préalable de l'auteur, il est interdit de :
+
+- copier tout ou partie du code source, des icônes, de l'identité visuelle ou de
+  la documentation ;
+- les modifier, les traduire ou en créer une œuvre dérivée ;
+- les redistribuer, les publier, les vendre, les louer ou les intégrer à un autre
+  logiciel, sous quelque forme que ce soit.
+
+La copie d'un dépôt public (« fork ») permise par les conditions d'utilisation de
+GitHub n'accorde aucun droit au-delà de ce que ces conditions prévoient : en
+particulier, aucun droit de réutiliser le code hors de GitHub.
+
+
+2. L'application
+
+L'application AV·WAN, telle que publiée par l'auteur à l'adresse
+https://github.com/sashabedard/AV-WAN/releases, peut être téléchargée, installée
+et utilisée gratuitement, à toute fin, y compris professionnelle.
+
+Il est interdit de redistribuer l'application, modifiée ou non, ailleurs que par
+cette adresse, sans permission écrite.
+
+Les fichiers créés avec l'application (projets .avwan, PDF, CSV, classeurs Excel)
+appartiennent à leurs auteurs.
+
+
+3. Mention obligatoire
+
+Toute présentation, démonstration, capture d'écran publiée, publication ou
+utilisation autorisée de l'application ou d'un extrait de son code doit porter
+la mention suivante :
+
+    AV·WAN — © 2026 Sasha Bédard — https://github.com/sashabedard/AV-WAN
+
+
+4. Composants de tiers
+
+Les composants de tiers inclus dans l'application gardent leur propre licence,
+notamment :
+
+- Electron, React, React Flow, zustand, zod et les autres bibliothèques : licence
+  MIT, ou la licence propre à chaque paquet ;
+- polices Archivo Narrow et IBM Plex Mono : SIL Open Font License 1.1.
+
+
+5. Absence de garantie
+
+L'application et le code sont fournis « tels quels », sans garantie d'aucune
+sorte. L'auteur ne peut être tenu responsable des dommages découlant de leur
+utilisation.
+
+
+Demande de permission : ouvrir une « issue » sur
+https://github.com/sashabedard/AV-WAN ou contacter l'auteur.
