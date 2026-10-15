@@ -7,7 +7,7 @@ import { ipPlan } from '../reports/ipPlan'
 import { bom } from '../reports/bom'
 import { zonePageNumbers } from '../reports/zoneSheet'
 import { PrintLegend } from './PrintLegend'
-import { DeviceSheetsPage, PatchPage, PortMapsPage, PowerPage, VlanSheetsPage } from './sections'
+import { ChannelsPage, DeviceSheetsPage, PatchPage, PortMapsPage, PowerPage, VlanSheetsPage } from './sections'
 import { pageCss } from './pageCss'
 import { useReadyGate } from './useReadyGate'
 import { StaticDiagram } from './StaticDiagram'
@@ -52,6 +52,7 @@ export function PrintDocument({ project, options, onReady }: { project: Project;
       {has('vlans') && <VlanSheetsPage project={project} />}
       {has('ip') && <TablePage table={ipPlan(project)} empty="Aucune adresse IP dans le projet." />}
       {has('patch') && <PatchPage project={project} />}
+      {has('canaux') && <ChannelsPage project={project} />}
       {has('puissance') && <PowerPage project={project} />}
       {has('nomenclature') && <TablePage table={bom(project)} empty="Projet vide : rien à commander." />}
     </div>

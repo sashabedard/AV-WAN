@@ -1,9 +1,9 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it } from 'vitest'
 import { cleanup, render, screen, within } from '@testing-library/react'
-import { DeviceSheetsPage, PatchPage, PortMapsPage, PowerPage, VlanSheetsPage } from './sections'
+import { ChannelsPage, DeviceSheetsPage, PatchPage, PortMapsPage, PowerPage, VlanSheetsPage } from './sections'
 import { createExampleProject } from '../samples/exampleProject'
-import { createProject } from '../model/project'
+import { createDevice, createProject } from '../model/project'
 import { powerShowProject } from '../reports/__fixtures__/powerShow'
 import { patchShowProject } from '../reports/__fixtures__/patchShow'
 
@@ -20,6 +20,21 @@ describe('sections du PDF', () => {
     expect(meta('FIX-1')).not.toMatch(/IP :/)
     expect(meta('LED-1')).not.toMatch(/IP :/)
     expect(meta('CAM-1')).toMatch(/IP :/)
+  })
+
+  it('canaux DMX : un bloc par appareil nommé', () => {
+    const lyre = createProject(new Date(2026, 9, 15))
+    const fix = { ...createDevice(lyre, 'dmx-fixture', { x: 0, y: 0 }, { id: 'f' }), name: 'FIX-1', model: 'Wash', dmx: { footprint: 2, mode: '2CH', address: 5, universe: 1 } }
+    const p = { ...lyre, devices: [fix], dmxChannels: [{ templateId: 'dmx-fixture', model: 'Wash', mode: '2CH', params: ['Red', 'Green'] }] }
+    const { container } = render(<ChannelsPage project={p} />)
+    expect(container.querySelectorAll('.cs__block')).toHaveLength(1)
+    expect(screen.getByText('FIX-1 · U1 · 5–6')).toBeTruthy()
+    expect(screen.getByText('Green')).toBeTruthy()
+  })
+
+  it('canaux DMX : dit quand rien n’est nommé', () => {
+    render(<ChannelsPage project={createProject()} />)
+    expect(screen.getByText('Aucun canal nommé. Les canaux se nomment dans l’inspecteur, section Patch DMX.')).toBeTruthy()
   })
 
   it('patch DMX : un tableau par univers, avec les remarques', () => {

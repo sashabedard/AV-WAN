@@ -1,5 +1,5 @@
 export type PdfFormat = 'na' | 'iso'
-export type PdfSection = 'schema' | 'appareils' | 'ports' | 'branchement' | 'vlans' | 'ip' | 'patch' | 'puissance' | 'nomenclature'
+export type PdfSection = 'schema' | 'appareils' | 'ports' | 'branchement' | 'vlans' | 'ip' | 'patch' | 'canaux' | 'puissance' | 'nomenclature'
 
 export interface PdfOptions {
   sections: PdfSection[]
@@ -16,6 +16,7 @@ export const PDF_SECTIONS: ReadonlyArray<{ id: PdfSection; label: string }> = [
   { id: 'vlans', label: 'Fiches VLAN' },
   { id: 'ip', label: 'Plan d’adressage IP' },
   { id: 'patch', label: 'Patch DMX' },
+  { id: 'canaux', label: 'Canaux DMX' },
   { id: 'puissance', label: 'Bilan de puissance' },
   { id: 'nomenclature', label: 'Nomenclature' }
 ]
