@@ -6,6 +6,7 @@ import { getTemplate } from '../catalog'
 import { PATCH_PANEL_TEMPLATE_IDS } from '../catalog/templates'
 import { devicePowerW, feedingPsu, loadLevel, mainsVoltage, poeFeeder, psuLoad, resolvePsu, round1 } from '../model/power'
 import { formatFr } from '../model/fields'
+import { LED_STRIP_TYPES } from '../model/led'
 import type { Cell, Column, DataTable } from '../../../shared/tables'
 import { compareText } from './format'
 
@@ -82,7 +83,7 @@ export function powerBudget(project: Project): PowerBudget {
     const remark = d.psu ? psuRemark(project, d) : poe ? `via PoE · ${poe.name}` : psu && watts === undefined ? 'puissance non renseignée' : ''
     const row: PowerRow = {
       device: d.name,
-      type: d.model ?? t?.model ?? t?.name ?? '',
+      type: d.model ?? (d.ledStrip ? `Bande LED ${LED_STRIP_TYPES[d.ledStrip.type].label}` : (t?.model ?? t?.name ?? '')),
       ...(watts !== undefined ? { watts } : {}),
       fedBy: psu?.name ?? poe?.name ?? '',
       ...(mainsW !== undefined ? { mainsW } : {}),

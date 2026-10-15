@@ -36,8 +36,8 @@ describe('powerBudget', () => {
   it('décrit les lignes d’une zone, triées par nom', () => {
     const scene = powerBudget(show()).zones[0]!
     expect(scene.rows).toEqual([
-      { device: 'LED-1', type: 'Bande LED', watts: 144, fedBy: 'PSU-1', remark: '' },
-      { device: 'LED-2', type: 'Bande LED', watts: 144, fedBy: 'PSU-1', remark: '' },
+      { device: 'LED-1', type: 'Bande LED COB mono', watts: 144, fedBy: 'PSU-1', remark: '' },
+      { device: 'LED-2', type: 'Bande LED COB mono', watts: 144, fedBy: 'PSU-1', remark: '' },
       { device: 'MH-1', type: 'Lyre spot', watts: 470, fedBy: '', mainsW: 470, remark: '' },
       { device: 'PSU-1', type: 'Appareil générique', watts: 360, fedBy: '', mainsW: 360, remark: 'charge 288 W / 360 W (80 %)' }
     ])
@@ -105,6 +105,12 @@ describe('powerBudget', () => {
       ['Hors zone', undefined, 50]
     ])
     expect(powerBudget(q).totalW).toBe(880)
+  })
+
+  it('type d’une bande : son type de bande, sauf modèle tapé', () => {
+    const p = show()
+    const q = { ...p, devices: p.devices.map((d) => (d.id === 'led2' ? { ...d, model: 'Ruban de scène' } : d)) }
+    expect(powerBudget(q).zones[0]!.rows.slice(0, 2).map((r) => r.type)).toEqual(['Bande LED COB mono', 'Ruban de scène'])
   })
 
   it('un panneau de brassage n’est pas un appareil « sans puissance »', () => {
