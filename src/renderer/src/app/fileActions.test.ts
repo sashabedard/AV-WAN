@@ -258,6 +258,27 @@ describe('restauration', () => {
     expect(api.file.save).not.toHaveBeenCalled()
   })
 
+  it('enregistrement automatique actif : le message dit où la copie restaurée sera enregistrée', async () => {
+    vi.useFakeTimers()
+    uiStore.getState().setAutoSave(true)
+    const api = fakeApi()
+    vi.stubGlobal('window', { avwan: api, confirm: () => true })
+    vi.mocked(api.recovery.restore).mockResolvedValueOnce({ key: 'f-0123456789abcdef', path: '/x/salle-b.avwan', text: serializeProject(sampleProject()) })
+    expect(await restoreRecoveryAction('f-0123456789abcdef')).toBe(true)
+    expect(projectStore.getState().toast).toBe('Version récupérée restaurée : elle sera enregistrée dans salle-b.avwan.')
+    vi.mocked(api.recovery.restore).mockResolvedValueOnce({ key: 'u-abcdef', path: null, text: serializeProject(sampleProject()) })
+    expect(await restoreRecoveryAction('u-abcdef')).toBe(true)
+    expect(projectStore.getState().toast).toBe('Version récupérée restaurée : elle sera enregistrée dans Documents › AV·WAN.')
+  })
+
+  it('case « Enregistrement automatique » décochée : le message demande d’enregistrer', async () => {
+    const api = fakeApi()
+    vi.mocked(api.recovery.restore).mockResolvedValue({ key: 'f-0123456789abcdef', path: '/x/salle-b.avwan', text: serializeProject(sampleProject()) })
+    vi.stubGlobal('window', { avwan: api, confirm: () => true })
+    expect(await restoreRecoveryAction('f-0123456789abcdef')).toBe(true)
+    expect(projectStore.getState().toast).toBe('Version récupérée restaurée. Enregistrez pour la garder dans salle-b.avwan.')
+  })
+
   it('ouvrir un fichier qui a une copie plus récente propose de la restaurer', async () => {
     const api = fakeApi()
     const entry = { key: 'f-0123456789abcdef', path: '/x/b.avwan', title: 'B', savedAt: new Date().toISOString() }

@@ -61,13 +61,19 @@ export async function restoreRecoveryAction(key: string): Promise<boolean> {
     s.loadProject(res.project, res.readOnly ? null : restored.path, { readOnly: res.readOnly, restored: true })
     autosave.adopt(restored.key)
     uiStore.getState().setWelcome(false)
-    const where = restored.path && !res.readOnly ? ` Enregistrez pour la garder dans ${fileNameOf(restored.path)}.` : ' Enregistrez-la pour la garder.'
+    const target = restored.path && !res.readOnly ? fileNameOf(restored.path) : null
+    // Enregistrement automatique actif : la copie part seule dans son fichier, ou dans Documents › AV·WAN.
+    const where = uiStore.getState().autoSave
+      ? ` : elle sera enregistrée dans ${target ?? 'Documents › AV·WAN'}.`
+      : target
+        ? `. Enregistrez pour la garder dans ${target}.`
+        : '. Enregistrez-la pour la garder.'
     projectStore
       .getState()
       .showToast(
         res.readOnly
           ? 'Version récupérée restaurée en lecture seule : elle vient d’une version plus récente d’AV·WAN. Utilisez « Enregistrer sous… ».'
-          : `Version récupérée restaurée.${where}`
+          : `Version récupérée restaurée${where}`
       )
     return true
   } catch (e) {
