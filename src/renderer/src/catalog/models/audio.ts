@@ -27,10 +27,10 @@ export const AUDIO_MODELS: readonly DeviceTemplate[] = [
   {
     id: 'yamaha-dm3',
     category: 'audio',
-    name: 'Console Yamaha DM3',
+    name: 'Console Yamaha DM3-D',
     code: 'MIX',
     vendor: 'Yamaha',
-    model: 'Yamaha DM3',
+    model: 'Yamaha DM3-D',
     icon: ic('audio-console'),
     ports: [
       ...dantePair(),
@@ -40,7 +40,7 @@ export const AUDIO_MODELS: readonly DeviceTemplate[] = [
     ],
     powerW: 43,
     defaults: { vlanId: 30 },
-    note: 'Dante sur la version DM3-D seulement (pas sur la DM3 Standard) ; la fiche ne précise pas la vitesse du port réseau.'
+    note: 'Variante Dante (DM3-D) ; la DM3 Standard n’a pas de Dante. La fiche ne précise pas la vitesse du port réseau.'
   },
   // Source : https://www.allen-heath.com/content/uploads/2023/05/SQ-5-Technical-Datasheet_G.pdf (fiche du fabricant : réseau Fast Ethernet 100 Mbit/s, consommation max 75 W)
   // et https://www.allen-heath.com/content/uploads/2023/06/SQ-Dante-V2-Cut-Sheet.pdf (carte Dante : commutateur Gigabit intégré, 2 ports etherCON redondants ou en mode commutateur) (consultées le 2026-10-14)
@@ -54,19 +54,19 @@ export const AUDIO_MODELS: readonly DeviceTemplate[] = [
     icon: ic('audio-console'),
     ports: [
       rj45('NET', { label: 'Réseau', speedMbps: 100 }),
-      rj45('DANTE-1', { label: 'Dante 1' }),
-      rj45('DANTE-2', { label: 'Dante 2' })
+      rj45('DANTE-1', { label: 'Dante 1', speedMbps: 1000 }),
+      rj45('DANTE-2', { label: 'Dante 2', speedMbps: 1000 })
     ],
     powerW: 75,
     defaults: { vlanId: 30 },
-    note: 'Carte Dante en option : 2 ports redondants ou en commutateur. 75 W = console seule, consommation de la carte non publiée.'
+    note: 'Carte Dante en option : « Dante 1/2 » est neutre, les ports servent en redondance ou en commutateur. 75 W = console seule, consommation de la carte non publiée.'
   },
   // Source : https://pubs.shure.com/view/guide/ULXD-DQ/en-US.pdf (manuel du fabricant, consultée le 2026-10-14)
   // 2 ports Ethernet/Dante « Primary » et « Secondary » (10/100 Mbps ou 1 Gbps), alimentation 100–240 V AC 0,26 A max, pas de PoE ni de puissance en watts.
   {
     id: 'shure-ulxd4d',
     category: 'audio',
-    name: 'Récepteur HF Shure ULX-D4D',
+    name: 'Récepteur HF Shure ULXD4D',
     code: 'HF',
     vendor: 'Shure',
     model: 'Shure ULXD4D',
@@ -142,7 +142,7 @@ export const AUDIO_MODELS: readonly DeviceTemplate[] = [
     model: 'Elgato Stream Deck MK.2',
     icon: ic('usb-controller'),
     ports: [simple('usb', 'USB', 'USB')],
-    note: 'Alimenté par l’USB ; consommation non publiée par le fabricant.'
+    note: 'Consommation non publiée par le fabricant.'
   },
   // Source : https://cdn.inmusicbrands.com/akai/attachments/apc40II/APC40%20mkII%20-%20User%20Guide%20-%20v1.0.pdf (manuel du fabricant : le port USB de l’ordinateur alimente l’appareil) (consulté le 2026-10-14)
   {
