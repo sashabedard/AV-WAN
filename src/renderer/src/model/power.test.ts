@@ -100,6 +100,59 @@ describe('feedingPsu et poeFeeder', () => {
   })
 })
 
+// Câblage d'une PixLite : PSU-1 (300 W) → DC-IN du contrôleur ; ses sorties pixel portent données et alimentation
+// vers LED-1 et LED-2 (180 W chacune, sans câble DC). LED-3 sort aussi du contrôleur mais a sa propre alimentation, PSU-2.
+function pixlite(): Project {
+  const px = (id: string): PortDef => ({ id, label: id, connector: 'pixel' })
+  const strip = { type: 'sk6812-rgbw' as const, volts: 24, wPerM: 18, lengthM: 10, pxPerM: 60 }
+  const led = (id: string, name: string): Device => dev(id, name, { templateId: 'led-strip', ports: [px('IN'), dc('DC-IN')], ledStrip: strip })
+  return {
+    ...createProject(new Date(2026, 9, 14)),
+    devices: [
+      dev('psu', 'PSU-1', { ports: [dc('DC-OUT-1')], psu: { volts: 24, watts: 300 } }),
+      dev('psu2', 'PSU-2', { ports: [dc('DC-OUT-1')], psu: { volts: 24, watts: 300 } }),
+      dev('pix', 'PIX-1', { ports: [dc('DC-IN'), px('OUT1'), px('OUT2'), px('OUT3')] }),
+      led('led1', 'LED-1'),
+      led('led2', 'LED-2'),
+      led('led3', 'LED-3')
+    ],
+    links: [
+      link('d1', ['psu', 'DC-OUT-1'], ['pix', 'DC-IN']),
+      link('p1', ['pix', 'OUT1'], ['led1', 'IN'], 'pixel'),
+      link('p2', ['led2', 'IN'], ['pix', 'OUT2'], 'pixel'),
+      link('p3', ['pix', 'OUT3'], ['led3', 'IN'], 'pixel'),
+      link('d2', ['psu2', 'DC-OUT-1'], ['led3', 'DC-IN'])
+    ]
+  }
+}
+
+describe('bandes alimentées par le contrôleur de pixels', () => {
+  it('une bande sans câble DC est nourrie par l’alimentation du contrôleur', () => {
+    const p = pixlite()
+    expect(feedingPsu(p, 'led1')?.name).toBe('PSU-1')
+    expect(feedingPsu(p, 'led2')?.name).toBe('PSU-1')
+    expect(feedingPsu(p, 'led3')?.name).toBe('PSU-2') // son propre câble DC l’emporte
+  })
+
+  it('l’alimentation du contrôleur compte ses bandes, une fois chacune : 360 W / 300 W, surcharge', () => {
+    const load = psuLoad(pixlite(), 'psu')
+    expect(load.fed.map((d) => d.name)).toEqual(['PIX-1', 'LED-1', 'LED-2'])
+    expect(load.loadW).toBe(360)
+    expect(load.capacityW).toBe(300)
+    expect(load.ratio).toBe(1.2)
+    expect(loadLevel(load.ratio!)).toBe('over')
+    expect(load.missing.map((d) => d.name)).toEqual(['PIX-1'])
+    expect(psuLoad(pixlite(), 'psu2').fed.map((d) => d.name)).toEqual(['LED-3'])
+  })
+
+  it('sans alimentation sur le contrôleur, la bande n’est nourrie par personne', () => {
+    const p = pixlite()
+    const q = { ...p, links: p.links.filter((l) => l.id !== 'd1') }
+    expect(feedingPsu(q, 'led1')).toBeUndefined()
+    expect(psuLoad(q, 'psu').fed).toEqual([])
+  })
+})
+
 describe('mainsVoltage', () => {
   it('120 V par défaut', () => {
     const p = createProject()

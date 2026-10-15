@@ -62,6 +62,34 @@ describe('powerBudget', () => {
     expect(powerTable(unratedPsu()).rows.some((r) => r[1] === 'Sans puissance renseignée')).toBe(false)
   })
 
+  it('bandes alimentées par le contrôleur de pixels : comptées via son alimentation, une seule fois', () => {
+    const px = (id: string): PortDef => ({ id, label: id, connector: 'pixel' })
+    const strip = { type: 'sk6812-rgbw' as const, volts: 24, wPerM: 18, lengthM: 10, pxPerM: 60 }
+    const p: Project = {
+      ...createProject(new Date(2026, 9, 14)),
+      devices: [
+        raw('psu', 'PSU-1', { ports: [dc('DC-OUT-1')], psu: { volts: 24, watts: 300 } }),
+        raw('pix', 'PIX-1', { ports: [dc('DC-IN'), px('OUT1'), px('OUT2')] }),
+        raw('led1', 'LED-1', { templateId: 'led-strip', ports: [px('IN'), dc('DC-IN')], ledStrip: strip }),
+        raw('led2', 'LED-2', { templateId: 'led-strip', ports: [px('IN'), dc('DC-IN')], ledStrip: strip })
+      ],
+      links: [
+        dcLink('d1', ['psu', 'DC-OUT-1'], ['pix', 'DC-IN']),
+        { ...dcLink('p1', ['pix', 'OUT1'], ['led1', 'IN']), medium: 'pixel' },
+        { ...dcLink('p2', ['pix', 'OUT2'], ['led2', 'IN']), medium: 'pixel' }
+      ]
+    }
+    const b = powerBudget(p)
+    expect(b.totalW).toBe(300)
+    const rows = b.zones[0]!.rows
+    expect(rows.filter((r) => r.device.startsWith('LED')).map((r) => [r.device, r.fedBy, r.mainsW])).toEqual([
+      ['LED-1', 'PSU-1', undefined],
+      ['LED-2', 'PSU-1', undefined]
+    ])
+    expect(rows.find((r) => r.device === 'PSU-1')?.remark).toBe('charge 360 W / 300 W (120 %) · Surcharge')
+    expect(b.psus[0]).toMatchObject({ name: 'PSU-1', loadW: 360, ratio: 1.2, fed: ['PIX-1', 'LED-1', 'LED-2'], remark: 'Surcharge' })
+  })
+
   it('projet vide : zéro partout, jamais NaN', () => {
     const b = powerBudget(createProject())
     expect([b.totalW, b.amps, b.zones.length, b.psus.length, b.missing.length]).toEqual([0, 0, 0, 0, 0])

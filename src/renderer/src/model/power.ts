@@ -44,14 +44,14 @@ export function mainsVoltage(project: Project): MainsVoltage {
   return project.settings.mainsVoltage ?? 120
 }
 
-// Appareils au bout des câbles branchés sur les prises DC d'un appareil, chacun une fois.
-function dcPeers(project: Project, deviceId: string): Device[] {
+// Appareils au bout des câbles branchés sur les prises DC (ou pixel) d'un appareil, chacun une fois.
+function peersOn(project: Project, deviceId: string, connector: 'dc' | 'pixel'): Device[] {
   const device = findDevice(project, deviceId)
   if (!device) return []
   const out: Device[] = []
   const seen = new Set<string>()
   for (const port of device.ports) {
-    if (port.connector !== 'dc') continue
+    if (port.connector !== connector) continue
     for (const l of linksOnPort(project, { deviceId, portId: port.id })) {
       const other = l.a.deviceId === deviceId && l.a.portId === port.id ? l.b : l.a
       const peer = findDevice(project, other.deviceId)
@@ -64,6 +64,12 @@ function dcPeers(project: Project, deviceId: string): Device[] {
   return out
 }
 
+const dcPeers = (project: Project, deviceId: string): Device[] => peersOn(project, deviceId, 'dc')
+
+function hasDcCable(project: Project, device: Device): boolean {
+  return device.ports.some((port) => port.connector === 'dc' && linksOnPort(project, { deviceId: device.id, portId: port.id }).length > 0)
+}
+
 export interface PsuLoad {
   capacityW?: number
   loadW: number
@@ -74,7 +80,10 @@ export interface PsuLoad {
 
 export function psuLoad(project: Project, psuId: string): PsuLoad {
   const psu = findDevice(project, psuId)
-  const fed = dcPeers(project, psuId)
+  const direct = dcPeers(project, psuId)
+  // Bandes sans câble DC nourries à travers un contrôleur de pixels branché sur cette alimentation (voir feedingPsu).
+  const viaPixel = psu?.psu ? project.devices.filter((d) => d.ledStrip && !direct.includes(d) && feedingPsu(project, d.id)?.id === psuId) : []
+  const fed = [...direct, ...viaPixel]
   const loadW = round1(fed.reduce((sum, d) => sum + (devicePowerW(d) ?? 0), 0))
   const capacityW = resolvePsu(psu?.psu).watts
   return {
@@ -86,10 +95,25 @@ export function psuLoad(project: Project, psuId: string): PsuLoad {
   }
 }
 
-// L'alimentation (gabarit avec `psu`) branchée sur une prise DC de l'appareil.
+// L'alimentation (gabarit avec `psu`) branchée sur une prise DC de l'appareil. Une bande sans câble DC est
+// nourrie par sa sortie pixel (PixLite : PSU → DC-IN du contrôleur, puis chaque sortie porte données et alimentation) :
+// elle compte sur l'alimentation de l'appareil qui la pilote. Une bande avec son propre câble DC garde son alimentation directe.
 export function feedingPsu(project: Project, deviceId: string): Device | undefined {
-  if (findDevice(project, deviceId)?.psu) return undefined
-  return dcPeers(project, deviceId).find((d) => d.psu !== undefined)
+  return psuFeeding(project, deviceId, new Set())
+}
+
+function psuFeeding(project: Project, deviceId: string, visited: Set<string>): Device | undefined {
+  const device = findDevice(project, deviceId)
+  if (!device || device.psu) return undefined
+  const direct = dcPeers(project, deviceId).find((d) => d.psu !== undefined)
+  if (direct || !device.ledStrip || hasDcCable(project, device)) return direct
+  visited.add(deviceId)
+  for (const peer of peersOn(project, deviceId, 'pixel')) {
+    if (visited.has(peer.id)) continue
+    const psu = psuFeeding(project, peer.id, visited)
+    if (psu) return psu
+  }
+  return undefined
 }
 
 // Le switch (ou l'injecteur) qui alimente l'appareil en PoE, s'il y en a un.
