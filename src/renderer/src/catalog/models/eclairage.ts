@@ -27,7 +27,7 @@ export const LIGHTING_MODELS: readonly DeviceTemplate[] = [
         { name: '21CH', channels: 21 }
       ]
     },
-    note: 'Puissance maximale relevée à 120 V (480 à 488 W selon la tension).'
+    note: 'Puissance maximale relevée à 120 V (480 à 488 W selon la tension). Ordre des modes (18CH d’abord) : choix, le manuel ne désigne pas de mode par défaut.'
   },
   // Source : https://www.martin.com/en/products/mac-aura-xb (page produit du fabricant)
   // et manuel https://www.martin.com/en/site_elements/martin-mac-aura-xb-user-manual (v. C) et fiche https://www.martin.com/en/site_elements/mac-aura-xb-spec-sheet-english (consultés le 2026-10-14)
@@ -52,7 +52,7 @@ export const LIGHTING_MODELS: readonly DeviceTemplate[] = [
   },
   // Source : fiche technique Clay Paky Sharpy C61375 https://e-assist.tech/servlet/checkDocumentsFile?Id=2030 (fiche du fabricant, 08/2023)
   // et manuel d’instructions C61375, copie hébergée par 4Wall : https://cdn01.4wall.com/cms/rentals/files/f60ef02cea55e4.pdf (tableau « Channel function », consultés le 2026-10-14)
-  // Modes Standard (16 canaux) et Vector (20 canaux) ; Art-Net / RDM annoncés ; 350 VA à 230 V (pas de puissance en watts publiée).
+  // Modes Standard (16 canaux) et Vector (20 canaux) ; Art-Net / RDM annoncés mais aucune prise réseau nommée (ni fiche, ni manuel, ni page claypaky.it) ; 350 VA à 230 V (pas de puissance en watts publiée).
   {
     id: 'claypaky-sharpy',
     category: 'eclairage',
@@ -61,8 +61,7 @@ export const LIGHTING_MODELS: readonly DeviceTemplate[] = [
     vendor: 'Clay Paky',
     model: 'Clay Paky Sharpy',
     icon: ic('moving-head'),
-    ports: [...dmxThru(), rj45('ETH')],
-    defaults: { vlanId: 50 },
+    ports: dmxThru(),
     dmx: {
       footprint: 16,
       modes: [
@@ -70,7 +69,7 @@ export const LIGHTING_MODELS: readonly DeviceTemplate[] = [
         { name: 'Vector', channels: 20 }
       ]
     },
-    note: 'Modèle d’origine (C61375, lampe 189 W). Puissance en watts non publiée par le fabricant : 350 VA à 230 V. Le type de prise Ethernet et sa vitesse ne sont pas précisés par la fiche.'
+    note: 'Modèle d’origine (C61375, lampe 189 W). Puissance en watts non publiée par le fabricant : 350 VA à 230 V. Art-Net/RDM annoncés ; prise réseau non précisée par le fabricant.'
   },
   // Source : https://www.robe.cz/res/downloads/catalogues/ROBE_MegaPointe_leaflet.pdf (fiche du fabricant : 2 modes, 39 et 34 canaux, 670 W, RJ45 Ethernet, Art-Net/sACN)
   // et table DMX Robe v1.5 « Mode 1 – Standard 16 bits, Mode 2 – Réduit 8 bits », copie hébergée par Storm Lighting :
@@ -243,7 +242,7 @@ export const LIGHTING_MODELS: readonly DeviceTemplate[] = [
     ports: [rj45('ETH', { speedMbps: 100, poeIn: 'af', poeDrawW: 8 }), ...dmxOutputs(4)],
     powerW: 8,
     defaults: { vlanId: 50 },
-    note: 'Alimenté uniquement par PoE ; 8 W est le « maximum power budget » annoncé par le fabricant. Pas d’entrée DC sur cette version (les versions DIN en ont une).'
+    note: 'Alimenté uniquement par PoE ; 8 W : budget de puissance maximal publié par le fabricant, pas une consommation mesurée. Pas d’entrée DC sur cette version (les versions DIN en ont une).'
   },
   // Source : fiche technique https://www.ac-et.com/storage/product_images/advatek/a4_s_mk3/pixlite-a4-s-mk3-datasheet_20250225.pdf (Advatek, copie hébergée par AC Entertainment Technologies, consultée le 2026-10-14)
   // 4 sorties pixels alimentées (7 A chacune, 28 A au total), 2 Ethernet 10/100/1000, port auxiliaire RS485 DMX en entrée ou sortie, entrée 5–24 V DC, pas de PoE.
