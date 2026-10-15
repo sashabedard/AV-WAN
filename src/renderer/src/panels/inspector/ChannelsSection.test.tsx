@@ -124,6 +124,21 @@ describe('inspecteur : canaux DMX', () => {
     expect(projectStore.getState().toast).toBe('5 lignes ignorées après le canal 9.')
   })
 
+  it('coller plusieurs lignes par-dessus un brouillon : une seule étape, le brouillon n’est pas validé', async () => {
+    const user = userEvent.setup()
+    select('w')
+    render(<Inspector />)
+    const before = present()
+    await user.type(screen.getByLabelText('Canal 1'), 'abc')
+    await user.paste('Red\nGreen')
+    expect(names('w')).toEqual(['Red', 'Green'])
+    expect((screen.getByLabelText('Canal 1') as HTMLInputElement).value).toBe('Red')
+    expect(projectStore.getState().history.past).toHaveLength(1)
+    expect(save).toHaveBeenCalledTimes(1)
+    act(() => projectStore.getState().undo())
+    expect(present()).toBe(before)
+  })
+
   it('moins de canaux puis autant qu’avant : les noms reviennent', () => {
     projectStore.getState().setChannelList({ templateId: 'dmx-fixture', model: 'Wash', mode: '9CH' }, ['A', 'B', 'C', 'D', 'E'])
     select('w')

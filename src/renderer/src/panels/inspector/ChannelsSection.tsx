@@ -87,8 +87,7 @@ export function ChannelsSection({ device, project }: { device: Device; project: 
               onPaste={(e) => {
                 const pasted = pastedNames(e.clipboardData.getData('text/plain'))
                 if (!pasted) return
-                e.preventDefault()
-                e.currentTarget.blur()
+                e.preventDefault() // CommitInput abandonne le brouillon : le collage est une seule étape
                 const { params: next, ignored } = fillParams(params, i, pasted, footprint)
                 if (writeList(key, next) && ignored > 0) projectStore.getState().showToast(`${ignored} ligne${ignored > 1 ? 's' : ''} ignorée${ignored > 1 ? 's' : ''} après le canal ${footprint}.`)
               }}
