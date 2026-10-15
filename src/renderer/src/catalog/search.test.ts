@@ -42,4 +42,11 @@ describe('searchTemplates', () => {
     expect(searchTemplates('haze')[0]?.id).toBe('hazer')
     expect(searchTemplates('strobe')[0]?.id).toBe('strobe')
   })
+
+  it('trouve un capteur par sa marque ou son modèle', () => {
+    expect(searchTemplates('livox')[0]?.id).toBe('livox-mid-360')
+    expect(searchTemplates('mid-360')[0]?.id).toBe('livox-mid-360')
+    expect(searchTemplates('femto mega')[0]?.id).toBe('orbbec-femto-mega')
+    expect(searchTemplates('kinect').map((t) => t.id)).toEqual(expect.arrayContaining(['kinect-v1', 'kinect-v2', 'azure-kinect-dk']))
+  })
 })

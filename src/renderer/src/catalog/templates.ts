@@ -3,8 +3,9 @@ import { ic } from './ic'
 import { stripWithType } from '../model/led'
 import { dmxThru, patchPanelPorts, range, rj45, sfp, sfpPlus, simple, wifi } from './ports'
 import { DEFAULT_SWITCH_SPEC } from './switch'
+import { SENSOR_MODELS } from './models/capteurs'
 
-export const TEMPLATES: readonly DeviceTemplate[] = [
+const BASE_TEMPLATES: readonly DeviceTemplate[] = [
   // Réseau
   { id: 'switch', category: 'reseau', name: 'Switch', code: 'SW', icon: ic('switch'), ports: [], switch: DEFAULT_SWITCH_SPEC, defaults: { vlanId: 10 } },
   { id: 'gateway', category: 'reseau', name: 'Passerelle / routeur', code: 'GW', icon: ic('gateway'), ports: [rj45('WAN', { speedMbps: 2500 }), ...range('LAN', 1, 4).map((id) => rj45(id))], defaults: { vlanId: 10 } },
@@ -67,6 +68,8 @@ export const TEMPLATES: readonly DeviceTemplate[] = [
   { id: 'psu', category: 'autre', name: 'Alimentation', code: 'PSU', icon: ic('psu'), ports: range('DC-OUT-', 1, 4).map((id, i) => simple('dc', id, `DC OUT ${i + 1}`)), psu: { volts: 24 } },
   { id: 'generic', category: 'autre', name: 'Appareil générique', code: 'GEN', icon: ic('generic'), ports: [rj45('ETH')] }
 ]
+
+export const TEMPLATES: readonly DeviceTemplate[] = [...BASE_TEMPLATES, ...SENSOR_MODELS]
 
 export const TEMPLATES_BY_ID: ReadonlyMap<string, DeviceTemplate> = new Map(TEMPLATES.map((t) => [t.id, t]))
 
