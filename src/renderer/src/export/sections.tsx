@@ -2,6 +2,7 @@ import { Fragment } from 'react'
 import type { Project } from '../model/types'
 import type { DataTable } from '../../../shared/tables'
 import { deviceSheets } from '../reports/deviceSheets'
+import { PATCH_PDF_COLUMNS, patchGroups } from '../reports/patch'
 import { portMaps } from '../reports/portMaps'
 import { vlanSheets } from '../reports/vlanSheets'
 import { PortMapFacade } from './PortMapFacade'
@@ -21,6 +22,11 @@ export function DeviceSheetsPage({ project }: { project: Project }) {
             <span className="ds__kind">{[s.kind, s.model].filter(Boolean).join(' · ')}</span>
           </header>
           <p className="ds__meta">{[s.networked && `IP : ${s.ip}`, s.hostname && `Nom d’hôte : ${s.hostname}`, s.zone && `Zone : ${s.zone}`].filter(Boolean).join(' · ')}</p>
+          {s.extras.map((x) => (
+            <p key={x} className="ds__meta">
+              {x}
+            </p>
+          ))}
           {s.lines.length === 0 ? (
             <p className="ds__none">Aucun câble branché.</p>
           ) : (
@@ -32,6 +38,30 @@ export function DeviceSheetsPage({ project }: { project: Project }) {
           )}
           {s.note && <p className="ds__note">{s.note}</p>}
         </article>
+      ))}
+    </section>
+  )
+}
+
+// Section « Patch DMX » : un tableau par univers, trié par adresse (spec patch-puissance-catalogue § 6.1).
+export function PatchPage({ project }: { project: Project }) {
+  const groups = patchGroups(project)
+  return (
+    <section className="pg pg--sheet">
+      <h2 className="pg__h">Patch DMX</h2>
+      {groups.length === 0 && <p className="pg__empty">Aucun appareil patchable dans le projet.</p>}
+      {groups.map((g) => (
+        <div key={g.title} className="pt">
+          <h3 className="pt__h">{g.title}</h3>
+          <ReportTable
+            table={{
+              id: `patch-${g.universe ?? 'sans'}`,
+              title: g.title,
+              columns: PATCH_PDF_COLUMNS,
+              rows: g.rows.map((r) => [r.address ?? null, r.end ?? null, r.channels, r.device, r.model, r.mode, r.zone, r.remark])
+            }}
+          />
+        </div>
       ))}
     </section>
   )

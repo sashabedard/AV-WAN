@@ -2,6 +2,8 @@ import type { Project } from '../model/types'
 import { linksOnPort } from '../model/rules'
 import { getTemplate } from '../catalog'
 import { connection, type Connection } from './connections'
+import { patchIndex } from '../model/dmx'
+import { dmxSummary } from './patch'
 import { DASH, compareText, ipLabel } from './format'
 
 const NETWORK_CONNECTORS = new Set<string>(['rj45', 'sfp', 'sfp+', 'wifi'])
@@ -23,6 +25,7 @@ export interface DeviceSheet {
   zone?: string
   note?: string
   lines: DeviceSheetLine[]
+  extras: string[] // lignes en plus (patch DMX…), une par ligne imprimée
 }
 
 // « ETH › SW-2 · port 1 · PoE+ actif (25 W) · VLAN 40 NDI · C-010 Cat6 12 m »
@@ -38,6 +41,7 @@ export function sheetLineText(port: string, c: Connection): string {
 
 // Fiches des appareils qui ne sont pas des switchs (spec § 11.1, section 2), triées par nom.
 export function deviceSheets(project: Project): DeviceSheet[] {
+  const index = patchIndex(project)
   return project.devices
     .filter((d) => d.switch === undefined)
     .sort((a, b) => compareText(a.name, b.name))
@@ -51,6 +55,8 @@ export function deviceSheets(project: Project): DeviceSheet[] {
             return { port: port.label, connection: c, text: sheetLineText(port.label, c) }
           })
       })
+      const patch = index.entries.get(device.id)
+      const extras = patch ? [dmxSummary(patch)] : []
       const template = getTemplate(project, device.templateId)
       const zone = project.zones.find((z) => z.id === device.zoneId)?.name
       return {
@@ -63,7 +69,8 @@ export function deviceSheets(project: Project): DeviceSheet[] {
         ...(device.hostname ? { hostname: device.hostname } : {}),
         ...(zone ? { zone } : {}),
         ...(device.note ? { note: device.note } : {}),
-        lines
+        lines,
+        extras
       }
     })
 }

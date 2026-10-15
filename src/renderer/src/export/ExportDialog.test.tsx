@@ -7,7 +7,7 @@ import { projectStore } from '../store/projectStore'
 import { uiStore } from '../store/uiStore'
 import { createExampleProject } from '../samples/exampleProject'
 
-const ALL = ['schema', 'appareils', 'ports', 'branchement', 'vlans', 'ip', 'nomenclature']
+const ALL = ['schema', 'appareils', 'ports', 'branchement', 'vlans', 'ip', 'patch', 'nomenclature']
 
 beforeEach(() => {
   projectStore.getState().loadProject(createExampleProject(new Date(2026, 9, 13)), null)
@@ -21,7 +21,7 @@ describe('ExportDialog', () => {
     const onExport = vi.fn()
     render(<ExportDialog onExport={onExport} />)
     expect(screen.getByRole('dialog', { name: 'Exporter le PDF' })).toBeTruthy()
-    expect(screen.getAllByRole('checkbox', { checked: true })).toHaveLength(8)
+    expect(screen.getAllByRole('checkbox', { checked: true })).toHaveLength(9)
     expect(screen.getByRole('checkbox', { name: 'Pages de zone agrandies (2)' })).toBeTruthy()
     await user.click(screen.getByRole('button', { name: 'Exporter le PDF…' }))
     expect(onExport).toHaveBeenCalledWith({ sections: ALL, format: 'na', zonePages: true })
