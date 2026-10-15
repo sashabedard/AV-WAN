@@ -13,6 +13,7 @@ import { projectStore } from '../store/projectStore'
 import { ipcErrorMessage } from '../app/ipcError'
 import { useDismissOnOutside } from './useDismiss'
 import { usePlaceableTemplates } from './usePlaceableTemplates'
+import { TruncTip, useTruncTip } from './TruncTip'
 import './panels.css'
 
 export const TEMPLATE_MIME = 'application/x-avwan-template'
@@ -20,6 +21,8 @@ export const TEMPLATE_MIME = 'application/x-avwan-template'
 const GROUPS = CATEGORY_ORDER.map((category) => ({ category, items: TEMPLATES.filter((t) => t.category === category) }))
 
 export function PaletteItem({ template, pending, actions }: { template: DeviceTemplate; pending: boolean; actions?: ReactNode }) {
+  const nameRef = useRef<HTMLSpanElement>(null)
+  const tip = useTruncTip(nameRef)
   return (
     <li className={actions ? 'palette__row' : undefined}>
       <button
@@ -27,17 +30,24 @@ export function PaletteItem({ template, pending, actions }: { template: DeviceTe
         draggable
         data-testid={`palette-${template.id}`}
         className={`palette__item${pending ? ' is-pending' : ''}`}
-        title="Glisser sur le canvas, ou cliquer puis cliquer sur le canvas"
+        title={tip.cut ? undefined : 'Glisser sur le canvas, ou cliquer puis cliquer sur le canvas'}
+        onPointerEnter={tip.show}
+        onPointerLeave={tip.hide}
+        onPointerDown={tip.hide}
         onDragStart={(e) => {
+          tip.hide()
           e.dataTransfer.setData(TEMPLATE_MIME, template.id)
           e.dataTransfer.effectAllowed = 'copy'
         }}
         onClick={() => uiStore.getState().setPendingTemplate(pending ? null : template.id)}
       >
         <DeviceIcon icon={template.icon} size={18} />
-        <span className="palette__name">{template.name}</span>
+        <span ref={nameRef} className="palette__name">
+          {template.name}
+        </span>
         <span className="palette__code">{template.code}</span>
       </button>
+      <TruncTip at={tip.at} text={template.name} />
       {actions}
     </li>
   )

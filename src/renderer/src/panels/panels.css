@@ -7,6 +7,8 @@
 .palette__item.is-pending { background: var(--accent-bg); box-shadow: inset 3px 0 0 var(--accent); }
 .palette__name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .palette__code { flex: none; min-width: 30px; padding: 2px 3px; border: 1px solid var(--muted); color: var(--muted); font: 500 9px/1 var(--font-mono); text-align: center; }
+/* Nom coupé par la largeur du panneau : le nom complet, à droite du panneau (TruncTip). */
+.trunc-tip { position: fixed; z-index: 75; max-width: 420px; padding: 5px 9px; transform: translateY(-50%); border: 1px solid var(--line); border-radius: 4px; background: var(--surface); box-shadow: 0 6px 18px var(--tile-shadow); color: var(--ink); font-size: 13px; pointer-events: none; }
 
 .field { display: grid; gap: 4px; margin-bottom: 10px; }
 .field--inline { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; font-size: 13px; }

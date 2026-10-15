@@ -65,6 +65,29 @@ describe('Palette', () => {
     expect(uiStore.getState().pendingZone).toBe(false)
     expect(uiStore.getState().pendingTemplateId).toBe('dante-avio')
   })
+
+  it('un nom coupé montre le nom complet au survol, sans le title natif en doublon', async () => {
+    const user = userEvent.setup()
+    // jsdom ne mesure rien : seul le nom de la PTZ « déborde ».
+    const isCut = (el: HTMLElement): boolean => el.classList.contains('palette__name') && el.closest('[data-testid="palette-ptz-ndi"]') !== null
+    vi.spyOn(HTMLElement.prototype, 'scrollWidth', 'get').mockImplementation(function (this: HTMLElement) {
+      return isCut(this) ? 300 : 100
+    })
+    vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockReturnValue(100)
+    render(<Palette />)
+    const cut = screen.getByTestId('palette-ptz-ndi')
+    await user.hover(cut)
+    expect((await screen.findByRole('tooltip')).textContent).toBe('Caméra PTZ NDI')
+    expect(cut.hasAttribute('title')).toBe(false)
+    await user.unhover(cut)
+    expect(screen.queryByRole('tooltip')).toBeNull()
+
+    const whole = screen.getByTestId('palette-dante-avio')
+    await user.hover(whole)
+    await new Promise((r) => setTimeout(r, 400))
+    expect(screen.queryByRole('tooltip')).toBeNull()
+    expect(whole.getAttribute('title')).toMatch(/^Glisser sur le canvas/)
+  })
 })
 
 const balise = templateFromDraft({ ...blankDraft(), name: 'Balise Wi-Fi', code: 'BAL' }, 'custom-balise0001')
