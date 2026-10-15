@@ -270,6 +270,53 @@ describe('écriture automatique dans le fichier', () => {
   })
 })
 
+describe('suspend (boîte « Enregistrer sous » ouverte)', () => {
+  beforeEach(() => {
+    vi.useFakeTimers()
+  })
+
+  // Boîte retenue : elle se ferme quand on le décide.
+  function heldDialog() {
+    let close: (path: string | null) => void = () => undefined
+    const dialog = new Promise<string | null>((resolve) => (close = resolve))
+    return { dialog, close: (path: string | null) => close(path) }
+  }
+
+  it('rien n’est écrit pendant la boîte, ni à l’échéance du délai ni à la perte de focus', async () => {
+    const { store, deps, auto } = setup(null)
+    store.getState().updateMeta({ title: 'Salle B' })
+    const held = heldDialog()
+    const done = auto.suspend(() => held.dialog)
+    await vi.advanceTimersByTimeAsync(FILE_AUTOSAVE_DELAY_MS * 3)
+    await auto.flush()
+    expect(deps.createDefault).not.toHaveBeenCalled()
+    expect(deps.save).not.toHaveBeenCalled()
+    held.close('/x/choisi.avwan')
+    expect(await done).toBe('/x/choisi.avwan')
+  })
+
+  it('boîte annulée, projet encore modifié : le délai repart à la reprise', async () => {
+    const { store, deps, auto } = setup()
+    store.getState().updateMeta({ title: 'Salle B' })
+    const held = heldDialog()
+    const done = auto.suspend(() => held.dialog)
+    await vi.advanceTimersByTimeAsync(FILE_AUTOSAVE_DELAY_MS * 2)
+    held.close(null)
+    await done
+    expect(deps.save).not.toHaveBeenCalled()
+    await vi.advanceTimersByTimeAsync(FILE_AUTOSAVE_DELAY_MS)
+    expect(deps.save).toHaveBeenCalledTimes(1)
+    expect(isDirty(store.getState())).toBe(false)
+  })
+
+  it('projet enregistré par la boîte : rien n’est reprogrammé', async () => {
+    const { store, auto } = setup()
+    store.getState().updateMeta({ title: 'Salle B' })
+    await auto.suspend(async () => store.getState().markSaved('/x/choisi.avwan'))
+    expect(vi.getTimerCount()).toBe(0)
+  })
+})
+
 describe('flushSync (fermeture de la fenêtre)', () => {
   it('modifié avec un chemin : écriture synchrone, projet marqué enregistré, rend true', () => {
     const { store, deps, auto } = setup()

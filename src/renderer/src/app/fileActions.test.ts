@@ -5,6 +5,7 @@ import { sampleProject } from '../model/__fixtures__/sample'
 import { serializeProject } from '../model/file'
 import { loadFromText, newProjectAction, openProjectAction, openRecentAction, openRequestAction, restoreRecoveryAction, revertToOpenedAction, saveProjectAction, saveProjectAsAction } from './fileActions'
 import { autosave } from './autosave'
+import { FILE_AUTOSAVE_DELAY_MS, fileAutoSave } from './fileAutoSave'
 import { blankDraft, templateFromDraft } from '../model/customTemplate'
 import { uiStore } from '../store/uiStore'
 
@@ -458,5 +459,71 @@ describe('changer de document moins de 2 s après une modification (enregistreme
     expect(confirm).toHaveBeenCalledWith(QUESTION)
     expect(projectStore.getState().filePath).toBe('/tmp/a.avwan')
     expect(projectStore.getState().history.present.meta.title).toBe('Pas écrit')
+  })
+})
+
+describe('« Enregistrer sous » pendant l’enregistrement automatique', () => {
+  beforeEach(() => {
+    vi.useFakeTimers()
+    uiStore.getState().setAutoSave(true)
+  })
+
+  // Boîte « Enregistrer sous » retenue : elle se ferme quand on le décide.
+  function heldSaveAs() {
+    let close: (path: string | null) => void = () => undefined
+    const saveAs = vi.fn((_text: string, _name: string) => new Promise<string | null>((resolve) => (close = resolve)))
+    return { saveAs, close: (path: string | null) => close(path) }
+  }
+
+  it('projet sans titre modifié : aucun fichier n’est créé dans Documents › AV·WAN pendant la boîte', async () => {
+    const held = heldSaveAs()
+    const api = fakeApi({ saveAs: held.saveAs })
+    vi.stubGlobal('window', { avwan: api, confirm: () => true })
+    projectStore.getState().loadProject(sampleProject(), null)
+    projectStore.getState().updateMeta({ title: 'Salle B' })
+    const done = saveProjectAsAction() // ⇧⌘S moins de 2 s après la modification
+    await vi.advanceTimersByTimeAsync(FILE_AUTOSAVE_DELAY_MS * 3) // le délai échoit, boîte ouverte
+    await fileAutoSave.flush() // la boîte fait perdre le focus à la fenêtre
+    expect(api.file.createDefault).not.toHaveBeenCalled()
+    held.close('/x/Salle B.avwan')
+    await done
+    await vi.advanceTimersByTimeAsync(FILE_AUTOSAVE_DELAY_MS * 3)
+    expect(api.file.createDefault).not.toHaveBeenCalled()
+    expect(projectStore.getState().filePath).toBe('/x/Salle B.avwan')
+    expect(isDirty(projectStore.getState())).toBe(false)
+    expect(api.file.discardAutoCreated).not.toHaveBeenCalled()
+  })
+
+  it('fichier créé automatiquement pendant la boîte : il est relu après la boîte, puis déplacé', async () => {
+    const held = heldSaveAs()
+    let created: (path: string) => void = () => undefined
+    const createDefault = vi.fn((_title: string, _text: string) => new Promise<string>((resolve) => (created = resolve)))
+    const api = fakeApi({ saveAs: held.saveAs, createDefault })
+    vi.stubGlobal('window', { avwan: api, confirm: () => true })
+    projectStore.getState().loadProject(sampleProject(), null)
+    projectStore.getState().updateMeta({ title: 'Salle B' })
+    await vi.advanceTimersByTimeAsync(FILE_AUTOSAVE_DELAY_MS) // l'écriture automatique part…
+    expect(createDefault).toHaveBeenCalledTimes(1)
+    const done = saveProjectAsAction() // … et ⇧⌘S arrive avant qu'elle finisse
+    created('/docs/Salle B.avwan')
+    await vi.advanceTimersByTimeAsync(0)
+    held.close('/x/Régie.avwan')
+    await done
+    expect(projectStore.getState().filePath).toBe('/x/Régie.avwan')
+    expect(api.file.discardAutoCreated).toHaveBeenCalledWith('/docs/Salle B.avwan', '/x/Régie.avwan')
+  })
+
+  it('autre document ouvert pendant la boîte : il n’est pas touché', async () => {
+    const held = heldSaveAs()
+    const api = fakeApi({ saveAs: held.saveAs })
+    vi.stubGlobal('window', { avwan: api, confirm: () => true })
+    projectStore.getState().updateMeta({ title: 'Salle B' })
+    const done = saveProjectAsAction()
+    projectStore.getState().loadProject(sampleProject(), '/x/autre.avwan', { restored: true })
+    held.close('/x/Régie.avwan')
+    await done
+    expect(projectStore.getState().filePath).toBe('/x/autre.avwan')
+    expect(isDirty(projectStore.getState())).toBe(true)
+    expect(api.file.discardAutoCreated).not.toHaveBeenCalled()
   })
 })

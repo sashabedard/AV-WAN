@@ -23,6 +23,7 @@ export interface FileAutoSaveDeps {
 export interface FileAutoSave {
   flush(): Promise<void>
   flushSync(): boolean
+  suspend<T>(fn: () => Promise<T>): Promise<T>
   stop(): void
 }
 
@@ -41,12 +42,17 @@ export function createFileAutoSave(store: StoreApi<ProjectState>, deps: FileAuto
   let again = false
   // Un seul message par série d'échecs : remis à zéro par une réussite ou un autre document.
   let failing = false
+  // Boîte « Enregistrer sous » ouverte : aucune écriture automatique (elle créerait un fichier en trop).
+  let suspended = 0
 
   const cancel = (): void => {
     if (timer !== null) clearTimeout(timer)
     timer = null
   }
   const writable = (s: ProjectState): boolean => deps.enabled() && !s.readOnly && isDirty(s)
+  const schedule = (): void => {
+    if (timer === null && suspended === 0 && writable(store.getState())) timer = setTimeout(() => void flush(), FILE_AUTOSAVE_DELAY_MS)
+  }
 
   // Seul un nouveau contenu relance le délai (pas un message ni une sélection). Ouvrir ou créer un
   // document n'écrit rien par soi-même.
@@ -62,7 +68,7 @@ export function createFileAutoSave(store: StoreApi<ProjectState>, deps: FileAuto
     if (s.history.present === seen) return
     seen = s.history.present
     cancel()
-    if (writable(s)) timer = setTimeout(() => void flush(), FILE_AUTOSAVE_DELAY_MS)
+    schedule()
   })
 
   // Ne rejette jamais : un échec devient un message.
@@ -94,6 +100,8 @@ export function createFileAutoSave(store: StoreApi<ProjectState>, deps: FileAuto
 
   const flush = (): Promise<void> => {
     cancel()
+    // Pendant la boîte, la demande (délai, perte de focus) est reprise à sa fermeture.
+    if (suspended > 0) return Promise.resolve()
     if (running) {
       again = true
       return running
@@ -130,6 +138,18 @@ export function createFileAutoSave(store: StoreApi<ProjectState>, deps: FileAuto
       store.getState().markSaved(s.filePath, present)
       deps.onSaved()
       return true
+    },
+    // « Enregistrer sous » : l'écriture automatique attend la fin de fn ; si le projet est alors encore
+    // modifié, le délai repart.
+    suspend: async (fn) => {
+      suspended++
+      cancel()
+      try {
+        return await fn()
+      } finally {
+        suspended--
+        schedule()
+      }
     },
     stop: () => {
       unsubscribe()
