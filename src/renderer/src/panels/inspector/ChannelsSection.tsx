@@ -12,7 +12,6 @@ const SUGGESTIONS = [
   'Strobe', 'Shutter', 'Pan', 'Pan fine', 'Tilt', 'Tilt fine', 'Pan/Tilt speed', 'Gobo', 'Gobo rotation', 'Prism', 'Focus', 'Zoom',
   'Iris', 'Frost', 'Control', 'Macro', 'Mode', 'Function'
 ]
-const LIST_ID = 'dmx-param-suggestions'
 
 // Projet d'abord (⌘Z), puis les réglages (tous les projets). En lecture seule, rien n'est écrit nulle part (false).
 function writeList(key: ChannelKey, params: readonly string[]): boolean {
@@ -64,11 +63,6 @@ export function ChannelsSection({ device, project }: { device: Device; project: 
   return (
     <details className="field chan">
       <summary className="chan__sum">{tail ? `Canaux · ${footprint} — ${tail}` : `Canaux · ${footprint}`}</summary>
-      <datalist id={LIST_ID}>
-        {SUGGESTIONS.map((s) => (
-          <option key={s} value={s} />
-        ))}
-      </datalist>
       <ol className="chan__list">
         {Array.from({ length: footprint }, (_, i) => (
           <li key={i} className="chan__row">
@@ -79,7 +73,7 @@ export function ChannelsSection({ device, project }: { device: Device; project: 
               }}
               className="input"
               aria-label={`Canal ${i + 1}`}
-              list={LIST_ID}
+              suggestions={SUGGESTIONS}
               maxLength={60}
               value={params[i] ?? ''}
               onCommit={commit(i)}
