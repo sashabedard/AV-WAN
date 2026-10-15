@@ -12,7 +12,9 @@ test('canaux DMX : nommés dans l’inspecteur, retenus dans les réglages, impr
   const { app, page } = await launchApp({ keepWelcome: true, userData, env: { AVWAN_E2E_EXPORT_DIR: dir } })
   try {
     await page.getByRole('dialog', { name: 'Accueil' }).getByRole('button', { name: /Projet exemple/ }).click()
-    const fixId = await page.evaluate(() => window.__avwan!.getProject().devices.find((d) => d.name === 'FIX-1')!.id)
+    const fix = await page.evaluate(() => window.__avwan!.getProject().devices.find((d) => d.name === 'FIX-1')!)
+    expect(fix.dmx).toMatchObject({ address: 1, footprint: 16 }) // les adresses attendues dans le PDF en dépendent
+    const fixId = fix.id
     await page.evaluate((id) => window.__avwan!.select({ deviceIds: [id], linkIds: [] }), fixId)
     await page.getByText(/^Canaux · 16/).click()
     await page.getByLabel('Canal 1', { exact: true }).fill('Red')
@@ -26,9 +28,9 @@ test('canaux DMX : nommés dans l’inspecteur, retenus dans les réglages, impr
     const { pages } = await readPdf(path!)
     const text = pages.map((p) => p.text).join(' ')
     expect(text).toContain('Canaux DMX')
-    expect(text).toContain('FIX-1 ·')
-    expect(text).toContain('Red')
-    expect(text).toContain('Green')
+    expect(text).toMatch(/FIX-1 · U[0-9?]+ · 1–16/)
+    // Adr. | Ch | Paramètre : adresse réelle = adresse + canal − 1.
+    expect(text).toMatch(/\b1 1 Red 2 2 Green 3 3 /)
   } finally {
     await app.close()
   }
