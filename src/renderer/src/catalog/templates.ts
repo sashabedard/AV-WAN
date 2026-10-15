@@ -4,7 +4,6 @@ import { stripWithType } from '../model/led'
 import { dmxThru, patchPanelPorts, range, rj45, sfp, sfpPlus, simple, wifi } from './ports'
 import { DEFAULT_SWITCH_SPEC } from './switch'
 
-
 export const TEMPLATES: readonly DeviceTemplate[] = [
   // Réseau
   { id: 'switch', category: 'reseau', name: 'Switch', code: 'SW', icon: ic('switch'), ports: [], switch: DEFAULT_SWITCH_SPEC, defaults: { vlanId: 10 } },
