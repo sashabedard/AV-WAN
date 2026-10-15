@@ -24,3 +24,11 @@ export interface PortRef {
   deviceId: string
   portId: string
 }
+
+export type DmxPatch = z.infer<typeof S.DmxPatchSchema>
+export type DmxMode = z.infer<typeof S.DmxModeSchema>
+export type TemplateDmx = z.infer<typeof S.TemplateDmxSchema>
+export type Psu = z.infer<typeof S.PsuSchema>
+export type LedStripType = z.infer<typeof S.LedStripTypeSchema>
+export type LedStrip = z.infer<typeof S.LedStripSchema>
+export type MainsVoltage = 120 | 230

@@ -4,7 +4,7 @@ import type { Family } from '../model/rules'
 
 export const MEDIUM_LABELS: Record<Medium, string> = {
   cat5e: 'Cat5e', cat6: 'Cat6', cat6a: 'Cat6A', om3: 'Fibre OM3', om4: 'Fibre OM4', os2: 'Fibre OS2', dac: 'DAC',
-  wifi: 'Wi-Fi', usb: 'USB', dmx: 'DMX', pixel: 'Pixels', hdmi: 'HDMI', sdi: 'SDI', serial: 'Série'
+  wifi: 'Wi-Fi', usb: 'USB', dmx: 'DMX', pixel: 'Pixels', hdmi: 'HDMI', sdi: 'SDI', serial: 'Série', dc: 'Alim DC'
 }
 
 const MEDIA_BY_FAMILY: Record<Family, Medium[]> = {
@@ -16,7 +16,8 @@ const MEDIA_BY_FAMILY: Record<Family, Medium[]> = {
   pixel: ['pixel'],
   hdmi: ['hdmi'],
   sdi: ['sdi'],
-  serial: ['serial']
+  serial: ['serial'],
+  dc: ['dc']
 }
 
 export function mediaForFamily(family: Family): Medium[] {
@@ -33,7 +34,8 @@ export const CONNECTOR_LABELS: Record<Connector, string> = {
   pixel: 'Pixels',
   hdmi: 'HDMI',
   sdi: 'SDI',
-  serial: 'Série'
+  serial: 'Série',
+  dc: 'Alim DC'
 }
 
 export const POE_CHOICE_LABELS: Record<PoeChoice, string> = {

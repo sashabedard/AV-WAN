@@ -37,7 +37,7 @@ export const TEMPLATES: readonly DeviceTemplate[] = [
   { id: 'lighting-console', category: 'eclairage', name: "Console d'éclairage", code: 'LX', icon: ic('lighting-console'), ports: [rj45('ETH1'), rj45('ETH2'), simple('dmx', 'DMX-A', 'DMX A'), simple('dmx', 'DMX-B', 'DMX B')], defaults: { vlanId: 50 } },
   { id: 'dmx-node', category: 'eclairage', name: 'Nœud DMX (type ODE)', code: 'DMX', icon: ic('dmx-node'), ports: [rj45('ETH', { speedMbps: 100, poeIn: 'af', poeDrawW: 3 }), simple('dmx', 'DMX-1', 'DMX 1'), simple('dmx', 'DMX-2', 'DMX 2')], defaults: { vlanId: 50 } },
   { id: 'pixel-controller', category: 'eclairage', name: 'Contrôleur de pixels (type PixLite A4-S)', code: 'PIX', icon: ic('pixel-controller'), ports: [rj45('ETH1'), rj45('ETH2'), ...range('OUT', 1, 4).map((id) => simple('pixel', id)), simple('dmx', 'DMX')], defaults: { vlanId: 50 } },
-  { id: 'dmx-fixture', category: 'eclairage', name: 'Appareil DMX', code: 'FIX', icon: ic('fixture'), ports: [simple('dmx', 'DMX-IN', 'DMX IN'), simple('dmx', 'DMX-OUT', 'DMX OUT')] },
+  { id: 'dmx-fixture', category: 'eclairage', name: 'Appareil DMX', code: 'FIX', icon: ic('fixture'), ports: [simple('dmx', 'DMX-IN', 'DMX IN'), simple('dmx', 'DMX-OUT', 'DMX OUT')], dmx: { footprint: 1 } },
   { id: 'led-strip', category: 'eclairage', name: 'Bande LED', code: 'LED', icon: ic('led-strip'), ports: [simple('pixel', 'IN')] },
   // IoT
   { id: 'esp32-devkit', category: 'iot', name: 'ESP32 DevKit (Wi-Fi)', code: 'IOT', icon: ic('esp32'), ports: [wifi(), simple('usb', 'USB')], defaults: { vlanId: 60 } },

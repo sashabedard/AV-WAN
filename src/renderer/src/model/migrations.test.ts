@@ -15,3 +15,28 @@ describe('migrate', () => {
     expect(() => migrate({ schemaVersion: 0 })).toThrow('Aucune migration depuis la version 0')
   })
 })
+
+describe('migration 1 → 2', () => {
+  it('l’« Appareil DMX » devient patchable (1 canal), le reste ne change pas', () => {
+    const doc = {
+      schemaVersion: 1,
+      devices: [
+        { id: 'f', templateId: 'dmx-fixture' },
+        { id: 'g', templateId: 'generic' },
+        { id: 'h', templateId: 'dmx-fixture', dmx: { footprint: 16 } }
+      ]
+    }
+    expect(migrate(doc)).toEqual({
+      schemaVersion: 2,
+      devices: [
+        { id: 'f', templateId: 'dmx-fixture', dmx: { footprint: 1 } },
+        { id: 'g', templateId: 'generic' },
+        { id: 'h', templateId: 'dmx-fixture', dmx: { footprint: 16 } }
+      ]
+    })
+  })
+
+  it('un document sans liste d’appareils passe quand même', () => {
+    expect(migrate({ schemaVersion: 1 })).toEqual({ schemaVersion: 2 })
+  })
+})

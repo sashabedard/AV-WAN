@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { sampleProject } from './__fixtures__/sample'
-import { isRackDevice, canConnectPorts, canReconnect, defaultMedium, isPortFree, nextCableId, nextDeviceName, pickPort } from './rules'
+import { FAMILY_LABELS, connectorFamily, isRackDevice, canConnectPorts, canReconnect, defaultMedium, isPortFree, nextCableId, nextDeviceName, pickPort } from './rules'
 import { createDevice, createProject } from './project'
 import type { Project } from './types'
 
@@ -89,4 +89,10 @@ describe('isRackDevice', () => {
     expect(isRackDevice(createDevice(p, 'patch-panel-24', { x: 0, y: 0 }))).toBe(true)
     expect(isRackDevice(createDevice(p, 'ptz-ndi', { x: 0, y: 0 }))).toBe(false)
   })
+})
+
+it('range la prise « Alim DC » dans sa propre famille', () => {
+  expect(connectorFamily('dc')).toBe('dc')
+  expect(defaultMedium('dc')).toBe('dc')
+  expect(FAMILY_LABELS.dc).toBe('alim DC')
 })

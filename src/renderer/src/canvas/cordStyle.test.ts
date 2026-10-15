@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { MEDIUM_KIND_ORDER, NEUTRAL, TRUNK, TYPE_COLORS, cordStyle } from './cordStyle'
+import { MEDIUM_KIND_ORDER, NEUTRAL, TRUNK, TYPE_COLORS, cordStyle, mediumKind } from './cordStyle'
 import { contrastRatio, PAPER } from '../theme/contrast'
 import { sampleProject } from '../model/__fixtures__/sample'
 import { VLAN_PRESETS } from '../catalog/vlanPresets'
@@ -59,4 +59,13 @@ describe('cordStyle', () => {
       }
     }
   })
+})
+
+it('dessine un câble « Alim DC » comme un lien simple, pastille DC', () => {
+  const p = sampleProject()
+  const link = { ...p.links[0]!, medium: 'dc' as const }
+  const s = cordStyle(p, link, 'dark')
+  expect(s.badge).toBe('DC')
+  expect(s.plugs).toBe(false)
+  expect(mediumKind('dc')).toBe('simple')
 })

@@ -1,7 +1,7 @@
 import type { Connector, Device, Link, Medium, PortDef, PortRef, Project } from './types'
 import { PATCH_PANEL_TEMPLATE_IDS, RACK_TEMPLATE_IDS } from '../catalog/templates'
 
-export type Family = 'ethernet' | 'optical' | 'wifi' | 'usb' | 'dmx' | 'pixel' | 'hdmi' | 'sdi' | 'serial'
+export type Family = 'ethernet' | 'optical' | 'wifi' | 'usb' | 'dmx' | 'pixel' | 'hdmi' | 'sdi' | 'serial' | 'dc'
 
 export const FAMILY_LABELS: Record<Family, string> = {
   ethernet: 'RJ45',
@@ -12,7 +12,8 @@ export const FAMILY_LABELS: Record<Family, string> = {
   pixel: 'pixels',
   hdmi: 'HDMI',
   sdi: 'SDI',
-  serial: 'série'
+  serial: 'série',
+  dc: 'alim DC'
 }
 
 export function connectorFamily(c: Connector): Family {
