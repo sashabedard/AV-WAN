@@ -145,3 +145,26 @@ it('montre les univers occupés par une bande pixel branchée sur un contrôleur
   render(<Inspector />)
   expect(screen.getByText('Univers 10–12 · via PIX-1 › OUT1')).toBeTruthy()
 })
+
+it('signale discrètement un appareil patché dans un univers de la bande, comme le bloc Patch DMX', () => {
+  let p = projectStore.getState().history.present
+  const pix = { ...createDevice(p, 'pixel-controller', { x: 0, y: 0 }, { id: 'pix' }), name: 'PIX-1', portState: { OUT1: { universe: 10 } } }
+  p = {
+    ...p,
+    devices: [
+      ...p.devices.map((d) =>
+        d.id === 'led1' ? { ...d, ledStrip: { type: 'sk6812-rgbw' as const, volts: 24, wPerM: 14.4, lengthM: 5, pxPerM: 60 } } : d.id === 'fix' ? { ...d, name: 'FIX-1', dmx: { footprint: 16, address: 500, universe: 11 } } : d
+      ),
+      pix
+    ],
+    links: [...p.links, { id: 'lp', cableId: 'C-009', a: { deviceId: 'pix', portId: 'OUT1' }, b: { deviceId: 'led1', portId: 'IN' }, medium: 'pixel' }]
+  }
+  projectStore.getState().loadProject(p, null)
+  select('led1')
+  render(<Inspector />)
+  expect(screen.getByText('Chevauche FIX-1 (500–515)').className).toBe('insp__warn')
+  cleanup()
+  select('led2')
+  render(<Inspector />)
+  expect(document.querySelector('.insp__warn')).toBeNull()
+})

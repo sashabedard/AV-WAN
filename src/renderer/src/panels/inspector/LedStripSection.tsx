@@ -2,7 +2,7 @@
 import type { Device, LedStrip, LedStripType, Project } from '../../model/types'
 import { LedStripTypeSchema } from '../../model/schema'
 import { LED_STRIP_TYPES, LED_VOLTAGES, stripPixels, stripPower, stripWithType } from '../../model/led'
-import { patchIndex, sourceLabel } from '../../model/dmx'
+import { issueTexts, overlapsIn, patchIndex, sourceLabel } from '../../model/dmx'
 import { formatFr, parseDecimalField, parseIntField } from '../../model/fields'
 import { projectStore } from '../../store/projectStore'
 import { CommitInput } from '../CommitInput'
@@ -113,7 +113,18 @@ export function LedStripSection({ device, project }: { device: Device; project: 
             if (!sp || sp.spans.length === 0) return null
             const first = sp.spans[0]!.universe
             const last = sp.spans.at(-1)!.universe
-            return <p className="insp__note">{`Univers ${first === last ? first : `${first}–${last}`} · via ${sourceLabel(project, { kind: 'port', ref: sp.source })}`}</p>
+            // Appareils patchés dans un univers de la bande : même repère que le bloc Patch DMX.
+            const warnings = [...new Set(sp.spans.flatMap((span) => issueTexts({ overlaps: overlapsIn(index, span.universe, 1, span.channels, device.id), overflow: false })))]
+            return (
+              <>
+                <p className="insp__note">{`Univers ${first === last ? first : `${first}–${last}`} · via ${sourceLabel(project, { kind: 'port', ref: sp.source })}`}</p>
+                {warnings.map((w) => (
+                  <p key={w} className="insp__warn">
+                    {w}
+                  </p>
+                ))}
+              </>
+            )
           })()}
         </>
       )}
