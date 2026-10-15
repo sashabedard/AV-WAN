@@ -9,11 +9,22 @@ import { DeviceTemplateSchema } from '../model/schema'
 describe('TEMPLATES', () => {
   it('a des identifiants uniques, des gabarits valides et des icônes connues', () => {
     expect(new Set(TEMPLATES.map((t) => t.id)).size).toBe(TEMPLATES.length)
-    expect(TEMPLATES.length).toBe(41)
+    expect(TEMPLATES.length).toBe(50)
     for (const t of TEMPLATES) {
       expect(DeviceTemplateSchema.safeParse(t).success, t.id).toBe(true)
       expect(t.icon.kind === 'builtin' && (BUILTIN_ICON_NAMES as readonly string[]).includes(t.icon.name), t.id).toBe(true)
       expect(CATEGORY_ORDER).toContain(t.category)
+    }
+  })
+
+  it('donne des génériques d’éclairage patchables, entrée et recopie DMX', () => {
+    const ids = ['moving-spot', 'moving-wash', 'moving-beam', 'par-led', 'led-batten', 'profile-led', 'strobe', 'hazer', 'fog-machine']
+    for (const id of ids) {
+      const t = TEMPLATES.find((x) => x.id === id)!
+      expect(t.category, id).toBe('eclairage')
+      expect(t.dmx?.footprint, id).toBeGreaterThan(0)
+      expect(t.ports.map((p) => p.id), id).toEqual(['DMX-IN', 'DMX-OUT'])
+      expect(t.powerW, id).toBeUndefined() // un générique n’invente pas de watts
     }
   })
 

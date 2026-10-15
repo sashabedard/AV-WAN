@@ -36,4 +36,10 @@ describe('searchTemplates', () => {
     expect(searchTemplates('alim 24v')[0]?.id).toBe('psu')
     expect(searchTemplates('fcob').map((t) => t.id)).toContain('led-strip')
   })
+
+  it('trouve les génériques d’éclairage comme on en parle en régie', () => {
+    expect(searchTemplates('lyre spot')[0]?.id).toBe('moving-spot')
+    expect(searchTemplates('haze')[0]?.id).toBe('hazer')
+    expect(searchTemplates('strobe')[0]?.id).toBe('strobe')
+  })
 })

@@ -31,3 +31,8 @@ export function patchPanelPorts(count: number): PortDef[] {
   for (let i = 1; i <= count; i++) out.push({ id: `R${i}`, label: `R${i}`, connector: 'rj45', speedMbps: 1000, row: 'bottom' })
   return out
 }
+
+// Entrée DMX et recopie d’un projecteur (chaîne DMX).
+export function dmxThru(): PortDef[] {
+  return [simple('dmx', 'DMX-IN', 'DMX IN'), simple('dmx', 'DMX-OUT', 'DMX OUT')]
+}
