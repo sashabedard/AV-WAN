@@ -29,7 +29,8 @@ export interface PowerRow {
   remark: string
 }
 export interface PowerZone {
-  zone: string
+  zone: string // nom affiché
+  zoneId?: string // absent : hors zone
   rows: PowerRow[]
   subtotalW: number
 }
@@ -62,7 +63,8 @@ function psuRemark(project: Project, psu: Device): string {
 }
 
 export function powerBudget(project: Project): PowerBudget {
-  const byZone = new Map<string, PowerRow[]>()
+  // Par id de zone (undefined : hors zone) : deux zones homonymes, ou une zone nommée « Hors zone », ne fusionnent pas.
+  const byZone = new Map<string | undefined, PowerRow[]>()
   const missing: string[] = []
   for (const d of [...project.devices].sort((a, b) => compareText(a.name, b.name))) {
     const watts = devicePowerW(d)
@@ -85,15 +87,15 @@ export function powerBudget(project: Project): PowerBudget {
       ...(mainsW !== undefined ? { mainsW } : {}),
       remark
     }
-    const zone = project.zones.find((z) => z.id === d.zoneId)?.name ?? HORS_ZONE
-    byZone.set(zone, [...(byZone.get(zone) ?? []), row])
+    const zoneId = project.zones.find((z) => z.id === d.zoneId)?.id
+    byZone.set(zoneId, [...(byZone.get(zoneId) ?? []), row])
   }
-  const order = [...project.zones.map((z) => z.name), HORS_ZONE]
+  const order: Array<{ id?: string; name: string }> = [...project.zones, { name: HORS_ZONE }]
   const zones: PowerZone[] = order
-    .filter((name, i) => byZone.has(name) && order.indexOf(name) === i)
-    .map((zone) => {
-      const rows = byZone.get(zone)!
-      return { zone, rows, subtotalW: round1(rows.reduce((sum, r) => sum + (r.mainsW ?? 0), 0)) }
+    .filter(({ id }, i) => byZone.has(id) && order.findIndex((z) => z.id === id) === i)
+    .map(({ id, name }) => {
+      const rows = byZone.get(id)!
+      return { zone: name, ...(id !== undefined ? { zoneId: id } : {}), rows, subtotalW: round1(rows.reduce((sum, r) => sum + (r.mainsW ?? 0), 0)) }
     })
   const totalW = round1(zones.reduce((sum, z) => sum + z.subtotalW, 0))
   const voltage = mainsVoltage(project)

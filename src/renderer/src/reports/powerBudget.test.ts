@@ -90,6 +90,23 @@ describe('powerBudget', () => {
     expect(b.psus[0]).toMatchObject({ name: 'PSU-1', loadW: 360, ratio: 1.2, fed: ['PIX-1', 'LED-1', 'LED-2'], remark: 'Surcharge' })
   })
 
+  it('regroupe par zone (son id), pas par nom : zones homonymes et zone nommée « Hors zone » restent séparées', () => {
+    const p = show()
+    const zone = (id: string, name: string) => ({ id, name, color: '#888888', rect: { x: 40, y: 0, w: 10, h: 10 }, ownPdfPage: false })
+    const q: Project = {
+      ...p,
+      zones: [...p.zones, zone('z3', 'Scène'), zone('z4', 'Hors zone')],
+      devices: [...p.devices.map((d) => (d.id === 'mh' ? { ...d, zoneId: 'z3' } : d.id === 'cam' ? { ...d, zoneId: 'z4' } : d)), raw('x', 'X-1', { powerW: 50 })]
+    }
+    expect(powerBudget(q).zones.map((z) => [z.zone, z.zoneId, z.subtotalW])).toEqual([
+      ['Scène', 'z1', 360],
+      ['Scène', 'z3', 470],
+      ['Hors zone', 'z4', 0],
+      ['Hors zone', undefined, 50]
+    ])
+    expect(powerBudget(q).totalW).toBe(880)
+  })
+
   it('projet vide : zéro partout, jamais NaN', () => {
     const b = powerBudget(createProject())
     expect([b.totalW, b.amps, b.zones.length, b.psus.length, b.missing.length]).toEqual([0, 0, 0, 0, 0])

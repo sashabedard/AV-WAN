@@ -163,11 +163,11 @@ export function PowerPage({ project }: { project: Project }) {
         </div>
       )}
       {b.zones.map((z) => (
-        <div key={z.zone} className="pt">
+        <div key={z.zoneId ?? 'hors-zone'} className="pt">
           <h3 className="pt__h">{z.zone}</h3>
           <ReportTable
             table={{
-              id: `puissance-${z.zone}`,
+              id: `puissance-${z.zoneId ?? 'hors-zone'}`,
               title: z.zone,
               columns: POWER_PDF_COLUMNS,
               rows: [...z.rows.map((r) => [r.device, r.type, r.watts ?? null, r.fedBy, r.mainsW ?? null, r.remark]), ['Sous-total', '', null, '', z.subtotalW, '']]
