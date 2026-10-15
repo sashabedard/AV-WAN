@@ -4,6 +4,7 @@ import { DeviceTemplateSchema } from '../../model/schema'
 import { SENSOR_MODELS } from './capteurs'
 import { LIGHTING_MODELS } from './eclairage'
 import { VIDEO_MODELS } from './video'
+import { AUDIO_MODELS } from './audio'
 import { createDevice, createProject } from '../../model/project'
 import { isUniverseOutput } from '../../model/dmx'
 
@@ -11,7 +12,9 @@ import { isUniverseOutput } from '../../model/dmx'
 const FAMILIES: ReadonlyArray<[string, Category, readonly DeviceTemplate[]]> = [
   ['capteurs', 'capteur', SENSOR_MODELS],
   ['éclairage', 'eclairage', LIGHTING_MODELS],
-  ['vidéo', 'video', VIDEO_MODELS]
+  ['vidéo', 'video', VIDEO_MODELS],
+  ['audio', 'audio', AUDIO_MODELS.filter((t) => t.category === 'audio')],
+  ['contrôleurs', 'ordinateur', AUDIO_MODELS.filter((t) => t.category === 'ordinateur')]
 ]
 
 describe.each(FAMILIES)('modèles %s', (_name, category, models) => {

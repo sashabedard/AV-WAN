@@ -60,4 +60,9 @@ describe('searchTemplates', () => {
     expect(ids('tessera')).toEqual(expect.arrayContaining(['brompton-tessera-sx40', 'brompton-tessera-xd-10g']))
     expect(searchTemplates('atem')[0]?.id).toBe('bmd-atem-mini-pro')
   })
+
+  it('trouve l’audio et les contrôleurs nommés', () => {
+    expect(searchTemplates('rio1608')[0]?.id).toBe('yamaha-rio1608-d2')
+    expect(searchTemplates('stream deck')[0]?.id).toBe('elgato-stream-deck-mk2')
+  })
 })
