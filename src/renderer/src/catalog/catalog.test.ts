@@ -9,7 +9,7 @@ import { DeviceTemplateSchema } from '../model/schema'
 describe('TEMPLATES', () => {
   it('a des identifiants uniques, des gabarits valides et des icônes connues', () => {
     expect(new Set(TEMPLATES.map((t) => t.id)).size).toBe(TEMPLATES.length)
-    expect(TEMPLATES.length).toBe(78)
+    expect(TEMPLATES.length).toBe(88)
     for (const t of TEMPLATES) {
       expect(DeviceTemplateSchema.safeParse(t).success, t.id).toBe(true)
       expect(t.icon.kind === 'builtin' && (BUILTIN_ICON_NAMES as readonly string[]).includes(t.icon.name), t.id).toBe(true)

@@ -55,4 +55,9 @@ describe('searchTemplates', () => {
     expect(searchTemplates('megapointe')[0]?.id).toBe('robe-megapointe')
     expect(searchTemplates('pixlite t8')[0]?.id).toBe('advatek-pixlite-t8s-mk3')
   })
+
+  it('trouve la vidéo nommée', () => {
+    expect(ids('tessera')).toEqual(expect.arrayContaining(['brompton-tessera-sx40', 'brompton-tessera-xd-10g']))
+    expect(searchTemplates('atem')[0]?.id).toBe('bmd-atem-mini-pro')
+  })
 })

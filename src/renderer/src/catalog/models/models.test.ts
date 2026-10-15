@@ -3,11 +3,15 @@ import type { Category, DeviceTemplate } from '../../model/types'
 import { DeviceTemplateSchema } from '../../model/schema'
 import { SENSOR_MODELS } from './capteurs'
 import { LIGHTING_MODELS } from './eclairage'
+import { VIDEO_MODELS } from './video'
+import { createDevice, createProject } from '../../model/project'
+import { isUniverseOutput } from '../../model/dmx'
 
 // Une ligne par famille ; les tâches suivantes ajoutent la leur.
 const FAMILIES: ReadonlyArray<[string, Category, readonly DeviceTemplate[]]> = [
   ['capteurs', 'capteur', SENSOR_MODELS],
-  ['éclairage', 'eclairage', LIGHTING_MODELS]
+  ['éclairage', 'eclairage', LIGHTING_MODELS],
+  ['vidéo', 'video', VIDEO_MODELS]
 ]
 
 describe.each(FAMILIES)('modèles %s', (_name, category, models) => {
@@ -51,5 +55,15 @@ describe('éclairage nommé', () => {
       expect(byId.get(id)?.dmx, id).toBeUndefined()
       expect(byId.get(id)!.ports.some((p) => p.connector === 'dmx' || p.connector === 'pixel'), id).toBe(true)
     }
+  })
+})
+
+describe('vidéo nommée', () => {
+  it('les sorties d’un processeur LED ne sont pas des sorties d’univers', () => {
+    const p = { ...createProject(), devices: [] }
+    const t = VIDEO_MODELS.find((x) => x.id === 'novastar-mctrl4k')!
+    const d = createDevice({ ...p, templates: [] }, t.id, { x: 0, y: 0 })
+    expect(d.ports.filter((x) => x.connector === 'pixel').length).toBeGreaterThan(0)
+    expect(d.ports.some((x) => isUniverseOutput(p, d, x))).toBe(false)
   })
 })
