@@ -54,6 +54,20 @@ describe('toFlowNodes', () => {
     const nodes = toFlowNodes(p, analyzeLinks(p, 'dark'), createFlowCache())
     expect(nodes[1]!.data.side).toBe('top')
   })
+
+  it('met l’adresse DMX sur la 2ᵉ ligne et refait la tuile quand l’univers du nœud change', () => {
+    let p = createProject()
+    const ode = { ...createDevice(p, 'dmx-node', { x: 0, y: 0 }, { id: 'ode' }), portState: { 'DMX-1': { universe: 1 } } }
+    const f = { ...createDevice(p, 'dmx-fixture', { x: 0, y: 200 }, { id: 'f' }), dmx: { footprint: 16, address: 33 } }
+    p = { ...p, devices: [ode, f], links: [{ id: 'l', cableId: 'C-001', a: { deviceId: 'ode', portId: 'DMX-1' }, b: { deviceId: 'f', portId: 'DMX-IN' }, medium: 'dmx' }] }
+    const cache = createFlowCache()
+    const first = toFlowNodes(p, analyzeLinks(p, 'dark'), cache).find((n) => n.id === 'f')!
+    expect(first.data.line2).toBe('U1 · 33')
+    const q = { ...p, devices: [{ ...ode, portState: { 'DMX-1': { universe: 4 } } }, f] }
+    const second = toFlowNodes(q, analyzeLinks(q, 'dark'), cache).find((n) => n.id === 'f')!
+    expect(second.data.line2).toBe('U4 · 33')
+    expect(second).not.toBe(first)
+  })
 })
 
 describe('toFlowEdges', () => {

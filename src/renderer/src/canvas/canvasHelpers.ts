@@ -1,6 +1,7 @@
 import type { Node } from '@xyflow/react'
 import type { CordFlowEdge } from './toFlow'
-import type { IpConfig } from '../model/types'
+import type { Device, IpConfig } from '../model/types'
+import { patchLine, type PatchEntry } from '../model/dmx'
 
 export const GRID = 8
 
@@ -9,6 +10,12 @@ export function deviceIpLine(ip: IpConfig | undefined): string {
   if (!ip) return 'IP non définie'
   if (ip.address) return `${ip.address} · ${ip.mode === 'static' ? 'FIXE' : 'DHCP'}`
   return ip.mode === 'dhcp' ? 'DHCP' : 'IP non définie'
+}
+
+// 2ᵉ ligne d'une tuile (spec patch-puissance-catalogue § 4.7) : l'adresse DMX d'un appareil patchable, sinon l'IP.
+export function deviceSecondLine(device: Device, patch: PatchEntry | undefined): string {
+  if (device.dmx) return patchLine(patch)
+  return deviceIpLine(device.ip)
 }
 
 export function snapPoint(p: { x: number; y: number }, on: boolean): { x: number; y: number } {

@@ -5,6 +5,8 @@ import { resolvePortSide } from '../model/layout'
 import { findPort, isRackDevice, sameRef } from '../model/rules'
 import { POE_LABELS, linkPoe, linkVlanIds } from '../model/derive'
 import { NEUTRAL, cordStyle, type CordStyle, type ThemeMode } from './cordStyle'
+import { patchIndex } from '../model/dmx'
+import { deviceSecondLine } from './canvasHelpers'
 import { nodeSize } from './nodeGeometry'
 import { facadeExit, switchFacade } from './switchFacade'
 
@@ -24,6 +26,7 @@ export type DeviceNodeData = {
   ports: Record<string, PortInfo>
   poeUsage?: PoeUsage
   vlans: number[]
+  line2: string
 }
 export type DeviceFlowNode = Node<DeviceNodeData, 'device' | 'switch'>
 export type ZoneNodeData = { zone: Zone }
@@ -97,6 +100,7 @@ const NO_VLANS: number[] = []
 export function toFlowNodes(project: Project, analysis: LinkAnalysis, cache: FlowCache): DeviceFlowNode[] {
   const out: DeviceFlowNode[] = []
   const alive = new Set<string>()
+  const index = project.devices.some((d) => d.dmx) ? patchIndex(project) : undefined
   for (const device of project.devices) {
     alive.add(device.id)
     const side = resolvePortSide(project, device, nodeSize)
@@ -108,7 +112,8 @@ export function toFlowNodes(project: Project, analysis: LinkAnalysis, cache: Flo
           ...(device.switch.poeBudgetW !== undefined ? { budgetW: device.switch.poeBudgetW } : {})
         }
       : undefined
-    const key = `${side}|${JSON.stringify(ports)}|${JSON.stringify(poeUsage ?? null)}|${vlans.join(',')}`
+    const line2 = deviceSecondLine(device, index?.entries.get(device.id))
+    const key = `${side}|${JSON.stringify(ports)}|${JSON.stringify(poeUsage ?? null)}|${vlans.join(',')}|${line2}`
     const hit = cache.nodes.get(device.id)
     if (hit && hit.device === device && hit.key === key) {
       out.push(hit.node)
@@ -118,7 +123,7 @@ export function toFlowNodes(project: Project, analysis: LinkAnalysis, cache: Flo
       id: device.id,
       type: isRackDevice(device) ? 'switch' : 'device',
       position: device.position,
-      data: { device, template: getTemplate(project, device.templateId), side, ports, vlans, ...(poeUsage ? { poeUsage } : {}) }
+      data: { device, template: getTemplate(project, device.templateId), side, ports, vlans, line2, ...(poeUsage ? { poeUsage } : {}) }
     }
     cache.nodes.set(device.id, { key, device, node })
     out.push(node)
