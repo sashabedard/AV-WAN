@@ -13,6 +13,25 @@ describe('dossier par défaut', () => {
     expect(projectFileName('.cache')).toBe('cache')
   })
 
+  it('remplace les caractères de contrôle comme les autres caractères interdits', () => {
+    expect(projectFileName('Salle\tB')).toBe('Salle-B')
+    expect(projectFileName('a\nb\rc\u0000d\u001fe\u007ff')).toBe('a-b-c-d-e-f')
+    expect(projectFileName('\u0007Régie')).toBe('Régie')
+  })
+
+  it('un nom réservé par Windows reçoit « (projet) »', () => {
+    expect(projectFileName('AUX')).toBe('AUX (projet)')
+    expect(projectFileName('con')).toBe('con (projet)')
+    expect(projectFileName(' Nul ')).toBe('Nul (projet)')
+    expect(projectFileName('PRN')).toBe('PRN (projet)')
+    expect(projectFileName('COM1')).toBe('COM1 (projet)')
+    expect(projectFileName('lpt9')).toBe('lpt9 (projet)')
+    expect(projectFileName('COM10')).toBe('COM10')
+    expect(projectFileName('LPT0')).toBe('LPT0')
+    expect(projectFileName('Console')).toBe('Console')
+    expect(projectFileName('AUX 2')).toBe('AUX 2')
+  })
+
   it('ajoute « 2 », « 3 »… plutôt que d’écraser', () => {
     const taken = new Set([join('/d', 'Nouveau projet.avwan'), join('/d', 'Nouveau projet 2.avwan')])
     expect(uniqueProjectPath('/d', '', (p) => taken.has(p))).toBe(join('/d', 'Nouveau projet 3.avwan'))

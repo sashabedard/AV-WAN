@@ -4,15 +4,19 @@ import { join } from 'node:path'
 import { isSameFile } from './fileIO'
 
 const MAX_NAME = 80
+// Noms que Windows réserve à des périphériques, quelle que soit la casse : « AUX.avwan » ne s'écrit pas.
+const RESERVED = /^(con|prn|aux|nul|com[1-9]|lpt[1-9])$/i
 
 export function projectFileName(title: string): string {
   const cleaned = title
-    .replace(/[\\/:*?"<>|]+/g, '-')
+    // Caractères interdits par macOS ou Windows, et caractères de contrôle.
+    .replace(/[\\/:*?"<>|\x00-\x1f\x7f]+/g, '-')
     .replace(/-{2,}/g, '-')
     .trim()
     .replace(/^[.\s-]+/, '')
     .slice(0, MAX_NAME)
     .trim()
+  if (RESERVED.test(cleaned)) return `${cleaned} (projet)`
   return cleaned || 'Nouveau projet'
 }
 
