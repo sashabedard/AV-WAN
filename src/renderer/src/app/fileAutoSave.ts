@@ -36,11 +36,13 @@ export function createFileAutoSave(store: StoreApi<ProjectState>, deps: FileAuto
   let timer: ReturnType<typeof setTimeout> | null = null
   let seen = store.getState().history.present
   let docId = store.getState().docId
+  let filePath = store.getState().filePath
   let running: Promise<void> | null = null
   // Version en cours d'écriture, et demande arrivée pendant ce temps (elle vaut pour le document courant).
   let writing: Project | null = null
   let again = false
-  // Un seul message par série d'échecs : remis à zéro par une réussite ou un autre document.
+  // Un seul message par série d'échecs : remis à zéro par une réussite, un autre document ou un autre
+  // fichier (« Enregistrer sous » loin d'un partage tombé). Tant qu'il dure, la fermeture n'écrit pas.
   let failing = false
   // Boîte « Enregistrer sous » ouverte : aucune écriture automatique (elle créerait un fichier en trop).
   let suspended = 0
@@ -57,6 +59,10 @@ export function createFileAutoSave(store: StoreApi<ProjectState>, deps: FileAuto
   // Seul un nouveau contenu relance le délai (pas un message ni une sélection). Ouvrir ou créer un
   // document n'écrit rien par soi-même.
   const unsubscribe = store.subscribe((s) => {
+    if (s.filePath !== filePath) {
+      filePath = s.filePath
+      failing = false
+    }
     if (s.docId !== docId) {
       docId = s.docId
       seen = s.history.present
@@ -125,6 +131,9 @@ export function createFileAutoSave(store: StoreApi<ProjectState>, deps: FileAuto
       const s = store.getState()
       if (!isDirty(s)) return true
       if (!deps.enabled() || s.readOnly || !s.filePath) return false
+      // L'écriture échoue déjà (partage réseau tombé…) : une écriture synchrone gèlerait l'app jusqu'au
+      // délai du système. On pose la question.
+      if (failing) return false
       const present = s.history.present
       // Une écriture plus ancienne encore en cours pourrait finir après celle-ci et l'écraser : on demande.
       if (writing !== null && writing !== present) return false

@@ -366,6 +366,36 @@ describe('flushSync (fermeture de la fenêtre)', () => {
     await vi.advanceTimersByTimeAsync(0)
   })
 
+  it('l’écriture automatique échoue déjà (partage réseau tombé) : rend false sans tenter d’écrire', async () => {
+    vi.useFakeTimers()
+    const save = vi.fn(async (_path: string, _text: string): Promise<string> => {
+      throw new Error('Délai dépassé (ETIMEDOUT).')
+    })
+    const { store, deps, auto } = setup('/Volumes/partage/a.avwan', { save })
+    store.getState().updateMeta({ title: 'Salle B' })
+    await vi.advanceTimersByTimeAsync(FILE_AUTOSAVE_DELAY_MS)
+    expect(deps.toast).toHaveBeenCalledTimes(1)
+    store.getState().updateMeta({ title: 'Salle C' })
+    // Une écriture synchrone sur un partage tombé gèlerait l'app jusqu'au délai du système.
+    expect(auto.flushSync()).toBe(false)
+    expect(deps.saveSync).not.toHaveBeenCalled()
+    expect(isDirty(store.getState())).toBe(true)
+  })
+
+  it('après des échecs, « Enregistrer sous » vers un autre fichier : la fermeture écrit de nouveau', async () => {
+    vi.useFakeTimers()
+    const save = vi.fn(async (_path: string, _text: string): Promise<string> => {
+      throw new Error('Délai dépassé (ETIMEDOUT).')
+    })
+    const { store, deps, auto } = setup('/Volumes/partage/a.avwan', { save })
+    store.getState().updateMeta({ title: 'Salle B' })
+    await vi.advanceTimersByTimeAsync(FILE_AUTOSAVE_DELAY_MS)
+    store.getState().markSaved('/Users/x/a.avwan') // « Enregistrer sous » réussi : un autre fichier, une autre série
+    store.getState().updateMeta({ title: 'Salle C' })
+    expect(auto.flushSync()).toBe(true)
+    expect(deps.saveSync).toHaveBeenCalledWith('/Users/x/a.avwan', expect.stringContaining('"title": "Salle C"'))
+  })
+
   it('case décochée ou lecture seule : rend false sans écrire', () => {
     const { store, deps, auto, setEnabled } = setup()
     store.getState().updateMeta({ title: 'Salle B' })
