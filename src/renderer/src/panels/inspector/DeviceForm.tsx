@@ -11,7 +11,9 @@ import { Segmented } from '../Segmented'
 import { SwitchConfigurator } from '../SwitchConfigurator'
 import { peersOf, portVlanSummary } from './format'
 import { isUniverseOutput, UNIVERSE_MAX } from '../../model/dmx'
-import { parseIntField } from '../../model/fields'
+import { parseDecimalField, parseIntField } from '../../model/fields'
+import { PsuSection } from './PsuSection'
+import { LedStripSection } from './LedStripSection'
 import { PatchSection } from './PatchSection'
 
 function SwitchSection({ device, project }: { device: Device; project: Project }) {
@@ -69,6 +71,28 @@ export function DeviceForm({ device, project }: { device: Device; project: Proje
           onCommit={(v) => s().updateDevice(device.id, { model: v.trim() || undefined })}
         />
       </label>
+      {!device.ledStrip && !device.psu && (
+        <div className="field">
+          <span className="field__label">Puissance</span>
+          <div className="patch__row">
+            <CommitInput
+              className="input"
+              aria-label="Puissance (W)"
+              inputMode="decimal"
+              placeholder="—"
+              value={device.powerW !== undefined ? String(device.powerW).replace('.', ',') : ''}
+              onCommit={(v) => {
+                const n = parseDecimalField(v)
+                if (n === undefined) s().showToast('Puissance : un nombre positif ou nul, en watts.')
+                else s().updateDevice(device.id, { powerW: n ?? undefined })
+              }}
+            />
+            <span className="patch__range">W</span>
+          </div>
+        </div>
+      )}
+      <PsuSection device={device} project={project} />
+      <LedStripSection device={device} project={project} />
       <PatchSection device={device} project={project} />
       <div className="field">
         <span className="field__label">Adresse IP</span>

@@ -24,7 +24,7 @@ export function Inspector() {
   const zone = zones[0]
   return (
     <div className="inspector">
-      {count === 0 && (inspectedVlan ? <VlanForm key={inspectedVlan.id} vlan={inspectedVlan} project={project} /> : <ProjectMetaForm meta={project.meta} />)}
+      {count === 0 && (inspectedVlan ? <VlanForm key={inspectedVlan.id} vlan={inspectedVlan} project={project} /> : <ProjectMetaForm project={project} />)}
       {count > 1 && <p className="insp__multi">{count} éléments sélectionnés.</p>}
       {count === 1 && device && <DeviceForm key={device.id} device={device} project={project} />}
       {count === 1 && zone && <ZoneForm key={zone.id} zone={zone} project={project} />}
