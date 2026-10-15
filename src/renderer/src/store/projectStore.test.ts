@@ -1,10 +1,11 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import { createProject } from '../model/project'
 import { createProjectStore, isDirty, linksOnRemovedPorts } from './projectStore'
 import { copyFragment } from '../model/clipboard'
 import { vlanPreset } from '../catalog/vlanPresets'
 import { sampleProject } from '../model/__fixtures__/sample'
 import { blankDraft, templateFromDraft } from '../model/customTemplate'
+import { dmxChannelsStore } from './dmxChannelsStore'
 
 const store = () => createProjectStore(sampleProject())
 
@@ -385,6 +386,7 @@ describe('placer une composante perso', () => {
 
 describe('listes de canaux DMX', () => {
   const WASH = { templateId: 'dmx-fixture', model: 'Wash', mode: '9CH' }
+  afterEach(() => dmxChannelsStore.setState({ lists: [] }))
 
   it('nommer les canaux est une étape annulable', () => {
     const store = createProjectStore(createProject(new Date(2026, 9, 15)))
@@ -403,5 +405,16 @@ describe('listes de canaux DMX', () => {
     store.getState().setChannelList(WASH, ['Red'])
     expect(store.getState().history.present.dmxChannels).toBeUndefined()
     expect(store.getState().toast).toMatch(/lecture seule/)
+  })
+
+  it('placer un appareil copie la liste des réglages dans le projet ; ⌘Z retire l’appareil et la liste ensemble', () => {
+    dmxChannelsStore.setState({ lists: [{ templateId: 'dmx-fixture', params: ['Red', 'Green'] }] })
+    const store = createProjectStore(createProject(new Date(2026, 9, 15)))
+    store.getState().addDevice('dmx-fixture', { x: 0, y: 0 })
+    expect(store.getState().history.present.dmxChannels).toEqual([{ templateId: 'dmx-fixture', params: ['Red', 'Green'] }])
+    expect(store.getState().history.past).toHaveLength(1)
+    store.getState().undo()
+    expect(store.getState().history.present.devices).toEqual([])
+    expect(store.getState().history.present.dmxChannels).toBeUndefined()
   })
 })

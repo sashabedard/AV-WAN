@@ -28,13 +28,14 @@ function writeList(key: ChannelKey, params: readonly string[]): void {
     .catch((e: unknown) => projectStore.getState().showToast(`Liste non retenue pour vos autres projets : ${ipcErrorMessage(e)}`))
 }
 
-function restoreManual(key: ChannelKey): void {
+// Le projet reprend la liste du manuel (une étape annulable, le fichier devient modifié) ; les réglages oublient la leur.
+function restoreManual(key: ChannelKey, manual: readonly string[]): void {
   const s = projectStore.getState()
   if (s.readOnly) {
     s.apply((p) => p)
     return
   }
-  s.removeChannelList(key)
+  s.setChannelList(key, manual)
   dmxChannelsStore
     .getState()
     .remove(key)
@@ -96,7 +97,7 @@ export function ChannelsSection({ device, project }: { device: Device; project: 
         ))}
       </ol>
       {catalog !== undefined && !manual && (
-        <button type="button" className="btn chan__reset" onClick={() => restoreManual(key)}>
+        <button type="button" className="btn chan__reset" onClick={() => restoreManual(key, catalog)}>
           Rétablir le manuel
         </button>
       )}

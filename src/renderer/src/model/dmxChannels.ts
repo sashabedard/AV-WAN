@@ -110,6 +110,34 @@ const usedKeys = (project: Project): ChannelKey[] =>
     return k ? [k] : []
   })
 
+const sameChannelKeyFields = (a: Device, b: Device): boolean =>
+  a.templateId === b.templateId && a.model === b.model && a.dmx !== undefined && b.dmx !== undefined && a.dmx.mode === b.dmx.mode
+
+// Le projet garde une copie de chaque liste qu'il affiche (§ 3.7) : une clé qui apparaît (appareil ajouté, modèle ou
+// mode changé) sans entrée dans le projet y reçoit la liste lue, réglages sinon catalogue. Un glisser ne fait que
+// comparer les appareils (aucune clé nouvelle) ; rien à copier rend la même référence.
+export function ownNewKeys(prev: Project, next: Project, settings: readonly DmxChannelList[]): Project {
+  if (next.devices === prev.devices) return next
+  let before: Map<string, Device> | undefined
+  const fresh = next.devices.filter((d, i) => {
+    if (!d.dmx || prev.devices[i] === d) return false
+    before ??= new Map(prev.devices.map((x) => [x.id, x]))
+    const old = before.get(d.id)
+    return !old || !sameChannelKeyFields(old, d)
+  })
+  if (fresh.length === 0) return next
+  const used = new Set(usedKeys(prev).map(keyId))
+  const start = next.dmxChannels ?? []
+  let lists = start
+  for (const d of fresh) {
+    const k = channelKey(d)
+    if (!k || used.has(keyId(k)) || findList(lists, k)) continue
+    const params = findList(settings, k)?.params ?? catalogParams(next, k)
+    if (params) lists = [...lists, toList(k, normalizeParams(params))]
+  }
+  return lists === start ? next : withLists(next, lists)
+}
+
 // Fichier complet (§ 3.7) : chaque clé utilisée sans entrée reçoit celle des réglages. Le catalogue voyage avec l'app.
 export function embedUsedLists(project: Project, settings: readonly DmxChannelList[]): Project {
   if (settings.length === 0) return project

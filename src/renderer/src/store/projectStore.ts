@@ -9,8 +9,9 @@ import { pasteFragment as pasteFragmentModel, type Fragment } from '../model/cli
 import { addVlan as addVlanModel, changeVlanId as changeVlanIdModel, removeVlan as removeVlanModel, updateVlan as updateVlanModel, type VlanPatch } from '../model/vlans'
 import { assignZones, createZone, moveZones, placeDevices, removeZones, resizeZone as resizeZoneModel, zoneAround, zonesWithin, type ZoneRect } from '../model/zones'
 import { withTemplate } from '../model/customTemplate'
-import { removeProjectList, setProjectList, type ChannelKey } from '../model/dmxChannels'
+import { ownNewKeys, removeProjectList, setProjectList, type ChannelKey } from '../model/dmxChannels'
 import { uiStore } from './uiStore'
+import { dmxChannelsStore } from './dmxChannelsStore'
 import { commit, initHistory, redo as historyRedo, undo as historyUndo, type History } from './history'
 
 export interface Selection {
@@ -110,7 +111,8 @@ export function createProjectStore(initial: Project = createProject()): StoreApi
         set({ toast: READ_ONLY_MESSAGE })
         return
       }
-      const next = fn(history.present)
+      // Une clé de canaux qui apparaît reçoit sa liste dans la même étape (spec canaux-dmx § 3.7).
+      const next = ownNewKeys(history.present, fn(history.present), dmxChannelsStore.getState().lists)
       if (next !== history.present) set({ history: commit(history, next) })
     }
 

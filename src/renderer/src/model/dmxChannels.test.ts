@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import { createDevice, createProject } from './project'
 import type { Device, DeviceTemplate, DmxChannelList, Project } from './types'
 import {
-  catalogParams, channelKey, embedUsedLists, fillParams, keyId, mergeProjectLists, normalizeParams, parseSettingsLists, pastedNames,
+  catalogParams, channelKey, embedUsedLists, fillParams, keyId, mergeProjectLists, normalizeParams, ownNewKeys, parseSettingsLists, pastedNames,
   pruneChannelLists, removeList, removeProjectList, resolveChannels, sameParams, serializeSettingsLists, setProjectList, sharedCount, upsertList
 } from './dmxChannels'
 
@@ -95,6 +95,61 @@ describe('entrées du projet et des réglages', () => {
     expect(resolveChannels(q, [], WASH)?.params).toEqual(['Mine'])
     expect(resolveChannels(q, [], key(q, 'c'))?.params).toEqual(['A', 'B'])
     expect(mergeProjectLists(q, [])).toBe(q)
+  })
+})
+
+describe('le projet garde une copie de chaque liste qu’il affiche', () => {
+  const SPOT = { templateId: 'dmx-fixture', model: 'Spot', mode: '9CH' }
+  const settings: DmxChannelList[] = [{ ...SPOT, params: ['Pan', 'Tilt'] }]
+  const empty = (): Project => ({ ...createProject(new Date(2026, 9, 15)), templates: [LYRE] })
+  const add = (p: Project, id: string, templateId: string, extra: Partial<Device> = {}): Project => ({
+    ...p,
+    devices: [...p.devices, { ...createDevice(p, templateId, { x: 0, y: 0 }, { id }), ...extra }]
+  })
+
+  it('nouvel appareil : la liste des réglages, sinon celle du catalogue, est copiée', () => {
+    const p = empty()
+    const q = add(add(p, 's', 'dmx-fixture', { model: 'Spot', dmx: { footprint: 9, mode: '9CH' } }), 'a', LYRE.id)
+    expect(ownNewKeys(p, q, settings).dmxChannels).toEqual([
+      { ...SPOT, params: ['Pan', 'Tilt'] },
+      { templateId: LYRE.id, mode: '3CH', params: ['Dimmer', 'Pan', 'Tilt'] }
+    ])
+  })
+
+  it('aucune liste nulle part : rien n’est ajouté', () => {
+    const p = empty()
+    const q = add(p, 'c', LYRE.id, { dmx: { footprint: 2, mode: '2CH' } })
+    expect(ownNewKeys(p, q, settings)).toBe(q)
+  })
+
+  it('clé déjà utilisée avant : rien ne change', () => {
+    const p = project() // a et b lisent le catalogue, sans entrée (projet d’avant cette fonction)
+    const q = add(p, 'a2', LYRE.id)
+    expect(ownNewKeys(p, q, settings)).toBe(q)
+  })
+
+  it('entrée déjà dans le projet (collage) : gardée telle quelle', () => {
+    const p = empty()
+    const q = setProjectList(add(p, 'a', LYRE.id), { templateId: LYRE.id, model: '', mode: '3CH' }, ['Mine'])
+    expect(ownNewKeys(p, q, settings)).toBe(q)
+  })
+
+  it('changer le modèle ou le mode : la liste de la nouvelle clé est copiée', () => {
+    const p = project()
+    const q = { ...p, devices: p.devices.map((d) => (d.id === 'w' ? { ...d, model: 'Spot' } : d)) }
+    expect(ownNewKeys(p, q, settings).dmxChannels).toEqual([{ ...SPOT, params: ['Pan', 'Tilt'] }])
+    const lyre = empty()
+    const one = add(lyre, 'c', LYRE.id, { dmx: { footprint: 2, mode: '2CH' } })
+    const three = { ...one, devices: one.devices.map((d) => ({ ...d, dmx: { footprint: 3, mode: '3CH' } })) }
+    expect(ownNewKeys(one, three, []).dmxChannels).toEqual([{ templateId: LYRE.id, mode: '3CH', params: ['Dimmer', 'Pan', 'Tilt'] }])
+  })
+
+  it('même tableau d’appareils, ou appareils seulement déplacés : même référence', () => {
+    const p = project()
+    const meta = { ...p, meta: { ...p.meta, title: 'Autre' } }
+    expect(ownNewKeys(p, meta, settings)).toBe(meta)
+    const moved = { ...p, devices: p.devices.map((d) => ({ ...d, position: { x: 5, y: 5 } })) }
+    expect(ownNewKeys(p, moved, settings)).toBe(moved)
   })
 })
 

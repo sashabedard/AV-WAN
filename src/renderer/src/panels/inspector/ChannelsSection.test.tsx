@@ -3,10 +3,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act, cleanup, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { Inspector } from '../Inspector'
-import { projectStore } from '../../store/projectStore'
+import { isDirty, projectStore } from '../../store/projectStore'
 import { dmxChannelsStore } from '../../store/dmxChannelsStore'
 import { createDevice, createProject } from '../../model/project'
-import { channelKey, resolveChannels } from '../../model/dmxChannels'
+import { channelKey, removeList, resolveChannels, upsertList, type ChannelKey } from '../../model/dmxChannels'
+import { fileTextOf } from '../../app/fileText'
 import type { Device, DeviceTemplate, Project } from '../../model/types'
 
 const LYRE: DeviceTemplate = {
@@ -31,8 +32,14 @@ const dev = (id: string): Device => present().devices.find((d) => d.id === id)!
 const names = (id: string): string[] | undefined => resolveChannels(present(), dmxChannelsStore.getState().lists, channelKey(dev(id))!)?.params
 const select = (id: string): void => projectStore.getState().setSelection({ deviceIds: [id], linkIds: [] })
 const original = dmxChannelsStore.getState()
-const save = vi.fn(async () => undefined)
-const remove = vi.fn(async () => undefined)
+// Comme le vrai store : la liste des réglages change après l'écriture.
+const save = vi.fn(async (key: ChannelKey, params: readonly string[]) => {
+  dmxChannelsStore.setState({ lists: upsertList(dmxChannelsStore.getState().lists, key, params) })
+})
+const remove = vi.fn(async (key: ChannelKey) => {
+  dmxChannelsStore.setState({ lists: removeList(dmxChannelsStore.getState().lists, key) })
+})
+const MANUAL = { templateId: LYRE.id, mode: '3CH', params: ['Dimmer', 'Pan', 'Tilt'] }
 
 beforeEach(() => {
   projectStore.getState().loadProject(project(), null)
@@ -66,9 +73,41 @@ describe('inspecteur : canaux DMX', () => {
     expect(save).toHaveBeenCalledWith({ templateId: LYRE.id, model: '', mode: '3CH' }, ['Dimmer', 'Pan 16', 'Tilt'])
     expect(screen.getByText('Canaux · 3 — partagés par 2 appareils · modifiée')).toBeTruthy()
     await user.click(screen.getByRole('button', { name: 'Rétablir le manuel' }))
-    expect(present().dmxChannels).toBeUndefined()
+    expect(present().dmxChannels).toEqual([MANUAL])
     expect(remove).toHaveBeenCalledWith({ templateId: LYRE.id, model: '', mode: '3CH' })
     expect(names('a')).toEqual(['Dimmer', 'Pan', 'Tilt'])
+    expect(screen.getByText('Canaux · 3 — partagés par 2 appareils · d’après le manuel')).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Rétablir le manuel' })).toBeNull()
+  })
+
+  it('appareil placé : ⌘Z après la première modification ramène le nom d’avant', async () => {
+    const user = userEvent.setup()
+    projectStore.getState().loadProject({ ...createProject(new Date(2026, 9, 15)), templates: [LYRE] }, null)
+    const id = projectStore.getState().addDevice(LYRE.id, { x: 0, y: 0 })
+    select(id)
+    render(<Inspector />)
+    await user.clear(screen.getByLabelText('Canal 2'))
+    await user.type(screen.getByLabelText('Canal 2'), 'Pan 16{Enter}')
+    expect(names(id)).toEqual(['Dimmer', 'Pan 16', 'Tilt'])
+    act(() => projectStore.getState().undo())
+    expect((screen.getByLabelText('Canal 2') as HTMLInputElement).value).toBe('Pan')
+  })
+
+  it('projet sans entrée qui lit les réglages : Rétablir écrit le manuel dans le projet, donc dans le fichier', async () => {
+    const user = userEvent.setup()
+    const mine = { templateId: LYRE.id, mode: '3CH', params: ['Dim', 'P', 'T'] }
+    dmxChannelsStore.setState({ lists: [mine] })
+    select('a')
+    render(<Inspector />)
+    expect(JSON.parse(fileTextOf(present())).dmxChannels).toEqual([mine]) // déjà enregistré ainsi (enregistrement automatique)
+    expect(isDirty(projectStore.getState())).toBe(false)
+    await user.click(screen.getByRole('button', { name: 'Rétablir le manuel' }))
+    expect(present().dmxChannels).toEqual([MANUAL])
+    expect(isDirty(projectStore.getState())).toBe(true)
+    expect(JSON.parse(fileTextOf(present())).dmxChannels).toEqual([MANUAL])
+    expect(screen.getByText('Canaux · 3 — partagés par 2 appareils · d’après le manuel')).toBeTruthy()
+    act(() => projectStore.getState().undo())
+    expect(present().dmxChannels).toBeUndefined()
   })
 
   it('coller plusieurs lignes remplit les canaux suivants et signale le surplus', async () => {
