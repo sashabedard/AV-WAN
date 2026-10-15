@@ -5,7 +5,7 @@ import { DeviceSchema, DeviceTemplateSchema, LinkSchema } from './schema'
 import { withTemplate } from './customTemplate'
 import { canConnectPorts, nextCableId } from './rules'
 import { newId } from './project'
-import { nextFreeAddress, patchIndex, resolveUniverse } from './dmx'
+import { nextFreeAddress, patchIndex, type PatchIndex, type PatchRange } from './dmx'
 
 export const FRAGMENT_MIME = 'application/x-avwan-fragment'
 
@@ -31,10 +31,10 @@ export function copyFragment(project: Project, deviceIds: readonly string[]): Fr
   const used = new Set(devices.map((d) => d.templateId))
   const templates = project.templates.filter((t) => used.has(t.id))
   // § 4.5 : la copie n'a pas les câbles de l'original ; elle garde son univers effectif, figé ici.
-  const byId = new Map(project.devices.map((d) => [d.id, d]))
+  const index = patchIndex(project)
   const frozen = devices.map((d) => {
     if (!d.dmx || d.dmx.universe !== undefined) return d
-    const u = resolveUniverse(project, d.id, byId)
+    const u = index.entries.get(d.id)?.universe
     return u ? { ...d, dmx: { ...d.dmx, universe: u.universe } } : d
   })
   return structuredClone({ devices: frozen, links, templates })
@@ -54,11 +54,11 @@ export function parseFragment(text: string): Fragment | null {
 }
 
 // § 4.5 : une copie patchée prend l'adresse suivante libre de son univers ; sans univers, pas d'adresse.
-function withNextAddress(project: Project, device: Device): Device {
+function withNextAddress(index: PatchIndex, device: Device): Device {
   if (!device.dmx) return device
   const { address: _previous, ...dmx } = device.dmx
   if (dmx.universe === undefined) return { ...device, dmx }
-  const address = nextFreeAddress(patchIndex(project), dmx.universe, dmx.footprint)
+  const address = nextFreeAddress(index, dmx.universe, dmx.footprint)
   return { ...device, dmx: address !== undefined ? { ...dmx, address } : dmx }
 }
 
@@ -79,6 +79,11 @@ export function pasteFragment(
   makeId: () => string = newId
 ): { project: Project; deviceIds: string[]; linkIds: string[] } {
   let p = (fragment.templates ?? []).reduce(withTemplate, project)
+  // L'index est calculé une fois ; la plage de chaque copie s'ajoute à une liste locale (jamais à l'index en cache)
+  // pour que les copies suivantes la voient. Les câbles des copies n'arrivent qu'après : ils ne changent aucun univers ici.
+  const base = patchIndex(p)
+  const ranges: PatchRange[] = [...base.ranges]
+  const index: PatchIndex = { ...base, ranges }
   const idMap = new Map<string, string>()
   const deviceIds: string[] = []
   for (const d of fragment.devices) {
@@ -92,7 +97,10 @@ export function pasteFragment(
       position: { x: d.position.x + offset.x, y: d.position.y + offset.y },
       ...(ip ? { ip: { address: '', mode: ip.mode } } : {}) // deux appareils ne partagent pas une IP
     }
-    p = { ...p, devices: [...p.devices, withNextAddress(p, copy)] }
+    const placed = withNextAddress(index, copy)
+    const dmx = placed.dmx
+    if (dmx?.universe !== undefined && dmx.address !== undefined) ranges.push({ ownerId: id, universe: dmx.universe, start: dmx.address, end: dmx.address + dmx.footprint - 1 })
+    p = { ...p, devices: [...p.devices, placed] }
     deviceIds.push(id)
   }
   const linkIds: string[] = []

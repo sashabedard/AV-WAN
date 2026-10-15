@@ -34,11 +34,12 @@ export interface StripPatch {
   source: PortRef
   spans: StripSpan[]
 }
+// Mis en cache par projet (voir patchIndex) : en lecture seule, jamais modifié après coup.
 export interface PatchIndex {
-  entries: Map<string, PatchEntry>
-  ranges: PatchRange[]
-  byId: ReadonlyMap<string, Device>
-  strips: Map<string, StripPatch>
+  readonly entries: ReadonlyMap<string, PatchEntry>
+  readonly ranges: readonly PatchRange[]
+  readonly byId: ReadonlyMap<string, Device>
+  readonly strips: ReadonlyMap<string, StripPatch>
 }
 export interface Overlap {
   name: string
@@ -74,17 +75,30 @@ function portOf(byId: ReadonlyMap<string, Device>, ref: PortRef): { device: Devi
   return device && port ? { device, port } : undefined
 }
 
-// § 4.1 : l'univers tapé, sinon le long des câbles DMX en traversant les appareils patchables, niveau par
-// niveau (la source la plus proche gagne) ; dans un niveau, l'ordre des câbles du projet départage.
-export function resolveUniverse(project: Project, deviceId: string, byId: ReadonlyMap<string, Device> = deviceMap(project)): ResolvedUniverse | undefined {
-  const start = byId.get(deviceId)
-  if (!start?.dmx) return undefined
-  if (start.dmx.universe !== undefined) return { universe: start.dmx.universe, source: { kind: 'typed' } }
+// Câbles de chaque appareil, par leur rang dans project.links (croissant) : le parcours ne relit pas tout le projet.
+export type LinkAdjacency = ReadonlyMap<string, readonly number[]>
+
+export function linkAdjacency(project: Project): LinkAdjacency {
+  const adjacency = new Map<string, number[]>()
+  project.links.forEach((link, i) => {
+    for (const id of new Set([link.a.deviceId, link.b.deviceId])) {
+      const list = adjacency.get(id)
+      if (list) list.push(i)
+      else adjacency.set(id, [i])
+    }
+  })
+  return adjacency
+}
+
+// Univers donné par les câbles DMX, sans regarder la valeur tapée de l'appareil de départ.
+function cableUniverse(project: Project, start: Device, byId: ReadonlyMap<string, Device>, adjacency: LinkAdjacency): ResolvedUniverse | undefined {
   const seen = new Set<string>([start.id])
   let frontier = new Set<string>([start.id])
   while (frontier.size > 0) {
     const next = new Set<string>()
-    for (const link of project.links) {
+    const level = [...new Set([...frontier].flatMap((id) => adjacency.get(id) ?? []))].sort((a, b) => a - b)
+    for (const i of level) {
+      const link = project.links[i]!
       for (const [here, there] of [
         [link.a, link.b],
         [link.b, link.a]
@@ -109,9 +123,29 @@ export function resolveUniverse(project: Project, deviceId: string, byId: Readon
   return undefined
 }
 
+// § 4.1 : l'univers tapé, sinon le long des câbles DMX en traversant les appareils patchables, niveau par
+// niveau (la source la plus proche gagne) ; dans un niveau, l'ordre des câbles du projet départage.
+export function resolveUniverse(
+  project: Project,
+  deviceId: string,
+  byId: ReadonlyMap<string, Device> = deviceMap(project),
+  adjacency: LinkAdjacency = linkAdjacency(project)
+): ResolvedUniverse | undefined {
+  const start = byId.get(deviceId)
+  if (!start?.dmx) return undefined
+  if (start.dmx.universe !== undefined) return { universe: start.dmx.universe, source: { kind: 'typed' } }
+  return cableUniverse(project, start, byId, adjacency)
+}
+
 // § 4.2 : univers de départ d'une bande pixel, lu sur la sortie pixel où elle est branchée.
-export function stripStart(project: Project, device: Device, byId: ReadonlyMap<string, Device> = deviceMap(project)): { universe: number; ref: PortRef } | undefined {
-  for (const link of project.links) {
+export function stripStart(
+  project: Project,
+  device: Device,
+  byId: ReadonlyMap<string, Device> = deviceMap(project),
+  adjacency: LinkAdjacency = linkAdjacency(project)
+): { universe: number; ref: PortRef } | undefined {
+  for (const i of adjacency.get(device.id) ?? []) {
+    const link = project.links[i]!
     for (const [here, there] of [
       [link.a, link.b],
       [link.b, link.a]
@@ -139,16 +173,28 @@ export function stripSpans(px: StripPixels, start: number): StripSpan[] {
   return spans
 }
 
+// Les projets de l'historique sont immuables : un index par projet, partagé par le canvas, l'inspecteur et les rapports.
+const indexCache = new WeakMap<Project, PatchIndex>()
+
 // Univers effectif et plage de chaque appareil patchable, calculés une fois pour tout le projet.
 export function patchIndex(project: Project): PatchIndex {
+  const hit = indexCache.get(project)
+  if (hit) return hit
+  const index = buildPatchIndex(project)
+  indexCache.set(project, index)
+  return index
+}
+
+function buildPatchIndex(project: Project): PatchIndex {
   const byId = deviceMap(project)
+  const adjacency = linkAdjacency(project)
   const entries = new Map<string, PatchEntry>()
   const ranges: PatchRange[] = []
   const strips = new Map<string, StripPatch>()
   for (const device of project.devices) {
     if (device.ledStrip) {
       const px = stripPixels(device.ledStrip)
-      const start = px ? stripStart(project, device, byId) : undefined
+      const start = px ? stripStart(project, device, byId, adjacency) : undefined
       if (px && start) {
         const spans = stripSpans(px, start.universe)
         strips.set(device.id, { device, source: start.ref, spans })
@@ -156,7 +202,7 @@ export function patchIndex(project: Project): PatchIndex {
       }
     }
     if (!device.dmx) continue
-    const universe = resolveUniverse(project, device.id, byId)
+    const universe = resolveUniverse(project, device.id, byId, adjacency)
     const address = device.dmx.address
     const range: PatchRange | undefined =
       universe && address !== undefined ? { ownerId: device.id, universe: universe.universe, start: address, end: address + device.dmx.footprint - 1 } : undefined

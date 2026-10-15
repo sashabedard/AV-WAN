@@ -5,6 +5,7 @@ import { sampleProject } from './__fixtures__/sample'
 import { blankDraft, templateFromDraft, withTemplate } from './customTemplate'
 import { createDevice, createProject } from './project'
 import type { Device, Project } from './types'
+import { patchIndex } from './dmx'
 
 const ids = (): (() => string) => {
   let n = 0
@@ -122,6 +123,20 @@ describe('patch et presse-papiers', () => {
       addresses.push(p.devices.find((d) => d.id === r.deviceIds[0])!.dmx?.address)
     }
     expect(addresses).toEqual([17, 33, 49])
+  })
+
+  it('colle huit copies d’un coup : 1, 17, 33, … sans toucher l’index du projet cible', () => {
+    const target = createProject(new Date(2026, 9, 14))
+    const before = patchIndex(target)
+    const fixtures = Array.from({ length: 8 }, (_, i): Device => ({
+      ...createDevice(target, 'dmx-fixture', { x: 0, y: 0 }, { id: `f${i}` }),
+      name: `FIX-${i + 1}`,
+      dmx: { footprint: 16, universe: 1, address: 1 }
+    }))
+    const r = pasteFragment(target, { devices: fixtures, links: [] }, { x: 0, y: 0 }, freshIds)
+    expect(r.project.devices.map((d) => d.dmx?.address)).toEqual([1, 17, 33, 49, 65, 81, 97, 113])
+    expect(patchIndex(target)).toBe(before)
+    expect(before.ranges).toEqual([])
   })
 
   it('colle dans un autre projet : garde l’univers et prend la 1re plage libre', () => {

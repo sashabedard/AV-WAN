@@ -1,5 +1,4 @@
 // src/renderer/src/panels/inspector/PatchSection.tsx
-import { useMemo } from 'react'
 import type { Device, DmxPatch, Project } from '../../model/types'
 import { DMX_SLOTS, UNIVERSE_MAX, issueTexts, nextFreeAddress, patchIndex, patchIssues, rangeLabel, sourceLabel } from '../../model/dmx'
 import { parseIntField } from '../../model/fields'
@@ -21,7 +20,7 @@ function compactDmx(d: DmxPatch): DmxPatch {
 
 // Bloc « Patch DMX » d'un appareil patchable (spec patch-puissance-catalogue § 4.6).
 export function PatchSection({ device, project }: { device: Device; project: Project }) {
-  const index = useMemo(() => patchIndex(project), [project])
+  const index = patchIndex(project) // mémorisé par projet
   const dmx = device.dmx
   if (!dmx) return null
   const s = projectStore.getState

@@ -90,12 +90,37 @@ describe('resolveUniverse', () => {
     expect(resolveUniverse(r.p, 'f2')?.universe).toBe(5)
   })
 
+  it('dans un même niveau, l’ordre des câbles du projet départage', () => {
+    const r = rig()
+    r.add('a', 'dmx-node', node('ODE-A', 1))
+    r.add('b', 'dmx-node', node('ODE-B', 5))
+    r.add('f1', 'dmx-fixture', fix(1))
+    r.link(['f1', 'DMX-OUT'], ['b', 'DMX-1'])
+    r.link(['a', 'DMX-1'], ['f1', 'DMX-IN'])
+    expect(resolveUniverse(r.p, 'f1')?.universe).toBe(5)
+  })
+
   it('ne suit pas un câble réseau', () => {
     const r = rig()
     r.add('ode', 'dmx-node', node('ODE-1', 1))
     r.add('f1', 'generic', { dmx: { footprint: 1, address: 1 } })
     r.link(['ode', 'ETH'], ['f1', 'ETH'], 'cat6')
     expect(resolveUniverse(r.p, 'f1')).toBeUndefined()
+  })
+})
+
+describe('patchIndex mémorisé', () => {
+  it('un seul calcul par projet : le même index pour le même projet, un autre pour un projet modifié', () => {
+    const r = rig()
+    r.add('ode', 'dmx-node', node('ODE-1', 1))
+    r.add('f1', 'dmx-fixture', fix(1))
+    r.link(['ode', 'DMX-1'], ['f1', 'DMX-IN'])
+    const p = r.p
+    expect(patchIndex(p)).toBe(patchIndex(p))
+    const q = { ...p, devices: p.devices.map((d) => (d.id === 'f1' ? { ...d, dmx: { footprint: 16, address: 33 } } : d)) }
+    expect(patchIndex(q)).not.toBe(patchIndex(p))
+    expect(patchIndex(q).entries.get('f1')?.range).toEqual({ ownerId: 'f1', universe: 1, start: 33, end: 48 })
+    expect(patchIndex(p).entries.get('f1')?.range).toEqual({ ownerId: 'f1', universe: 1, start: 1, end: 16 })
   })
 })
 

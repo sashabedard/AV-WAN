@@ -1,5 +1,4 @@
 // src/renderer/src/panels/inspector/LedStripSection.tsx
-import { useMemo } from 'react'
 import type { Device, LedStrip, LedStripType, Project } from '../../model/types'
 import { LedStripTypeSchema } from '../../model/schema'
 import { LED_STRIP_TYPES, LED_VOLTAGES, stripPixels, stripPower, stripWithType } from '../../model/led'
@@ -22,7 +21,7 @@ function compactStrip(s: LedStrip): LedStrip {
 
 // Bande LED (spec § 5.3) : le type préremplit, la puissance et les pixels se calculent.
 export function LedStripSection({ device, project }: { device: Device; project: Project }) {
-  const index = useMemo(() => patchIndex(project), [project])
+  const index = patchIndex(project) // mémorisé par projet
   const strip = device.ledStrip
   if (!strip) return null
   const s = projectStore.getState
