@@ -7,6 +7,7 @@ import { useOpenRequests } from './app/useOpenRequests'
 import { useAutosave } from './app/autosave'
 import { useFileAutoSave } from './app/fileAutoSave'
 import { useLibraryLoad } from './app/useLibraryLoad'
+import { useDmxChannelsLoad } from './app/useDmxChannelsLoad'
 import { useSettingsSync } from './app/useSettingsSync'
 
 export function App() {
@@ -18,6 +19,7 @@ export function App() {
   useAutosave()
   useFileAutoSave()
   useLibraryLoad()
+  useDmxChannelsLoad()
   useSettingsSync()
   return <AppShell />
 }

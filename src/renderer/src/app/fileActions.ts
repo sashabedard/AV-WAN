@@ -1,6 +1,6 @@
 import { isDirty, projectStore } from '../store/projectStore'
-import { parseProjectFile, serializeProject } from '../model/file'
-import { pruneTemplates } from '../model/customTemplate'
+import { parseProjectFile } from '../model/file'
+import { fileTextOf } from './fileText'
 import { ipcErrorMessage } from './ipcError'
 import type { OpenedFile, OpenRequest, RecoveryEntry } from '../../../shared/api'
 import { uiStore } from '../store/uiStore'
@@ -149,7 +149,7 @@ export function saveProjectAsAction(): Promise<void> {
     const s = projectStore.getState()
     const snapshot = s.history.present
     try {
-      const path = await window.avwan.file.saveAs(serializeProject(pruneTemplates(snapshot)), suggestedName())
+      const path = await window.avwan.file.saveAs(fileTextOf(snapshot), suggestedName())
       if (!path) return
       const after = projectStore.getState()
       // Autre document ouvert pendant la boîte : le fichier est écrit, ce document-là n'est pas concerné.
@@ -175,7 +175,7 @@ export async function saveProjectAction(): Promise<void> {
   const path = s.filePath
   const snapshot = s.history.present
   try {
-    await window.avwan.file.save(path, serializeProject(pruneTemplates(snapshot)))
+    await window.avwan.file.save(path, fileTextOf(snapshot))
     projectStore.getState().markSaved(path, snapshot)
     autosave.saved()
   } catch (e) {
