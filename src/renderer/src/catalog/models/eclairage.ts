@@ -1,4 +1,5 @@
 // Éclairage nommé (spec patch-puissance-catalogue § 7). Chaque valeur vient de la source citée au-dessus du gabarit.
+// Le `model` d’un gabarit fait partie de la clé des listes de canaux des utilisateurs : le garder stable (le changer détache leurs listes modifiées).
 import type { DeviceTemplate } from '../../model/types'
 import { ic } from '../ic'
 import { dmxThru, range, rj45, simple } from '../ports'
