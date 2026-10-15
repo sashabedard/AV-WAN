@@ -29,9 +29,11 @@ textarea {
 }
 
 .shell {
+  position: relative;
   display: grid;
   height: 100%;
-  grid-template-columns: 232px minmax(0, 1fr) 312px;
+  /* --left-w : posée par la poignée (SidebarResizer) ; jamais plus de la moitié de la fenêtre. */
+  grid-template-columns: min(var(--left-w, 232px), 50vw) minmax(0, 1fr) 312px;
   grid-template-rows: 44px minmax(0, 1fr);
   grid-template-areas: 'top top top' 'left center right';
 }
@@ -39,6 +41,16 @@ textarea {
 .shell__left { grid-area: left; background: var(--surface); border-right: 1px solid var(--line); overflow-y: auto; }
 .shell__center { grid-area: center; position: relative; min-width: 0; }
 .shell__right { grid-area: right; background: var(--surface); border-left: 1px solid var(--line); overflow-y: auto; }
+/* Défilement des panneaux : barre fine, invisible tant que le pointeur n'est pas sur le panneau. */
+.shell__left, .shell__right { scrollbar-width: thin; scrollbar-color: transparent transparent; }
+.shell__left:hover, .shell__right:hover { scrollbar-color: color-mix(in srgb, var(--muted) 45%, transparent) transparent; }
+/* Poignée : placée sur la zone « left », elle suit la colonne et chevauche sa bordure droite. */
+.shell__resizer { grid-area: left; position: absolute; top: 0; bottom: 0; right: -4px; z-index: 15; width: 7px; cursor: col-resize; touch-action: none; }
+.shell__resizer::after { content: ''; position: absolute; top: 0; bottom: 0; left: 2px; width: 2px; background: transparent; transition: background-color 0.12s; }
+.shell__resizer:hover::after, .shell__resizer.is-dragging::after, .shell__resizer:focus-visible::after { background: var(--accent); }
+.shell__resizer:focus-visible { outline: none; }
+.is-resizing, .is-resizing * { cursor: col-resize !important; user-select: none; }
+
 
 .topbar { display: flex; align-items: center; gap: 10px; padding: 0 16px; background: var(--surface); border-bottom: 1px solid var(--line); }
 .wordmark { font-weight: 700; font-size: 17px; letter-spacing: 0.09em; }
