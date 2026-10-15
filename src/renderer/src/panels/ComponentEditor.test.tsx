@@ -117,4 +117,17 @@ describe('ComponentEditor', () => {
     expect(uiStore.getState().componentEditor).toBeNull()
     expect(save).not.toHaveBeenCalled()
   })
+
+  it('crée une composante patchable de 16 canaux, 470 W', async () => {
+    const user = userEvent.setup()
+    render(<ComponentEditor />)
+    await user.type(screen.getByLabelText('Nom'), 'Lyre maison')
+    await user.type(screen.getByLabelText('Code'), 'MH')
+    await user.click(screen.getByLabelText('Appareil à patcher (DMX)'))
+    await user.clear(screen.getByLabelText('Canaux'))
+    await user.type(screen.getByLabelText('Canaux'), '16')
+    await user.type(screen.getByLabelText('Puissance (W)'), '470')
+    await user.click(screen.getByRole('button', { name: 'Enregistrer' }))
+    expect(save).toHaveBeenCalledWith(expect.objectContaining({ dmx: { footprint: 16 }, powerW: 470 }))
+  })
 })

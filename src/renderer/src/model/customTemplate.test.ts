@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { ConnectorSchema, DeviceTemplateSchema } from './schema'
-import { TEMPLATES_BY_ID } from '../catalog/templates'
+import { TEMPLATES, TEMPLATES_BY_ID } from '../catalog/templates'
 import { CONNECTOR_LABELS, POE_CHOICE_LABELS } from '../catalog/labels'
 import { sampleProject } from './__fixtures__/sample'
 import {
@@ -34,7 +34,7 @@ const lidar = (): TemplateDraft => ({
 
 describe('brouillon', () => {
   it('part d’un appareil vide ou d’un gabarit intégré', () => {
-    expect(blankDraft()).toEqual({ name: '', code: '', category: 'autre', vendor: '', model: '', icon: { kind: 'builtin', name: 'generic' }, ports: [] })
+    expect(blankDraft()).toEqual({ name: '', code: '', category: 'autre', vendor: '', model: '', icon: { kind: 'builtin', name: 'generic' }, ports: [], patchable: false, footprint: '1', powerW: '' })
     const avio = draftFrom(TEMPLATES_BY_ID.get('dante-avio')!)
     expect(avio).toMatchObject({ name: 'Adaptateur Dante AVIO', code: 'DNT', category: 'audio', icon: { kind: 'builtin', name: 'dante' } })
     expect(avio.ports).toEqual([{ label: 'ETH', connector: 'rj45', poe: 'in-af' }])
@@ -145,5 +145,33 @@ describe('duplicateTemplate', () => {
     const copy = duplicateTemplate({ ...templateFromDraft(lidar(), 'custom-aaaaaaaaaaaa'), name: 'x'.repeat(60) })
     expect(copy.name).toHaveLength(60)
     expect(copy.name.endsWith(' (copie)')).toBe(true)
+  })
+})
+
+describe('patch et puissance d’une composante', () => {
+  const base = (): TemplateDraft => ({ ...blankDraft(), name: 'Lyre', code: 'MH' })
+
+  it('écrit les canaux et la puissance', () => {
+    const t = templateFromDraft({ ...base(), patchable: true, footprint: '16', powerW: '470,5' }, 'custom-abcdef123456')
+    expect(t.dmx).toEqual({ footprint: 16 })
+    expect(t.powerW).toBe(470.5)
+  })
+
+  it('sans case cochée ni puissance, rien n’est écrit', () => {
+    const t = templateFromDraft({ ...base(), patchable: false, footprint: '16', powerW: '' }, 'custom-abcdef123456')
+    expect(t.dmx).toBeUndefined()
+    expect(t.powerW).toBeUndefined()
+  })
+
+  it('valide les canaux seulement quand la case est cochée', () => {
+    expect(validateDraft({ ...base(), patchable: true, footprint: '600' }).dmx).toBe('Canaux : un nombre entier de 1 à 512.')
+    expect(validateDraft({ ...base(), patchable: false, footprint: '600' }).dmx).toBeUndefined()
+    expect(validateDraft({ ...base(), powerW: 'beaucoup' }).power).toBe('Puissance : un nombre positif ou nul, en watts.')
+  })
+
+  it('reprend le patch et la puissance d’un gabarit', () => {
+    const fixture = TEMPLATES.find((t) => t.id === 'dmx-fixture')!
+    expect(draftFrom(fixture)).toMatchObject({ patchable: true, footprint: '1', powerW: '' })
+    expect(draftFrom({ ...fixture, powerW: 12.5, dmx: { footprint: 8, modes: [{ name: 'A', channels: 12 }] } })).toMatchObject({ footprint: '12', powerW: '12,5' })
   })
 })

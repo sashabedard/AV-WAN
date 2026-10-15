@@ -172,6 +172,25 @@ function EditorForm({ editing }: { editing: DeviceTemplate | null }) {
           </div>
         </div>
 
+        <div className="ce__row">
+          <label className="ce__check">
+            <input type="checkbox" checked={draft.patchable} onChange={(e) => patch({ patchable: e.target.checked })} />
+            Appareil à patcher (DMX)
+          </label>
+          {draft.patchable && (
+            <div className="ce__field ce__code">
+              <label className="ce__label" htmlFor="ce-footprint">Canaux</label>
+              <input id="ce-footprint" inputMode="numeric" value={draft.footprint} onChange={(e) => patch({ footprint: e.target.value })} />
+              {errors.dmx && <p className="ce__error">{errors.dmx}</p>}
+            </div>
+          )}
+          <div className="ce__field ce__code">
+            <label className="ce__label" htmlFor="ce-power">Puissance (W)</label>
+            <input id="ce-power" inputMode="decimal" value={draft.powerW} onChange={(e) => patch({ powerW: e.target.value })} />
+            {errors.power && <p className="ce__error">{errors.power}</p>}
+          </div>
+        </div>
+
         <fieldset className="ce__group">
           <legend className="ce__label">Icône</legend>
           <div className="ce__icons" role="radiogroup" aria-label="Icônes maison">
