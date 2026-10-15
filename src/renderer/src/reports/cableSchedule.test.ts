@@ -10,7 +10,7 @@ describe('cableSchedule', () => {
     const t = cableSchedule(p)
     expect(t).toMatchObject({ id: 'branchement', title: 'Liste de branchement' })
     expect(t.columns.map((c) => c.label)).toEqual(['Câble', 'De', 'Vers', 'Médium', 'Longueur (m)', 'PoE', 'Mode', 'VLAN natif', 'VLAN étiquetés', 'Note'])
-    expect(t.rows.map((r) => r[0])).toEqual(Array.from({ length: 18 }, (_, i) => `C-${String(i + 1).padStart(3, '0')}`))
+    expect(t.rows.map((r) => r[0])).toEqual(Array.from({ length: 23 }, (_, i) => `C-${String(i + 1).padStart(3, '0')}`))
   })
 
   it('donne les ports, le médium, la longueur, le PoE et le VLAN de chaque câble', () => {

@@ -10,6 +10,11 @@ import { CommitInput } from '../CommitInput'
 import { Segmented } from '../Segmented'
 import { SwitchConfigurator } from '../SwitchConfigurator'
 import { peersOf, portVlanSummary } from './format'
+import { isUniverseOutput, UNIVERSE_MAX } from '../../model/dmx'
+import { parseDecimalField, parseIntField } from '../../model/fields'
+import { PsuSection } from './PsuSection'
+import { LedStripSection } from './LedStripSection'
+import { PatchSection } from './PatchSection'
 
 function SwitchSection({ device, project }: { device: Device; project: Project }) {
   const [editing, setEditing] = useState(false)
@@ -48,6 +53,7 @@ export function DeviceForm({ device, project }: { device: Device; project: Proje
   const s = projectStore.getState
   const template = getTemplate(project, device.templateId)
   const ipMode = device.ip?.mode ?? 'dhcp'
+  const universePorts = new Set(device.ports.filter((p) => isUniverseOutput(project, device, p)).map((p) => p.id))
   return (
     <div>
       <h2 className="insp__title">{template?.name ?? 'Appareil'}</h2>
@@ -65,6 +71,29 @@ export function DeviceForm({ device, project }: { device: Device; project: Proje
           onCommit={(v) => s().updateDevice(device.id, { model: v.trim() || undefined })}
         />
       </label>
+      {!device.ledStrip && !device.psu && (
+        <div className="field">
+          <span className="field__label">Puissance</span>
+          <div className="patch__row">
+            <CommitInput
+              className="input"
+              aria-label="Puissance (W)"
+              inputMode="decimal"
+              placeholder="—"
+              value={device.powerW !== undefined ? String(device.powerW).replace('.', ',') : ''}
+              onCommit={(v) => {
+                const n = parseDecimalField(v)
+                if (n === undefined) s().showToast('Puissance : un nombre positif ou nul, en watts.')
+                else s().updateDevice(device.id, { powerW: n ?? undefined })
+              }}
+            />
+            <span className="patch__range">W</span>
+          </div>
+        </div>
+      )}
+      <PsuSection device={device} project={project} />
+      <LedStripSection device={device} project={project} />
+      <PatchSection device={device} project={project} />
       <div className="field">
         <span className="field__label">Adresse IP</span>
         <CommitInput
@@ -115,6 +144,7 @@ export function DeviceForm({ device, project }: { device: Device; project: Proje
               <th>Branché à</th>
               <th>VLAN</th>
               <th>PoE</th>
+              {universePorts.size > 0 && <th>Univers</th>}
             </tr>
           </thead>
           <tbody>
@@ -137,6 +167,23 @@ export function DeviceForm({ device, project }: { device: Device; project: Proje
                     ''
                   )}
                 </td>
+                {universePorts.size > 0 && (
+                  <td>
+                    {universePorts.has(p.id) && (
+                      <CommitInput
+                        className="input input--mini"
+                        aria-label={`Univers ${p.label}`}
+                        inputMode="numeric"
+                        value={device.portState[p.id]?.universe !== undefined ? String(device.portState[p.id]!.universe) : ''}
+                        onCommit={(v) => {
+                          const n = parseIntField(v, 0, UNIVERSE_MAX)
+                          if (n === undefined) s().showToast(`Univers : un nombre entier de 0 à ${UNIVERSE_MAX}.`)
+                          else s().setPortState(device.id, p.id, { universe: n ?? undefined })
+                        }}
+                      />
+                    )}
+                  </td>
+                )}
               </tr>
             ))}
           </tbody>

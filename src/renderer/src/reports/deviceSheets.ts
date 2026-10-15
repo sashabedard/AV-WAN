@@ -1,7 +1,12 @@
-import type { Project } from '../model/types'
+import type { Device, LedStrip, Project } from '../model/types'
+import { LED_STRIP_TYPES, stripPixels, stripPower } from '../model/led'
+import { psuLoad, resolvePsu } from '../model/power'
+import { formatFr } from '../model/fields'
 import { linksOnPort } from '../model/rules'
 import { getTemplate } from '../catalog'
 import { connection, type Connection } from './connections'
+import { patchIndex } from '../model/dmx'
+import { dmxSummary } from './patch'
 import { DASH, compareText, ipLabel } from './format'
 
 const NETWORK_CONNECTORS = new Set<string>(['rj45', 'sfp', 'sfp+', 'wifi'])
@@ -23,6 +28,7 @@ export interface DeviceSheet {
   zone?: string
   note?: string
   lines: DeviceSheetLine[]
+  extras: string[] // lignes en plus (patch DMX…), une par ligne imprimée
 }
 
 // « ETH › SW-2 · port 1 · PoE+ actif (25 W) · VLAN 40 NDI · C-010 Cat6 12 m »
@@ -36,8 +42,35 @@ export function sheetLineText(port: string, c: Connection): string {
   return parts.join(' · ')
 }
 
+// « COB mono · 24 V · 10 W/m · 5 m · 50 W » (spec § 6.3).
+export function stripLine(strip: LedStrip): string {
+  const info = LED_STRIP_TYPES[strip.type]
+  const power = stripPower(strip)
+  const head = [info.label, `${formatFr(strip.volts)} V`, `${formatFr(strip.wPerM)} W/m`]
+  return [...head, ...(power && strip.lengthM !== undefined ? [`${formatFr(strip.lengthM)} m`, `${formatFr(power.watts)} W`] : ['longueur à définir'])].join(' · ')
+}
+
+function powerExtras(project: Project, device: Device): string[] {
+  if (device.ledStrip) {
+    const px = stripPixels(device.ledStrip)
+    return [stripLine(device.ledStrip), ...(px ? [`${formatFr(px.pixels)} px · ${px.universes} univers`] : [])]
+  }
+  if (device.psu) {
+    const r = resolvePsu(device.psu)
+    const load = psuLoad(project, device.id)
+    const volts = r.volts !== undefined ? [`${formatFr(r.volts)} V`] : []
+    return [
+      load.capacityW !== undefined
+        ? `Alimentation : ${[...volts, `${formatFr(load.capacityW)} W`].join(' · ')} · charge ${formatFr(load.loadW)} W (${Math.round((load.ratio ?? 0) * 100)} %)`
+        : `Alimentation : ${[...volts, `charge ${formatFr(load.loadW)} W, capacité inconnue`].join(' · ')}`
+    ]
+  }
+  return device.powerW !== undefined ? [`Puissance : ${formatFr(device.powerW)} W`] : []
+}
+
 // Fiches des appareils qui ne sont pas des switchs (spec § 11.1, section 2), triées par nom.
 export function deviceSheets(project: Project): DeviceSheet[] {
+  const index = patchIndex(project)
   return project.devices
     .filter((d) => d.switch === undefined)
     .sort((a, b) => compareText(a.name, b.name))
@@ -51,6 +84,8 @@ export function deviceSheets(project: Project): DeviceSheet[] {
             return { port: port.label, connection: c, text: sheetLineText(port.label, c) }
           })
       })
+      const patch = index.entries.get(device.id)
+      const extras = [...(patch ? [dmxSummary(patch)] : []), ...powerExtras(project, device)]
       const template = getTemplate(project, device.templateId)
       const zone = project.zones.find((z) => z.id === device.zoneId)?.name
       return {
@@ -63,7 +98,8 @@ export function deviceSheets(project: Project): DeviceSheet[] {
         ...(device.hostname ? { hostname: device.hostname } : {}),
         ...(zone ? { zone } : {}),
         ...(device.note ? { note: device.note } : {}),
-        lines
+        lines,
+        extras
       }
     })
 }

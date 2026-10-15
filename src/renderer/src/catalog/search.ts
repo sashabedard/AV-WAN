@@ -9,7 +9,7 @@ const KEYWORDS: Readonly<Record<string, string>> = {
   gateway: 'routeur router udm wan',
   ap: 'wifi borne antenne unifi',
   'ptp-bridge': 'antenne liaison radio airmax',
-  'poe-injector': 'alimentation',
+  'poe-injector': 'injecteur poe midspan',
   'media-converter': 'fibre sfp',
   'patch-panel-24': 'brassage patch keystone',
   laptop: 'ordinateur portable macbook',
@@ -31,7 +31,17 @@ const KEYWORDS: Readonly<Record<string, string>> = {
   'dmx-node': 'artnet sacn ode enttec',
   'pixel-controller': 'advatek pixlite pixels',
   'dmx-fixture': 'projecteur asservi par',
-  'led-strip': 'ruban pixels ws2812',
+  'moving-spot': 'lyre moving head asservi spot gobo',
+  'moving-wash': 'lyre moving head asservi wash',
+  'moving-beam': 'lyre moving head asservi beam',
+  'par-led': 'par projecteur rgbw',
+  'led-batten': 'barre rampe batten',
+  'profile-led': 'decoupe profile ellipsoidal',
+  strobe: 'strobe flash',
+  hazer: 'brume haze hazer',
+  'fog-machine': 'fumee fog smoke',
+  'led-strip': 'ruban pixels ws2812 ws2815 sk6812 cob fcob rgbw smd',
+  psu: 'alimentation alim bloc mean well transfo 12v 24v 48v dc',
   'esp32-devkit': 'espressif wifi',
   'esp32-poe': 'olimex espressif',
   'wt32-eth01': 'espressif ethernet',
@@ -44,7 +54,10 @@ const KEYWORDS: Readonly<Record<string, string>> = {
   'lidar-eth': 'ouster hokuyo',
   'depth-cam-usb': 'kinect realsense orbbec',
   'depth-cam-poe': 'orbbec femto',
-  generic: 'autre'
+  generic: 'autre',
+  // Modèles nommés : les écritures courantes que le nom ne contient pas.
+  'shure-ulxd4d': 'ulx-d ulxd ulxd4d',
+  'disguise-vx-4': 'vx4'
 }
 
 const BOUNDARY = /[\s()/·,.-]/

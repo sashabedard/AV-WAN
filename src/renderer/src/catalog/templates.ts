@@ -1,11 +1,14 @@
-import type { DeviceTemplate, IconRef } from '../model/types'
-import type { BuiltinIconName } from './iconNames'
-import { patchPanelPorts, range, rj45, sfp, sfpPlus, simple, wifi } from './ports'
+import type { DeviceTemplate } from '../model/types'
+import { ic } from './ic'
+import { stripWithType } from '../model/led'
+import { dmxThru, patchPanelPorts, range, rj45, sfp, sfpPlus, simple, wifi } from './ports'
 import { DEFAULT_SWITCH_SPEC } from './switch'
+import { SENSOR_MODELS } from './models/capteurs'
+import { LIGHTING_MODELS } from './models/eclairage'
+import { VIDEO_MODELS } from './models/video'
+import { AUDIO_MODELS } from './models/audio'
 
-const ic = (name: BuiltinIconName): IconRef => ({ kind: 'builtin', name })
-
-export const TEMPLATES: readonly DeviceTemplate[] = [
+const BASE_TEMPLATES: readonly DeviceTemplate[] = [
   // Réseau
   { id: 'switch', category: 'reseau', name: 'Switch', code: 'SW', icon: ic('switch'), ports: [], switch: DEFAULT_SWITCH_SPEC, defaults: { vlanId: 10 } },
   { id: 'gateway', category: 'reseau', name: 'Passerelle / routeur', code: 'GW', icon: ic('gateway'), ports: [rj45('WAN', { speedMbps: 2500 }), ...range('LAN', 1, 4).map((id) => rj45(id))], defaults: { vlanId: 10 } },
@@ -37,8 +40,18 @@ export const TEMPLATES: readonly DeviceTemplate[] = [
   { id: 'lighting-console', category: 'eclairage', name: "Console d'éclairage", code: 'LX', icon: ic('lighting-console'), ports: [rj45('ETH1'), rj45('ETH2'), simple('dmx', 'DMX-A', 'DMX A'), simple('dmx', 'DMX-B', 'DMX B')], defaults: { vlanId: 50 } },
   { id: 'dmx-node', category: 'eclairage', name: 'Nœud DMX (type ODE)', code: 'DMX', icon: ic('dmx-node'), ports: [rj45('ETH', { speedMbps: 100, poeIn: 'af', poeDrawW: 3 }), simple('dmx', 'DMX-1', 'DMX 1'), simple('dmx', 'DMX-2', 'DMX 2')], defaults: { vlanId: 50 } },
   { id: 'pixel-controller', category: 'eclairage', name: 'Contrôleur de pixels (type PixLite A4-S)', code: 'PIX', icon: ic('pixel-controller'), ports: [rj45('ETH1'), rj45('ETH2'), ...range('OUT', 1, 4).map((id) => simple('pixel', id)), simple('dmx', 'DMX')], defaults: { vlanId: 50 } },
-  { id: 'dmx-fixture', category: 'eclairage', name: 'Appareil DMX', code: 'FIX', icon: ic('fixture'), ports: [simple('dmx', 'DMX-IN', 'DMX IN'), simple('dmx', 'DMX-OUT', 'DMX OUT')] },
-  { id: 'led-strip', category: 'eclairage', name: 'Bande LED', code: 'LED', icon: ic('led-strip'), ports: [simple('pixel', 'IN')] },
+  { id: 'dmx-fixture', category: 'eclairage', name: 'Appareil DMX', code: 'FIX', icon: ic('fixture'), ports: [simple('dmx', 'DMX-IN', 'DMX IN'), simple('dmx', 'DMX-OUT', 'DMX OUT')], dmx: { footprint: 1 } },
+  { id: 'led-strip', category: 'eclairage', name: 'Bande LED', code: 'LED', icon: ic('led-strip'), ports: [simple('pixel', 'IN'), simple('dc', 'DC-IN', 'DC IN')], ledStrip: { ...stripWithType(undefined, 'ws2812b'), lengthM: 5 } },
+  // Génériques (spec § 7.1) : patchables avec des canaux typiques ; le mode réel se règle dans l’inspecteur. Pas de watts inventés.
+  { id: 'moving-spot', category: 'eclairage', name: 'Lyre spot', code: 'MH', icon: ic('moving-head'), ports: dmxThru(), dmx: { footprint: 16 }, defaults: { vlanId: 50 } },
+  { id: 'moving-wash', category: 'eclairage', name: 'Lyre wash', code: 'WSH', icon: ic('moving-head'), ports: dmxThru(), dmx: { footprint: 16 }, defaults: { vlanId: 50 } },
+  { id: 'moving-beam', category: 'eclairage', name: 'Lyre beam', code: 'BM', icon: ic('moving-head'), ports: dmxThru(), dmx: { footprint: 16 }, defaults: { vlanId: 50 } },
+  { id: 'par-led', category: 'eclairage', name: 'PAR LED', code: 'PAR', icon: ic('par'), ports: dmxThru(), dmx: { footprint: 8 }, defaults: { vlanId: 50 } },
+  { id: 'led-batten', category: 'eclairage', name: 'Barre LED', code: 'BAR', icon: ic('led-strip'), ports: dmxThru(), dmx: { footprint: 12 }, defaults: { vlanId: 50 } },
+  { id: 'profile-led', category: 'eclairage', name: 'Découpe LED', code: 'PRF', icon: ic('fixture'), ports: dmxThru(), dmx: { footprint: 5 }, defaults: { vlanId: 50 } },
+  { id: 'strobe', category: 'eclairage', name: 'Stroboscope', code: 'STR', icon: ic('strobe'), ports: dmxThru(), dmx: { footprint: 4 }, defaults: { vlanId: 50 } },
+  { id: 'hazer', category: 'eclairage', name: 'Machine à brume', code: 'HZ', icon: ic('fog'), ports: dmxThru(), dmx: { footprint: 2 }, defaults: { vlanId: 50 } },
+  { id: 'fog-machine', category: 'eclairage', name: 'Machine à fumée', code: 'FOG', icon: ic('fog'), ports: dmxThru(), dmx: { footprint: 1 }, defaults: { vlanId: 50 } },
   // IoT
   { id: 'esp32-devkit', category: 'iot', name: 'ESP32 DevKit (Wi-Fi)', code: 'IOT', icon: ic('esp32'), ports: [wifi(), simple('usb', 'USB')], defaults: { vlanId: 60 } },
   { id: 'esp32-poe', category: 'iot', name: 'ESP32-POE (Olimex)', code: 'IOT', icon: ic('esp32'), ports: [rj45('ETH', { speedMbps: 100, poeIn: 'af', poeDrawW: 2 }), wifi(), simple('usb', 'USB')], defaults: { vlanId: 60 } },
@@ -54,8 +67,12 @@ export const TEMPLATES: readonly DeviceTemplate[] = [
   { id: 'depth-cam-usb', category: 'capteur', name: 'Caméra de profondeur USB', code: 'DEP', icon: ic('depth-camera'), ports: [simple('usb', 'USB')] },
   { id: 'depth-cam-poe', category: 'capteur', name: 'Caméra de profondeur PoE+', code: 'DEP', icon: ic('depth-camera'), ports: [rj45('ETH', { poeIn: 'at', poeDrawW: 13 })], defaults: { vlanId: 60 } },
   // Autre
+  // Alimentation basse tension (spec § 5.2) : 24 V de départ, courant et puissance à taper (pas de capacité inventée).
+  { id: 'psu', category: 'autre', name: 'Alimentation', code: 'PSU', icon: ic('psu'), ports: range('DC-OUT-', 1, 4).map((id, i) => simple('dc', id, `DC OUT ${i + 1}`)), psu: { volts: 24 } },
   { id: 'generic', category: 'autre', name: 'Appareil générique', code: 'GEN', icon: ic('generic'), ports: [rj45('ETH')] }
 ]
+
+export const TEMPLATES: readonly DeviceTemplate[] = [...BASE_TEMPLATES, ...SENSOR_MODELS, ...LIGHTING_MODELS, ...VIDEO_MODELS, ...AUDIO_MODELS]
 
 export const TEMPLATES_BY_ID: ReadonlyMap<string, DeviceTemplate> = new Map(TEMPLATES.map((t) => [t.id, t]))
 

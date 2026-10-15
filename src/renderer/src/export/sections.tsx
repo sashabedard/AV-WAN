@@ -2,6 +2,9 @@ import { Fragment } from 'react'
 import type { Project } from '../model/types'
 import type { DataTable } from '../../../shared/tables'
 import { deviceSheets } from '../reports/deviceSheets'
+import { PATCH_PDF_COLUMNS, patchGroups } from '../reports/patch'
+import { POWER_PDF_COLUMNS, PSU_COLUMNS, powerBudget } from '../reports/powerBudget'
+import { formatFr } from '../model/fields'
 import { portMaps } from '../reports/portMaps'
 import { vlanSheets } from '../reports/vlanSheets'
 import { PortMapFacade } from './PortMapFacade'
@@ -21,6 +24,11 @@ export function DeviceSheetsPage({ project }: { project: Project }) {
             <span className="ds__kind">{[s.kind, s.model].filter(Boolean).join(' · ')}</span>
           </header>
           <p className="ds__meta">{[s.networked && `IP : ${s.ip}`, s.hostname && `Nom d’hôte : ${s.hostname}`, s.zone && `Zone : ${s.zone}`].filter(Boolean).join(' · ')}</p>
+          {s.extras.map((x) => (
+            <p key={x} className="ds__meta">
+              {x}
+            </p>
+          ))}
           {s.lines.length === 0 ? (
             <p className="ds__none">Aucun câble branché.</p>
           ) : (
@@ -32,6 +40,30 @@ export function DeviceSheetsPage({ project }: { project: Project }) {
           )}
           {s.note && <p className="ds__note">{s.note}</p>}
         </article>
+      ))}
+    </section>
+  )
+}
+
+// Section « Patch DMX » : un tableau par univers, trié par adresse (spec patch-puissance-catalogue § 6.1).
+export function PatchPage({ project }: { project: Project }) {
+  const groups = patchGroups(project)
+  return (
+    <section className="pg pg--sheet">
+      <h2 className="pg__h">Patch DMX</h2>
+      {groups.length === 0 && <p className="pg__empty">Aucun appareil patchable dans le projet.</p>}
+      {groups.map((g) => (
+        <div key={g.title} className="pt">
+          <h3 className="pt__h">{g.title}</h3>
+          <ReportTable
+            table={{
+              id: `patch-${g.universe ?? 'sans'}`,
+              title: g.title,
+              columns: PATCH_PDF_COLUMNS,
+              rows: g.rows.map((r) => [r.address ?? null, r.end ?? null, r.channels, r.device, r.model, r.mode, r.zone, r.remark])
+            }}
+          />
+        </div>
       ))}
     </section>
   )
@@ -105,6 +137,51 @@ export function VlanSheetsPage({ project }: { project: Project }) {
           {v.note && <p className="vs__note">{v.note}</p>}
         </article>
       ))}
+    </section>
+  )
+}
+
+// Section « Bilan de puissance » (spec § 6.1).
+export function PowerPage({ project }: { project: Project }) {
+  const b = powerBudget(project)
+  const shown = b.missing.slice(0, 12)
+  return (
+    <section className="pg pg--sheet">
+      <h2 className="pg__h">Bilan de puissance</h2>
+      {b.psus.length === 0 && b.zones.length === 0 && <p className="pg__empty">Aucune puissance renseignée dans le projet.</p>}
+      {b.psus.length > 0 && (
+        <div className="pt">
+          <h3 className="pt__h">Alimentations</h3>
+          <ReportTable
+            table={{
+              id: 'alimentations',
+              title: 'Alimentations',
+              columns: PSU_COLUMNS,
+              rows: b.psus.map((s) => [s.name, s.volts !== undefined ? `${formatFr(s.volts)} V` : '', s.capacityW ?? null, s.loadW, s.ratio !== undefined ? `${Math.round(s.ratio * 100)} %` : '', s.fed.join(', '), s.remark])
+            }}
+          />
+        </div>
+      )}
+      {b.zones.map((z) => (
+        <div key={z.zoneId ?? 'hors-zone'} className="pt">
+          <h3 className="pt__h">{z.zone}</h3>
+          <ReportTable
+            table={{
+              id: `puissance-${z.zoneId ?? 'hors-zone'}`,
+              title: z.zone,
+              columns: POWER_PDF_COLUMNS,
+              rows: [...z.rows.map((r) => [r.device, r.type, r.watts ?? null, r.fedBy, r.mainsW ?? null, r.remark]), ['Sous-total', '', null, '', z.subtotalW, '']]
+            }}
+          />
+        </div>
+      ))}
+      {b.zones.length > 0 && <p className="pw__total">{`Total : ${formatFr(b.totalW)} W · ${formatFr(b.amps, 1)} A à ${b.voltage} V`}</p>}
+      {b.missing.length > 0 && (
+        <p className="pw__missing">
+          {`${b.missing.length} appareil${b.missing.length > 1 ? 's' : ''} sans puissance renseignée : ${shown.join(', ')}${b.missing.length > shown.length ? ` et ${b.missing.length - shown.length} autres` : ''}`}
+        </p>
+      )}
+      <p className="pw__note">Facteur de puissance supposé égal à 1. Alimentations comptées à leur puissance nominale ; appareils PoE comptés dans leur switch.</p>
     </section>
   )
 }

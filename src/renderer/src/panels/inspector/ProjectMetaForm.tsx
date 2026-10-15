@@ -3,8 +3,10 @@ import type { Project } from '../../model/types'
 import { projectStore } from '../../store/projectStore'
 import { CommitInput } from '../CommitInput'
 import { Segmented } from '../Segmented'
+import { mainsVoltage } from '../../model/power'
 
-export function ProjectMetaForm({ meta }: { meta: Project['meta'] }) {
+export function ProjectMetaForm({ project }: { project: Project }) {
+  const meta = project.meta
   const s = projectStore.getState
   return (
     <div>
@@ -40,6 +42,18 @@ export function ProjectMetaForm({ meta }: { meta: Project['meta'] }) {
           ]}
           value={meta.status}
           onChange={(status) => s().updateMeta({ status })}
+        />
+      </div>
+      <div className="field">
+        <span className="field__label">Tension secteur</span>
+        <Segmented
+          ariaLabel="Tension secteur"
+          options={[
+            { value: '120', label: '120 V' },
+            { value: '230', label: '230 V' }
+          ]}
+          value={String(mainsVoltage(project))}
+          onChange={(v) => s().setMainsVoltage(v === '230' ? 230 : 120)}
         />
       </div>
       <p className="insp__note">Sélectionnez un appareil ou un câble pour le modifier.</p>

@@ -1,6 +1,7 @@
 // Composantes perso (spec plan 4 § 6) : brouillon de la boîte « Nouvelle composante », ports, validation,
 // et embarquement dans le projet. Fonctions pures.
 import { nanoid } from 'nanoid'
+import { parseDecimalField, parseIntField } from './fields'
 import type { Category, Connector, DeviceTemplate, IconRef, PoeClass, PortDef, Project } from './types'
 
 export const CUSTOM_ID = /^custom-[A-Za-z0-9_-]{6,40}$/
@@ -23,17 +24,22 @@ export interface TemplateDraft {
   model: string
   icon: IconRef
   ports: PortDraft[]
+  patchable: boolean
+  footprint: string
+  powerW: string
 }
 
 export interface DraftErrors {
   name?: string
   code?: string
   ports?: string
+  dmx?: string
+  power?: string
 }
 
 // Préfixe des ports ajoutés en lot : « 4 × RJ45 » donne ETH1 à ETH4.
 const PORT_PREFIX: Record<Connector, string> = {
-  rj45: 'ETH', sfp: 'SFP', 'sfp+': 'SFP+', wifi: 'WIFI', usb: 'USB', dmx: 'DMX', pixel: 'PIX', hdmi: 'HDMI', sdi: 'SDI', serial: 'SER'
+  rj45: 'ETH', sfp: 'SFP', 'sfp+': 'SFP+', wifi: 'WIFI', usb: 'USB', dmx: 'DMX', pixel: 'PIX', hdmi: 'HDMI', sdi: 'SDI', serial: 'SER', dc: 'DC'
 }
 const SPEED: Partial<Record<Connector, number>> = { rj45: 1000, sfp: 1000, 'sfp+': 10000 }
 
@@ -44,7 +50,7 @@ export function newCustomId(): string {
 }
 
 export function blankDraft(): TemplateDraft {
-  return { name: '', code: '', category: 'autre', vendor: '', model: '', icon: { kind: 'builtin', name: 'generic' }, ports: [] }
+  return { name: '', code: '', category: 'autre', vendor: '', model: '', icon: { kind: 'builtin', name: 'generic' }, ports: [], patchable: false, footprint: '1', powerW: '' }
 }
 
 const poeOf = (p: PortDef): PoeChoice => (p.poeIn ? `in-${p.poeIn}` : p.poeOut ? `out-${p.poeOut}` : 'none')
@@ -57,7 +63,11 @@ export function draftFrom(t: DeviceTemplate): TemplateDraft {
     vendor: t.vendor ?? '',
     model: t.model ?? '',
     icon: structuredClone(t.icon),
-    ports: t.ports.map((p) => ({ label: p.label || p.id, connector: p.connector, poe: poeOf(p) }))
+    ports: t.ports.map((p) => ({ label: p.label || p.id, connector: p.connector, poe: poeOf(p) })),
+    // Pas de formatFr ici : son espace des milliers (« 1 200 ») serait refusé à la relecture du champ.
+    patchable: t.dmx !== undefined,
+    footprint: String(t.dmx?.modes?.[0]?.channels ?? t.dmx?.footprint ?? 1),
+    powerW: t.powerW !== undefined ? String(t.powerW).replace('.', ',') : ''
   }
 }
 
@@ -99,6 +109,8 @@ export function validateDraft(d: TemplateDraft): DraftErrors {
   if (!/^[A-Z0-9]{1,4}$/.test(d.code)) errors.code = 'De 1 à 4 lettres ou chiffres.'
   if (d.ports.length > MAX_PORTS) errors.ports = `${MAX_PORTS} ports au plus.`
   else if (d.ports.some((p) => !p.label.trim())) errors.ports = 'Chaque port a besoin d’un nom.'
+  if (d.patchable && typeof parseIntField(d.footprint, 1, 512) !== 'number') errors.dmx = 'Canaux : un nombre entier de 1 à 512.'
+  if (parseDecimalField(d.powerW) === undefined) errors.power = 'Puissance : un nombre positif ou nul, en watts.'
   return errors
 }
 
@@ -121,6 +133,8 @@ export function templateFromDraft(d: TemplateDraft, id: string): DeviceTemplate 
     }
     return def
   })
+  const footprint = parseIntField(d.footprint, 1, 512)
+  const powerW = parseDecimalField(d.powerW)
   const vendor = d.vendor.trim()
   const model = d.model.trim()
   return {
@@ -132,6 +146,8 @@ export function templateFromDraft(d: TemplateDraft, id: string): DeviceTemplate 
     ports,
     ...(vendor ? { vendor } : {}),
     ...(model ? { model } : {}),
+    ...(d.patchable && typeof footprint === 'number' ? { dmx: { footprint } } : {}),
+    ...(typeof powerW === 'number' ? { powerW } : {}),
     isCustom: true
   }
 }

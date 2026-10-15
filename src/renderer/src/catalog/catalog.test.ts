@@ -9,11 +9,22 @@ import { DeviceTemplateSchema } from '../model/schema'
 describe('TEMPLATES', () => {
   it('a des identifiants uniques, des gabarits valides et des icônes connues', () => {
     expect(new Set(TEMPLATES.map((t) => t.id)).size).toBe(TEMPLATES.length)
-    expect(TEMPLATES.length).toBe(40)
+    expect(TEMPLATES.length).toBe(97)
     for (const t of TEMPLATES) {
       expect(DeviceTemplateSchema.safeParse(t).success, t.id).toBe(true)
       expect(t.icon.kind === 'builtin' && (BUILTIN_ICON_NAMES as readonly string[]).includes(t.icon.name), t.id).toBe(true)
       expect(CATEGORY_ORDER).toContain(t.category)
+    }
+  })
+
+  it('donne des génériques d’éclairage patchables, entrée et recopie DMX', () => {
+    const ids = ['moving-spot', 'moving-wash', 'moving-beam', 'par-led', 'led-batten', 'profile-led', 'strobe', 'hazer', 'fog-machine']
+    for (const id of ids) {
+      const t = TEMPLATES.find((x) => x.id === id)!
+      expect(t.category, id).toBe('eclairage')
+      expect(t.dmx?.footprint, id).toBeGreaterThan(0)
+      expect(t.ports.map((p) => p.id), id).toEqual(['DMX-IN', 'DMX-OUT'])
+      expect(t.powerW, id).toBeUndefined() // un générique n’invente pas de watts
     }
   })
 
@@ -78,5 +89,22 @@ describe('getTemplate', () => {
     expect(pp.ports[0]).toMatchObject({ id: 'A1', label: 'A1', connector: 'rj45', row: 'top' })
     expect(pp.ports[24]).toMatchObject({ id: 'R1', label: 'R1', connector: 'rj45', row: 'bottom' })
     expect(pp.ports.some((p) => p.poeOut || p.poeIn)).toBe(false)
+  })
+
+  it('décrit l’alimentation : 4 sorties DC, 24 V, courant et puissance à taper', () => {
+    const psu = TEMPLATES.find((t) => t.id === 'psu')!
+    expect(psu).toMatchObject({ category: 'autre', code: 'PSU', name: 'Alimentation', icon: { kind: 'builtin', name: 'psu' }, psu: { volts: 24 } })
+    expect(psu.ports.map((p) => [p.id, p.label, p.connector])).toEqual([
+      ['DC-OUT-1', 'DC OUT 1', 'dc'],
+      ['DC-OUT-2', 'DC OUT 2', 'dc'],
+      ['DC-OUT-3', 'DC OUT 3', 'dc'],
+      ['DC-OUT-4', 'DC OUT 4', 'dc']
+    ])
+  })
+
+  it('donne à la bande LED une entrée de données, une entrée DC et 5 m de WS2812B', () => {
+    const led = TEMPLATES.find((t) => t.id === 'led-strip')!
+    expect(led.ports.map((p) => [p.id, p.connector])).toEqual([['IN', 'pixel'], ['DC-IN', 'dc']])
+    expect(led.ledStrip).toMatchObject({ type: 'ws2812b', volts: 5, pxPerM: 60, lengthM: 5 })
   })
 })

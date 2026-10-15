@@ -28,3 +28,5 @@
 .ce__batch input { width: 64px; }
 .ce__actions { display: flex; justify-content: flex-end; gap: 8px; }
 .ce__sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+.ce__check { display: flex; align-items: center; gap: 6px; align-self: end; padding-bottom: 6px; font-size: 13px; }

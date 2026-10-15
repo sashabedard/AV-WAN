@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { createExampleProject } from '../samples/exampleProject'
+import { createDevice, createProject } from '../model/project'
+import type { Device, Link, PortDef, Project } from '../model/types'
 import { cableSchedule } from './cableSchedule'
 import { deviceSheets } from './deviceSheets'
 
@@ -10,7 +12,7 @@ describe('deviceSheets', () => {
   it('fait une fiche par appareil qui n’est pas un switch, triée par nom', () => {
     expect(deviceSheets(p).map((s) => s.name)).toEqual([
       'AP-1', 'CAM-1', 'CAM-2', 'DMX-1', 'DNT-1', 'FIX-1', 'GW-1', 'IOT-1', 'IOT-2',
-      'LED-1', 'LX-1', 'MAC-1', 'MQT-1', 'PC-1', 'PIX-1', 'SPK-1', 'SPK-2'
+      'LED-1', 'LED-2', 'LX-1', 'MAC-1', 'MH-1', 'MH-2', 'MH-3', 'MQT-1', 'PC-1', 'PIX-1', 'PSU-1', 'SPK-1', 'SPK-2'
     ])
   })
 
@@ -43,7 +45,46 @@ describe('deviceSheets', () => {
         checked++
       }
     }
-    // 13 câbles appareil → switch (une fiche), 1 passerelle → switch, 3 entre deux appareils (deux fiches), 1 entre switchs (aucune).
-    expect(checked).toBe(20)
+    // 13 câbles appareil → switch (une fiche), 1 passerelle → switch, 8 entre deux appareils (deux fiches), 1 entre switchs (aucune).
+    expect(checked).toBe(30)
+  })
+})
+
+describe('deviceSheets : ligne DMX', () => {
+  it('ajoute le résumé du patch aux appareils patchables seulement', () => {
+    let q = createExampleProject(new Date(2026, 9, 13))
+    q = { ...q, devices: [...q.devices, { ...createDevice(q, 'dmx-fixture', { x: 0, y: 0 }, { id: 'wash' }), name: 'WASH-9', dmx: { footprint: 16, address: 33, universe: 2, mode: 'Standard 16 ch' } }] }
+    const find = (name: string) => deviceSheets(q).find((s) => s.name === name)!
+    expect(find('WASH-9').extras).toEqual(['DMX : U2 · 33–48 · 16 ch · Standard 16 ch'])
+    expect(find('CAM-1').extras).toEqual([])
+  })
+})
+
+const dc = (id: string): PortDef => ({ id, label: id.replace(/-/g, ' '), connector: 'dc' })
+const dev = (id: string, name: string, extra: Partial<Device>): Device => ({ id, templateId: 'generic', name, position: { x: 0, y: 0 }, portSide: 'auto', ports: [], portState: {}, ...extra })
+const link = (id: string, a: [string, string], b: [string, string]): Link => ({ id, cableId: id, a: { deviceId: a[0], portId: a[1] }, b: { deviceId: b[0], portId: b[1] }, medium: 'dc' })
+
+// Une alim 24 V 15 A qui nourrit deux bandes COB de 144 W, plus une lyre de 470 W.
+function benchWithLyre(): Project {
+  const strip = { type: 'cob' as const, volts: 24, wPerM: 14.4, lengthM: 10 }
+  return {
+    ...createProject(new Date(2026, 9, 14)),
+    devices: [
+      dev('psu', 'PSU-1', { ports: [dc('DC-OUT-1'), dc('DC-OUT-2'), dc('DC-OUT-3'), dc('DC-OUT-4')], psu: { volts: 24, amps: 15 } }),
+      dev('led1', 'LED-1', { ports: [dc('DC-IN')], ledStrip: strip }),
+      dev('led2', 'LED-2', { ports: [dc('DC-IN')], ledStrip: strip }),
+      dev('mh', 'MH-1', { powerW: 470 })
+    ],
+    links: [link('l1', ['psu', 'DC-OUT-1'], ['led1', 'DC-IN']), link('l2', ['led2', 'DC-IN'], ['psu', 'DC-OUT-2'])]
+  }
+}
+
+describe('deviceSheets : puissance', () => {
+  it('ajoute puissance, bande et alimentation aux fiches', () => {
+    const sheets = deviceSheets(benchWithLyre())
+    const extras = (name: string) => sheets.find((s) => s.name === name)!.extras
+    expect(extras('MH-1')).toEqual(['Puissance : 470 W'])
+    expect(extras('LED-1')).toEqual(['COB mono · 24 V · 14,4 W/m · 10 m · 144 W'])
+    expect(extras('PSU-1')).toEqual(['Alimentation : 24 V · 360 W · charge 288 W (80 %)'])
   })
 })

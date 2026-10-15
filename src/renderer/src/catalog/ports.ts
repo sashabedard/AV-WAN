@@ -1,7 +1,7 @@
 import type { PortDef } from '../model/types'
 
 type Extra = Partial<Omit<PortDef, 'id' | 'connector'>>
-export type SimpleConnector = 'usb' | 'dmx' | 'pixel' | 'hdmi' | 'sdi' | 'serial'
+export type SimpleConnector = 'usb' | 'dmx' | 'pixel' | 'hdmi' | 'sdi' | 'serial' | 'dc'
 
 export function rj45(id: string, extra: Extra = {}): PortDef {
   return { id, label: id, connector: 'rj45', speedMbps: 1000, ...extra }
@@ -30,4 +30,9 @@ export function patchPanelPorts(count: number): PortDef[] {
   for (let i = 1; i <= count; i++) out.push({ id: `A${i}`, label: `A${i}`, connector: 'rj45', speedMbps: 1000, row: 'top' })
   for (let i = 1; i <= count; i++) out.push({ id: `R${i}`, label: `R${i}`, connector: 'rj45', speedMbps: 1000, row: 'bottom' })
   return out
+}
+
+// Entrée DMX et recopie d’un projecteur (chaîne DMX).
+export function dmxThru(): PortDef[] {
+  return [simple('dmx', 'DMX-IN', 'DMX IN'), simple('dmx', 'DMX-OUT', 'DMX OUT')]
 }

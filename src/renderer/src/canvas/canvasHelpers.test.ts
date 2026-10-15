@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
-import { deviceIpLine, mergeEdges, mergeNodes, nodesMatchDerived, snapPoint, syncSelected } from './canvasHelpers'
+import { deviceIpLine, deviceSecondLine, mergeEdges, mergeNodes, nodesMatchDerived, snapPoint, syncSelected } from './canvasHelpers'
 import type { CordFlowEdge, DeviceFlowNode } from './toFlow'
+import { patchIndex } from '../model/dmx'
+import { createDevice, createProject } from '../model/project'
 
 const node = (id: string, extra: Partial<DeviceFlowNode> = {}) =>
   ({ id, type: 'device', position: { x: 0, y: 0 }, data: {} as DeviceFlowNode['data'], ...extra }) as DeviceFlowNode
@@ -50,5 +52,27 @@ describe('deviceIpLine', () => {
     expect(deviceIpLine({ address: '10.0.0.5', mode: 'static' })).toBe('10.0.0.5 · FIXE')
     expect(deviceIpLine({ address: '', mode: 'static' })).toBe('IP non définie')
     expect(deviceIpLine(undefined)).toBe('IP non définie')
+  })
+})
+
+describe('deviceSecondLine', () => {
+  it('l’adresse remplace l’IP d’un appareil patchable ; l’IP reste pour les autres', () => {
+    let p = createProject()
+    const f = { ...createDevice(p, 'dmx-fixture', { x: 0, y: 0 }, { id: 'f' }), dmx: { footprint: 16, address: 33, universe: 0 } }
+    const cam = { ...createDevice(p, 'ip-camera', { x: 0, y: 0 }, { id: 'c' }), ip: { address: '10.70.0.5', mode: 'static' as const } }
+    p = { ...p, devices: [f, cam] }
+    const index = patchIndex(p)
+    expect(deviceSecondLine(f, index.entries.get('f'))).toBe('U0 · 33')
+    expect(deviceSecondLine(cam, undefined)).toBe('10.70.0.5 · FIXE')
+  })
+})
+
+describe('deviceSecondLine : puissance', () => {
+  it('bande : watts et longueur ; alimentation : tension et puissance', () => {
+    const base = createDevice(createProject(), 'generic', { x: 0, y: 0 }, { id: 'x' })
+    expect(deviceSecondLine({ ...base, ledStrip: { type: 'sk6812-rgbw', volts: 24, wPerM: 14.4, lengthM: 5, pxPerM: 60 } }, undefined)).toBe('72 W · 5 m')
+    expect(deviceSecondLine({ ...base, ledStrip: { type: 'ws2812b', volts: 5, wPerM: 18 } }, undefined)).toBe('Pixel WS2812B')
+    expect(deviceSecondLine({ ...base, psu: { volts: 24, amps: 15 } }, undefined)).toBe('24 V · 360 W')
+    expect(deviceSecondLine({ ...base, psu: { volts: 24 } }, undefined)).toBe('24 V')
   })
 })

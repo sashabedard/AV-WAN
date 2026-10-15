@@ -27,6 +27,12 @@
 .insp__title { margin: 4px 0 12px; font: 700 12px/1 var(--font-display); letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
 .insp__section { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line); }
 .insp__multi, .insp__note { color: var(--muted); font-size: 12.5px; }
+/* Repère discret (chevauchement, dépassement, marge) : jamais une alerte. */
+.insp__warn { margin: 4px 0 0; color: var(--accent); font-size: 12.5px; }
+.patch__row { display: flex; align-items: center; gap: 6px; }
+.patch__row .input { flex: 1 1 auto; min-width: 0; }
+.patch__range { font: 600 12px/1 var(--font-mono); color: var(--muted); white-space: nowrap; }
+.input--mini { width: 64px; }
 .ports { width: 100%; border-collapse: collapse; font: 12px var(--font-mono); }
 .ports th { padding: 4px 2px; text-align: left; font-size: 10px; font-weight: 600; text-transform: uppercase; color: var(--muted); }
 .ports td { padding: 4px 2px; border-top: 1px solid var(--line); }
@@ -95,3 +101,7 @@
 .palette__pop button { padding: 6px 10px; border: 0; border-radius: 3px; background: none; color: var(--ink); text-align: left; font-size: 13px; cursor: pointer; }
 .palette__pop button:hover { background: var(--surface-2); }
 .palette__pop .is-danger { color: var(--danger); }
+
+.psu__bar { height: 4px; margin: 2px 0 6px; overflow: hidden; border-radius: 2px; background: var(--line); }
+.psu__bar span { display: block; height: 100%; background: var(--muted); }
+.psu__bar--margin span, .psu__bar--over span { background: var(--accent); }

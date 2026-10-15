@@ -1,9 +1,11 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it } from 'vitest'
 import { cleanup, render, screen, within } from '@testing-library/react'
-import { DeviceSheetsPage, PortMapsPage, VlanSheetsPage } from './sections'
+import { DeviceSheetsPage, PatchPage, PortMapsPage, PowerPage, VlanSheetsPage } from './sections'
 import { createExampleProject } from '../samples/exampleProject'
 import { createProject } from '../model/project'
+import { powerShowProject } from '../reports/__fixtures__/powerShow'
+import { patchShowProject } from '../reports/__fixtures__/patchShow'
 
 afterEach(cleanup)
 const p = createExampleProject(new Date(2026, 9, 13))
@@ -11,13 +13,37 @@ const p = createExampleProject(new Date(2026, 9, 13))
 describe('sections du PDF', () => {
   it('fiches par appareil : un bloc par appareil, une ligne par branchement', () => {
     const { container } = render(<DeviceSheetsPage project={p} />)
-    expect(container.querySelectorAll('.ds')).toHaveLength(17)
+    expect(container.querySelectorAll('.ds')).toHaveLength(22)
     expect(screen.getByText('ETH › SW-2 · port 1 · PoE+ actif (25 W) · VLAN 40 NDI · C-010 Cat6 12 m')).toBeTruthy()
     expect(screen.getAllByText(/IP : 10\.40\.0\.21 statique/)).toHaveLength(1)
     const meta = (name: string) => [...container.querySelectorAll('.ds')].find((a) => a.querySelector('.ds__name')?.textContent === name)!.querySelector('.ds__meta')!.textContent
     expect(meta('FIX-1')).not.toMatch(/IP :/)
     expect(meta('LED-1')).not.toMatch(/IP :/)
     expect(meta('CAM-1')).toMatch(/IP :/)
+  })
+
+  it('patch DMX : un tableau par univers, avec les remarques', () => {
+    render(<PatchPage project={patchShowProject()} />)
+    expect(screen.getByText('Univers 1 · ODE-1 › DMX 1')).toBeTruthy()
+    expect(screen.getByText('Sans univers')).toBeTruthy()
+    expect(screen.getAllByText('Chevauche PAR-1 (10–17)').length).toBeGreaterThan(0)
+  })
+
+  it('patch DMX : dit quand rien n’est patchable', () => {
+    render(<PatchPage project={createProject()} />)
+    expect(screen.getByText('Aucun appareil patchable dans le projet.')).toBeTruthy()
+  })
+
+  it('bilan de puissance : total, alimentations et appareils sans puissance', () => {
+    render(<PowerPage project={powerShowProject()} />)
+    expect(screen.getByText('Total : 830 W · 6,9 A à 120 V')).toBeTruthy()
+    expect(screen.getByText('Alimentations')).toBeTruthy()
+    expect(screen.getByText('1 appareil sans puissance renseignée : SW-1')).toBeTruthy()
+  })
+
+  it('bilan de puissance : dit quand rien n’est renseigné', () => {
+    render(<PowerPage project={createProject()} />)
+    expect(screen.getByText('Aucune puissance renseignée dans le projet.')).toBeTruthy()
   })
 
   it('carte des ports : une page par switch, avec sa façade et son tableau', () => {

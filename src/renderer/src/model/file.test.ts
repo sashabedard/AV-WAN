@@ -29,7 +29,7 @@ describe('serializeProject / parseProjectFile', () => {
   })
 
   it('ouvre en lecture seule un fichier de version plus récente', () => {
-    const text = serializeProject(sampleProject()).replace('"schemaVersion": 1', '"schemaVersion": 2')
+    const text = serializeProject(sampleProject()).replace('"schemaVersion": 2', '"schemaVersion": 3')
     const r = parseProjectFile(text)
     expect(r.ok && r.readOnly).toBe(true)
   })

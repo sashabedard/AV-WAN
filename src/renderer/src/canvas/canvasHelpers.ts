@@ -1,6 +1,10 @@
 import type { Node } from '@xyflow/react'
 import type { CordFlowEdge } from './toFlow'
-import type { IpConfig } from '../model/types'
+import type { Device, IpConfig } from '../model/types'
+import { patchLine, type PatchEntry } from '../model/dmx'
+import { LED_STRIP_TYPES, stripPower } from '../model/led'
+import { resolvePsu } from '../model/power'
+import { formatFr } from '../model/fields'
 
 export const GRID = 8
 
@@ -9,6 +13,21 @@ export function deviceIpLine(ip: IpConfig | undefined): string {
   if (!ip) return 'IP non définie'
   if (ip.address) return `${ip.address} · ${ip.mode === 'static' ? 'FIXE' : 'DHCP'}`
   return ip.mode === 'dhcp' ? 'DHCP' : 'IP non définie'
+}
+
+// 2ᵉ ligne d'une tuile (spec patch-puissance-catalogue § 4.7) : l'adresse DMX d'un appareil patchable, sinon l'IP.
+export function deviceSecondLine(device: Device, patch: PatchEntry | undefined): string {
+  if (device.ledStrip) {
+    const power = stripPower(device.ledStrip)
+    const len = device.ledStrip.lengthM
+    return power && len !== undefined ? `${formatFr(power.watts)} W · ${formatFr(len)} m` : LED_STRIP_TYPES[device.ledStrip.type].label
+  }
+  if (device.psu) {
+    const r = resolvePsu(device.psu)
+    return [r.volts !== undefined ? `${formatFr(r.volts)} V` : '', r.watts !== undefined ? `${formatFr(r.watts)} W` : ''].filter(Boolean).join(' · ')
+  }
+  if (device.dmx) return patchLine(patch)
+  return deviceIpLine(device.ip)
 }
 
 export function snapPoint(p: { x: number; y: number }, on: boolean): { x: number; y: number } {

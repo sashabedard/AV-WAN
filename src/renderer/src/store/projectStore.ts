@@ -1,6 +1,6 @@
 import { createStore, type StoreApi } from 'zustand/vanilla'
 import { useStore } from 'zustand'
-import type { Device, Link, PortRef, PortState, Project, SwitchSpec, Vlan, Zone } from '../model/types'
+import type { Device, Link, MainsVoltage, PortRef, PortState, Project, SwitchSpec, Vlan, Zone } from '../model/types'
 import { createDevice, createProject, newId, type CreateDeviceOptions } from '../model/project'
 import { FAMILY_LABELS, canConnectPorts, canReconnect, connectorFamily, defaultMedium, findPort, nextCableId, sameRef } from '../model/rules'
 import { setLinkVlan as deriveSetLinkVlan, type VlanChoice } from '../model/derive'
@@ -22,7 +22,7 @@ export function sameSelection(a: Selection, b: Selection): boolean {
   const eq = (x: readonly string[] = [], y: readonly string[] = []): boolean => x.length === y.length && x.every((v, i) => v === y[i])
   return eq(a.deviceIds, b.deviceIds) && eq(a.linkIds, b.linkIds) && eq(a.zoneIds, b.zoneIds)
 }
-export type DevicePatch = Partial<Pick<Device, 'name' | 'model' | 'ip' | 'hostname' | 'note' | 'portSide'>>
+export type DevicePatch = Partial<Pick<Device, 'name' | 'model' | 'ip' | 'hostname' | 'note' | 'portSide' | 'powerW' | 'dmx' | 'psu' | 'ledStrip'>>
 export type LinkPatch = Partial<Pick<Link, 'cableId' | 'medium' | 'lengthM' | 'jacketColor' | 'wifi' | 'note' | 'elbow'>>
 export type MetaPatch = Partial<Project['meta']>
 export type ZonePatch = Partial<Pick<Zone, 'name' | 'color' | 'ownPdfPage'>>
@@ -66,6 +66,7 @@ export interface ProjectState {
   setPortState(deviceId: string, portId: string, patch: Partial<PortState>): void
   updateSwitchSpec(deviceId: string, spec: SwitchSpec): void
   updateMeta(patch: MetaPatch): void
+  setMainsVoltage(voltage: MainsVoltage): void
   setColorMode(mode: Project['settings']['colorMode']): void
   setPageFormat(format: Project['settings']['pageFormat']): void
   setSelection(selection: Selection): void
@@ -303,6 +304,8 @@ export function createProjectStore(initial: Project = createProject()): StoreApi
         }),
 
       updateMeta: (patch) => apply((p) => ({ ...p, meta: { ...p.meta, ...patch } })),
+      // Donnée du projet (elle change le bilan de puissance) : une entrée d'historique, contrairement au format du PDF.
+      setMainsVoltage: (voltage) => apply((p) => (p.settings.mainsVoltage === voltage ? p : { ...p, settings: { ...p.settings, mainsVoltage: voltage } })),
       // Préférence d'affichage enregistrée dans le fichier, mais jamais une entrée d'historique.
       setColorMode: (mode) => {
         const { history } = get()

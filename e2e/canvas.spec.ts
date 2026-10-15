@@ -8,7 +8,7 @@ test('projet exemple : recherche, renommage, couleur, zone, copier-coller, annul
 
     await page.getByRole('dialog', { name: 'Accueil' }).getByRole('button', { name: /Projet exemple/ }).click()
     let p = await project()
-    expect(p.devices).toHaveLength(19)
+    expect(p.devices).toHaveLength(24)
     expect(p.zones).toHaveLength(3)
 
     // ⌘K : chercher « ptz » et placer avec Entrée
@@ -16,7 +16,7 @@ test('projet exemple : recherche, renommage, couleur, zone, copier-coller, annul
     await page.getByRole('dialog', { name: 'Rechercher un appareil' }).getByLabel('Rechercher').fill('ptz')
     await page.keyboard.press('Enter')
     p = await project()
-    expect(p.devices).toHaveLength(20)
+    expect(p.devices).toHaveLength(25)
     const added = p.devices.at(-1)!
     expect(added).toMatchObject({ templateId: 'ptz-ndi', name: 'CAM-3' })
 
@@ -45,12 +45,12 @@ test('projet exemple : recherche, renommage, couleur, zone, copier-coller, annul
       document.dispatchEvent(new ClipboardEvent('copy', { clipboardData: data, bubbles: true, cancelable: true }))
       document.dispatchEvent(new ClipboardEvent('paste', { clipboardData: data, bubbles: true, cancelable: true }))
     })
-    await expect.poll(async () => (await project()).devices.length).toBe(21)
+    await expect.poll(async () => (await project()).devices.length).toBe(26)
 
     // ⌘Z défait le collage, pas le mode de couleur
     await page.evaluate(() => window.__avwan!.menu('undo'))
     p = await project()
-    expect(p.devices).toHaveLength(20)
+    expect(p.devices).toHaveLength(25)
     expect(p.settings.colorMode).toBe('type')
   } finally {
     await app.close()

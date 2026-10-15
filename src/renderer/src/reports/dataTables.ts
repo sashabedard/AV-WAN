@@ -4,8 +4,10 @@ import type { DataTable } from '../../../shared/tables'
 import { cableSchedule } from './cableSchedule'
 import { ipPlan } from './ipPlan'
 import { bom } from './bom'
+import { patchTable } from './patch'
+import { powerTable } from './powerBudget'
 
-// Les trois listes exportées en CSV et en Excel (spec § 11.2), dans cet ordre.
+// Les listes exportées en CSV et en Excel (spec § 11.2 ; patch-puissance-catalogue § 6.2), dans cet ordre.
 export function dataTables(project: Project): DataTable[] {
-  return [cableSchedule(project), ipPlan(project), bom(project)]
+  return [cableSchedule(project), ipPlan(project), patchTable(project), powerTable(project), bom(project)]
 }

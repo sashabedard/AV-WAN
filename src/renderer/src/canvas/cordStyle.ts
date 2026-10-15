@@ -79,5 +79,5 @@ export function cordStyle(project: Project, link: Link, theme: ThemeMode): CordS
   if (FIBER.has(m)) return { color, width: 3.2, innerDash: true, bands, extraBands, straight: false, plugs: true, alwaysTag }
   if (m === 'dac') return { color, width: 3.2, innerDash: false, bands, extraBands, straight: false, plugs: true, alwaysTag }
   if (m === 'wifi') return { color, width: 2, dash: '1.5 5', innerDash: false, bands: [], extraBands: 0, straight: true, plugs: false, alwaysTag }
-  return { color, width: 2, dash: '8 5', innerDash: false, bands: [], extraBands: 0, straight: false, plugs: false, badge: MEDIUM_LABELS[m].toUpperCase(), alwaysTag }
+  return { color, width: 2, dash: '8 5', innerDash: false, bands: [], extraBands: 0, straight: false, plugs: false, badge: m === 'dc' ? 'DC' : MEDIUM_LABELS[m].toUpperCase(), alwaysTag }
 }

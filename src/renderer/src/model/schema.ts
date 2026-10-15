@@ -5,9 +5,9 @@ z.config(z.locales.fr())
 
 export const VlanIdSchema = z.number().int().min(1).max(4094)
 export const PoeClassSchema = z.enum(['af', 'at', 'bt'])
-export const ConnectorSchema = z.enum(['rj45', 'sfp', 'sfp+', 'wifi', 'usb', 'dmx', 'pixel', 'hdmi', 'sdi', 'serial'])
+export const ConnectorSchema = z.enum(['rj45', 'sfp', 'sfp+', 'wifi', 'usb', 'dmx', 'pixel', 'hdmi', 'sdi', 'serial', 'dc'])
 export const MediumSchema = z.enum([
-  'cat5e', 'cat6', 'cat6a', 'om3', 'om4', 'os2', 'dac', 'wifi', 'usb', 'dmx', 'pixel', 'hdmi', 'sdi', 'serial'
+  'cat5e', 'cat6', 'cat6a', 'om3', 'om4', 'os2', 'dac', 'wifi', 'usb', 'dmx', 'pixel', 'hdmi', 'sdi', 'serial', 'dc'
 ])
 export const CategorySchema = z.enum(['reseau', 'ordinateur', 'audio', 'video', 'eclairage', 'iot', 'capteur', 'autre'])
 export const SideSchema = z.enum(['top', 'bottom', 'left', 'right'])
@@ -16,6 +16,29 @@ export const PortSideSchema = z.enum(['auto', 'top', 'bottom', 'left', 'right'])
 const XYSchema = z.object({ x: z.number(), y: z.number() })
 const HexColorSchema = z.string().regex(/^#[0-9A-Fa-f]{6}$/)
 export const IpSchema = z.object({ address: z.string(), mode: z.enum(['static', 'dhcp']) })
+
+// Patch DMX (spec patch-puissance-catalogue § 3.2). Univers : Art-Net commence à 0, sACN à 1 ; gardé tel que tapé.
+export const DmxUniverseSchema = z.number().int().min(0).max(63999)
+const DmxSlotSchema = z.number().int().min(1).max(512)
+export const DmxPatchSchema = z.object({
+  footprint: DmxSlotSchema,
+  address: DmxSlotSchema.optional(),
+  universe: DmxUniverseSchema.optional(),
+  mode: z.string().optional()
+})
+export const DmxModeSchema = z.object({ name: z.string(), channels: DmxSlotSchema })
+// modes[0] : le mode le plus courant, choisi à la création de l'appareil.
+export const TemplateDmxSchema = z.object({ footprint: DmxSlotSchema, modes: z.array(DmxModeSchema).min(1).optional() })
+// Alimentation : deux valeurs suffisent, la troisième se calcule (P = V × I).
+export const PsuSchema = z.object({ volts: z.number().positive().optional(), amps: z.number().positive().optional(), watts: z.number().positive().optional() })
+export const LedStripTypeSchema = z.enum(['cob', 'cob-cct', 'fcob-rgb', 'fcob-rgbw', 'smd-rgb', 'smd-rgbw', 'ws2811', 'ws2812b', 'ws2815', 'sk6812-rgbw', 'gs8208'])
+export const LedStripSchema = z.object({
+  type: LedStripTypeSchema,
+  volts: z.number().positive(),
+  wPerM: z.number().nonnegative(),
+  lengthM: z.number().positive().optional(), // absente : puissance non renseignée
+  pxPerM: z.number().int().positive().optional()
+})
 
 export const PortDefSchema = z.object({
   id: z.string().regex(/^[A-Za-z0-9+_-]+$/),
@@ -53,6 +76,11 @@ export const DeviceTemplateSchema = z.object({
   ports: z.array(PortDefSchema),
   switch: SwitchSpecSchema.optional(),
   defaults: z.object({ vlanId: VlanIdSchema.optional() }).optional(),
+  powerW: z.number().nonnegative().optional(),
+  dmx: TemplateDmxSchema.optional(),
+  psu: PsuSchema.optional(),
+  ledStrip: LedStripSchema.optional(),
+  note: z.string().optional(),
   isCustom: z.boolean().optional()
 })
 
@@ -62,6 +90,7 @@ export const PortStateSchema = z.object({
   taggedVlans: z.union([z.array(VlanIdSchema), z.literal('all')]).optional(),
   poeEnabled: z.boolean().optional(),
   ip: IpSchema.optional(),
+  universe: DmxUniverseSchema.optional(),
   label: z.string().optional(),
   note: z.string().optional()
 })
@@ -80,7 +109,11 @@ export const DeviceSchema = z.object({
   portState: z.record(z.string(), PortStateSchema),
   ip: IpSchema.optional(),
   hostname: z.string().optional(),
-  note: z.string().optional()
+  note: z.string().optional(),
+  powerW: z.number().nonnegative().optional(),
+  dmx: DmxPatchSchema.optional(),
+  psu: PsuSchema.optional(),
+  ledStrip: LedStripSchema.optional()
 })
 
 const PortRefSchema = z.object({ deviceId: z.string(), portId: z.string() })
@@ -132,7 +165,7 @@ export const VlanSchema = z.object({
 })
 
 export const ProjectSchema = z.object({
-  schemaVersion: z.literal(1),
+  schemaVersion: z.literal(2),
   meta: z.object({
     title: z.string(),
     course: z.string().optional(),
@@ -145,7 +178,8 @@ export const ProjectSchema = z.object({
     colorMode: z.enum(['vlan', 'type', 'port']),
     pageFormat: z.enum(['na', 'iso']),
     cableIdPrefix: z.string(),
-    snapToGrid: z.boolean()
+    snapToGrid: z.boolean(),
+    mainsVoltage: z.union([z.literal(120), z.literal(230)]).optional()
   }),
   vlans: z.array(VlanSchema),
   devices: z.array(DeviceSchema),

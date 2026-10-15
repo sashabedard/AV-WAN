@@ -365,4 +365,19 @@ describe('placer une composante perso', () => {
     expect(p.devices.map((d) => d.name)).toEqual(['LID-1', 'LID-2'])
     expect(p.devices[0]!.ports).toEqual([{ id: 'ETH', label: 'ETH', connector: 'rj45', speedMbps: 1000, poeIn: 'af' }])
   })
+
+  it('règle la tension secteur, annulable', () => {
+    const s = createProjectStore()
+    s.getState().setMainsVoltage(230)
+    expect(s.getState().history.present.settings.mainsVoltage).toBe(230)
+    s.getState().undo()
+    expect(s.getState().history.present.settings.mainsVoltage).toBeUndefined()
+  })
+
+  it('modifie le patch, la puissance, l’alimentation et la bande d’un appareil', () => {
+    const s = createProjectStore()
+    const id = s.getState().addDevice('dmx-fixture', { x: 0, y: 0 })
+    s.getState().updateDevice(id, { dmx: { footprint: 16, address: 33 }, powerW: 470 })
+    expect(s.getState().history.present.devices[0]).toMatchObject({ dmx: { footprint: 16, address: 33 }, powerW: 470 })
+  })
 })

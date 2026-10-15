@@ -43,7 +43,7 @@ export function registerExportIpc(): void {
       const target = await chooseExportPath(BrowserWindow.fromWebContents(event.sender), 'csv', String(suggestedName))
       if (!target) return null
       const paths = csvPaths(target, tables.map((t) => t.id))
-      // Le dialogue système n'a demandé que « nom.csv » (jamais écrit) : on confirme pour les trois vrais fichiers.
+      // Le dialogue système n'a demandé que « nom.csv » (jamais écrit) : on confirme pour les vrais fichiers.
       const taken = testExportDir() ? [] : existingPaths(paths)
       if (taken.length > 0) {
         const options = {

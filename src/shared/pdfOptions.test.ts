@@ -4,7 +4,7 @@ import { defaultPdfOptions, normalizePdfOptions } from './pdfOptions'
 describe('options du PDF', () => {
   it('coche toutes les sections par défaut, dans l’ordre de la spec', () => {
     expect(defaultPdfOptions()).toEqual({
-      sections: ['schema', 'appareils', 'ports', 'branchement', 'vlans', 'ip', 'nomenclature'],
+      sections: ['schema', 'appareils', 'ports', 'branchement', 'vlans', 'ip', 'patch', 'puissance', 'nomenclature'],
       format: 'na',
       zonePages: true
     })
