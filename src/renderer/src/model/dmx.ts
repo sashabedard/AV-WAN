@@ -1,0 +1,164 @@
+// src/renderer/src/model/dmx.ts
+// Patch DMX (spec patch-puissance-catalogue § 4) : univers effectif, plages occupées, chevauchements,
+// adresse suivante libre. Fonctions pures. Jamais de test « falsy » sur un univers : U0 existe (Art-Net).
+import type { Device, PortDef, PortRef, Project } from './types'
+import { getTemplate } from '../catalog'
+
+export const DMX_SLOTS = 512
+export const UNIVERSE_MAX = 63999
+
+export type UniverseSource = { kind: 'typed' } | { kind: 'port'; ref: PortRef }
+export interface ResolvedUniverse {
+  universe: number
+  source: UniverseSource
+}
+export interface PatchRange {
+  ownerId: string
+  universe: number
+  start: number
+  end: number // inclus ; peut dépasser 512
+}
+export interface PatchEntry {
+  device: Device
+  universe?: ResolvedUniverse
+  range?: PatchRange
+}
+export interface PatchIndex {
+  entries: Map<string, PatchEntry>
+  ranges: PatchRange[]
+  byId: ReadonlyMap<string, Device>
+}
+export interface Overlap {
+  name: string
+  start: number
+  end: number
+}
+export interface PatchIssues {
+  overlaps: Overlap[]
+  overflow: boolean
+}
+
+export function isPatchable(device: Device): boolean {
+  return device.dmx !== undefined
+}
+
+// Sortie d'univers (§ 3.3) : prise DMX d'un appareil non patchable, ou prise pixel d'un appareil d'éclairage
+// non patchable qui n'est pas une bande LED. Les sorties d'un processeur LED (Vidéo) portent des données
+// propriétaires vers les dalles, pas des univers.
+export function isUniverseOutput(project: Project, device: Device, port: PortDef): boolean {
+  if (isPatchable(device)) return false
+  if (port.connector === 'dmx') return true
+  if (port.connector !== 'pixel' || device.ledStrip !== undefined || device.templateId === 'led-strip') return false
+  return getTemplate(project, device.templateId)?.category === 'eclairage'
+}
+
+function deviceMap(project: Project): Map<string, Device> {
+  return new Map(project.devices.map((d) => [d.id, d]))
+}
+
+function portOf(byId: ReadonlyMap<string, Device>, ref: PortRef): { device: Device; port: PortDef } | undefined {
+  const device = byId.get(ref.deviceId)
+  const port = device?.ports.find((p) => p.id === ref.portId)
+  return device && port ? { device, port } : undefined
+}
+
+// § 4.1 : l'univers tapé, sinon le long des câbles DMX en traversant les appareils patchables, niveau par
+// niveau (la source la plus proche gagne) ; dans un niveau, l'ordre des câbles du projet départage.
+export function resolveUniverse(project: Project, deviceId: string, byId: ReadonlyMap<string, Device> = deviceMap(project)): ResolvedUniverse | undefined {
+  const start = byId.get(deviceId)
+  if (!start?.dmx) return undefined
+  if (start.dmx.universe !== undefined) return { universe: start.dmx.universe, source: { kind: 'typed' } }
+  const seen = new Set<string>([start.id])
+  let frontier = new Set<string>([start.id])
+  while (frontier.size > 0) {
+    const next = new Set<string>()
+    for (const link of project.links) {
+      for (const [here, there] of [
+        [link.a, link.b],
+        [link.b, link.a]
+      ] as const) {
+        if (!frontier.has(here.deviceId)) continue
+        const from = portOf(byId, here)
+        const to = portOf(byId, there)
+        if (!from || !to || from.port.connector !== 'dmx' || to.port.connector !== 'dmx') continue
+        if (isPatchable(to.device)) {
+          if (!seen.has(to.device.id)) {
+            seen.add(to.device.id)
+            next.add(to.device.id)
+          }
+          continue
+        }
+        const universe = to.device.portState[there.portId]?.universe
+        if (universe !== undefined) return { universe, source: { kind: 'port', ref: there } }
+      }
+    }
+    frontier = next
+  }
+  return undefined
+}
+
+// Univers effectif et plage de chaque appareil patchable, calculés une fois pour tout le projet.
+export function patchIndex(project: Project): PatchIndex {
+  const byId = deviceMap(project)
+  const entries = new Map<string, PatchEntry>()
+  const ranges: PatchRange[] = []
+  for (const device of project.devices) {
+    if (!device.dmx) continue
+    const universe = resolveUniverse(project, device.id, byId)
+    const address = device.dmx.address
+    const range: PatchRange | undefined =
+      universe && address !== undefined ? { ownerId: device.id, universe: universe.universe, start: address, end: address + device.dmx.footprint - 1 } : undefined
+    if (range) ranges.push(range)
+    entries.set(device.id, { device, ...(universe ? { universe } : {}), ...(range ? { range } : {}) })
+  }
+  return { entries, ranges, byId }
+}
+
+const byName = (a: Overlap, b: Overlap): number => a.start - b.start || a.name.localeCompare(b.name, 'fr-CA', { numeric: true })
+
+// Plages d'autres propriétaires qui touchent [start, end] dans un univers.
+export function overlapsIn(index: PatchIndex, universe: number, start: number, end: number, ownerId: string): Overlap[] {
+  return index.ranges
+    .filter((r) => r.ownerId !== ownerId && r.universe === universe && r.start <= end && start <= r.end)
+    .map((r) => ({ name: index.byId.get(r.ownerId)?.name ?? '?', start: r.start, end: r.end }))
+    .sort(byName)
+}
+
+export function patchIssues(index: PatchIndex, deviceId: string): PatchIssues {
+  const own = index.entries.get(deviceId)?.range
+  if (!own) return { overlaps: [], overflow: false }
+  return { overlaps: overlapsIn(index, own.universe, own.start, own.end, deviceId), overflow: own.end > DMX_SLOTS }
+}
+
+// § 4.4 : première adresse dont la plage tient dans 1…512 sans toucher une plage occupée.
+export function nextFreeAddress(index: PatchIndex, universe: number, footprint: number, excludeId?: string): number | undefined {
+  const taken = index.ranges.filter((r) => r.universe === universe && r.ownerId !== excludeId).sort((a, b) => a.start - b.start)
+  let candidate = 1
+  for (const r of taken) {
+    if (candidate + footprint - 1 < r.start) break
+    candidate = Math.max(candidate, r.end + 1)
+  }
+  return candidate + footprint - 1 <= DMX_SLOTS ? candidate : undefined
+}
+
+export function sourceLabel(project: Project, source: UniverseSource): string {
+  if (source.kind === 'typed') return 'tapé'
+  const device = project.devices.find((d) => d.id === source.ref.deviceId)
+  const port = device?.ports.find((p) => p.id === source.ref.portId)
+  return `${device?.name ?? '?'} › ${port?.label ?? source.ref.portId}`
+}
+
+export function rangeLabel(start: number, end: number): string {
+  return start === end ? String(start) : `${start}–${end}`
+}
+
+// 2ᵉ ligne d'une tuile patchable (§ 4.7).
+export function patchLine(entry: PatchEntry | undefined): string {
+  const address = entry?.device.dmx?.address
+  if (address === undefined) return ''
+  return entry?.universe ? `U${entry.universe.universe} · ${address}` : `Adr. ${address}`
+}
+
+export function issueTexts(issues: PatchIssues): string[] {
+  return [...issues.overlaps.map((o) => `Chevauche ${o.name} (${rangeLabel(o.start, o.end)})`), ...(issues.overflow ? ['Dépasse 512'] : [])]
+}
