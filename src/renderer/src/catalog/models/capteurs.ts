@@ -5,7 +5,7 @@ import { rj45, simple } from '../ports'
 
 export const SENSOR_MODELS: readonly DeviceTemplate[] = [
   // Source : https://www.livoxtech.com/mid-360/specs (fiche technique du fabricant, consultée le 2026-10-14)
-  // Ethernet 100BASE-TX, 9–27 V DC, 6,5 W en moyenne (pointe à 14 W par temps froid) . La fiche ne mentionne pas de PoE.
+  // Ethernet 100BASE-TX, 9–27 V DC, 6,5 W en moyenne (pointe à 14 W par temps froid). La fiche ne mentionne pas de PoE.
   {
     id: 'livox-mid-360',
     category: 'capteur',
@@ -30,7 +30,7 @@ export const SENSOR_MODELS: readonly DeviceTemplate[] = [
     model: 'Microsoft Kinect v1',
     icon: ic('depth-camera'),
     ports: [simple('usb', 'USB')],
-    note: 'Discontinuée. Bloc secteur dédié obligatoire pour le PC (le modèle Xbox 360 peut l’exiger séparément) ; USB 2.0 conseillé. Puissance non publiée par le fabricant.'
+    note: 'Nécessite l’adaptateur secteur/USB Kinect pour PC ; puissance non publiée.'
   },
   // Source : https://support.xbox.com/en-US/help/hardware-network/kinect/kinect-for-windows-v2-setup-with-adapter
   // et https://learn.microsoft.com/en-us/archive/blogs/kinectforwindows/revealing-kinect-for-windows-v2-hardware (consultées le 2026-10-14)
@@ -60,7 +60,7 @@ export const SENSOR_MODELS: readonly DeviceTemplate[] = [
     note: 'Discontinuée. Alimentée par son bloc (prise coaxiale) ou par un câble USB-C data + alimentation (1,5 A minimum).'
   },
   // Source : https://doc.orbbec.com/documentation/Orbbec Femto Mega Documentation/Femto Mega Hardware Specifications
-  // et fiche technique v1.1 https://mm.digikey.com/Volume0/opasdata/d220001/medias/docus/6348/Femto-Mega.pdf (consultées le 2026-10-14)
+  // et copie de la fiche technique v1.1, hébergée par DigiKey : https://mm.digikey.com/Volume0/opasdata/d220001/medias/docus/6348/Femto-Mega.pdf (consultées le 2026-10-14)
   // Fiche : PoE+/802.3at, DC 12 V 2 A, USB-C ; 17 W en pointe sur PoE (16 W sur DC, 14 W sur USB).
   {
     id: 'orbbec-femto-mega',
@@ -101,8 +101,7 @@ export const SENSOR_MODELS: readonly DeviceTemplate[] = [
     model: 'Intel RealSense D435i',
     icon: ic('depth-camera'),
     ports: [simple('usb', 'USB-C')],
-    powerW: 3.5,
-    note: 'Alimentée par le bus USB 3 (5 V, 700 mA maximum).'
+    note: 'Puissance non publiée ; le bus USB-C fournit au plus 5 V × 700 mA.'
   },
   // Source : https://www.realsenseai.com/download/21345/ (fiche technique D400, doc. 337029-017, consultée le 2026-10-14)
   // Même carte D4 USB Type-C que la D435i : 5 V, 700 mA maximum.
@@ -115,8 +114,7 @@ export const SENSOR_MODELS: readonly DeviceTemplate[] = [
     model: 'Intel RealSense D455',
     icon: ic('depth-camera'),
     ports: [simple('usb', 'USB-C')],
-    powerW: 3.5,
-    note: 'Alimentée par le bus USB 3 (5 V, 700 mA maximum).'
+    note: 'Puissance non publiée ; le bus USB-C fournit au plus 5 V × 700 mA.'
   },
   // Source : https://www.stereolabs.com/en-sg/store/products/zed-2i (page produit du fabricant, consultée le 2026-10-14)
   // « Power via USB 5V / 380mA », USB 3.0 Type-C à vis de verrouillage ; 5 V × 0,38 A = 1,9 W.
@@ -130,7 +128,7 @@ export const SENSOR_MODELS: readonly DeviceTemplate[] = [
     icon: ic('depth-camera'),
     ports: [simple('usb', 'USB-C')],
     powerW: 1.9,
-    note: 'Alimentée par le bus USB 3 (5 V, 380 mA).'
+    note: '≈ 1,9 W (5 V × 380 mA, calculé d’après la fiche).'
   },
   // Source : https://ouster.com/os-overview (10 à 20 W, 12/24 V, 1000BASE-T)
   // et https://static.ouster.dev/sensor-docs/hw_user_manual/hw_common_sections_OS0/electrical-interface.html (pointe 28 W à -40 °C ;
@@ -148,7 +146,7 @@ export const SENSOR_MODELS: readonly DeviceTemplate[] = [
     defaults: { vlanId: 60 },
     note: 'Boîtier d’interface (RJ45 gigabit + bloc 24 V DC) pour l’intérieur ; 10 à 20 W, jusqu’à 28 W par grand froid.'
   },
-  // Source : https://www.hokuyo-aut.jp/search/single.php?serial=167 et fiche https://www.ai.uni-bremen.de/wiki/_media/software/ust-10lx_specification.pdf (consultées le 2026-10-14)
+  // Source : https://www.hokuyo-aut.jp/search/single.php?serial=167 et copie de la fiche, hébergée par l’université de Brême : https://www.ai.uni-bremen.de/wiki/_media/software/ust-10lx_specification.pdf (consultées le 2026-10-14)
   // 12/24 V DC (plage 10–30 V), 150 mA (450 mA au démarrage), Ethernet 100BASE-TX ; aucune puissance en watts publiée.
   {
     id: 'hokuyo-ust-10lx',
@@ -188,6 +186,6 @@ export const SENSOR_MODELS: readonly DeviceTemplate[] = [
     icon: ic('depth-camera'),
     ports: [simple('usb', 'USB-C')],
     powerW: 2.5,
-    note: 'Alimenté par le bus USB (5 V, 500 mA).'
+    note: '≈ 2,5 W (5 V × 500 mA, calculé d’après la fiche).'
   }
 ]
