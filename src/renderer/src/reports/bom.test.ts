@@ -3,6 +3,8 @@ import { describe, expect, it } from 'vitest'
 import { createExampleProject } from '../samples/exampleProject'
 import { sampleProject } from '../model/__fixtures__/sample'
 import { bom } from './bom'
+import { createDevice, createProject } from '../model/project'
+import type { Project } from '../model/types'
 
 const p = createExampleProject(new Date(2026, 9, 13))
 const of = (kind: string, project = p) => bom(project).rows.filter((r) => r[0] === kind)
@@ -49,5 +51,27 @@ describe('bom', () => {
     expect(of('Câble', q)).toEqual([['Câble', 'Cat6', '3 m', 1]])
     delete q.links[0]!.lengthM
     expect(of('Câble', q)).toEqual([['Câble', 'Cat6', 'longueur à définir', 1]])
+  })
+})
+
+// Trois bandes COB 24 V 10 W/m (5 m, 10 m, sans longueur) et une alimentation 24 V 15 A.
+function stripsProject(): Project {
+  let q = createProject(new Date(2026, 9, 14))
+  const lengths: (number | undefined)[] = [5, 10, undefined]
+  const devices = lengths.map((lengthM, i) => ({
+    ...createDevice(q, 'led-strip', { x: 0, y: 0 }, { id: `s${i}` }),
+    ledStrip: { type: 'cob' as const, volts: 24, wPerM: 10, ...(lengthM !== undefined ? { lengthM } : {}) }
+  }))
+  devices.push({ ...createDevice(q, 'psu', { x: 0, y: 0 }, { id: 'p' }), psu: { volts: 24, amps: 15 } } as never)
+  q = { ...q, devices }
+  return q
+}
+
+describe('bom : bandes LED et alimentations', () => {
+  it('regroupe les bandes par type, tension et W/m, avec la longueur totale', () => {
+    const rows = bom(stripsProject()).rows
+    expect(rows).toContainEqual(['Appareil', 'Bande LED COB mono', '24 V · 10 W/m · 15 m au total + longueur à définir', 3])
+    expect(rows).toContainEqual(['Appareil', 'Alimentation', '24 V · 360 W', 1])
+    expect(rows.some((r) => r[1] === 'Bande LED')).toBe(false)
   })
 })

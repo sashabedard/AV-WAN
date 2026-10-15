@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { createExampleProject } from '../samples/exampleProject'
-import { createDevice } from '../model/project'
+import { createDevice, createProject } from '../model/project'
+import type { Device, Link, PortDef, Project } from '../model/types'
 import { cableSchedule } from './cableSchedule'
 import { deviceSheets } from './deviceSheets'
 
@@ -56,5 +57,34 @@ describe('deviceSheets : ligne DMX', () => {
     const find = (name: string) => deviceSheets(q).find((s) => s.name === name)!
     expect(find('WASH-9').extras).toEqual(['DMX : U2 · 33–48 · 16 ch · Standard 16 ch'])
     expect(find('CAM-1').extras).toEqual([])
+  })
+})
+
+const dc = (id: string): PortDef => ({ id, label: id.replace(/-/g, ' '), connector: 'dc' })
+const dev = (id: string, name: string, extra: Partial<Device>): Device => ({ id, templateId: 'generic', name, position: { x: 0, y: 0 }, portSide: 'auto', ports: [], portState: {}, ...extra })
+const link = (id: string, a: [string, string], b: [string, string]): Link => ({ id, cableId: id, a: { deviceId: a[0], portId: a[1] }, b: { deviceId: b[0], portId: b[1] }, medium: 'dc' })
+
+// Une alim 24 V 15 A qui nourrit deux bandes COB de 144 W, plus une lyre de 470 W.
+function benchWithLyre(): Project {
+  const strip = { type: 'cob' as const, volts: 24, wPerM: 14.4, lengthM: 10 }
+  return {
+    ...createProject(new Date(2026, 9, 14)),
+    devices: [
+      dev('psu', 'PSU-1', { ports: [dc('DC-OUT-1'), dc('DC-OUT-2'), dc('DC-OUT-3'), dc('DC-OUT-4')], psu: { volts: 24, amps: 15 } }),
+      dev('led1', 'LED-1', { ports: [dc('DC-IN')], ledStrip: strip }),
+      dev('led2', 'LED-2', { ports: [dc('DC-IN')], ledStrip: strip }),
+      dev('mh', 'MH-1', { powerW: 470 })
+    ],
+    links: [link('l1', ['psu', 'DC-OUT-1'], ['led1', 'DC-IN']), link('l2', ['led2', 'DC-IN'], ['psu', 'DC-OUT-2'])]
+  }
+}
+
+describe('deviceSheets : puissance', () => {
+  it('ajoute puissance, bande et alimentation aux fiches', () => {
+    const sheets = deviceSheets(benchWithLyre())
+    const extras = (name: string) => sheets.find((s) => s.name === name)!.extras
+    expect(extras('MH-1')).toEqual(['Puissance : 470 W'])
+    expect(extras('LED-1')).toEqual(['COB mono · 24 V · 14,4 W/m · 10 m · 144 W'])
+    expect(extras('PSU-1')).toEqual(['Alimentation : 24 V · 360 W · charge 288 W (80 %)'])
   })
 })

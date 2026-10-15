@@ -1,4 +1,7 @@
-import type { Project } from '../model/types'
+import type { Device, LedStrip, Project } from '../model/types'
+import { LED_STRIP_TYPES, stripPixels, stripPower } from '../model/led'
+import { psuLoad, resolvePsu } from '../model/power'
+import { formatFr } from '../model/fields'
 import { linksOnPort } from '../model/rules'
 import { getTemplate } from '../catalog'
 import { connection, type Connection } from './connections'
@@ -39,6 +42,32 @@ export function sheetLineText(port: string, c: Connection): string {
   return parts.join(' · ')
 }
 
+// « COB mono · 24 V · 10 W/m · 5 m · 50 W » (spec § 6.3).
+export function stripLine(strip: LedStrip): string {
+  const info = LED_STRIP_TYPES[strip.type]
+  const power = stripPower(strip)
+  const head = [info.label, `${formatFr(strip.volts)} V`, `${formatFr(strip.wPerM)} W/m`]
+  return [...head, ...(power && strip.lengthM !== undefined ? [`${formatFr(strip.lengthM)} m`, `${formatFr(power.watts)} W`] : ['longueur à définir'])].join(' · ')
+}
+
+function powerExtras(project: Project, device: Device): string[] {
+  if (device.ledStrip) {
+    const px = stripPixels(device.ledStrip)
+    return [stripLine(device.ledStrip), ...(px ? [`${formatFr(px.pixels)} px · ${px.universes} univers`] : [])]
+  }
+  if (device.psu) {
+    const r = resolvePsu(device.psu)
+    const load = psuLoad(project, device.id)
+    const volts = r.volts !== undefined ? [`${formatFr(r.volts)} V`] : []
+    return [
+      load.capacityW !== undefined
+        ? `Alimentation : ${[...volts, `${formatFr(load.capacityW)} W`].join(' · ')} · charge ${formatFr(load.loadW)} W (${Math.round((load.ratio ?? 0) * 100)} %)`
+        : `Alimentation : ${[...volts, `charge ${formatFr(load.loadW)} W, capacité inconnue`].join(' · ')}`
+    ]
+  }
+  return device.powerW !== undefined ? [`Puissance : ${formatFr(device.powerW)} W`] : []
+}
+
 // Fiches des appareils qui ne sont pas des switchs (spec § 11.1, section 2), triées par nom.
 export function deviceSheets(project: Project): DeviceSheet[] {
   const index = patchIndex(project)
@@ -56,7 +85,7 @@ export function deviceSheets(project: Project): DeviceSheet[] {
           })
       })
       const patch = index.entries.get(device.id)
-      const extras = patch ? [dmxSummary(patch)] : []
+      const extras = [...(patch ? [dmxSummary(patch)] : []), ...powerExtras(project, device)]
       const template = getTemplate(project, device.templateId)
       const zone = project.zones.find((z) => z.id === device.zoneId)?.name
       return {

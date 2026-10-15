@@ -66,3 +66,13 @@ describe('deviceSecondLine', () => {
     expect(deviceSecondLine(cam, undefined)).toBe('10.70.0.5 · FIXE')
   })
 })
+
+describe('deviceSecondLine : puissance', () => {
+  it('bande : watts et longueur ; alimentation : tension et puissance', () => {
+    const base = createDevice(createProject(), 'generic', { x: 0, y: 0 }, { id: 'x' })
+    expect(deviceSecondLine({ ...base, ledStrip: { type: 'sk6812-rgbw', volts: 24, wPerM: 14.4, lengthM: 5, pxPerM: 60 } }, undefined)).toBe('72 W · 5 m')
+    expect(deviceSecondLine({ ...base, ledStrip: { type: 'ws2812b', volts: 5, wPerM: 18 } }, undefined)).toBe('Pixel WS2812B')
+    expect(deviceSecondLine({ ...base, psu: { volts: 24, amps: 15 } }, undefined)).toBe('24 V · 360 W')
+    expect(deviceSecondLine({ ...base, psu: { volts: 24 } }, undefined)).toBe('24 V')
+  })
+})

@@ -1,5 +1,8 @@
 // src/renderer/src/reports/bom.ts
-import type { Medium, Project } from '../model/types'
+import type { LedStrip, Medium, Project, Psu } from '../model/types'
+import { LED_STRIP_TYPES } from '../model/led'
+import { resolvePsu } from '../model/power'
+import { formatFr } from '../model/fields'
 import { MediumSchema } from '../model/schema'
 import { findPort } from '../model/rules'
 import { getTemplate } from '../catalog'
@@ -18,21 +21,40 @@ export const BOM_COLUMNS: Column[] = [
 const MEDIUM_ORDER: readonly Medium[] = MediumSchema.options
 const FIBER: Partial<Record<Medium, 'multimode' | 'monomode'>> = { om3: 'multimode', om4: 'multimode', os2: 'monomode' }
 
+function psuDetail(psu: Psu): string {
+  const r = resolvePsu(psu)
+  return [r.volts !== undefined ? `${formatFr(r.volts)} V` : '', r.watts !== undefined ? `${formatFr(r.watts)} W` : ''].filter(Boolean).join(' · ')
+}
+
 function tally<K>(map: Map<string, { key: K; n: number }>, id: string, key: K): void {
   const hit = map.get(id)
   if (hit) hit.n++
   else map.set(id, { key, n: 1 })
 }
 
-// Nomenclature (spec § 11.1, section 7) : appareils par gabarit et modèle ; câbles par médium et longueur
+// Nomenclature (spec § 11.1, section 7) : appareils par gabarit et modèle ; bandes LED par type, tension et W/m,
+// longueur totale ; câbles par médium et longueur
 // arrondie au mètre supérieur ; modules optiques déduits, un par cage SFP/SFP+ branchée en fibre
 // (un câble DAC a ses modules intégrés). Une liaison Wi-Fi n'est pas un câble.
 export function bom(project: Project): DataTable {
   const devices = new Map<string, { key: [string, string]; n: number }>()
+  const strips = new Map<string, { strip: LedStrip; n: number; meters: number; unknown: boolean }>()
   for (const d of project.devices) {
     const t = getTemplate(project, d.templateId)
     const name = t?.name ?? d.templateId
-    const detail = d.switch ? [d.model, switchSummary(d.switch)].filter(Boolean).join(' · ') : (d.model ?? t?.model ?? '')
+    if (d.ledStrip) {
+      const s = d.ledStrip
+      const key = `${s.type}\u0000${s.volts}\u0000${s.wPerM}`
+      const hit = strips.get(key) ?? { strip: s, n: 0, meters: 0, unknown: false }
+      hit.n++
+      if (s.lengthM === undefined) hit.unknown = true
+      else hit.meters += s.lengthM
+      strips.set(key, hit)
+      continue
+    }
+    const detail = d.psu
+      ? [d.model, psuDetail(d.psu)].filter(Boolean).join(' · ')
+      : d.switch ? [d.model, switchSummary(d.switch)].filter(Boolean).join(' · ') : (d.model ?? t?.model ?? '')
     tally(devices, `${name}\u0000${detail}`, [name, detail])
   }
   const cables = new Map<string, { key: [Medium, number | undefined]; n: number }>()
@@ -55,6 +77,14 @@ export function bom(project: Project): DataTable {
     ...[...devices.values()]
       .sort((a, b) => compareText(a.key[0], b.key[0]) || compareText(a.key[1], b.key[1]))
       .map(({ key, n }) => ['Appareil', key[0], key[1] || DASH, n]),
+    ...[...strips.values()]
+      .sort((a, b) => compareText(LED_STRIP_TYPES[a.strip.type].label, LED_STRIP_TYPES[b.strip.type].label) || a.strip.volts - b.strip.volts || a.strip.wPerM - b.strip.wPerM)
+      .map(({ strip, n, meters, unknown }) => [
+        'Appareil',
+        `Bande LED ${LED_STRIP_TYPES[strip.type].label}`,
+        `${formatFr(strip.volts)} V · ${formatFr(strip.wPerM)} W/m · ${formatFr(meters)} m au total${unknown ? ' + longueur à définir' : ''}`,
+        n
+      ]),
     ...[...cables.values()]
       .sort((a, b) => MEDIUM_ORDER.indexOf(a.key[0]) - MEDIUM_ORDER.indexOf(b.key[0]) || byLength(a.key[1], b.key[1]))
       .map(({ key, n }) => ['Câble', MEDIUM_LABELS[key[0]], key[1] === undefined ? 'longueur à définir' : `${key[1]} m`, n]),
