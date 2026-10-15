@@ -7,6 +7,7 @@ import { Sidebar } from '../panels/Sidebar'
 import { Inspector } from '../panels/Inspector'
 import { Canvas } from '../canvas/Canvas'
 import { UpdateBanner } from './UpdateBanner'
+import { SidebarResizer } from './SidebarResizer'
 
 export function AppShell() {
   return (
@@ -15,6 +16,7 @@ export function AppShell() {
       <aside className="shell__left" aria-label="Panneau de gauche">
         <Sidebar />
       </aside>
+      <SidebarResizer />
       <main className="shell__center">
         <Canvas />
         <UpdateBanner />
