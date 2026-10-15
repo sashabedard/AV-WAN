@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { readFileSync } from 'node:fs'
 import { formatFr, parseDecimalField, parseIntField } from './fields'
 
 describe('parseIntField', () => {
@@ -12,6 +13,30 @@ describe('parseIntField', () => {
     expect(parseIntField('abc', 1, 512)).toBeUndefined()
     expect(parseIntField('-1', 0, 63999)).toBeUndefined()
     expect(parseIntField('0', 0, 63999)).toBe(0)
+  })
+})
+
+describe('milliers à la française', () => {
+  it('entier : « 1 500 » avec une espace ordinaire, insécable ou fine insécable', () => {
+    expect(parseIntField('1 500', 0, 63999)).toBe(1500)
+    expect(parseIntField('1\u00A0500', 0, 63999)).toBe(1500)
+    expect(parseIntField('1\u202F500', 0, 63999)).toBe(1500)
+    expect(parseIntField(' 12 345 ', 0, 63999)).toBe(12345)
+    expect(parseIntField('70 000', 0, 63999)).toBeUndefined() // toujours dans les bornes
+  })
+
+  it('décimal : « 1 500,5 », et relit ce que formatFr écrit', () => {
+    expect(parseDecimalField('1 500')).toBe(1500)
+    expect(parseDecimalField('1 500,5')).toBe(1500.5)
+    expect(parseDecimalField('1\u202F234.5')).toBe(1234.5)
+    expect(parseDecimalField(formatFr(12345.6))).toBe(12345.6)
+  })
+
+  it('une espace ailleurs qu’entre des groupes de trois chiffres est refusée', () => {
+    expect(parseIntField('1 5', 0, 63999)).toBeUndefined()
+    expect(parseIntField('15 00', 0, 63999)).toBeUndefined()
+    expect(parseDecimalField('1 2')).toBeUndefined()
+    expect(parseDecimalField('1 500 ,5')).toBeUndefined()
   })
 })
 
@@ -33,6 +58,11 @@ describe('parseDecimalField', () => {
 })
 
 describe('formatFr', () => {
+  it('le source n’a aucune espace invisible littérale (échappements \\u00A0, \\u202F)', () => {
+    const text = readFileSync(new URL('./fields.ts', import.meta.url), 'utf8')
+    expect(/[\u00A0\u202F]/.test(text)).toBe(false)
+  })
+
   it('écrit à la française, espace des milliers', () => {
     expect(formatFr(1200)).toBe('1 200')
     expect(formatFr(14.4)).toBe('14,4')
