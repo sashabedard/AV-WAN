@@ -12,7 +12,7 @@ describe('deviceSheets', () => {
   it('fait une fiche par appareil qui n’est pas un switch, triée par nom', () => {
     expect(deviceSheets(p).map((s) => s.name)).toEqual([
       'AP-1', 'CAM-1', 'CAM-2', 'DMX-1', 'DNT-1', 'FIX-1', 'GW-1', 'IOT-1', 'IOT-2',
-      'LED-1', 'LX-1', 'MAC-1', 'MQT-1', 'PC-1', 'PIX-1', 'SPK-1', 'SPK-2'
+      'LED-1', 'LED-2', 'LX-1', 'MAC-1', 'MH-1', 'MH-2', 'MH-3', 'MQT-1', 'PC-1', 'PIX-1', 'PSU-1', 'SPK-1', 'SPK-2'
     ])
   })
 
@@ -45,8 +45,8 @@ describe('deviceSheets', () => {
         checked++
       }
     }
-    // 13 câbles appareil → switch (une fiche), 1 passerelle → switch, 3 entre deux appareils (deux fiches), 1 entre switchs (aucune).
-    expect(checked).toBe(20)
+    // 13 câbles appareil → switch (une fiche), 1 passerelle → switch, 8 entre deux appareils (deux fiches), 1 entre switchs (aucune).
+    expect(checked).toBe(30)
   })
 })
 

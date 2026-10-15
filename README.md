@@ -43,15 +43,17 @@ AV·WAN est gratuit, fonctionne hors ligne sur macOS et Windows, et est en fran�
 
 | | |
 |---|---|
-| **Dessiner** | Canvas infini. Glisser un appareil depuis la palette (40 gabarits avec leurs icônes : switch, AP, caméras PTZ NDI, Dante AVIO, ESP32-POE, PixLite, broker MQTT, panneau de brassage…) ou le trouver avec `⌘K`, puis glisser pour le déplacer, avec alignement sur une grille de 8 px. |
+| **Dessiner** | Canvas infini. Glisser un appareil depuis la palette (97 gabarits avec leurs icônes : switch, AP, caméras PTZ NDI, Dante AVIO, ESP32-POE, PixLite, broker MQTT, panneau de brassage…) ou le trouver avec `⌘K`, puis glisser pour le déplacer, avec alignement sur une grille de 8 px. |
 | **Organiser** | Zones (régie, salle, scène) qui emportent leurs appareils, `⌘G` pour en créer une autour de la sélection. Copier, coller, dupliquer, renommer d'un double-clic. |
 | **Voir** | Couleur des cordons par VLAN, par type de câble ou par port. Un clic sur un VLAN de la légende met ses appareils en évidence. Minicarte, `⌘0` pour tout cadrer. **Vue épinglée** (`⇧⌘P`) : une vignette figée sur un cadre du schéma, à jour en direct, pendant que la vue principale reste libre ; un clic y sélectionne, un double-clic y recentre la vue principale. |
+| **Patcher** | Adresse DMX, canaux et mode de chaque appareil, univers de chaque sortie de nœud. L'univers se déduit du câble DMX (nœud › DMX 2 → lyre → lyre) ou se tape à la main. « Suivante libre » trouve la première plage libre, ⌘D place la copie à la suite, et les chevauchements sont notés sans jamais bloquer. Les bandes pixel occupent leurs univers à partir de la sortie du contrôleur. |
+| **Alimenter** | Puissance de chaque appareil, alimentations 12/24 V (deux valeurs suffisent : P = V × I), câble « Alim DC », charge de chaque alimentation avec la marge de 20 %. Bandes LED COB, FCOB, RGBW, pixel… : W/m × longueur, ampères, pixels et univers. |
 | **Configurer un switch** | 4, 5, 8, 12, 16, 24 ou 48 ports, PoE / PoE+ / PoE++ avec budget en watts, 0, 2 ou 4 cages SFP+. La façade est dessinée comme le vrai matériel. |
 | **Mes composantes** | Créer ses propres appareils : nom, code, catégorie, ports (RJ45, SFP, USB, DMX, HDMI…) avec PoE reçu ou fourni, et une icône maison ou importée (SVG ou PNG). Ils se réutilisent d'un projet à l'autre, et chaque projet embarque ceux qu'il utilise : il s'ouvre complet chez quelqu'un qui ne les a pas. |
 | **Ne rien perdre** | Enregistrement automatique dans le fichier, comme un document en ligne (Fichier › Enregistrement automatique, actif par défaut) ; un nouveau projet reçoit son fichier dans Documents › AV·WAN. Fichier › Revenir à la version d'ouverture en cas d'erreur. Copie de secours toutes les 30 secondes : après un arrêt imprévu, l'accueil propose de la restaurer. Double-clic sur un fichier `.avwan` pour l'ouvrir. |
 | **Brancher** | Glisser d'un port à un autre, ou lâcher le câble sur l'appareil : AV·WAN choisit un port libre compatible, et un port PoE pour un appareil alimenté. Un port n'accepte qu'un seul câble. On rebranche un bout de câble en le glissant, et on déplace son coude. |
 | **Régler** | IP de chaque appareil (bascule *Statique / DHCP*), VLAN en accès ou en trunk, médium (Cat6, fibre OM4, DAC, Wi-Fi…), longueur. |
-| **Documenter** | Liste de branchement, fiches par appareil, carte des ports de chaque switch, fiches VLAN avec les réglages UniFi (IGMP Snooping, Querier, profil ProAV…), plan d'adressage IP, nomenclature. |
+| **Documenter** | Liste de branchement, fiches par appareil, carte des ports de chaque switch, fiches VLAN avec les réglages UniFi (IGMP Snooping, Querier, profil ProAV…), plan d'adressage IP, patch DMX, bilan de puissance, nomenclature. |
 | **Exporter** | PDF vectoriel en Tabloïd + Lettre (ou A3 + A4) avec un cartouche sur chaque page, CSV et Excel. |
 
 ### Exports
@@ -65,9 +67,11 @@ AV·WAN est gratuit, fonctionne hors ligne sur macOS et Windows, et est en fran�
   4. liste de branchement ;
   5. fiches VLAN avec les réglages UniFi sous leurs noms exacts ;
   6. plan d'adressage IP, trié par VLAN puis par adresse ;
-  7. nomenclature : appareils, câbles par longueur arrondie au mètre, modules SFP+ déduits.
-- **CSV** pour Excel en français (séparateur « ; », UTF-8) : liste de branchement, plan IP et nomenclature, un fichier chacun.
-- **Classeur Excel** : les trois mêmes listes, une feuille chacune, en-têtes figés et filtres activés.
+  7. patch DMX : un tableau par univers, trié par adresse, chevauchements en remarque ;
+  8. bilan de puissance : par alimentation, par zone, total en watts et en ampères à la tension du projet (120 ou 230 V) ;
+  9. nomenclature : appareils, câbles par longueur arrondie au mètre, modules SFP+ déduits.
+- **CSV** pour Excel en français (séparateur « ; », UTF-8) : les cinq listes (branchement, plan IP, patch DMX, bilan de puissance, nomenclature), un fichier chacune.
+- **Classeur Excel** : les cinq mêmes listes, une feuille chacune, en-têtes figés et filtres activés.
 
 Le PDF, le CSV et le classeur lisent les mêmes tableaux : ils ne se contredisent jamais.
 
@@ -109,6 +113,7 @@ Pourquoi séparer Dante, NDI et l'éclairage ? Leurs flux multicast tombent tous
 - [x] **Plan 2 — Canvas complet et identité** : **logo et icône d'app**, jeu d'icônes maison, zones (régie, salle, scène), panneau VLAN, modes de couleur *Type* et *Port*, recherche `⌘K`, projet exemple, **captures d'écran de ce README**.
 - [x] **Plan 3 — Rapports et exports** : PDF vectoriel (schéma, pages de zone, fiches, cartes des ports, branchement, VLAN, plan IP, nomenclature), CSV et Excel, VLAN à travers le panneau de brassage.
 - [x] **Plan 4 — Livraison** : DMG universel notarisé et installeur Windows publiés par la CI, guide d'installation PDF, mises à jour automatiques, ouverture par double-clic, autosauvegarde et récupération, composantes perso avec import d'icône.
+- [x] **Plan 5 — Production** : patch DMX et patch list, alimentations et bandes LED, bilan de puissance, catalogue de modèles nommés (capteurs, éclairage, vidéo / LED wall, audio).
 
 ## Démarrer (développement)
 

@@ -14,7 +14,7 @@ test('exporte le projet exemple en PDF vectoriel : schéma en Tabloïd, tableau 
   try {
     await page.getByRole('dialog', { name: 'Accueil' }).getByRole('button', { name: /Projet exemple/ }).click()
     const path = await page.evaluate(() =>
-      window.__avwan!.exportPdf({ sections: ['schema', 'appareils', 'ports', 'branchement', 'vlans', 'ip', 'nomenclature'], format: 'na', zonePages: true })
+      window.__avwan!.exportPdf({ sections: ['schema', 'appareils', 'ports', 'branchement', 'vlans', 'ip', 'patch', 'puissance', 'nomenclature'], format: 'na', zonePages: true })
     )
     expect(path).toBe(join(dir, 'Installation interactive (exemple).pdf'))
     const { pages, bytes } = await readPdf(path!)
@@ -80,7 +80,7 @@ test('exporte un projet vide en A3 + A4 sans attendre', async () => {
   }
 })
 
-test('exporte les trois listes en CSV pour Excel, puis le classeur', async () => {
+test('exporte les cinq listes en CSV pour Excel, puis le classeur', async () => {
   const dir = exportDir()
   const { app, page } = await launchApp({ keepWelcome: true, env: { AVWAN_E2E_EXPORT_DIR: dir } })
   try {
@@ -92,11 +92,14 @@ test('exporte les trois listes en CSV pour Excel, puis le classeur', async () =>
     expect(csv.startsWith('\ufeffCâble;De;Vers;Médium;Longueur (m);PoE;Mode;VLAN natif;VLAN étiquetés;Note\r\n')).toBe(true)
     expect(csv).toContain('\r\nC-010;CAM-1 · ETH;SW-2 · port 1;Cat6;12;PoE+ actif (25 W);Accès;40 NDI;—;\r\n')
     expect(existsSync(`${stem}-plan-ip.csv`)).toBe(true)
+    expect(existsSync(`${stem}-patch-dmx.csv`)).toBe(true)
+    expect(existsSync(`${stem}-bilan-puissance.csv`)).toBe(true)
+    expect(readFileSync(`${stem}-patch-dmx.csv`, 'utf8')).toContain('\r\n2;17;32;16;MH-2;')
     await page.evaluate(() => window.__avwan!.menu('exportXlsx'))
     await expect.poll(() => existsSync(`${stem}.xlsx`)).toBe(true)
     const wb = new ExcelJS.Workbook()
     await wb.xlsx.readFile(`${stem}.xlsx`)
-    expect(wb.worksheets.map((w) => w.name)).toEqual(['Liste de branchement', 'Plan d’adressage IP', 'Nomenclature'])
+    expect(wb.worksheets.map((w) => w.name)).toEqual(['Liste de branchement', 'Plan d’adressage IP', 'Patch DMX', 'Bilan de puissance', 'Nomenclature'])
   } finally {
     await app.close()
   }

@@ -7,7 +7,7 @@ import { vlanPreset } from '../catalog/vlanPresets'
 
 export const EXAMPLE_TITLE = 'Installation interactive (exemple)'
 
-type Extra = Partial<Pick<Device, 'model' | 'ip' | 'hostname' | 'note'>>
+type Extra = Partial<Pick<Device, 'model' | 'ip' | 'hostname' | 'note' | 'dmx' | 'powerW' | 'psu' | 'ledStrip' | 'portState'>>
 const fixe = (address: string): NonNullable<Device['ip']> => ({ address, mode: 'static' })
 const DHCP: NonNullable<Device['ip']> = { address: '', mode: 'dhcp' }
 const access = (vlan: number): VlanChoice => ({ kind: 'access', vlan })
@@ -18,7 +18,7 @@ const TRUNK_ALL: VlanChoice = { kind: 'trunk', native: 10, tagged: 'all' }
 // Identifiants stables (ex-…) : les captures du README et les tests restent reproductibles.
 export function createExampleProject(now: Date = new Date()): Project {
   const base = createProject(now)
-  let p: Project = { ...base, meta: { ...base.meta, title: EXAMPLE_TITLE, authors: ['Équipe technique'] }, vlans: [10, 20, 30, 40, 50, 60].map(vlanPreset) }
+  let p: Project = { ...base, meta: { ...base.meta, title: EXAMPLE_TITLE, authors: ['Équipe technique'] }, vlans: [10, 20, 30, 40, 50, 60].map(vlanPreset), settings: { ...base.settings, mainsVoltage: 120 } }
   const ids = new Map<string, string>()
   const id = (key: string): string => {
     const v = ids.get(key)
@@ -54,10 +54,15 @@ export function createExampleProject(now: Date = new Date()): Project {
   add('iot1', 'esp32-poe', 1300, 420, { ip: fixe('10.60.0.31'), model: 'Capteur de présence' })
   add('iot2', 'esp32-devkit', 1480, 420, { ip: DHCP, model: 'Bouton sans fil' })
   // Scène
-  add('pix', 'pixel-controller', 80, 700, { ip: fixe('10.50.0.20') })
-  add('led', 'led-strip', 80, 820, { model: 'Bande pixels 5 m' })
-  add('dmx', 'dmx-node', 360, 700, { ip: fixe('10.50.0.21') })
-  add('fix', 'dmx-fixture', 360, 820, { model: 'Projecteur asservi' })
+  add('pix', 'pixel-controller', 80, 700, { ip: fixe('10.50.0.20'), portState: { OUT1: { universe: 10 } } })
+  add('led', 'led-strip', 80, 820, { model: 'Bande pixels 5 m', ledStrip: { type: 'ws2815', volts: 12, wPerM: 14.4, lengthM: 5, pxPerM: 60 } })
+  add('dmx', 'dmx-node', 360, 700, { ip: fixe('10.50.0.21'), portState: { 'DMX-1': { universe: 1 }, 'DMX-2': { universe: 2 } } })
+  add('fix', 'dmx-fixture', 360, 820, { model: 'Projecteur asservi', dmx: { footprint: 16, address: 1, mode: 'Standard 16 ch' } })
+  add('mh1', 'moving-spot', 640, 700, { powerW: 400, dmx: { footprint: 16, address: 1 } })
+  add('mh2', 'moving-spot', 900, 700, { powerW: 400, dmx: { footprint: 16, address: 17 } })
+  add('mh3', 'moving-spot', 1160, 700, { powerW: 400, dmx: { footprint: 16, address: 33 } })
+  add('psu', 'psu', 640, 820, { psu: { volts: 12, amps: 30 } })
+  add('rgb', 'led-strip', 900, 820, { model: 'Ruban de scène', ledStrip: { type: 'smd-rgb', volts: 12, wPerM: 14.4, lengthM: 10 } })
 
   link(['gw', 'LAN1'], ['sw1', '1'], 'cat6', TRUNK_ALL, { lengthM: 1 })
   link(['sw1', 'SFP+1'], ['sw2', 'SFP+1'], 'om4', TRUNK_ALL, { lengthM: 30 })
@@ -77,6 +82,11 @@ export function createExampleProject(now: Date = new Date()): Project {
   link(['iot2', 'WIFI'], ['ap', 'WIFI'], 'wifi', access(60), { wifi: { ssid: 'AVWAN-IOT', band: '2.4' } })
   link(['pix', 'OUT1'], ['led', 'IN'], 'pixel', NONE, { lengthM: 2 })
   link(['dmx', 'DMX-1'], ['fix', 'DMX-IN'], 'dmx', NONE, { lengthM: 10 })
+  link(['dmx', 'DMX-2'], ['mh1', 'DMX-IN'], 'dmx', NONE, { lengthM: 8 })
+  link(['mh1', 'DMX-OUT'], ['mh2', 'DMX-IN'], 'dmx', NONE, { lengthM: 3 })
+  link(['mh2', 'DMX-OUT'], ['mh3', 'DMX-IN'], 'dmx', NONE, { lengthM: 3 })
+  link(['psu', 'DC-OUT-1'], ['led', 'DC-IN'], 'dc', NONE, { lengthM: 2 })
+  link(['psu', 'DC-OUT-2'], ['rgb', 'DC-IN'], 'dc', NONE, { lengthM: 2 })
 
   p = {
     ...p,

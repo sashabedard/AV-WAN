@@ -13,7 +13,7 @@ const p = createExampleProject(new Date(2026, 9, 13))
 describe('sections du PDF', () => {
   it('fiches par appareil : un bloc par appareil, une ligne par branchement', () => {
     const { container } = render(<DeviceSheetsPage project={p} />)
-    expect(container.querySelectorAll('.ds')).toHaveLength(17)
+    expect(container.querySelectorAll('.ds')).toHaveLength(22)
     expect(screen.getByText('ETH › SW-2 · port 1 · PoE+ actif (25 W) · VLAN 40 NDI · C-010 Cat6 12 m')).toBeTruthy()
     expect(screen.getAllByText(/IP : 10\.40\.0\.21 statique/)).toHaveLength(1)
     const meta = (name: string) => [...container.querySelectorAll('.ds')].find((a) => a.querySelector('.ds__name')?.textContent === name)!.querySelector('.ds__meta')!.textContent

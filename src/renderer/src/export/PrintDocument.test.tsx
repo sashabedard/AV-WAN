@@ -12,7 +12,7 @@ describe('PrintDocument', () => {
     const onReady = vi.fn()
     render(<PrintDocument project={createExampleProject(new Date(2026, 9, 13))} options={{ sections: ['branchement'], format: 'na', zonePages: false }} onReady={onReady} />)
     expect(screen.getByRole('heading', { name: 'Liste de branchement' })).toBeTruthy()
-    expect(screen.getAllByRole('row')).toHaveLength(19)
+    expect(screen.getAllByRole('row')).toHaveLength(24)
     expect(document.querySelector('.print style')!.textContent).toContain('@page sheet { size: 8.5in 11in; }')
     await waitFor(() => expect(onReady).toHaveBeenCalledTimes(1))
   })

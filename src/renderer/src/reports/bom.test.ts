@@ -15,8 +15,8 @@ describe('bom', () => {
     expect(t).toMatchObject({ id: 'nomenclature', title: 'Nomenclature' })
     expect(t.columns.map((c) => c.label)).toEqual(['Catégorie', 'Désignation', 'Détail', 'Quantité'])
     const devices = of('Appareil')
-    expect(devices).toHaveLength(17)
-    expect(devices.reduce((s, r) => s + (r[3] as number), 0)).toBe(19)
+    expect(devices).toHaveLength(20)
+    expect(devices.reduce((s, r) => s + (r[3] as number), 0)).toBe(24)
     expect(devices).toContainEqual(['Appareil', 'Caméra PTZ NDI', '—', 2])
     expect(devices).toContainEqual(['Appareil', 'Switch', 'Switch de régie 24 PoE+ · 24×PoE+ · 2×SFP+', 1])
     expect(devices).toContainEqual(['Appareil', 'PC média (TouchDesigner, Resolume)', 'TouchDesigner', 1])
@@ -34,8 +34,11 @@ describe('bom', () => {
       ['Câble', 'Cat6', '15 m', 2],
       ['Câble', 'Cat6', '20 m', 2],
       ['Câble', 'Fibre OM4', '30 m', 1],
+      ['Câble', 'DMX', '3 m', 2],
+      ['Câble', 'DMX', '8 m', 1],
       ['Câble', 'DMX', '10 m', 1],
-      ['Câble', 'Pixels', '2 m', 1]
+      ['Câble', 'Pixels', '2 m', 1],
+      ['Câble', 'Alim DC', '2 m', 2]
     ])
   })
 
