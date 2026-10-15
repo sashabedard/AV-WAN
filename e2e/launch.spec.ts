@@ -12,7 +12,7 @@ test('l’app démarre, affiche le canvas et répond', async () => {
     await expect(page.getByRole('region', { name: 'Mes composantes' })).toBeVisible()
     expect(await app.evaluate(({ app }) => app.getVersion())).toBe(version)
     const project = await page.evaluate(() => window.__avwan!.getProject())
-    expect(project.schemaVersion).toBe(1)
+    expect(project.schemaVersion).toBe(2)
     expect(project.vlans.length).toBeGreaterThan(0)
   } finally {
     await app.close()
