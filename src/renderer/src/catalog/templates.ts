@@ -1,5 +1,6 @@
 import type { DeviceTemplate, IconRef } from '../model/types'
 import type { BuiltinIconName } from './iconNames'
+import { stripWithType } from '../model/led'
 import { patchPanelPorts, range, rj45, sfp, sfpPlus, simple, wifi } from './ports'
 import { DEFAULT_SWITCH_SPEC } from './switch'
 
@@ -38,7 +39,7 @@ export const TEMPLATES: readonly DeviceTemplate[] = [
   { id: 'dmx-node', category: 'eclairage', name: 'Nœud DMX (type ODE)', code: 'DMX', icon: ic('dmx-node'), ports: [rj45('ETH', { speedMbps: 100, poeIn: 'af', poeDrawW: 3 }), simple('dmx', 'DMX-1', 'DMX 1'), simple('dmx', 'DMX-2', 'DMX 2')], defaults: { vlanId: 50 } },
   { id: 'pixel-controller', category: 'eclairage', name: 'Contrôleur de pixels (type PixLite A4-S)', code: 'PIX', icon: ic('pixel-controller'), ports: [rj45('ETH1'), rj45('ETH2'), ...range('OUT', 1, 4).map((id) => simple('pixel', id)), simple('dmx', 'DMX')], defaults: { vlanId: 50 } },
   { id: 'dmx-fixture', category: 'eclairage', name: 'Appareil DMX', code: 'FIX', icon: ic('fixture'), ports: [simple('dmx', 'DMX-IN', 'DMX IN'), simple('dmx', 'DMX-OUT', 'DMX OUT')], dmx: { footprint: 1 } },
-  { id: 'led-strip', category: 'eclairage', name: 'Bande LED', code: 'LED', icon: ic('led-strip'), ports: [simple('pixel', 'IN')] },
+  { id: 'led-strip', category: 'eclairage', name: 'Bande LED', code: 'LED', icon: ic('led-strip'), ports: [simple('pixel', 'IN'), simple('dc', 'DC-IN', 'DC IN')], ledStrip: { ...stripWithType(undefined, 'ws2812b'), lengthM: 5 } },
   // IoT
   { id: 'esp32-devkit', category: 'iot', name: 'ESP32 DevKit (Wi-Fi)', code: 'IOT', icon: ic('esp32'), ports: [wifi(), simple('usb', 'USB')], defaults: { vlanId: 60 } },
   { id: 'esp32-poe', category: 'iot', name: 'ESP32-POE (Olimex)', code: 'IOT', icon: ic('esp32'), ports: [rj45('ETH', { speedMbps: 100, poeIn: 'af', poeDrawW: 2 }), wifi(), simple('usb', 'USB')], defaults: { vlanId: 60 } },
@@ -54,6 +55,8 @@ export const TEMPLATES: readonly DeviceTemplate[] = [
   { id: 'depth-cam-usb', category: 'capteur', name: 'Caméra de profondeur USB', code: 'DEP', icon: ic('depth-camera'), ports: [simple('usb', 'USB')] },
   { id: 'depth-cam-poe', category: 'capteur', name: 'Caméra de profondeur PoE+', code: 'DEP', icon: ic('depth-camera'), ports: [rj45('ETH', { poeIn: 'at', poeDrawW: 13 })], defaults: { vlanId: 60 } },
   // Autre
+  // Alimentation basse tension (spec § 5.2) : 24 V de départ, courant et puissance à taper (pas de capacité inventée).
+  { id: 'psu', category: 'autre', name: 'Alimentation', code: 'PSU', icon: ic('psu'), ports: range('DC-OUT-', 1, 4).map((id, i) => simple('dc', id, `DC OUT ${i + 1}`)), psu: { volts: 24 } },
   { id: 'generic', category: 'autre', name: 'Appareil générique', code: 'GEN', icon: ic('generic'), ports: [rj45('ETH')] }
 ]
 

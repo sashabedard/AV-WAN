@@ -30,4 +30,10 @@ describe('searchTemplates', () => {
     expect(ids('  ')).toEqual(TEMPLATES.map((t) => t.id))
     expect(ids('zzzq')).toEqual([])
   })
+
+  it('trouve l’alimentation et la bande par leurs mots de régie', () => {
+    expect(searchTemplates('mean well')[0]?.id).toBe('psu')
+    expect(searchTemplates('alim 24v')[0]?.id).toBe('psu')
+    expect(searchTemplates('fcob').map((t) => t.id)).toContain('led-strip')
+  })
 })

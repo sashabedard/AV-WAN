@@ -31,8 +31,9 @@ describe('couches du renderer', () => {
     expect(offenders(['model', 'catalog', 'reports'], (i) => UI.test(i.from))).toEqual([])
   })
 
+  // Seule exception : model/led, une feuille (types seulement) — aucun cycle possible.
   it('catalog/ n’utilise model/ que pour ses types (aucun cycle à l’exécution)', () => {
-    expect(offenders(['catalog'], (i) => i.from.startsWith('../model/') && !i.typeOnly)).toEqual([])
+    expect(offenders(['catalog'], (i) => i.from.startsWith('../model/') && i.from !== '../model/led' && !i.typeOnly)).toEqual([])
   })
 
   it('reports/ ne dépend ni du store, ni du canvas, ni des panneaux, ni de l’app, ni de l’export', () => {

@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest'
+import { LED_STRIP_TYPES } from './led'
 import { CURRENT_SCHEMA_VERSION, MIGRATIONS, migrate } from './migrations'
 
 afterEach(() => {
@@ -38,5 +39,20 @@ describe('migration 1 → 2', () => {
 
   it('un document sans liste d’appareils passe quand même', () => {
     expect(migrate({ schemaVersion: 1 })).toEqual({ schemaVersion: 2 })
+  })
+
+  it('1 → 2 : une ancienne bande reçoit sa prise DC et le type WS2812B, sans longueur', () => {
+    const doc = { schemaVersion: 1, devices: [{ id: 'led', templateId: 'led-strip', ports: [{ id: 'IN', label: 'IN', connector: 'pixel' }] }] }
+    expect(migrate(doc)).toEqual({
+      schemaVersion: 2,
+      devices: [
+        {
+          id: 'led',
+          templateId: 'led-strip',
+          ports: [{ id: 'IN', label: 'IN', connector: 'pixel' }, { id: 'DC-IN', label: 'DC IN', connector: 'dc' }],
+          ledStrip: { type: 'ws2812b', volts: 5, wPerM: LED_STRIP_TYPES.ws2812b.wPerM, pxPerM: 60 }
+        }
+      ]
+    })
   })
 })
