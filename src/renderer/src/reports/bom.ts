@@ -38,17 +38,20 @@ function tally<K>(map: Map<string, { key: K; n: number }>, id: string, key: K): 
 // (un câble DAC a ses modules intégrés). Une liaison Wi-Fi n'est pas un câble.
 export function bom(project: Project): DataTable {
   const devices = new Map<string, { key: [string, string]; n: number }>()
-  const strips = new Map<string, { strip: LedStrip; n: number; meters: number; unknown: boolean }>()
+  const strips = new Map<string, { strip: LedStrip; n: number; meters: number; known: boolean; unknown: boolean }>()
   for (const d of project.devices) {
     const t = getTemplate(project, d.templateId)
     const name = t?.name ?? d.templateId
     if (d.ledStrip) {
       const s = d.ledStrip
       const key = `${s.type}\u0000${s.volts}\u0000${s.wPerM}`
-      const hit = strips.get(key) ?? { strip: s, n: 0, meters: 0, unknown: false }
+      const hit = strips.get(key) ?? { strip: s, n: 0, meters: 0, known: false, unknown: false }
       hit.n++
       if (s.lengthM === undefined) hit.unknown = true
-      else hit.meters += s.lengthM
+      else {
+        hit.known = true
+        hit.meters += s.lengthM
+      }
       strips.set(key, hit)
       continue
     }
@@ -79,10 +82,10 @@ export function bom(project: Project): DataTable {
       .map(({ key, n }) => ['Appareil', key[0], key[1] || DASH, n]),
     ...[...strips.values()]
       .sort((a, b) => compareText(LED_STRIP_TYPES[a.strip.type].label, LED_STRIP_TYPES[b.strip.type].label) || a.strip.volts - b.strip.volts || a.strip.wPerM - b.strip.wPerM)
-      .map(({ strip, n, meters, unknown }) => [
+      .map(({ strip, n, meters, known, unknown }) => [
         'Appareil',
         `Bande LED ${LED_STRIP_TYPES[strip.type].label}`,
-        `${formatFr(strip.volts)} V · ${formatFr(strip.wPerM)} W/m · ${formatFr(meters)} m au total${unknown ? ' + longueur à définir' : ''}`,
+        `${formatFr(strip.volts)} V · ${formatFr(strip.wPerM)} W/m · ${known ? `${formatFr(meters)} m au total${unknown ? ' + longueur à définir' : ''}` : 'longueur à définir'}`,
         n
       ]),
     ...[...cables.values()]
