@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { act, cleanup, render, screen } from '@testing-library/react'
+import { act, cleanup, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { Inspector } from '../Inspector'
 import { isDirty, projectStore } from '../../store/projectStore'
@@ -137,6 +137,52 @@ describe('inspecteur : canaux DMX', () => {
     expect(save).toHaveBeenCalledTimes(1)
     act(() => projectStore.getState().undo())
     expect(present()).toBe(before)
+  })
+
+  // Le <datalist> natif d’Electron ne défile pas : les dernières suggestions étaient hors d’atteinte.
+  it('suggestions : liste maison qui défile, toutes les suggestions atteignables', async () => {
+    const user = userEvent.setup()
+    select('w')
+    const { container } = render(<Inspector />)
+    expect(container.querySelector('datalist')).toBeNull()
+    await user.click(screen.getByLabelText('Canal 1'))
+    const list = screen.getByRole('listbox', { name: 'Suggestions' })
+    expect(list.classList.contains('suggest')).toBe(true)
+    expect(within(list).getAllByRole('option')).toHaveLength(32)
+    expect(within(list).getByRole('option', { name: 'Function' })).toBeTruthy()
+  })
+
+  it('suggestions : la frappe filtre ; flèches + Entrée choisit en une étape et passe au canal suivant ; Échap ferme sans annuler', async () => {
+    const user = userEvent.setup()
+    select('w')
+    render(<Inspector />)
+    await user.type(screen.getByLabelText('Canal 1'), 'gob')
+    const list = screen.getByRole('listbox', { name: 'Suggestions' })
+    expect(within(list).getAllByRole('option').map((o) => o.textContent)).toEqual(['Gobo', 'Gobo rotation'])
+    await user.keyboard('{ArrowDown}{ArrowDown}{Enter}')
+    expect(names('w')).toEqual(['Gobo rotation'])
+    expect(projectStore.getState().history.past).toHaveLength(1)
+    expect(save).toHaveBeenCalledTimes(1)
+    expect(document.activeElement).toBe(screen.getByLabelText('Canal 2'))
+    expect(screen.queryByRole('listbox')).toBeNull()
+    await user.keyboard('zo')
+    expect(screen.getByRole('option', { name: 'Zoom' })).toBeTruthy()
+    await user.keyboard('{Escape}')
+    expect(screen.queryByRole('listbox')).toBeNull()
+    expect(document.activeElement).toBe(screen.getByLabelText('Canal 2'))
+    expect((screen.getByLabelText('Canal 2') as HTMLInputElement).value).toBe('zo')
+  })
+
+  it('suggestions : un clic choisit et valide en une étape', async () => {
+    const user = userEvent.setup()
+    select('w')
+    render(<Inspector />)
+    await user.click(screen.getByLabelText('Canal 3'))
+    await user.click(screen.getByRole('option', { name: 'Zoom' }))
+    expect(names('w')).toEqual(['', '', 'Zoom'])
+    expect(projectStore.getState().history.past).toHaveLength(1)
+    expect(save).toHaveBeenCalledTimes(1)
+    expect(screen.queryByRole('listbox')).toBeNull()
   })
 
   it('moins de canaux puis autant qu’avant : les noms reviennent', () => {

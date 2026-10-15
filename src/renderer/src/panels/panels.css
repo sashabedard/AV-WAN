@@ -115,3 +115,11 @@
 .chan__row { display: grid; grid-template-columns: 22px minmax(0, 1fr); align-items: center; gap: 6px; }
 .chan__n { font: 600 11px/1 var(--font-mono); color: var(--muted); text-align: right; }
 .chan__reset { margin-top: 8px; }
+/* Suggestions d'un champ (CommitInput) : hauteur bornée, barre de défilement toujours visible. */
+.suggest { position: fixed; z-index: 65; margin: 0; padding: 4px 0; list-style: none; overflow-y: auto; overscroll-behavior: contain; border: 1px solid var(--line); border-radius: 5px; background: var(--surface); box-shadow: 0 8px 24px var(--tile-shadow); }
+/* Barre classique (pas l'overlay macOS qui s'efface) ; ignorée par Chromium si scrollbar-width/-color est posé ici. */
+.suggest::-webkit-scrollbar { width: 10px; }
+.suggest::-webkit-scrollbar-track { background: transparent; }
+.suggest::-webkit-scrollbar-thumb { border: 3px solid transparent; border-radius: 5px; background: color-mix(in srgb, var(--muted) 65%, transparent) padding-box; }
+.suggest__item { padding: 5px 12px; cursor: pointer; color: var(--ink); font-size: 13px; white-space: nowrap; }
+.suggest__item.is-active { background: var(--accent-bg); box-shadow: inset 3px 0 0 var(--accent); }

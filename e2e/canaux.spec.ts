@@ -22,6 +22,20 @@ test('canaux DMX : nommés dans l’inspecteur, retenus dans les réglages, impr
     await expect(page.getByLabel('Canal 2', { exact: true })).toBeFocused()
     await page.keyboard.type('Green')
     await page.keyboard.press('Enter')
+    // Le menu natif d’un <datalist> ne défilait pas : la dernière suggestion doit rester atteignable.
+    await expect(page.getByLabel('Canal 3', { exact: true })).toBeFocused()
+    await page.keyboard.press('ArrowDown')
+    const menu = page.getByRole('listbox', { name: 'Suggestions' })
+    await expect(menu).toBeVisible()
+    expect(await menu.evaluate((el) => el.scrollHeight > el.clientHeight)).toBe(true)
+    await menu.getByRole('option', { name: 'Function' }).scrollIntoViewIfNeeded()
+    await menu.getByRole('option', { name: 'Function' }).click()
+    await expect(menu).toBeHidden()
+    // Champ du bas : le panneau défile pour l’afficher, le menu suit au lieu de se refermer.
+    await page.getByLabel('Canal 16', { exact: true }).click()
+    await expect(menu).toBeVisible()
+    await page.keyboard.press('Escape')
+    await expect(menu).toBeHidden()
     const settingsFile = join(userData, 'dmx-channels.json')
     await expect.poll(() => existsSync(settingsFile) && readFileSync(settingsFile, 'utf8').includes('Green')).toBe(true)
     const path = await page.evaluate(() => window.__avwan!.exportPdf({ sections: ['canaux'], format: 'na', zonePages: false }))
@@ -30,7 +44,7 @@ test('canaux DMX : nommés dans l’inspecteur, retenus dans les réglages, impr
     expect(text).toContain('Canaux DMX')
     expect(text).toMatch(/FIX-1 · U[0-9?]+ · 1–16/)
     // Adr. | Ch | Paramètre : adresse réelle = adresse + canal − 1.
-    expect(text).toMatch(/\b1 1 Red 2 2 Green 3 3 /)
+    expect(text).toMatch(/\b1 1 Red 2 2 Green 3 3 Function\b/)
   } finally {
     await app.close()
   }
