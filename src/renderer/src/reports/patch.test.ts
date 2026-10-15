@@ -23,6 +23,17 @@ describe('patchGroups', () => {
   })
 })
 
+describe('univers tapé contredit par le câble', () => {
+  it('le note en remarque', () => {
+    const p = show()
+    const q = { ...p, devices: p.devices.map((d) => (d.id === 'mh2' ? { ...d, dmx: { ...d.dmx!, universe: 2 } } : d)) }
+    const row = patchTable(q).rows.find((r) => r[4] === 'MH-2')!
+    expect(row[0]).toBe(2)
+    expect(row.at(-1)).toBe('Univers tapé 2 ; le câble donne 1')
+    expect(patchTable(show()).rows.find((r) => r[4] === 'PAR-1')!.at(-1)).toBe('Chevauche MH-1 (1–16) · Chevauche MH-2 (17–32)')
+  })
+})
+
 describe('patchTable', () => {
   it('à plat, trié par univers puis adresse, une colonne par champ', () => {
     const t = patchTable(show())

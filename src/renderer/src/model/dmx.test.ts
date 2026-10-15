@@ -191,6 +191,34 @@ describe('chevauchements, dépassement, adresse suivante libre', () => {
   })
 })
 
+describe('univers tapé contredit par le câble', () => {
+  function chain() {
+    const r = rig()
+    r.add('ode', 'dmx-node', node('ODE-1', 3, 0))
+    r.add('f1', 'dmx-fixture', fix(1, 16, 2)) // tapé 2, le câble donne 3
+    r.add('f2', 'dmx-fixture', fix(17, 16, 3)) // tapé 3, concorde
+    r.add('f3', 'dmx-fixture', fix(undefined, 16, 7)) // sans adresse, câble U0
+    r.add('f4', 'dmx-fixture', fix(1, 16, 5)) // tapé, sans câble
+    r.link(['ode', 'DMX-1'], ['f1', 'DMX-IN'])
+    r.link(['f1', 'DMX-OUT'], ['f2', 'DMX-IN'])
+    r.link(['ode', 'DMX-2'], ['f3', 'DMX-IN'])
+    return r
+  }
+
+  it('le signale, même sans adresse, et garde l’univers tapé', () => {
+    const index = patchIndex(chain().p)
+    expect(issueTexts(patchIssues(index, 'f1'))).toEqual(['Univers tapé 2 ; le câble donne 3'])
+    expect(issueTexts(patchIssues(index, 'f3'))).toEqual(['Univers tapé 7 ; le câble donne 0'])
+    expect(index.entries.get('f1')?.universe).toEqual({ universe: 2, source: { kind: 'typed' } })
+  })
+
+  it('rien quand les deux concordent, ni sans câble', () => {
+    const index = patchIndex(chain().p)
+    expect(issueTexts(patchIssues(index, 'f2'))).toEqual([])
+    expect(issueTexts(patchIssues(index, 'f4'))).toEqual([])
+  })
+})
+
 describe('patchLine', () => {
   it('U2 · 33, Adr. 33 sans univers, rien sans adresse', () => {
     const r = rig()

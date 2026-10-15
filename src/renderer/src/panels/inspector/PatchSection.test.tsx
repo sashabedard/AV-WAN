@@ -107,6 +107,13 @@ describe('bloc Patch DMX', () => {
     expect(dev('f1').dmx?.address).toBe(10)
     expect(screen.getByText('Chevauche FIX-2 (1–16)')).toBeTruthy()
   })
+
+  it('signale discrètement un univers tapé que le câble contredit', () => {
+    projectStore.getState().updateDevice('f1', { dmx: { footprint: 16, universe: 9 } })
+    select('f1')
+    render(<Inspector />)
+    expect(screen.getByText('Univers tapé 9 ; le câble donne 2').className).toBe('insp__warn')
+  })
 })
 
 describe('colonne Univers des ports', () => {

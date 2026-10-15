@@ -23,6 +23,7 @@ export interface PatchEntry {
   device: Device
   universe?: ResolvedUniverse
   range?: PatchRange
+  cableUniverse?: number // univers que donnerait le câble, quand il contredit l'univers tapé
 }
 export interface StripSpan {
   universe: number
@@ -49,6 +50,7 @@ export interface Overlap {
 export interface PatchIssues {
   overlaps: Overlap[]
   overflow: boolean
+  universeConflict?: { typed: number; cable: number }
 }
 
 export function isPatchable(device: Device): boolean {
@@ -207,7 +209,10 @@ function buildPatchIndex(project: Project): PatchIndex {
     const range: PatchRange | undefined =
       universe && address !== undefined ? { ownerId: device.id, universe: universe.universe, start: address, end: address + device.dmx.footprint - 1 } : undefined
     if (range) ranges.push(range)
-    entries.set(device.id, { device, ...(universe ? { universe } : {}), ...(range ? { range } : {}) })
+    // Univers tapé (une copie le fige) : le câble peut en donner un autre ; l'univers tapé reste celui du patch.
+    const cable = device.dmx.universe !== undefined ? cableUniverse(project, device, byId, adjacency)?.universe : undefined
+    const conflict = cable !== undefined && cable !== device.dmx.universe
+    entries.set(device.id, { device, ...(universe ? { universe } : {}), ...(range ? { range } : {}), ...(conflict ? { cableUniverse: cable } : {}) })
   }
   return { entries, ranges, byId, strips }
 }
@@ -223,9 +228,12 @@ export function overlapsIn(index: PatchIndex, universe: number, start: number, e
 }
 
 export function patchIssues(index: PatchIndex, deviceId: string): PatchIssues {
-  const own = index.entries.get(deviceId)?.range
-  if (!own) return { overlaps: [], overflow: false }
-  return { overlaps: overlapsIn(index, own.universe, own.start, own.end, deviceId), overflow: own.end > DMX_SLOTS }
+  const entry = index.entries.get(deviceId)
+  const typed = entry?.device.dmx?.universe
+  const conflict = typed !== undefined && entry?.cableUniverse !== undefined ? { universeConflict: { typed, cable: entry.cableUniverse } } : {}
+  const own = entry?.range
+  if (!own) return { overlaps: [], overflow: false, ...conflict }
+  return { overlaps: overlapsIn(index, own.universe, own.start, own.end, deviceId), overflow: own.end > DMX_SLOTS, ...conflict }
 }
 
 // § 4.4 : première adresse dont la plage tient dans 1…512 sans toucher une plage occupée.
@@ -258,5 +266,10 @@ export function patchLine(entry: PatchEntry | undefined): string {
 }
 
 export function issueTexts(issues: PatchIssues): string[] {
-  return [...issues.overlaps.map((o) => `Chevauche ${o.name} (${rangeLabel(o.start, o.end)})`), ...(issues.overflow ? ['Dépasse 512'] : [])]
+  const c = issues.universeConflict
+  return [
+    ...(c ? [`Univers tapé ${c.typed} ; le câble donne ${c.cable}`] : []),
+    ...issues.overlaps.map((o) => `Chevauche ${o.name} (${rangeLabel(o.start, o.end)})`),
+    ...(issues.overflow ? ['Dépasse 512'] : [])
+  ]
 }
