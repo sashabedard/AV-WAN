@@ -14,18 +14,19 @@ const SUGGESTIONS = [
 ]
 const LIST_ID = 'dmx-param-suggestions'
 
-// Projet d'abord (⌘Z), puis les réglages (tous les projets). En lecture seule, rien n'est écrit nulle part.
-function writeList(key: ChannelKey, params: readonly string[]): void {
+// Projet d'abord (⌘Z), puis les réglages (tous les projets). En lecture seule, rien n'est écrit nulle part (false).
+function writeList(key: ChannelKey, params: readonly string[]): boolean {
   const s = projectStore.getState()
   if (s.readOnly) {
     s.apply((p) => p) // affiche le message de lecture seule
-    return
+    return false
   }
   s.setChannelList(key, params)
   dmxChannelsStore
     .getState()
     .save(key, params)
     .catch((e: unknown) => projectStore.getState().showToast(`Liste non retenue pour vos autres projets : ${ipcErrorMessage(e)}`))
+  return true
 }
 
 // Le projet reprend la liste du manuel (une étape annulable, le fichier devient modifié) ; les réglages oublient la leur.
@@ -89,8 +90,7 @@ export function ChannelsSection({ device, project }: { device: Device; project: 
                 e.preventDefault()
                 e.currentTarget.blur()
                 const { params: next, ignored } = fillParams(params, i, pasted, footprint)
-                writeList(key, next)
-                if (ignored > 0) projectStore.getState().showToast(`${ignored} ligne${ignored > 1 ? 's' : ''} ignorée${ignored > 1 ? 's' : ''} après le canal ${footprint}.`)
+                if (writeList(key, next) && ignored > 0) projectStore.getState().showToast(`${ignored} ligne${ignored > 1 ? 's' : ''} ignorée${ignored > 1 ? 's' : ''} après le canal ${footprint}.`)
               }}
             />
           </li>

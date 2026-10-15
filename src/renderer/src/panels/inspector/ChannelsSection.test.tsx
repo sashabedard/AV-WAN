@@ -154,4 +154,16 @@ describe('inspecteur : canaux DMX', () => {
     expect(save).not.toHaveBeenCalled()
     expect(projectStore.getState().toast).toMatch(/lecture seule/)
   })
+
+  it('lecture seule : un collage trop long garde le message de lecture seule, rien n’est écrit', async () => {
+    const user = userEvent.setup()
+    projectStore.setState({ readOnly: true })
+    select('w')
+    render(<Inspector />)
+    await user.click(screen.getByLabelText('Canal 5'))
+    await user.paste(Array.from({ length: 10 }, (_, i) => `P${i + 1}`).join('\n'))
+    expect(present().dmxChannels).toBeUndefined()
+    expect(save).not.toHaveBeenCalled()
+    expect(projectStore.getState().toast).toMatch(/lecture seule/)
+  })
 })
