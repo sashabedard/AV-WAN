@@ -96,6 +96,10 @@ export function createFileAutoSave(store: StoreApi<ProjectState>, deps: FileAuto
       if (after.docId !== s.docId || after.filePath !== s.filePath) return
       after.markSaved(path, snapshot)
       deps.onSaved()
+      // Annulé vers l'ancienne version enregistrée pendant l'écriture : aucun minuteur n'est parti (le
+      // projet n'était plus modifié), mais le fichier contient maintenant la version écrite. L'état obtenu
+      // est écrit à son tour.
+      schedule()
     } catch (e) {
       if (!failing) deps.toast(`Enregistrement automatique impossible : ${ipcErrorMessage(e)}`)
       failing = true

@@ -224,6 +224,30 @@ describe('écriture automatique dans le fichier', () => {
     expect(isDirty(store.getState())).toBe(false)
   })
 
+  it('annulation vers l’état enregistré pendant une écriture : l’état obtenu est écrit à son tour', async () => {
+    const held = heldSaves()
+    const { store, deps } = setup('/x/a.avwan', { save: held.save })
+    const v1 = store.getState().history.present
+    store.getState().updateMeta({ title: 'V2' })
+    await vi.advanceTimersByTimeAsync(FILE_AUTOSAVE_DELAY_MS)
+    expect(held.save).toHaveBeenCalledTimes(1)
+    store.getState().undo() // ⌘Z vers V1, qui est encore la version enregistrée : rien à écrire… pour l'instant
+    expect(store.getState().history.present).toBe(v1)
+    expect(isDirty(store.getState())).toBe(false)
+    held.release()
+    await vi.advanceTimersByTimeAsync(0)
+    // V2 est maintenant dans le fichier, le projet montre V1 : il est modifié et doit être écrit.
+    expect(isDirty(store.getState())).toBe(true)
+    expect(held.save).toHaveBeenCalledTimes(1)
+    await vi.advanceTimersByTimeAsync(FILE_AUTOSAVE_DELAY_MS)
+    expect(held.save).toHaveBeenCalledTimes(2)
+    expect(held.save.mock.calls[1]![1]).toBe(textOf(v1))
+    held.release()
+    await vi.advanceTimersByTimeAsync(0)
+    expect(isDirty(store.getState())).toBe(false)
+    expect(deps.onSaved).toHaveBeenCalledTimes(2)
+  })
+
   it('changement de document : le minuteur en attente est annulé', async () => {
     const { store, deps } = setup()
     store.getState().updateMeta({ title: 'Salle B' })
