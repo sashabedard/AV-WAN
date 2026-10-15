@@ -3,6 +3,8 @@ import type { Project } from '../model/types'
 import type { DataTable } from '../../../shared/tables'
 import { deviceSheets } from '../reports/deviceSheets'
 import { PATCH_PDF_COLUMNS, patchGroups } from '../reports/patch'
+import { POWER_PDF_COLUMNS, PSU_COLUMNS, powerBudget } from '../reports/powerBudget'
+import { formatFr } from '../model/fields'
 import { portMaps } from '../reports/portMaps'
 import { vlanSheets } from '../reports/vlanSheets'
 import { PortMapFacade } from './PortMapFacade'
@@ -135,6 +137,51 @@ export function VlanSheetsPage({ project }: { project: Project }) {
           {v.note && <p className="vs__note">{v.note}</p>}
         </article>
       ))}
+    </section>
+  )
+}
+
+// Section « Bilan de puissance » (spec § 6.1).
+export function PowerPage({ project }: { project: Project }) {
+  const b = powerBudget(project)
+  const shown = b.missing.slice(0, 12)
+  return (
+    <section className="pg pg--sheet">
+      <h2 className="pg__h">Bilan de puissance</h2>
+      {b.psus.length === 0 && b.zones.length === 0 && <p className="pg__empty">Aucune puissance renseignée dans le projet.</p>}
+      {b.psus.length > 0 && (
+        <div className="pt">
+          <h3 className="pt__h">Alimentations</h3>
+          <ReportTable
+            table={{
+              id: 'alimentations',
+              title: 'Alimentations',
+              columns: PSU_COLUMNS,
+              rows: b.psus.map((s) => [s.name, s.volts !== undefined ? `${formatFr(s.volts)} V` : '', s.capacityW ?? null, s.loadW, s.ratio !== undefined ? `${Math.round(s.ratio * 100)} %` : '', s.fed.join(', '), s.remark])
+            }}
+          />
+        </div>
+      )}
+      {b.zones.map((z) => (
+        <div key={z.zone} className="pt">
+          <h3 className="pt__h">{z.zone}</h3>
+          <ReportTable
+            table={{
+              id: `puissance-${z.zone}`,
+              title: z.zone,
+              columns: POWER_PDF_COLUMNS,
+              rows: [...z.rows.map((r) => [r.device, r.type, r.watts ?? null, r.fedBy, r.mainsW ?? null, r.remark]), ['Sous-total', '', null, '', z.subtotalW, '']]
+            }}
+          />
+        </div>
+      ))}
+      {b.zones.length > 0 && <p className="pw__total">{`Total : ${formatFr(b.totalW)} W · ${formatFr(b.amps, 1)} A à ${b.voltage} V`}</p>}
+      {b.missing.length > 0 && (
+        <p className="pw__missing">
+          {`${b.missing.length} appareil${b.missing.length > 1 ? 's' : ''} sans puissance renseignée : ${shown.join(', ')}${b.missing.length > shown.length ? ` et ${b.missing.length - shown.length} autres` : ''}`}
+        </p>
+      )}
+      <p className="pw__note">Facteur de puissance supposé égal à 1. Alimentations comptées à leur puissance nominale ; appareils PoE comptés dans leur switch.</p>
     </section>
   )
 }

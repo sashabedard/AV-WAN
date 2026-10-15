@@ -1,9 +1,10 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it } from 'vitest'
 import { cleanup, render, screen, within } from '@testing-library/react'
-import { DeviceSheetsPage, PatchPage, PortMapsPage, VlanSheetsPage } from './sections'
+import { DeviceSheetsPage, PatchPage, PortMapsPage, PowerPage, VlanSheetsPage } from './sections'
 import { createExampleProject } from '../samples/exampleProject'
 import { createProject } from '../model/project'
+import { powerShowProject } from '../reports/__fixtures__/powerShow'
 import { patchShowProject } from '../reports/__fixtures__/patchShow'
 
 afterEach(cleanup)
@@ -31,6 +32,18 @@ describe('sections du PDF', () => {
   it('patch DMX : dit quand rien n’est patchable', () => {
     render(<PatchPage project={createProject()} />)
     expect(screen.getByText('Aucun appareil patchable dans le projet.')).toBeTruthy()
+  })
+
+  it('bilan de puissance : total, alimentations et appareils sans puissance', () => {
+    render(<PowerPage project={powerShowProject()} />)
+    expect(screen.getByText('Total : 830 W · 6,9 A à 120 V')).toBeTruthy()
+    expect(screen.getByText('Alimentations')).toBeTruthy()
+    expect(screen.getByText('1 appareil sans puissance renseignée : SW-1')).toBeTruthy()
+  })
+
+  it('bilan de puissance : dit quand rien n’est renseigné', () => {
+    render(<PowerPage project={createProject()} />)
+    expect(screen.getByText('Aucune puissance renseignée dans le projet.')).toBeTruthy()
   })
 
   it('carte des ports : une page par switch, avec sa façade et son tableau', () => {
