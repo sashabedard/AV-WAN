@@ -9,8 +9,9 @@ const pixelOutputs = (prefix: string, count: number, medium: string) =>
 
 export const VIDEO_MODELS: readonly DeviceTemplate[] = [
   // Source : https://www.rentex.com/wp-content/uploads/2018/02/NovaStar-Controller-MCTRL4K-Specifications-Rev1.0.1.pdf
-  // (fiche NovaStar « Specifications Rev1.0.1 », copie hébergée par Rentex, consultée le 2026-10-14)
+  // (fiche NovaStar « Specifications Rev1.0.1 », copie hébergée par Rentex, consultée le 2026-10-14, revérifiée le 2026-10-15)
   // 16 sorties Gigabit Ethernet (Neutrik) et 4 sorties fibre LC monomode ; entrées DP 1.2, HDMI 2.0 et 2 DVI double lien ; 30 W.
+  // Tableau « Outputs » (p. 7) : « Two types of ports cannot be used to connect devices simultaneously » (RJ45 ou fibre, pas les deux).
   {
     id: 'novastar-mctrl4k',
     category: 'video',
@@ -30,7 +31,8 @@ export const VIDEO_MODELS: readonly DeviceTemplate[] = [
     note: 'Sorties RJ45 ou fibre, pas les deux à la fois ; entrées DisplayPort et DVI non dessinées ; la fiche ne précise pas la vitesse du port de contrôle.'
   },
   // Source : https://oss.novastar.tech/uploads/2024/07/VX1000-All-in-One-Controller-Specifications-V1.6.0.pdf
-  // (fiche du fabricant, V1.6.0, consultée le 2026-10-14) : 10 sorties Gigabit Ethernet, 2 sorties fibre 10G, puissance nominale 35 W.
+  // (fiche du fabricant, V1.6.0, consultée le 2026-10-14, revérifiée le 2026-10-15) : 10 sorties Gigabit Ethernet, 2 sorties fibre 10G, puissance nominale 35 W ;
+  // entrées 2 HDMI 1.4 et 3G-SDI ; « Output connectors : 1x HDMI 1.3, for monitoring or video output » (la prise HDMI OUT).
   {
     id: 'novastar-vx1000',
     category: 'video',
