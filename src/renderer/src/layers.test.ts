@@ -31,7 +31,7 @@ describe('couches du renderer', () => {
     expect(offenders(['model', 'catalog', 'reports'], (i) => UI.test(i.from))).toEqual([])
   })
 
-  // Seule exception : model/led, une feuille (types seulement) — aucun cycle possible.
+  // Seule exception : model/led, une feuille sans import à l’exécution (elle n’importe que des types) — aucun cycle possible.
   it('catalog/ n’utilise model/ que pour ses types (aucun cycle à l’exécution)', () => {
     expect(offenders(['catalog'], (i) => i.from.startsWith('../model/') && i.from !== '../model/led' && !i.typeOnly)).toEqual([])
   })
