@@ -9,6 +9,7 @@ import { pasteFragment as pasteFragmentModel, type Fragment } from '../model/cli
 import { addVlan as addVlanModel, changeVlanId as changeVlanIdModel, removeVlan as removeVlanModel, updateVlan as updateVlanModel, type VlanPatch } from '../model/vlans'
 import { assignZones, createZone, moveZones, placeDevices, removeZones, resizeZone as resizeZoneModel, zoneAround, zonesWithin, type ZoneRect } from '../model/zones'
 import { withTemplate } from '../model/customTemplate'
+import { removeProjectList, setProjectList, type ChannelKey } from '../model/dmxChannels'
 import { uiStore } from './uiStore'
 import { commit, initHistory, redo as historyRedo, undo as historyUndo, type History } from './history'
 
@@ -57,6 +58,9 @@ export interface ProjectState {
   connect(a: PortRef, b: PortRef): string | null
   reconnect(linkId: string, end: 'a' | 'b', to: PortRef): boolean
   updateDevice(id: string, patch: DevicePatch): void
+  // Noms des canaux DMX d'un modèle + mode (spec canaux-dmx § 3.7) : l'entrée du projet ; les réglages sont écrits par l'appelant.
+  setChannelList(key: ChannelKey, params: readonly string[]): void
+  removeChannelList(key: ChannelKey): void
   updateLink(id: string, patch: LinkPatch): void
   setLinkVlan(linkId: string, choice: VlanChoice): void
   addVlan(vlan: Vlan): void
@@ -251,6 +255,8 @@ export function createProjectStore(initial: Project = createProject()): StoreApi
       },
 
       updateDevice: (id, patch) => apply((p) => ({ ...p, devices: p.devices.map((d) => (d.id === id ? { ...d, ...patch } : d)) })),
+      setChannelList: (key, params) => apply((p) => setProjectList(p, key, params)),
+      removeChannelList: (key) => apply((p) => removeProjectList(p, key)),
       updateLink: (id, patch) => apply((p) => ({ ...p, links: p.links.map((l) => (l.id === id ? { ...l, ...patch } : l)) })),
       setLinkVlan: (linkId, choice) => apply((p) => deriveSetLinkVlan(p, linkId, choice)),
       addVlan: (vlan) => apply((p) => addVlanModel(p, vlan)),
