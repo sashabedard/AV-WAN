@@ -1,7 +1,8 @@
 // src/renderer/src/reports/patch.ts
 import type { Project } from '../model/types'
 import { getTemplate } from '../catalog'
-import { issueTexts, patchIndex, patchIssues, rangeLabel, sourceLabel, type PatchEntry } from '../model/dmx'
+import { LED_STRIP_TYPES } from '../model/led'
+import { issueTexts, overlapsIn, patchIndex, patchIssues, rangeLabel, sourceLabel, type PatchEntry } from '../model/dmx'
 import type { Cell, Column, DataTable } from '../../../shared/tables'
 import { compareText } from './format'
 
@@ -59,6 +60,25 @@ export function patchRows(project: Project): PatchRow[] {
       zone: zoneName(project, d.zoneId),
       remark: issueTexts(patchIssues(index, d.id)).join(' · ')
     })
+  }
+  for (const sp of index.strips.values()) {
+    const d = sp.device
+    const t = getTemplate(project, d.templateId)
+    const label = LED_STRIP_TYPES[d.ledStrip!.type].label
+    for (const span of sp.spans) {
+      rows.push({
+        universe: span.universe,
+        address: 1,
+        end: span.channels,
+        channels: span.channels,
+        device: d.name,
+        model: d.model ?? t?.model ?? t?.name ?? '',
+        mode: `${label} · ${span.pixels} px`,
+        source: sourceLabel(project, { kind: 'port', ref: sp.source }),
+        zone: zoneName(project, d.zoneId),
+        remark: issueTexts({ overlaps: overlapsIn(index, span.universe, 1, span.channels, d.id), overflow: false }).join(' · ')
+      })
+    }
   }
   return rows.sort((a, b) => undefinedLast(a.universe, b.universe) || undefinedLast(a.address, b.address) || compareText(a.device, b.device))
 }

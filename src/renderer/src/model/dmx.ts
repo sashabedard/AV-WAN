@@ -2,6 +2,7 @@
 // Patch DMX (spec patch-puissance-catalogue § 4) : univers effectif, plages occupées, chevauchements,
 // adresse suivante libre. Fonctions pures. Jamais de test « falsy » sur un univers : U0 existe (Art-Net).
 import type { Device, PortDef, PortRef, Project } from './types'
+import { stripPixels, type StripPixels } from './led'
 import { getTemplate } from '../catalog'
 
 export const DMX_SLOTS = 512
@@ -23,10 +24,21 @@ export interface PatchEntry {
   universe?: ResolvedUniverse
   range?: PatchRange
 }
+export interface StripSpan {
+  universe: number
+  pixels: number
+  channels: number
+}
+export interface StripPatch {
+  device: Device
+  source: PortRef
+  spans: StripSpan[]
+}
 export interface PatchIndex {
   entries: Map<string, PatchEntry>
   ranges: PatchRange[]
   byId: ReadonlyMap<string, Device>
+  strips: Map<string, StripPatch>
 }
 export interface Overlap {
   name: string
@@ -97,12 +109,52 @@ export function resolveUniverse(project: Project, deviceId: string, byId: Readon
   return undefined
 }
 
+// § 4.2 : univers de départ d'une bande pixel, lu sur la sortie pixel où elle est branchée.
+export function stripStart(project: Project, device: Device, byId: ReadonlyMap<string, Device> = deviceMap(project)): { universe: number; ref: PortRef } | undefined {
+  for (const link of project.links) {
+    for (const [here, there] of [
+      [link.a, link.b],
+      [link.b, link.a]
+    ] as const) {
+      if (here.deviceId !== device.id) continue
+      const from = portOf(byId, here)
+      const to = portOf(byId, there)
+      if (!from || !to || from.port.connector !== 'pixel' || to.port.connector !== 'pixel') continue
+      const universe = to.device.portState[there.portId]?.universe
+      if (universe !== undefined) return { universe, ref: there }
+    }
+  }
+  return undefined
+}
+
+// Univers consécutifs à partir du départ ; chacun prend ses canaux à partir de 1.
+export function stripSpans(px: StripPixels, start: number): StripSpan[] {
+  const spans: StripSpan[] = []
+  let left = px.pixels
+  for (let universe = start; left > 0 && universe <= UNIVERSE_MAX; universe++) {
+    const pixels = Math.min(left, px.perUniverse)
+    spans.push({ universe, pixels, channels: pixels * px.channelsPerPixel })
+    left -= pixels
+  }
+  return spans
+}
+
 // Univers effectif et plage de chaque appareil patchable, calculés une fois pour tout le projet.
 export function patchIndex(project: Project): PatchIndex {
   const byId = deviceMap(project)
   const entries = new Map<string, PatchEntry>()
   const ranges: PatchRange[] = []
+  const strips = new Map<string, StripPatch>()
   for (const device of project.devices) {
+    if (device.ledStrip) {
+      const px = stripPixels(device.ledStrip)
+      const start = px ? stripStart(project, device, byId) : undefined
+      if (px && start) {
+        const spans = stripSpans(px, start.universe)
+        strips.set(device.id, { device, source: start.ref, spans })
+        for (const s of spans) ranges.push({ ownerId: device.id, universe: s.universe, start: 1, end: s.channels })
+      }
+    }
     if (!device.dmx) continue
     const universe = resolveUniverse(project, device.id, byId)
     const address = device.dmx.address
@@ -111,7 +163,7 @@ export function patchIndex(project: Project): PatchIndex {
     if (range) ranges.push(range)
     entries.set(device.id, { device, ...(universe ? { universe } : {}), ...(range ? { range } : {}) })
   }
-  return { entries, ranges, byId }
+  return { entries, ranges, byId, strips }
 }
 
 const byName = (a: Overlap, b: Overlap): number => a.start - b.start || a.name.localeCompare(b.name, 'fr-CA', { numeric: true })

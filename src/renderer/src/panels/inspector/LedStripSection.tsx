@@ -1,7 +1,9 @@
 // src/renderer/src/panels/inspector/LedStripSection.tsx
+import { useMemo } from 'react'
 import type { Device, LedStrip, LedStripType, Project } from '../../model/types'
 import { LedStripTypeSchema } from '../../model/schema'
 import { LED_STRIP_TYPES, LED_VOLTAGES, stripPixels, stripPower, stripWithType } from '../../model/led'
+import { patchIndex, sourceLabel } from '../../model/dmx'
 import { formatFr, parseDecimalField, parseIntField } from '../../model/fields'
 import { projectStore } from '../../store/projectStore'
 import { CommitInput } from '../CommitInput'
@@ -19,7 +21,8 @@ function compactStrip(s: LedStrip): LedStrip {
 }
 
 // Bande LED (spec § 5.3) : le type préremplit, la puissance et les pixels se calculent.
-export function LedStripSection({ device, project: _project }: { device: Device; project: Project }) {
+export function LedStripSection({ device, project }: { device: Device; project: Project }) {
+  const index = useMemo(() => patchIndex(project), [project])
   const strip = device.ledStrip
   if (!strip) return null
   const s = projectStore.getState
@@ -106,6 +109,13 @@ export function LedStripSection({ device, project: _project }: { device: Device;
             </div>
           </div>
           {px && <p className="insp__note">{`→ ${formatFr(px.pixels)} px · ${formatFr(px.channels)} ch · ${px.universes} univers`}</p>}
+          {(() => {
+            const sp = index.strips.get(device.id)
+            if (!sp || sp.spans.length === 0) return null
+            const first = sp.spans[0]!.universe
+            const last = sp.spans.at(-1)!.universe
+            return <p className="insp__note">{`Univers ${first === last ? first : `${first}–${last}`} · via ${sourceLabel(project, { kind: 'port', ref: sp.source })}`}</p>
+          })()}
         </>
       )}
     </section>

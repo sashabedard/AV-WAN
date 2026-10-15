@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { createProject } from '../model/project'
+import type { Device, Project } from '../model/types'
+import { createDevice, createProject } from '../model/project'
 import { patchIndex } from '../model/dmx'
 import { patchShowProject as show } from './__fixtures__/patchShow'
 import { dmxSummary, patchGroups, patchTable } from './patch'
@@ -43,4 +44,21 @@ describe('dmxSummary', () => {
     expect(dmxSummary(index.entries.get('mh1')!)).toBe('DMX : U1 · 1–16 · 16 ch · Standard 16 ch')
     expect(dmxSummary(index.entries.get('none')!)).toBe('DMX : univers inconnu · adresse à définir · 2 ch')
   })
+})
+
+it('liste une bande pixel dans chaque univers qu’elle occupe', () => {
+  let p: Project = createProject(new Date(2026, 9, 14))
+  const add = (id: string, templateId: string, extra: Partial<Device>): void => {
+    p = { ...p, devices: [...p.devices, { ...createDevice(p, templateId, { x: 0, y: 0 }, { id }), ...extra }] }
+  }
+  add('pix', 'pixel-controller', { name: 'PIX-1', portState: { OUT1: { universe: 10 } } })
+  add('led', 'led-strip', { name: 'LED-1', model: 'Ruban scène', ledStrip: { type: 'sk6812-rgbw', volts: 24, wPerM: 14.4, lengthM: 5, pxPerM: 60 } })
+  p = { ...p, links: [{ id: 'l', cableId: 'C-001', a: { deviceId: 'pix', portId: 'OUT1' }, b: { deviceId: 'led', portId: 'IN' }, medium: 'pixel' }] }
+  const t = patchTable(p)
+  expect(t.rows).toEqual([
+    [10, 1, 512, 512, 'LED-1', 'Ruban scène', 'Pixel RGBW (SK6812) · 128 px', 'PIX-1 › OUT1', '', ''],
+    [11, 1, 512, 512, 'LED-1', 'Ruban scène', 'Pixel RGBW (SK6812) · 128 px', 'PIX-1 › OUT1', '', ''],
+    [12, 1, 176, 176, 'LED-1', 'Ruban scène', 'Pixel RGBW (SK6812) · 44 px', 'PIX-1 › OUT1', '', '']
+  ])
+  expect(patchGroups(p).map((g) => g.title)).toEqual(['Univers 10 · PIX-1 › OUT1', 'Univers 11 · PIX-1 › OUT1', 'Univers 12 · PIX-1 › OUT1'])
 })

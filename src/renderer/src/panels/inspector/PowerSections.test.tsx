@@ -134,3 +134,14 @@ describe('tension secteur du projet', () => {
     expect(projectStore.getState().history.present.settings.mainsVoltage).toBe(230)
   })
 })
+
+it('montre les univers occupés par une bande pixel branchée sur un contrôleur', () => {
+  let p = projectStore.getState().history.present
+  const pix = { ...createDevice(p, 'pixel-controller', { x: 0, y: 0 }, { id: 'pix' }), name: 'PIX-1', portState: { OUT1: { universe: 10 } } }
+  p = { ...p, devices: [...p.devices.map((d) => (d.id === 'led1' ? { ...d, ledStrip: { type: 'sk6812-rgbw' as const, volts: 24, wPerM: 14.4, lengthM: 5, pxPerM: 60 } } : d)), pix] }
+  p = { ...p, links: [...p.links, { id: 'lp', cableId: 'C-009', a: { deviceId: 'pix', portId: 'OUT1' }, b: { deviceId: 'led1', portId: 'IN' }, medium: 'pixel' }] }
+  projectStore.getState().loadProject(p, null)
+  select('led1')
+  render(<Inspector />)
+  expect(screen.getByText('Univers 10–12 · via PIX-1 › OUT1')).toBeTruthy()
+})

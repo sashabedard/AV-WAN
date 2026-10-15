@@ -180,3 +180,36 @@ describe('patchLine', () => {
     expect(patchLine(index.entries.get('f4'))).toBe('U0 · 1')
   })
 })
+
+describe('bandes pixel', () => {
+  function pixels() {
+    const r = rig()
+    r.add('pix', 'pixel-controller', { name: 'PIX-1', portState: { OUT1: { universe: 10 } } })
+    r.add('led', 'led-strip', { name: 'LED-1', ledStrip: { type: 'sk6812-rgbw', volts: 24, wPerM: 14.4, lengthM: 5, pxPerM: 60 } })
+    r.add('f1', 'dmx-fixture', fix(500, 16, 11))
+    r.link(['pix', 'OUT1'], ['led', 'IN'], 'pixel')
+    return r
+  }
+
+  it('occupe les univers 10 à 12, sans couper un pixel', () => {
+    const index = patchIndex(pixels().p)
+    expect(index.strips.get('led')?.spans).toEqual([
+      { universe: 10, pixels: 128, channels: 512 },
+      { universe: 11, pixels: 128, channels: 512 },
+      { universe: 12, pixels: 44, channels: 176 }
+    ])
+    expect(sourceLabel(pixels().p, { kind: 'port', ref: index.strips.get('led')!.source })).toBe('PIX-1 › OUT1')
+  })
+
+  it('un appareil patché dans un univers de la bande la chevauche', () => {
+    const index = patchIndex(pixels().p)
+    expect(issueTexts(patchIssues(index, 'f1'))).toEqual(['Chevauche LED-1 (1–512)', 'Dépasse 512'])
+    expect(nextFreeAddress(index, 12, 16)).toBe(177)
+  })
+
+  it('rien sans univers de départ sur la sortie', () => {
+    const r = pixels()
+    const q = { ...r.p, devices: r.p.devices.map((d) => (d.id === 'pix' ? { ...d, portState: {} } : d)) }
+    expect(patchIndex(q).strips.size).toBe(0)
+  })
+})
