@@ -4,6 +4,7 @@ import { stripWithType } from '../model/led'
 import { dmxThru, patchPanelPorts, range, rj45, sfp, sfpPlus, simple, wifi } from './ports'
 import { DEFAULT_SWITCH_SPEC } from './switch'
 import { SENSOR_MODELS } from './models/capteurs'
+import { LIGHTING_MODELS } from './models/eclairage'
 
 const BASE_TEMPLATES: readonly DeviceTemplate[] = [
   // Réseau
@@ -69,7 +70,7 @@ const BASE_TEMPLATES: readonly DeviceTemplate[] = [
   { id: 'generic', category: 'autre', name: 'Appareil générique', code: 'GEN', icon: ic('generic'), ports: [rj45('ETH')] }
 ]
 
-export const TEMPLATES: readonly DeviceTemplate[] = [...BASE_TEMPLATES, ...SENSOR_MODELS]
+export const TEMPLATES: readonly DeviceTemplate[] = [...BASE_TEMPLATES, ...SENSOR_MODELS, ...LIGHTING_MODELS]
 
 export const TEMPLATES_BY_ID: ReadonlyMap<string, DeviceTemplate> = new Map(TEMPLATES.map((t) => [t.id, t]))
 

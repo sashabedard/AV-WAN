@@ -2,9 +2,13 @@ import { describe, expect, it } from 'vitest'
 import type { Category, DeviceTemplate } from '../../model/types'
 import { DeviceTemplateSchema } from '../../model/schema'
 import { SENSOR_MODELS } from './capteurs'
+import { LIGHTING_MODELS } from './eclairage'
 
 // Une ligne par famille ; les tâches suivantes ajoutent la leur.
-const FAMILIES: ReadonlyArray<[string, Category, readonly DeviceTemplate[]]> = [['capteurs', 'capteur', SENSOR_MODELS]]
+const FAMILIES: ReadonlyArray<[string, Category, readonly DeviceTemplate[]]> = [
+  ['capteurs', 'capteur', SENSOR_MODELS],
+  ['éclairage', 'eclairage', LIGHTING_MODELS]
+]
 
 describe.each(FAMILIES)('modèles %s', (_name, category, models) => {
   it('sont valides, de leur catégorie, avec marque, modèle et code', () => {
@@ -33,6 +37,19 @@ describe.each(FAMILIES)('modèles %s', (_name, category, models) => {
       if (!t.dmx) continue
       expect(t.dmx.modes?.length, t.id).toBeGreaterThan(0)
       expect(t.dmx.footprint, t.id).toBe(t.dmx.modes![0]!.channels)
+    }
+  })
+})
+
+describe('éclairage nommé', () => {
+  it('les projecteurs sont patchables, les nœuds et contrôleurs ne le sont pas', () => {
+    const byId = new Map(LIGHTING_MODELS.map((t) => [t.id, t]))
+    for (const id of ['chauvet-rogue-r2x-spot', 'martin-mac-aura-xb', 'claypaky-sharpy', 'robe-megapointe', 'etc-colorsource-par', 'martin-atomic-3000-led']) {
+      expect(byId.get(id)?.dmx, id).toBeDefined()
+    }
+    for (const id of ['enttec-ode-mk3', 'luminex-luminode-4', 'dmxking-edmx4-pro', 'advatek-pixlite-a4s-mk3']) {
+      expect(byId.get(id)?.dmx, id).toBeUndefined()
+      expect(byId.get(id)!.ports.some((p) => p.connector === 'dmx' || p.connector === 'pixel'), id).toBe(true)
     }
   })
 })

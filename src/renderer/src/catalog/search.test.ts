@@ -49,4 +49,10 @@ describe('searchTemplates', () => {
     expect(searchTemplates('femto mega')[0]?.id).toBe('orbbec-femto-mega')
     expect(searchTemplates('kinect').map((t) => t.id)).toEqual(expect.arrayContaining(['kinect-v1', 'kinect-v2', 'azure-kinect-dk']))
   })
+
+  it('trouve l’éclairage nommé', () => {
+    expect(searchTemplates('sharpy')[0]?.id).toBe('claypaky-sharpy')
+    expect(searchTemplates('megapointe')[0]?.id).toBe('robe-megapointe')
+    expect(searchTemplates('pixlite t8')[0]?.id).toBe('advatek-pixlite-t8s-mk3')
+  })
 })
