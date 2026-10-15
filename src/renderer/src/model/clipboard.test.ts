@@ -3,7 +3,8 @@ import { describe, expect, it } from 'vitest'
 import { copyFragment, nextCopyName, parseFragment, pasteFragment, serializeFragment } from './clipboard'
 import { sampleProject } from './__fixtures__/sample'
 import { blankDraft, templateFromDraft, withTemplate } from './customTemplate'
-import { createDevice } from './project'
+import { createDevice, createProject } from './project'
+import type { Device, Project } from './types'
 
 const ids = (): (() => string) => {
   let n = 0
@@ -88,5 +89,56 @@ describe('composantes perso dans le presse-papiers', () => {
   it('relit un fragment sans composantes (copié par une version précédente)', () => {
     const old = JSON.stringify({ avwanFragment: 1, devices: [], links: [] })
     expect(parseFragment(old)).toEqual({ devices: [], links: [], templates: [] })
+  })
+})
+
+function patched(): Project {
+  let p = createProject(new Date(2026, 9, 14))
+  const add = (id: string, templateId: string, extra: Partial<Device>): void => {
+    p = { ...p, devices: [...p.devices, { ...createDevice(p, templateId, { x: 0, y: 0 }, { id }), ...extra }] }
+  }
+  add('ode', 'dmx-node', { name: 'ODE-1', portState: { 'DMX-1': { universe: 1 } } })
+  add('f1', 'dmx-fixture', { dmx: { footprint: 16, address: 1, mode: 'Standard' } })
+  add('f9', 'dmx-fixture', { dmx: { footprint: 16, address: 40 } }) // sans univers
+  p = { ...p, links: [{ id: 'l1', cableId: 'C-001', a: { deviceId: 'ode', portId: 'DMX-1' }, b: { deviceId: 'f1', portId: 'DMX-IN' }, medium: 'dmx' }] }
+  return p
+}
+let n = 0
+const freshIds = (): string => `c${++n}`
+
+describe('patch et presse-papiers', () => {
+  it('fige l’univers déduit dans la copie', () => {
+    const frag = copyFragment(patched(), ['f1'])!
+    expect(frag.devices[0]!.dmx).toEqual({ footprint: 16, address: 1, mode: 'Standard', universe: 1 })
+  })
+
+  it('dupliquer trois fois place les copies à la suite dans le même univers', () => {
+    let p = patched()
+    const frag = copyFragment(p, ['f1'])!
+    const addresses: Array<number | undefined> = []
+    for (let i = 1; i <= 3; i++) {
+      const r = pasteFragment(p, frag, { x: 24 * i, y: 24 * i }, freshIds)
+      p = r.project
+      addresses.push(p.devices.find((d) => d.id === r.deviceIds[0])!.dmx?.address)
+    }
+    expect(addresses).toEqual([17, 33, 49])
+  })
+
+  it('colle dans un autre projet : garde l’univers et prend la 1re plage libre', () => {
+    const frag = copyFragment(patched(), ['f1'])!
+    const r = pasteFragment(createProject(), frag, { x: 0, y: 0 }, freshIds)
+    expect(r.project.devices[0]!.dmx).toEqual({ footprint: 16, address: 1, mode: 'Standard', universe: 1 })
+  })
+
+  it('sans univers, la copie perd son adresse', () => {
+    const p = patched()
+    const r = pasteFragment(p, copyFragment(p, ['f9'])!, { x: 24, y: 24 }, freshIds)
+    expect(r.project.devices.find((d) => d.id === r.deviceIds[0])!.dmx).toEqual({ footprint: 16 })
+  })
+
+  it('l’original garde son univers déduit (rien n’est écrit dans le projet source)', () => {
+    const p = patched()
+    copyFragment(p, ['f1'])
+    expect(p.devices.find((d) => d.id === 'f1')!.dmx?.universe).toBeUndefined()
   })
 })

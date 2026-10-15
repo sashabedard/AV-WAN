@@ -5,6 +5,7 @@ import { DeviceSchema, DeviceTemplateSchema, LinkSchema } from './schema'
 import { withTemplate } from './customTemplate'
 import { canConnectPorts, nextCableId } from './rules'
 import { newId } from './project'
+import { nextFreeAddress, patchIndex, resolveUniverse } from './dmx'
 
 export const FRAGMENT_MIME = 'application/x-avwan-fragment'
 
@@ -29,7 +30,14 @@ export function copyFragment(project: Project, deviceIds: readonly string[]): Fr
   const links = project.links.filter((l) => ids.has(l.a.deviceId) && ids.has(l.b.deviceId))
   const used = new Set(devices.map((d) => d.templateId))
   const templates = project.templates.filter((t) => used.has(t.id))
-  return structuredClone({ devices, links, templates })
+  // § 4.5 : la copie n'a pas les câbles de l'original ; elle garde son univers effectif, figé ici.
+  const byId = new Map(project.devices.map((d) => [d.id, d]))
+  const frozen = devices.map((d) => {
+    if (!d.dmx || d.dmx.universe !== undefined) return d
+    const u = resolveUniverse(project, d.id, byId)
+    return u ? { ...d, dmx: { ...d.dmx, universe: u.universe } } : d
+  })
+  return structuredClone({ devices: frozen, links, templates })
 }
 
 export function serializeFragment(f: Fragment): string {
@@ -43,6 +51,15 @@ export function parseFragment(text: string): Fragment | null {
   } catch {
     return null
   }
+}
+
+// § 4.5 : une copie patchée prend l'adresse suivante libre de son univers ; sans univers, pas d'adresse.
+function withNextAddress(project: Project, device: Device): Device {
+  if (!device.dmx) return device
+  const { address: _previous, ...dmx } = device.dmx
+  if (dmx.universe === undefined) return { ...device, dmx }
+  const address = nextFreeAddress(patchIndex(project), dmx.universe, dmx.footprint)
+  return { ...device, dmx: address !== undefined ? { ...dmx, address } : dmx }
 }
 
 // « CAM-1 » → « CAM-2 » (ou le suivant libre) ; « Régie » → « Régie-2 ».
@@ -75,7 +92,7 @@ export function pasteFragment(
       position: { x: d.position.x + offset.x, y: d.position.y + offset.y },
       ...(ip ? { ip: { address: '', mode: ip.mode } } : {}) // deux appareils ne partagent pas une IP
     }
-    p = { ...p, devices: [...p.devices, copy] }
+    p = { ...p, devices: [...p.devices, withNextAddress(p, copy)] }
     deviceIds.push(id)
   }
   const linkIds: string[] = []
