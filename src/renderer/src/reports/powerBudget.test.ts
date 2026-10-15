@@ -3,6 +3,22 @@ import { describe, expect, it } from 'vitest'
 import { createProject } from '../model/project'
 import { powerShowProject as show } from './__fixtures__/powerShow'
 import { powerBudget, powerTable } from './powerBudget'
+import type { Device, Link, PortDef, Project } from '../model/types'
+
+const dc = (id: string): PortDef => ({ id, label: id.replace(/-/g, ' '), connector: 'dc' })
+const dcLink = (id: string, a: [string, string], b: [string, string]): Link => ({ id, cableId: id, a: { deviceId: a[0], portId: a[1] }, b: { deviceId: b[0], portId: b[1] }, medium: 'dc' })
+const raw = (id: string, name: string, extra: Partial<Device>): Device => ({ id, templateId: 'generic', name, position: { x: 0, y: 0 }, portSide: 'auto', ports: [], portState: {}, ...extra })
+
+// Une alimentation 24 V sans capacité (le gabarit `psu` tel quel) qui nourrit trois bandes de 96 W.
+function unratedPsu(): Project {
+  const strip = { type: 'cob' as const, volts: 24, wPerM: 9.6, lengthM: 10 }
+  const leds = [1, 2, 3].map((n) => raw(`led${n}`, `LED-${n}`, { templateId: 'led-strip', ports: [dc('DC-IN')], ledStrip: strip }))
+  return {
+    ...createProject(new Date(2026, 9, 14)),
+    devices: [raw('psu', 'PSU-1', { ports: [1, 2, 3].map((n) => dc(`DC-OUT-${n}`)), psu: { volts: 24 } }), ...leds],
+    links: [1, 2, 3].map((n) => dcLink(`l${n}`, ['psu', `DC-OUT-${n}`], [`led${n}`, 'DC-IN']))
+  }
+}
 
 describe('powerBudget', () => {
   it('compte chaque watt une fois : alimentation nominale, bandes via l’alim, caméra via son switch', () => {
@@ -36,6 +52,14 @@ describe('powerBudget', () => {
   it('230 V : moins d’ampères', () => {
     const p = show()
     expect(powerBudget({ ...p, settings: { ...p.settings, mainsVoltage: 230 } }).amps).toBe(3.6)
+  })
+
+  it('alimentation sans capacité : une ligne qui compte sa charge connue, pas « sans puissance »', () => {
+    const b = powerBudget(unratedPsu())
+    expect(b.totalW).toBe(288)
+    expect(b.zones[0]!.rows.find((r) => r.device === 'PSU-1')).toEqual({ device: 'PSU-1', type: 'Appareil générique', fedBy: '', mainsW: 288, remark: 'charge 288 W, capacité inconnue' })
+    expect(b.missing).not.toContain('PSU-1')
+    expect(powerTable(unratedPsu()).rows.some((r) => r[1] === 'Sans puissance renseignée')).toBe(false)
   })
 
   it('projet vide : zéro partout, jamais NaN', () => {

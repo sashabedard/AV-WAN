@@ -68,10 +68,13 @@ export function powerBudget(project: Project): PowerBudget {
     const watts = devicePowerW(d)
     const psu = feedingPsu(project, d.id)
     const poe = psu ? undefined : poeFeeder(project, d.id)
-    if (watts === undefined && !psu) {
+    // Alimentation sans capacité : elle compte au secteur sa charge connue (borne basse), sinon ses appareils disparaîtraient du total.
+    const unratedLoadW = d.psu && watts === undefined ? psuLoad(project, d.id).loadW : undefined
+    if (watts === undefined && !psu && unratedLoadW === undefined) {
       if (!poe) missing.push(d.name)
       continue
     }
+    const mainsW = psu || poe ? undefined : (watts ?? unratedLoadW)
     const t = getTemplate(project, d.templateId)
     const remark = d.psu ? psuRemark(project, d) : poe ? `via PoE · ${poe.name}` : psu && watts === undefined ? 'puissance non renseignée' : ''
     const row: PowerRow = {
@@ -79,7 +82,7 @@ export function powerBudget(project: Project): PowerBudget {
       type: d.model ?? t?.model ?? t?.name ?? '',
       ...(watts !== undefined ? { watts } : {}),
       fedBy: psu?.name ?? poe?.name ?? '',
-      ...(!psu && !poe && watts !== undefined ? { mainsW: watts } : {}),
+      ...(mainsW !== undefined ? { mainsW } : {}),
       remark
     }
     const zone = project.zones.find((z) => z.id === d.zoneId)?.name ?? HORS_ZONE
