@@ -22,3 +22,9 @@ export async function readOpenedVersion(dir: string, path: string): Promise<stri
     return null
   }
 }
+
+// Chemin réutilisé par un autre projet (fichier créé automatiquement, cible de « Enregistrer sous ») : la
+// version d'un ancien fichier à ce chemin ramènerait un projet sans rapport. Sans version, rien ne se passe.
+export async function forgetOpenedVersion(dir: string, path: string): Promise<void> {
+  await fs.rm(fileFor(dir, path), { force: true })
+}

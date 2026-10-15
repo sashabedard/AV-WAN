@@ -9,7 +9,7 @@ import { frenchErrors, frenchFsMessage } from './errors'
 import { discardAutoCreated, uniqueProjectPath } from './defaultLocation'
 import { atomicWriteFile, atomicWriteFileSync, backupFile, readTextFile } from './fileIO'
 import { discardRecovery, discardRecoverySync, findNewerRecovery, isRecoveryKey, keyForPath, keyForUntitled, listRecovery, parseRecoveryWrite, prepareRestore, writeRecovery } from './recovery'
-import { readOpenedVersion, rememberOpenedVersion } from './versions'
+import { forgetOpenedVersion, readOpenedVersion, rememberOpenedVersion } from './versions'
 import { listLibrary, removeLibrary, saveLibrary } from './library'
 
 const filters = [{ name: 'Projet AV·WAN', extensions: [FILE_EXTENSION] }]
@@ -67,6 +67,9 @@ export function keepOpenedVersion(path: string, text: string): void {
   void rememberOpenedVersion(versionsDir(), path, text).catch(() => undefined)
 }
 
+// Au mieux aussi : le chemin reçoit un nouveau projet, la version d'un ancien fichier ne doit pas revenir.
+const dropOpenedVersion = (path: string): Promise<void> => forgetOpenedVersion(versionsDir(), path).catch(() => undefined)
+
 export function registerIpc(): void {
   ipcMain.handle(IPC.open, (event) =>
     frenchErrors(async (): Promise<OpenedFile | null> => {
@@ -115,6 +118,7 @@ export function registerIpc(): void {
       await atomicWriteFile(path, text)
       grants.grant(path)
       autoCreated.add(path)
+      await dropOpenedVersion(path)
       await remember(path)
       return path
     })
@@ -153,6 +157,7 @@ export function registerIpc(): void {
       const path = res.filePath.toLowerCase().endsWith(EXT) ? res.filePath : `${res.filePath}${EXT}`
       await atomicWriteFile(path, text)
       grants.grant(path)
+      await dropOpenedVersion(path)
       await remember(path)
       return path
     })

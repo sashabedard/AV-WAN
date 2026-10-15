@@ -2,7 +2,7 @@ import { afterAll, describe, expect, it } from 'vitest'
 import { mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { readOpenedVersion, rememberOpenedVersion, VERSION_MAX_BYTES } from './versions'
+import { forgetOpenedVersion, readOpenedVersion, rememberOpenedVersion, VERSION_MAX_BYTES } from './versions'
 
 const dirs: string[] = []
 afterAll(() => dirs.forEach((d) => rmSync(d, { recursive: true, force: true })))
@@ -36,6 +36,20 @@ describe('versions d’ouverture', () => {
 
   it('un chemin sans version rend null', async () => {
     expect(await readOpenedVersion(tempDir(), '/inconnu.avwan')).toBeNull()
+  })
+
+  it('un chemin réutilisé (nouveau fichier, « Enregistrer sous ») oublie la version de l’ancien fichier', async () => {
+    const dir = tempDir()
+    await rememberOpenedVersion(dir, '/docs/Nouveau projet.avwan', 'ancien projet sans rapport')
+    await rememberOpenedVersion(dir, '/autre.avwan', 'autre')
+    await forgetOpenedVersion(dir, '/docs/Nouveau projet.avwan')
+    expect(await readOpenedVersion(dir, '/docs/Nouveau projet.avwan')).toBeNull()
+    expect(await readOpenedVersion(dir, '/autre.avwan')).toBe('autre')
+  })
+
+  it('oublier un chemin sans version (ou un dossier absent) ne lève pas', async () => {
+    await expect(forgetOpenedVersion(tempDir(), '/inconnu.avwan')).resolves.toBeUndefined()
+    await expect(forgetOpenedVersion(join(tempDir(), 'absent'), '/inconnu.avwan')).resolves.toBeUndefined()
   })
 
   it('un texte de plus de 20 Mo n’est pas gardé', async () => {
