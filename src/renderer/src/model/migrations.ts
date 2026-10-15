@@ -1,6 +1,6 @@
 import { stripWithType } from './led'
 
-export const CURRENT_SCHEMA_VERSION = 2
+export const CURRENT_SCHEMA_VERSION = 3
 
 export type RawDoc = Record<string, unknown> & { schemaVersion: number }
 
@@ -20,7 +20,9 @@ export function migrateDeviceV2(device: unknown): unknown {
 
 // MIGRATIONS[n] transforme un document de version n en version n + 1.
 export const MIGRATIONS: Record<number, (doc: RawDoc) => RawDoc> = {
-  1: (doc) => ({ ...doc, schemaVersion: 2, ...(Array.isArray(doc['devices']) ? { devices: doc['devices'].map(migrateDeviceV2) } : {}) })
+  1: (doc) => ({ ...doc, schemaVersion: 2, ...(Array.isArray(doc['devices']) ? { devices: doc['devices'].map(migrateDeviceV2) } : {}) }),
+  // 2 → 3 (canaux DMX nommés) : le champ dmxChannels est facultatif, rien d'autre ne change.
+  2: (doc) => ({ ...doc, schemaVersion: 3 })
 }
 
 export function migrate(doc: RawDoc): RawDoc {

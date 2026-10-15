@@ -29,7 +29,7 @@ describe('serializeProject / parseProjectFile', () => {
   })
 
   it('ouvre en lecture seule un fichier de version plus récente', () => {
-    const text = serializeProject(sampleProject()).replace('"schemaVersion": 2', '"schemaVersion": 3')
+    const text = serializeProject(sampleProject()).replace('"schemaVersion": 3', '"schemaVersion": 4')
     const r = parseProjectFile(text)
     expect(r.ok && r.readOnly).toBe(true)
   })
@@ -45,5 +45,30 @@ describe('serializeProject / parseProjectFile', () => {
     const res = parseProjectFile(JSON.stringify({ schemaVersion: 1, meta: { title: 3 } }))
     expect(res.ok).toBe(false)
     if (!res.ok) expect(res.error).toMatch(/^Fichier invalide : .*Entrée invalide/)
+  })
+})
+
+describe('format v3 : listes de canaux DMX', () => {
+  it('garde les listes de canaux DMX du fichier', () => {
+    const p = { ...sampleProject(), dmxChannels: [{ templateId: 'dmx-fixture', model: 'Wash', mode: '9CH', params: ['Red', '', 'Blue'] }] }
+    const r = parseProjectFile(serializeProject(p))
+    expect(r.ok).toBe(true)
+    if (r.ok) expect(r.project.dmxChannels).toEqual(p.dmxChannels)
+  })
+
+  it('un fichier version 2 s’ouvre en version 3, sans liste', () => {
+    const text = serializeProject(sampleProject()).replace('"schemaVersion": 3', '"schemaVersion": 2')
+    const r = parseProjectFile(text)
+    expect(r.ok).toBe(true)
+    if (r.ok) {
+      expect(r.project.schemaVersion).toBe(3)
+      expect(r.migratedFrom).toBe(2)
+      expect(r.project.dmxChannels).toBeUndefined()
+    }
+  })
+
+  it('refuse un nom de canal de plus de 60 caractères', () => {
+    const p = { ...sampleProject(), dmxChannels: [{ templateId: 'dmx-fixture', params: ['x'.repeat(61)] }] }
+    expect(parseProjectFile(serializeProject(p)).ok).toBe(false)
   })
 })
