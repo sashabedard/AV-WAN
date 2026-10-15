@@ -65,4 +65,13 @@ describe('searchTemplates', () => {
     expect(searchTemplates('rio1608')[0]?.id).toBe('yamaha-rio1608-d2')
     expect(searchTemplates('stream deck')[0]?.id).toBe('elgato-stream-deck-mk2')
   })
+
+  it('« alimentation » donne l’alimentation, pas l’injecteur PoE ; ULX-D et vx4 comme on les écrit', () => {
+    expect(searchTemplates('alimentation')[0]?.id).toBe('psu')
+    expect(searchTemplates('injecteur')[0]?.id).toBe('poe-injector')
+    expect(searchTemplates('midspan')[0]?.id).toBe('poe-injector')
+    expect(searchTemplates('ulx-d')[0]?.id).toBe('shure-ulxd4d')
+    expect(searchTemplates('ulxd')[0]?.id).toBe('shure-ulxd4d')
+    expect(searchTemplates('vx4')[0]?.id).toBe('disguise-vx-4')
+  })
 })

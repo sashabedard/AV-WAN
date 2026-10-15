@@ -9,7 +9,7 @@ const KEYWORDS: Readonly<Record<string, string>> = {
   gateway: 'routeur router udm wan',
   ap: 'wifi borne antenne unifi',
   'ptp-bridge': 'antenne liaison radio airmax',
-  'poe-injector': 'alimentation',
+  'poe-injector': 'injecteur poe midspan',
   'media-converter': 'fibre sfp',
   'patch-panel-24': 'brassage patch keystone',
   laptop: 'ordinateur portable macbook',
@@ -54,7 +54,10 @@ const KEYWORDS: Readonly<Record<string, string>> = {
   'lidar-eth': 'ouster hokuyo',
   'depth-cam-usb': 'kinect realsense orbbec',
   'depth-cam-poe': 'orbbec femto',
-  generic: 'autre'
+  generic: 'autre',
+  // Modèles nommés : les écritures courantes que le nom ne contient pas.
+  'shure-ulxd4d': 'ulx-d ulxd ulxd4d',
+  'disguise-vx-4': 'vx4'
 }
 
 const BOUNDARY = /[\s()/·,.-]/
