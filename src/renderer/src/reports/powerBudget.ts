@@ -3,6 +3,7 @@
 // Règle anti-double-compte : un appareil nourri par une alimentation compte via elle, un appareil PoE via son switch.
 import type { Device, MainsVoltage, Project } from '../model/types'
 import { getTemplate } from '../catalog'
+import { PATCH_PANEL_TEMPLATE_IDS } from '../catalog/templates'
 import { devicePowerW, feedingPsu, loadLevel, mainsVoltage, poeFeeder, psuLoad, resolvePsu, round1 } from '../model/power'
 import { formatFr } from '../model/fields'
 import type { Cell, Column, DataTable } from '../../../shared/tables'
@@ -73,7 +74,7 @@ export function powerBudget(project: Project): PowerBudget {
     // Alimentation sans capacité : elle compte au secteur sa charge connue (borne basse), sinon ses appareils disparaîtraient du total.
     const unratedLoadW = d.psu && watts === undefined ? psuLoad(project, d.id).loadW : undefined
     if (watts === undefined && !psu && unratedLoadW === undefined) {
-      if (!poe) missing.push(d.name)
+      if (!poe && !PATCH_PANEL_TEMPLATE_IDS.has(d.templateId)) missing.push(d.name) // un panneau de brassage ne consomme rien
       continue
     }
     const mainsW = psu || poe ? undefined : (watts ?? unratedLoadW)

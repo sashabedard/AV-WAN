@@ -1,6 +1,6 @@
 // src/renderer/src/reports/powerBudget.test.ts
 import { describe, expect, it } from 'vitest'
-import { createProject } from '../model/project'
+import { createDevice, createProject } from '../model/project'
 import { powerShowProject as show } from './__fixtures__/powerShow'
 import { powerBudget, powerTable } from './powerBudget'
 import type { Device, Link, PortDef, Project } from '../model/types'
@@ -105,6 +105,14 @@ describe('powerBudget', () => {
       ['Hors zone', undefined, 50]
     ])
     expect(powerBudget(q).totalW).toBe(880)
+  })
+
+  it('un panneau de brassage n’est pas un appareil « sans puissance »', () => {
+    const p = show()
+    const panel = { ...createDevice(p, 'patch-panel-24', { x: 0, y: 0 }, { id: 'pp' }), name: 'PP-1' }
+    const b = powerBudget({ ...p, devices: [...p.devices, panel] })
+    expect(b.missing).toEqual(['SW-1'])
+    expect(b.zones.flatMap((z) => z.rows).some((r) => r.device === 'PP-1')).toBe(false)
   })
 
   it('projet vide : zéro partout, jamais NaN', () => {
