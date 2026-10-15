@@ -195,6 +195,9 @@ export async function revertToOpenedAction(): Promise<boolean> {
   }
   try {
     const text = await window.avwan.file.openedVersion(path)
+    // Autre document ou autre fichier pendant la lecture : cette version n'est plus la sienne.
+    const after = projectStore.getState()
+    if (after.docId !== s.docId || after.filePath !== path) return false
     if (text === null) {
       s.showToast(none)
       return false

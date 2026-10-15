@@ -428,6 +428,31 @@ describe('revenir à la version d’ouverture', () => {
     expect(projectStore.getState().history).toBe(before)
   })
 
+  it('autre document ou autre fichier pendant la lecture de la version : rien ne change', async () => {
+    const opened = { ...sampleProject(), meta: { ...sampleProject().meta, title: 'Version d’ouverture' } }
+    let deliver: (text: string) => void = () => undefined
+    const openedVersion = vi.fn((_path: string) => new Promise<string | null>((resolve) => (deliver = resolve)))
+    const confirm = vi.fn(() => true)
+    vi.stubGlobal('window', { avwan: fakeApi({ openedVersion }), confirm })
+
+    // Un autre document s'ouvre pendant la lecture.
+    const pending = revertToOpenedAction()
+    projectStore.getState().loadProject(sampleProject(), '/x/b.avwan')
+    const other = projectStore.getState().history
+    deliver(serializeProject(opened))
+    expect(await pending).toBe(false)
+    expect(confirm).not.toHaveBeenCalled()
+    expect(projectStore.getState().history).toBe(other)
+
+    // Même document, mais « Enregistrer sous » vers un autre fichier pendant la lecture.
+    const pending2 = revertToOpenedAction()
+    projectStore.getState().markSaved('/x/c.avwan')
+    deliver(serializeProject(opened))
+    expect(await pending2).toBe(false)
+    expect(confirm).not.toHaveBeenCalled()
+    expect(projectStore.getState().history).toBe(other)
+  })
+
   it('version illisible ou erreur du processus principal : message, projet inchangé', async () => {
     const api = fakeApi({ openedVersion: vi.fn(async () => '{') })
     vi.stubGlobal('window', { avwan: api, confirm: () => true })
