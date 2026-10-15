@@ -5,6 +5,7 @@ import { parseIntField } from '../../model/fields'
 import { getTemplate } from '../../catalog'
 import { projectStore } from '../../store/projectStore'
 import { CommitInput } from '../CommitInput'
+import { ChannelsSection } from './ChannelsSection'
 
 type IntKey = 'address' | 'footprint' | 'universe'
 
@@ -94,6 +95,7 @@ export function PatchSection({ device, project }: { device: Device; project: Pro
           <CommitInput className="input" aria-label="Mode DMX" placeholder="Standard 16 ch" value={dmx.mode ?? ''} onCommit={(v) => save({ mode: v.trim() || undefined })} />
         </label>
       )}
+      <ChannelsSection device={device} project={project} />
       {warnings.map((w) => (
         <p key={w} className="insp__warn">
           {w}
