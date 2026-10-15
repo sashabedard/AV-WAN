@@ -1,12 +1,15 @@
 import { app, BrowserWindow, dialog, ipcMain, type OpenDialogOptions, type SaveDialogOptions } from 'electron'
 import { IPC, type LibraryFile, type OpenedFile, type RecoveryEntry, type RestoredRecovery } from '../shared/api'
 import { FILE_EXTENSION } from '../shared/appInfo'
+import { existsSync, promises as fs } from 'node:fs'
 import { join } from 'node:path'
 import { existingRecent, readRecent, rememberRecent } from './recent'
 import { assertRecentMember, createGrants } from './grants'
-import { frenchErrors } from './errors'
-import { atomicWriteFile, backupFile, readTextFile } from './fileIO'
+import { frenchErrors, frenchFsMessage } from './errors'
+import { discardAutoCreated, uniqueProjectPath } from './defaultLocation'
+import { atomicWriteFile, atomicWriteFileSync, backupFile, readTextFile } from './fileIO'
 import { discardRecovery, discardRecoverySync, findNewerRecovery, isRecoveryKey, keyForPath, keyForUntitled, listRecovery, parseRecoveryWrite, prepareRestore, writeRecovery } from './recovery'
+import { forgetOpenedVersion, readOpenedVersion, rememberOpenedVersion } from './versions'
 import { listLibrary, removeLibrary, saveLibrary } from './library'
 
 const filters = [{ name: 'Projet AV·WAN', extensions: [FILE_EXTENSION] }]
@@ -19,6 +22,10 @@ function assertProjectPath(path: string): void {
 // Le renderer n'écrit et ne rouvre que des chemins accordés ici.
 export const grants = createGrants()
 const isE2E = (): boolean => process.env['AVWAN_E2E'] === '1'
+
+// Fichiers créés par l'app dans Documents pendant la session (seuls ceux-là peuvent être supprimés).
+const autoCreated = new Set<string>()
+const documentsDir = (): string => (isE2E() && process.env['AVWAN_E2E_DOCUMENTS_DIR']) || join(app.getPath('documents'), 'AV·WAN')
 
 const recentFile = (): string => join(app.getPath('userData'), 'recent.json')
 // La liste des récents ne doit jamais faire échouer une ouverture ou un enregistrement.
@@ -53,6 +60,16 @@ export function resetRecoverySession(webContentsId: number): void {
   lastRecoveryKey.delete(webContentsId)
 }
 
+export const versionsDir = (): string => join(app.getPath('userData'), 'versions')
+
+// Au mieux : une version impossible à garder n'empêche jamais d'ouvrir.
+export function keepOpenedVersion(path: string, text: string): void {
+  void rememberOpenedVersion(versionsDir(), path, text).catch(() => undefined)
+}
+
+// Au mieux aussi : le chemin reçoit un nouveau projet, la version d'un ancien fichier ne doit pas revenir.
+const dropOpenedVersion = (path: string): Promise<void> => forgetOpenedVersion(versionsDir(), path).catch(() => undefined)
+
 export function registerIpc(): void {
   ipcMain.handle(IPC.open, (event) =>
     frenchErrors(async (): Promise<OpenedFile | null> => {
@@ -63,6 +80,7 @@ export function registerIpc(): void {
       if (res.canceled || !path) return null
       const text = await readTextFile(path)
       grants.grant(path)
+      keepOpenedVersion(path, text)
       return { path, text }
     })
   )
@@ -73,7 +91,9 @@ export function registerIpc(): void {
       frenchErrors(async (): Promise<OpenedFile> => {
         assertProjectPath(path)
         grants.grant(path)
-        return { path, text: await readTextFile(path) }
+        const text = await readTextFile(path)
+        keepOpenedVersion(path, text)
+        return { path, text }
       })
     )
   }
@@ -89,6 +109,42 @@ export function registerIpc(): void {
     })
   )
 
+  ipcMain.handle(IPC.fileCreateDefault, (_event, title: unknown, text: unknown) =>
+    frenchErrors(async (): Promise<string> => {
+      if (typeof text !== 'string') throw new Error('Contenu du projet invalide.')
+      const dir = documentsDir()
+      await fs.mkdir(dir, { recursive: true })
+      const path = uniqueProjectPath(dir, typeof title === 'string' ? title : '', existsSync)
+      await atomicWriteFile(path, text)
+      grants.grant(path)
+      autoCreated.add(path)
+      await dropOpenedVersion(path)
+      await remember(path)
+      return path
+    })
+  )
+
+  // Écriture synchrone (fermeture de la fenêtre) : le renderer attend toujours une réponse.
+  ipcMain.on(IPC.fileSaveSync, (event, path: unknown, text: unknown) => {
+    try {
+      if (typeof path !== 'string' || typeof text !== 'string') throw new Error('Requête d’enregistrement invalide.')
+      assertProjectPath(path)
+      if (isE2E()) grants.grant(path)
+      grants.assertGranted(path)
+      atomicWriteFileSync(path, text)
+      event.returnValue = { ok: true }
+    } catch (e) {
+      event.returnValue = { ok: false, error: frenchFsMessage(e) }
+    }
+  })
+
+  // L'ancien fichier n'est supprimé que si l'app l'a créé et que ce n'est pas celui qu'on vient d'écrire.
+  ipcMain.handle(IPC.fileDiscardAutoCreated, (_event, previous: unknown, current: unknown) =>
+    frenchErrors(async (): Promise<void> => {
+      await discardAutoCreated(autoCreated, previous, current)
+    })
+  )
+
   ipcMain.handle(IPC.saveAs, (event, text: string, suggestedName: string) =>
     frenchErrors(async (): Promise<string | null> => {
       const win = BrowserWindow.fromWebContents(event.sender)
@@ -101,6 +157,7 @@ export function registerIpc(): void {
       const path = res.filePath.toLowerCase().endsWith(EXT) ? res.filePath : `${res.filePath}${EXT}`
       await atomicWriteFile(path, text)
       grants.grant(path)
+      await dropOpenedVersion(path)
       await remember(path)
       return path
     })
@@ -115,6 +172,7 @@ export function registerIpc(): void {
       assertRecentMember(await readRecent(recentFile()), path)
       const text = await readTextFile(path)
       grants.grant(path)
+      keepOpenedVersion(path, text)
       return { path, text }
     })
   )
@@ -169,7 +227,12 @@ export function registerIpc(): void {
       if (!isRecoveryKey(key)) throw new Error('Clé de récupération invalide.')
       const restored = await prepareRestore(recoveryDir(), key)
       if (!restored) throw new Error('Cette copie de récupération n’existe plus.')
-      if (restored.path) grants.grant(restored.path)
+      if (restored.path) {
+        grants.grant(restored.path)
+        // Version d'ouverture = le fichier sur le disque, avant la restauration (il peut ne pas exister).
+        const restoredPath = restored.path
+        void readTextFile(restoredPath).then((text) => keepOpenedVersion(restoredPath, text)).catch(() => undefined)
+      }
       // Quitter sans enregistrer juste après la restauration doit aussi effacer cette copie.
       lastRecoveryKey.set(event.sender.id, key)
       return restored
@@ -181,6 +244,9 @@ export function registerIpc(): void {
     frenchErrors(async (): Promise<RecoveryEntry | null> =>
       typeof path === 'string' && grants.isGranted(path) ? findNewerRecovery(recoveryDir(), path) : null
     )
+  )
+  ipcMain.handle(IPC.fileOpenedVersion, (_event, path: unknown) =>
+    typeof path === 'string' && grants.isGranted(path) ? readOpenedVersion(versionsDir(), path) : null
   )
   ipcMain.handle(IPC.libraryList, (): Promise<LibraryFile[]> => listLibrary(libraryDir()))
   ipcMain.handle(IPC.librarySave, (_event, id: unknown, text: unknown) => frenchErrors(() => saveLibrary(libraryDir(), id, text)))

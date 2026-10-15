@@ -1,8 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { promises as fsp, mkdirSync, mkdtempSync, readFileSync, readdirSync, writeFileSync } from 'node:fs'
+import { existsSync, linkSync, promises as fsp, mkdirSync, mkdtempSync, readFileSync, readdirSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { atomicWriteFile, backupFile, backupPathFor, readTextFile } from './fileIO'
+import { atomicWriteFile, atomicWriteFileSync, backupFile, backupPathFor, isSameFile, readTextFile } from './fileIO'
 
 afterEach(() => {
   vi.restoreAllMocks()
@@ -17,6 +17,17 @@ describe('fileIO', () => {
     expect(readFileSync(file, 'utf8')).toBe('nouveau é')
     expect(readdirSync(dir)).toEqual(['projet.avwan'])
     expect(await readTextFile(file)).toBe('nouveau é')
+  })
+
+  it('écrit de façon atomique en synchrone, sans temporaire, et lève si le dossier manque', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'avwan-io-'))
+    const file = join(dir, 'sync.avwan')
+    atomicWriteFileSync(file, 'abc')
+    expect(readFileSync(file, 'utf8')).toBe('abc')
+    expect(readdirSync(dir)).toEqual(['sync.avwan'])
+    const missing = join(dir, 'absent')
+    expect(() => atomicWriteFileSync(join(missing, 'x.avwan'), 'abc')).toThrow()
+    expect(readdirSync(dir)).toEqual(['sync.avwan'])
   })
 
   it('crée une copie de sauvegarde *.bak.avwan', async () => {
@@ -97,5 +108,39 @@ describe('atomicWriteFile : échecs', () => {
     await atomicWriteFile(file, 'données')
     expect(order).toEqual(['sync', 'rename'])
     expect(readFileSync(file, 'utf8')).toBe('données')
+  })
+})
+
+// APFS (macOS) et NTFS (Windows) ignorent la casse : deux chaînes différentes peuvent désigner le même fichier.
+const caseDir = mkdtempSync(join(tmpdir(), 'avwan-casse-'))
+writeFileSync(join(caseDir, 'salle b.avwan'), 'x')
+const caseInsensitive = existsSync(join(caseDir, 'SALLE B.AVWAN'))
+
+describe('isSameFile', () => {
+  it('deux noms d’un même fichier (lien physique) : même fichier', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'avwan-meme-'))
+    const a = join(dir, 'a.avwan')
+    writeFileSync(a, 'x')
+    linkSync(a, join(dir, 'b.avwan'))
+    expect(await isSameFile(a, join(dir, 'b.avwan'))).toBe(true)
+    expect(await isSameFile(a, a)).toBe(true)
+  })
+
+  it('deux fichiers distincts au même contenu : pas le même fichier', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'avwan-meme-'))
+    writeFileSync(join(dir, 'a.avwan'), 'x')
+    writeFileSync(join(dir, 'b.avwan'), 'x')
+    expect(await isSameFile(join(dir, 'a.avwan'), join(dir, 'b.avwan'))).toBe(false)
+  })
+
+  it('dans le doute (un des deux introuvable) : même fichier, rien ne sera supprimé', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'avwan-meme-'))
+    writeFileSync(join(dir, 'a.avwan'), 'x')
+    expect(await isSameFile(join(dir, 'a.avwan'), join(dir, 'absent.avwan'))).toBe(true)
+    expect(await isSameFile(join(dir, 'absent.avwan'), join(dir, 'a.avwan'))).toBe(true)
+  })
+
+  it.runIf(caseInsensitive)('système de fichiers insensible à la casse : « salle b » et « Salle B » sont le même fichier', async () => {
+    expect(await isSameFile(join(caseDir, 'salle b.avwan'), join(caseDir, 'Salle B.avwan'))).toBe(true)
   })
 })

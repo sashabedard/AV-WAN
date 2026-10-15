@@ -3,8 +3,9 @@ import type { AvwanApi } from '../../../shared/api'
 import { isDirty, projectStore } from '../store/projectStore'
 import { sampleProject } from '../model/__fixtures__/sample'
 import { serializeProject } from '../model/file'
-import { fileNameOf, loadFromText, openProjectAction, openRecentAction, openRequestAction, restoreRecoveryAction, saveProjectAction } from './fileActions'
+import { loadFromText, newProjectAction, openProjectAction, openRecentAction, openRequestAction, restoreRecoveryAction, revertToOpenedAction, saveProjectAction, saveProjectAsAction } from './fileActions'
 import { autosave } from './autosave'
+import { FILE_AUTOSAVE_DELAY_MS, fileAutoSave } from './fileAutoSave'
 import { blankDraft, templateFromDraft } from '../model/customTemplate'
 import { uiStore } from '../store/uiStore'
 
@@ -26,6 +27,7 @@ function fakeApi(file: Partial<AvwanApi['file']> = {}): AvwanApi {
     rendererReady: vi.fn(),
     updates: { pending: vi.fn(async () => null), install: vi.fn() },
     onUpdateReady: () => () => undefined,
+    settings: { get: vi.fn(async () => ({ autoSave: true })), onChange: () => () => undefined },
     window: { setTitleBarColors: vi.fn(), showMenu: vi.fn(), onFullscreen: () => () => undefined },
     recent: {
       list: vi.fn(async () => []),
@@ -40,16 +42,24 @@ function fakeApi(file: Partial<AvwanApi['file']> = {}): AvwanApi {
       save: vi.fn(async (path: string) => path),
       saveAs: vi.fn(async () => '/tmp/copie.avwan'),
       backup: vi.fn(async (path: string) => `${path}.bak`),
+      createDefault: vi.fn(async () => '/docs/Nouveau projet.avwan'),
+      saveSync: vi.fn(() => ({ ok: true as const })),
+      discardAutoCreated: vi.fn(async () => undefined),
+      openedVersion: vi.fn(async () => null),
       ...file
     }
   }
 }
 
 beforeEach(() => {
+  // Enregistrement automatique coupé par défaut : seuls les tests qui le décrivent l'allument (minuteurs simulés).
+  uiStore.getState().setAutoSave(false)
   projectStore.getState().loadProject(sampleProject(), '/tmp/a.avwan')
 })
 afterEach(() => {
+  vi.useRealTimers()
   vi.unstubAllGlobals()
+  uiStore.getState().setAutoSave(true)
 })
 
 describe('fileActions', () => {
@@ -105,12 +115,6 @@ describe('fileActions', () => {
     expect(await loadFromText('/tmp/casse.avwan', '{')).toBe(false)
     expect(projectStore.getState().filePath).toBe('/tmp/a.avwan')
     expect(projectStore.getState().toast).toContain('JSON')
-  })
-
-  it('extrait le nom du fichier (macOS et Windows)', () => {
-    expect(fileNameOf('/Users/x/lumen.avwan')).toBe('lumen.avwan')
-    expect(fileNameOf('C:\\Projets\\lumen.avwan')).toBe('lumen.avwan')
-    expect(fileNameOf(null)).toBe('Sans titre')
   })
 
   it('ne mémorise un fichier récent qu’après une ouverture valide', async () => {
@@ -254,6 +258,27 @@ describe('restauration', () => {
     expect(api.file.save).not.toHaveBeenCalled()
   })
 
+  it('enregistrement automatique actif : le message dit où la copie restaurée sera enregistrée', async () => {
+    vi.useFakeTimers()
+    uiStore.getState().setAutoSave(true)
+    const api = fakeApi()
+    vi.stubGlobal('window', { avwan: api, confirm: () => true })
+    vi.mocked(api.recovery.restore).mockResolvedValueOnce({ key: 'f-0123456789abcdef', path: '/x/salle-b.avwan', text: serializeProject(sampleProject()) })
+    expect(await restoreRecoveryAction('f-0123456789abcdef')).toBe(true)
+    expect(projectStore.getState().toast).toBe('Version récupérée restaurée : elle sera enregistrée dans salle-b.avwan.')
+    vi.mocked(api.recovery.restore).mockResolvedValueOnce({ key: 'u-abcdef', path: null, text: serializeProject(sampleProject()) })
+    expect(await restoreRecoveryAction('u-abcdef')).toBe(true)
+    expect(projectStore.getState().toast).toBe('Version récupérée restaurée : elle sera enregistrée dans Documents › AV·WAN.')
+  })
+
+  it('case « Enregistrement automatique » décochée : le message demande d’enregistrer', async () => {
+    const api = fakeApi()
+    vi.mocked(api.recovery.restore).mockResolvedValue({ key: 'f-0123456789abcdef', path: '/x/salle-b.avwan', text: serializeProject(sampleProject()) })
+    vi.stubGlobal('window', { avwan: api, confirm: () => true })
+    expect(await restoreRecoveryAction('f-0123456789abcdef')).toBe(true)
+    expect(projectStore.getState().toast).toBe('Version récupérée restaurée. Enregistrez pour la garder dans salle-b.avwan.')
+  })
+
   it('ouvrir un fichier qui a une copie plus récente propose de la restaurer', async () => {
     const api = fakeApi()
     const entry = { key: 'f-0123456789abcdef', path: '/x/b.avwan', title: 'B', savedAt: new Date().toISOString() }
@@ -314,5 +339,237 @@ describe('enregistrer un projet avec des composantes', () => {
     const written = JSON.parse(vi.mocked(api.file.save).mock.calls[0]![1]) as { templates: unknown[] }
     expect(written.templates).toEqual([])
     expect(projectStore.getState().history.present.templates).toEqual([unused])
+  })
+})
+
+describe('« Enregistrer sous » depuis un fichier créé automatiquement', () => {
+  it('le fichier quitté est confié au processus principal, qui ne supprime que ses propres créations', async () => {
+    const api = fakeApi()
+    vi.stubGlobal('window', { avwan: api, confirm: () => true })
+    await saveProjectAsAction()
+    expect(projectStore.getState().filePath).toBe('/tmp/copie.avwan')
+    // Les deux chemins : le processus principal vérifie sur le disque que ce n'est pas le même fichier.
+    expect(api.file.discardAutoCreated).toHaveBeenCalledWith('/tmp/a.avwan', '/tmp/copie.avwan')
+  })
+
+  it('rien à déplacer pour un projet sans fichier, ni quand le chemin ne change pas', async () => {
+    const api = fakeApi()
+    vi.stubGlobal('window', { avwan: api, confirm: () => true })
+    projectStore.getState().loadProject(sampleProject(), null)
+    await saveProjectAsAction()
+    expect(projectStore.getState().filePath).toBe('/tmp/copie.avwan')
+    await saveProjectAsAction()
+    expect(api.file.discardAutoCreated).not.toHaveBeenCalled()
+  })
+
+  it('« Enregistrer sous » annulé ou en échec : rien n’est supprimé', async () => {
+    const api = fakeApi({ saveAs: vi.fn(async () => null) })
+    vi.stubGlobal('window', { avwan: api, confirm: () => true })
+    await saveProjectAsAction()
+    vi.mocked(api.file.saveAs).mockRejectedValueOnce(new Error('EACCES'))
+    await saveProjectAsAction()
+    expect(api.file.discardAutoCreated).not.toHaveBeenCalled()
+    expect(projectStore.getState().filePath).toBe('/tmp/a.avwan')
+  })
+})
+
+describe('revenir à la version d’ouverture', () => {
+  const NONE = 'Aucune version d’ouverture pour ce fichier.'
+
+  it('projet sans fichier : message clair, rien ne change', async () => {
+    const api = fakeApi()
+    const confirm = vi.fn(() => true)
+    vi.stubGlobal('window', { avwan: api, confirm })
+    projectStore.getState().loadProject(sampleProject(), null)
+    const before = projectStore.getState().history.present
+    expect(await revertToOpenedAction()).toBe(false)
+    expect(projectStore.getState().toast).toBe(NONE)
+    expect(api.file.openedVersion).not.toHaveBeenCalled()
+    expect(confirm).not.toHaveBeenCalled()
+    expect(projectStore.getState().history.present).toBe(before)
+  })
+
+  it('fichier sans version d’ouverture (créé automatiquement) : même message, projet inchangé', async () => {
+    const api = fakeApi({ openedVersion: vi.fn(async () => null) })
+    const confirm = vi.fn(() => true)
+    vi.stubGlobal('window', { avwan: api, confirm })
+    projectStore.getState().updateMeta({ title: 'Modifié' })
+    const before = projectStore.getState().history.present
+    expect(await revertToOpenedAction()).toBe(false)
+    expect(api.file.openedVersion).toHaveBeenCalledWith('/tmp/a.avwan')
+    expect(projectStore.getState().toast).toBe(NONE)
+    expect(confirm).not.toHaveBeenCalled()
+    expect(projectStore.getState().history.present).toBe(before)
+  })
+
+  it('confirmé : le projet redevient la version d’ouverture, et ⌘Z redonne le projet d’avant', async () => {
+    const opened = { ...sampleProject(), meta: { ...sampleProject().meta, title: 'Version d’ouverture' } }
+    const api = fakeApi({ openedVersion: vi.fn(async () => serializeProject(opened)) })
+    const confirm = vi.fn(() => true)
+    vi.stubGlobal('window', { avwan: api, confirm })
+    projectStore.getState().updateMeta({ title: 'Modifié depuis' })
+    const before = projectStore.getState().history.present
+    expect(await revertToOpenedAction()).toBe(true)
+    expect(confirm).toHaveBeenCalledWith(expect.stringContaining('Revenir à la version d’ouverture de a.avwan ?'))
+    expect(projectStore.getState().history.present.meta.title).toBe('Version d’ouverture')
+    expect(projectStore.getState().filePath).toBe('/tmp/a.avwan')
+    // Une modification ordinaire : l'enregistrement automatique l'écrira dans le fichier.
+    expect(isDirty(projectStore.getState())).toBe(true)
+    projectStore.getState().undo()
+    expect(projectStore.getState().history.present).toBe(before)
+  })
+
+  it('confirmation refusée : rien ne change', async () => {
+    const api = fakeApi({ openedVersion: vi.fn(async () => serializeProject(sampleProject())) })
+    vi.stubGlobal('window', { avwan: api, confirm: () => false })
+    projectStore.getState().updateMeta({ title: 'Modifié depuis' })
+    const before = projectStore.getState().history
+    expect(await revertToOpenedAction()).toBe(false)
+    expect(projectStore.getState().history).toBe(before)
+  })
+
+  it('autre document ou autre fichier pendant la lecture de la version : rien ne change', async () => {
+    const opened = { ...sampleProject(), meta: { ...sampleProject().meta, title: 'Version d’ouverture' } }
+    let deliver: (text: string) => void = () => undefined
+    const openedVersion = vi.fn((_path: string) => new Promise<string | null>((resolve) => (deliver = resolve)))
+    const confirm = vi.fn(() => true)
+    vi.stubGlobal('window', { avwan: fakeApi({ openedVersion }), confirm })
+
+    // Un autre document s'ouvre pendant la lecture.
+    const pending = revertToOpenedAction()
+    projectStore.getState().loadProject(sampleProject(), '/x/b.avwan')
+    const other = projectStore.getState().history
+    deliver(serializeProject(opened))
+    expect(await pending).toBe(false)
+    expect(confirm).not.toHaveBeenCalled()
+    expect(projectStore.getState().history).toBe(other)
+
+    // Même document, mais « Enregistrer sous » vers un autre fichier pendant la lecture.
+    const pending2 = revertToOpenedAction()
+    projectStore.getState().markSaved('/x/c.avwan')
+    deliver(serializeProject(opened))
+    expect(await pending2).toBe(false)
+    expect(confirm).not.toHaveBeenCalled()
+    expect(projectStore.getState().history).toBe(other)
+  })
+
+  it('version illisible ou erreur du processus principal : message, projet inchangé', async () => {
+    const api = fakeApi({ openedVersion: vi.fn(async () => '{') })
+    vi.stubGlobal('window', { avwan: api, confirm: () => true })
+    const before = projectStore.getState().history
+    expect(await revertToOpenedAction()).toBe(false)
+    expect(projectStore.getState().toast).toMatch(/^Retour impossible : /)
+    vi.mocked(api.file.openedVersion).mockRejectedValueOnce(new Error("Error invoking remote method 'file:openedVersion': Error: Accès refusé (EACCES)."))
+    expect(await revertToOpenedAction()).toBe(false)
+    expect(projectStore.getState().toast).toBe('Retour impossible : Accès refusé (EACCES).')
+    expect(projectStore.getState().history).toBe(before)
+  })
+})
+
+describe('changer de document moins de 2 s après une modification (enregistrement automatique)', () => {
+  const QUESTION = 'Des modifications ne sont pas enregistrées. Continuer quand même ?'
+  beforeEach(() => {
+    vi.useFakeTimers()
+    uiStore.getState().setAutoSave(true)
+  })
+
+  it('⌘N : la dernière modification est écrite dans le fichier, sans question', () => {
+    const api = fakeApi()
+    const confirm = vi.fn(() => false)
+    vi.stubGlobal('window', { avwan: api, confirm })
+    projectStore.getState().updateMeta({ title: 'Dernière modification' })
+    newProjectAction()
+    expect(api.file.saveSync).toHaveBeenCalledWith('/tmp/a.avwan', expect.stringContaining('"title": "Dernière modification"'))
+    expect(confirm).not.toHaveBeenCalled()
+    expect(projectStore.getState().filePath).toBeNull()
+  })
+
+  it('⌘O : la boîte d’ouverture s’affiche sans question une fois la modification écrite', async () => {
+    const api = fakeApi()
+    const confirm = vi.fn(() => false)
+    vi.stubGlobal('window', { avwan: api, confirm })
+    projectStore.getState().updateMeta({ title: 'Dernière modification' })
+    await openProjectAction()
+    expect(api.file.saveSync).toHaveBeenCalledTimes(1)
+    expect(confirm).not.toHaveBeenCalled()
+    expect(api.file.open).toHaveBeenCalledTimes(1)
+  })
+
+  it('écriture impossible : la question habituelle revient, et refuser garde le projet', () => {
+    const api = fakeApi({ saveSync: vi.fn(() => ({ ok: false as const, error: 'Disque plein (ENOSPC).' })) })
+    const confirm = vi.fn(() => false)
+    vi.stubGlobal('window', { avwan: api, confirm })
+    projectStore.getState().updateMeta({ title: 'Pas écrit' })
+    newProjectAction()
+    expect(api.file.saveSync).toHaveBeenCalledTimes(1)
+    expect(confirm).toHaveBeenCalledWith(QUESTION)
+    expect(projectStore.getState().filePath).toBe('/tmp/a.avwan')
+    expect(projectStore.getState().history.present.meta.title).toBe('Pas écrit')
+  })
+})
+
+describe('« Enregistrer sous » pendant l’enregistrement automatique', () => {
+  beforeEach(() => {
+    vi.useFakeTimers()
+    uiStore.getState().setAutoSave(true)
+  })
+
+  // Boîte « Enregistrer sous » retenue : elle se ferme quand on le décide.
+  function heldSaveAs() {
+    let close: (path: string | null) => void = () => undefined
+    const saveAs = vi.fn((_text: string, _name: string) => new Promise<string | null>((resolve) => (close = resolve)))
+    return { saveAs, close: (path: string | null) => close(path) }
+  }
+
+  it('projet sans titre modifié : aucun fichier n’est créé dans Documents › AV·WAN pendant la boîte', async () => {
+    const held = heldSaveAs()
+    const api = fakeApi({ saveAs: held.saveAs })
+    vi.stubGlobal('window', { avwan: api, confirm: () => true })
+    projectStore.getState().loadProject(sampleProject(), null)
+    projectStore.getState().updateMeta({ title: 'Salle B' })
+    const done = saveProjectAsAction() // ⇧⌘S moins de 2 s après la modification
+    await vi.advanceTimersByTimeAsync(FILE_AUTOSAVE_DELAY_MS * 3) // le délai échoit, boîte ouverte
+    await fileAutoSave.flush() // la boîte fait perdre le focus à la fenêtre
+    expect(api.file.createDefault).not.toHaveBeenCalled()
+    held.close('/x/Salle B.avwan')
+    await done
+    await vi.advanceTimersByTimeAsync(FILE_AUTOSAVE_DELAY_MS * 3)
+    expect(api.file.createDefault).not.toHaveBeenCalled()
+    expect(projectStore.getState().filePath).toBe('/x/Salle B.avwan')
+    expect(isDirty(projectStore.getState())).toBe(false)
+    expect(api.file.discardAutoCreated).not.toHaveBeenCalled()
+  })
+
+  it('fichier créé automatiquement pendant la boîte : il est relu après la boîte, puis déplacé', async () => {
+    const held = heldSaveAs()
+    let created: (path: string) => void = () => undefined
+    const createDefault = vi.fn((_title: string, _text: string) => new Promise<string>((resolve) => (created = resolve)))
+    const api = fakeApi({ saveAs: held.saveAs, createDefault })
+    vi.stubGlobal('window', { avwan: api, confirm: () => true })
+    projectStore.getState().loadProject(sampleProject(), null)
+    projectStore.getState().updateMeta({ title: 'Salle B' })
+    await vi.advanceTimersByTimeAsync(FILE_AUTOSAVE_DELAY_MS) // l'écriture automatique part…
+    expect(createDefault).toHaveBeenCalledTimes(1)
+    const done = saveProjectAsAction() // … et ⇧⌘S arrive avant qu'elle finisse
+    created('/docs/Salle B.avwan')
+    await vi.advanceTimersByTimeAsync(0)
+    held.close('/x/Régie.avwan')
+    await done
+    expect(projectStore.getState().filePath).toBe('/x/Régie.avwan')
+    expect(api.file.discardAutoCreated).toHaveBeenCalledWith('/docs/Salle B.avwan', '/x/Régie.avwan')
+  })
+
+  it('autre document ouvert pendant la boîte : il n’est pas touché', async () => {
+    const held = heldSaveAs()
+    const api = fakeApi({ saveAs: held.saveAs })
+    vi.stubGlobal('window', { avwan: api, confirm: () => true })
+    projectStore.getState().updateMeta({ title: 'Salle B' })
+    const done = saveProjectAsAction()
+    projectStore.getState().loadProject(sampleProject(), '/x/autre.avwan', { restored: true })
+    held.close('/x/Régie.avwan')
+    await done
+    expect(projectStore.getState().filePath).toBe('/x/autre.avwan')
+    expect(isDirty(projectStore.getState())).toBe(true)
+    expect(api.file.discardAutoCreated).not.toHaveBeenCalled()
   })
 })

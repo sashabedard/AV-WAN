@@ -1,6 +1,6 @@
 import { useRef } from 'react'
 import { isDirty, useProjectStore } from '../store/projectStore'
-import { fileNameOf } from './fileActions'
+import { fileNameOf } from './fileName'
 import { BrandMark } from './BrandMark'
 import { ThemeToggle } from './ThemeToggle'
 import { uiStore } from '../store/uiStore'

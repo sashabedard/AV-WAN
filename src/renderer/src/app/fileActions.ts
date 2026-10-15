@@ -5,18 +5,16 @@ import { ipcErrorMessage } from './ipcError'
 import type { OpenedFile, OpenRequest, RecoveryEntry } from '../../../shared/api'
 import { uiStore } from '../store/uiStore'
 import { autosave } from './autosave'
+import { fileAutoSave } from './fileAutoSave'
+import { fileNameOf } from './fileName'
 import { timeAgo } from './timeAgo'
 
 const DISCARD_QUESTION = 'Des modifications ne sont pas enregistrées. Continuer quand même ?'
 
+// Comme à la fermeture : avec l'enregistrement automatique, la dernière modification est d'abord écrite dans
+// le fichier ; la question ne revient que si cette écriture est impossible.
 function confirmDiscard(): boolean {
-  return !isDirty(projectStore.getState()) || window.confirm(DISCARD_QUESTION)
-}
-
-export function fileNameOf(path: string | null): string {
-  if (!path) return 'Sans titre'
-  const parts = path.split(/[\\/]/)
-  return parts[parts.length - 1] || path
+  return !isDirty(projectStore.getState()) || fileAutoSave.flushSync() || window.confirm(DISCARD_QUESTION)
 }
 
 export function suggestedName(): string {
@@ -63,13 +61,19 @@ export async function restoreRecoveryAction(key: string): Promise<boolean> {
     s.loadProject(res.project, res.readOnly ? null : restored.path, { readOnly: res.readOnly, restored: true })
     autosave.adopt(restored.key)
     uiStore.getState().setWelcome(false)
-    const where = restored.path && !res.readOnly ? ` Enregistrez pour la garder dans ${fileNameOf(restored.path)}.` : ' Enregistrez-la pour la garder.'
+    const target = restored.path && !res.readOnly ? fileNameOf(restored.path) : null
+    // Enregistrement automatique actif : la copie part seule dans son fichier, ou dans Documents › AV·WAN.
+    const where = uiStore.getState().autoSave
+      ? ` : elle sera enregistrée dans ${target ?? 'Documents › AV·WAN'}.`
+      : target
+        ? `. Enregistrez pour la garder dans ${target}.`
+        : '. Enregistrez-la pour la garder.'
     projectStore
       .getState()
       .showToast(
         res.readOnly
           ? 'Version récupérée restaurée en lecture seule : elle vient d’une version plus récente d’AV·WAN. Utilisez « Enregistrer sous… ».'
-          : `Version récupérée restaurée.${where}`
+          : `Version récupérée restaurée${where}`
       )
     return true
   } catch (e) {
@@ -138,18 +142,31 @@ export async function openRequestAction(request: OpenRequest): Promise<boolean> 
   }
 }
 
-export async function saveProjectAsAction(): Promise<void> {
-  const s = projectStore.getState()
-  const snapshot = s.history.present
-  try {
-    const path = await window.avwan.file.saveAs(serializeProject(pruneTemplates(snapshot)), suggestedName())
-    if (!path) return
-    projectStore.setState({ readOnly: false })
-    projectStore.getState().markSaved(path, snapshot)
-    autosave.saved()
-  } catch (e) {
-    s.showToast(`Échec de l’enregistrement : ${ipcErrorMessage(e)}`)
-  }
+// L'enregistrement automatique attend la fermeture de la boîte : sinon le délai de 2 s, ou la perte de focus
+// causée par la boîte, créerait un fichier en trop dans Documents › AV·WAN pour un projet sans titre.
+export function saveProjectAsAction(): Promise<void> {
+  return fileAutoSave.suspend(async () => {
+    const s = projectStore.getState()
+    const snapshot = s.history.present
+    try {
+      const path = await window.avwan.file.saveAs(serializeProject(pruneTemplates(snapshot)), suggestedName())
+      if (!path) return
+      const after = projectStore.getState()
+      // Autre document ouvert pendant la boîte : le fichier est écrit, ce document-là n'est pas concerné.
+      if (after.docId !== s.docId) return
+      // Relu après la boîte : une écriture automatique en cours a pu donner un fichier au projet entre-temps.
+      const previous = after.filePath
+      projectStore.setState({ readOnly: false })
+      projectStore.getState().markSaved(path, snapshot)
+      autosave.saved()
+      // Un fichier créé automatiquement (Documents › AV·WAN) est déplacé, pas copié : le processus principal
+      // ne supprime l'ancien que s'il l'a lui-même créé pendant cette session, et jamais s'il s'agit sur le
+      // disque du fichier qu'on vient d'écrire (même nom à la casse près sous macOS et Windows).
+      if (previous && previous !== path) void window.avwan.file.discardAutoCreated(previous, path).catch(() => undefined)
+    } catch (e) {
+      s.showToast(`Échec de l’enregistrement : ${ipcErrorMessage(e)}`)
+    }
+  })
 }
 
 export async function saveProjectAction(): Promise<void> {
@@ -163,5 +180,38 @@ export async function saveProjectAction(): Promise<void> {
     autosave.saved()
   } catch (e) {
     s.showToast(`Échec de l’enregistrement : ${ipcErrorMessage(e)}`)
+  }
+}
+
+// Filet de sécurité de l'enregistrement automatique : le projet redevient le fichier tel qu'il était à son
+// ouverture, par une modification ordinaire (annulable par ⌘Z), écrite ensuite dans le fichier.
+export async function revertToOpenedAction(): Promise<boolean> {
+  const s = projectStore.getState()
+  const path = s.filePath
+  const none = 'Aucune version d’ouverture pour ce fichier.'
+  if (!path) {
+    s.showToast(none)
+    return false
+  }
+  try {
+    const text = await window.avwan.file.openedVersion(path)
+    // Autre document ou autre fichier pendant la lecture : cette version n'est plus la sienne.
+    const after = projectStore.getState()
+    if (after.docId !== s.docId || after.filePath !== path) return false
+    if (text === null) {
+      s.showToast(none)
+      return false
+    }
+    const res = parseProjectFile(text)
+    if (!res.ok) {
+      s.showToast(`Retour impossible : ${res.error}`)
+      return false
+    }
+    if (!window.confirm(`Revenir à la version d’ouverture de ${fileNameOf(path)} ? Les modifications faites depuis seront remplacées (⌘Z permet d’annuler).`)) return false
+    projectStore.getState().apply(() => res.project)
+    return true
+  } catch (e) {
+    s.showToast(`Retour impossible : ${ipcErrorMessage(e)}`)
+    return false
   }
 }

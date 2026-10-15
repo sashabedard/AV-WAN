@@ -1,7 +1,7 @@
 import type { PdfOptions } from './pdfOptions'
 import type { DataTable } from './tables'
 
-export type MenuAction = 'new' | 'open' | 'save' | 'saveAs' | 'undo' | 'redo' | 'search' | 'fitView' | 'zoomIn' | 'zoomOut' | 'duplicate' | 'groupZone' | 'exportPdf' | 'exportCsv' | 'exportXlsx' | 'pinView' | 'unpinView'
+export type MenuAction = 'new' | 'open' | 'save' | 'saveAs' | 'undo' | 'redo' | 'search' | 'fitView' | 'zoomIn' | 'zoomOut' | 'duplicate' | 'groupZone' | 'exportPdf' | 'exportCsv' | 'exportXlsx' | 'pinView' | 'unpinView' | 'revertToOpened'
 export interface OpenedFile {
   path: string
   text: string
@@ -51,6 +51,11 @@ export interface AvwanApi {
     save(path: string, text: string): Promise<string>
     saveAs(text: string, suggestedName: string): Promise<string | null>
     backup(path: string): Promise<string>
+    createDefault(title: string, text: string): Promise<string>
+    saveSync(path: string, text: string): { ok: true } | { ok: false; error: string }
+    // « Enregistrer sous » : previous (quitté) est supprimé s'il a été créé par l'app et n'est pas current.
+    discardAutoCreated(previous: string, current: string): Promise<void>
+    openedVersion(path: string): Promise<string | null>
   }
   recent: {
     list(): Promise<string[]>
@@ -87,6 +92,11 @@ export interface AvwanApi {
     install(): void
   }
   onUpdateReady(callback: (version: string) => void): () => void
+  // Réglages de l'app (menu Fichier › Enregistrement automatique).
+  settings: {
+    get(): Promise<{ autoSave: boolean }>
+    onChange(callback: (settings: { autoSave: boolean }) => void): () => void
+  }
   // Fenêtre sans barre de titre : couleurs des boutons Windows, menu ☰, plein écran (pastilles macOS masquées).
   window: {
     setTitleBarColors(colors: { color: string; symbolColor: string }): void
@@ -101,6 +111,10 @@ export const IPC = {
   save: 'file:save',
   saveAs: 'file:saveAs',
   backup: 'file:backup',
+  fileCreateDefault: 'file:createDefault',
+  fileSaveSync: 'file:saveSync',
+  fileDiscardAutoCreated: 'file:discardAutoCreated',
+  fileOpenedVersion: 'file:openedVersion',
   recentList: 'recent:list',
   recentOpen: 'recent:open',
   recentRemember: 'recent:remember',
@@ -123,6 +137,8 @@ export const IPC = {
   updateReady: 'update:ready',
   updatePending: 'update:pending',
   updateInstall: 'update:install',
+  settingsGet: 'settings:get',
+  settingsChanged: 'settings:changed',
   windowTitleBarColors: 'window:titleBarColors',
   windowShowMenu: 'window:showMenu',
   windowFullscreen: 'window:fullscreen',

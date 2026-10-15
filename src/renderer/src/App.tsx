@@ -5,7 +5,9 @@ import { useFileDropGuard } from './app/useFileDropGuard'
 import { useClipboardEvents } from './app/clipboardActions'
 import { useOpenRequests } from './app/useOpenRequests'
 import { useAutosave } from './app/autosave'
+import { useFileAutoSave } from './app/fileAutoSave'
 import { useLibraryLoad } from './app/useLibraryLoad'
+import { useSettingsSync } from './app/useSettingsSync'
 
 export function App() {
   useMenuBridge()
@@ -14,6 +16,8 @@ export function App() {
   useClipboardEvents()
   useOpenRequests()
   useAutosave()
+  useFileAutoSave()
   useLibraryLoad()
+  useSettingsSync()
   return <AppShell />
 }

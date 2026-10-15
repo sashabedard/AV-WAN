@@ -9,10 +9,16 @@ export interface HelpHandlers {
   releases(): void
 }
 
+// Réglages exposés dans le menu Fichier (case à cocher native).
+export interface FileMenuOptions {
+  autoSave: boolean
+  toggleAutoSave(on: boolean): void
+}
+
 const SEPARATOR: MenuItemConstructorOptions = { type: 'separator' }
 
 // Gabarit du menu, sans Electron à l'exécution : testable sous Vitest.
-export function menuTemplate(isMac: boolean, send: (action: MenuAction) => void, help: HelpHandlers): MenuItemConstructorOptions[] {
+export function menuTemplate(isMac: boolean, send: (action: MenuAction) => void, help: HelpHandlers, file: FileMenuOptions): MenuItemConstructorOptions[] {
   const appMenu: MenuItemConstructorOptions[] = isMac
     ? [
         {
@@ -45,6 +51,8 @@ export function menuTemplate(isMac: boolean, send: (action: MenuAction) => void,
         SEPARATOR,
         { label: 'Enregistrer', accelerator: 'CmdOrCtrl+S', click: () => send('save') },
         { label: 'Enregistrer sous…', accelerator: 'Shift+CmdOrCtrl+S', click: () => send('saveAs') },
+        { label: 'Enregistrement automatique', type: 'checkbox', checked: file.autoSave, click: (item) => file.toggleAutoSave(item.checked) },
+        { label: 'Revenir à la version d’ouverture…', click: () => send('revertToOpened') },
         SEPARATOR,
         { label: 'Exporter le PDF…', accelerator: 'CmdOrCtrl+E', click: () => send('exportPdf') },
         { label: 'Exporter les listes en CSV…', click: () => send('exportCsv') },

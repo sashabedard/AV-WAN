@@ -10,7 +10,11 @@ const api: AvwanApi = {
     read: (path) => ipcRenderer.invoke(IPC.read, path),
     save: (path, text) => ipcRenderer.invoke(IPC.save, path, text),
     saveAs: (text, suggestedName) => ipcRenderer.invoke(IPC.saveAs, text, suggestedName),
-    backup: (path) => ipcRenderer.invoke(IPC.backup, path)
+    backup: (path) => ipcRenderer.invoke(IPC.backup, path),
+    createDefault: (title, text) => ipcRenderer.invoke(IPC.fileCreateDefault, title, text),
+    saveSync: (path, text) => ipcRenderer.sendSync(IPC.fileSaveSync, path, text),
+    discardAutoCreated: (previous, current) => ipcRenderer.invoke(IPC.fileDiscardAutoCreated, previous, current),
+    openedVersion: (path) => ipcRenderer.invoke(IPC.fileOpenedVersion, path)
   },
   recent: {
     list: () => ipcRenderer.invoke(IPC.recentList),
@@ -63,6 +67,16 @@ const api: AvwanApi = {
     ipcRenderer.on(IPC.updateReady, handler)
     return () => {
       ipcRenderer.removeListener(IPC.updateReady, handler)
+    }
+  },
+  settings: {
+    get: () => ipcRenderer.invoke(IPC.settingsGet),
+    onChange: (callback) => {
+      const handler = (_event: IpcRendererEvent, settings: { autoSave: boolean }): void => callback(settings)
+      ipcRenderer.on(IPC.settingsChanged, handler)
+      return () => {
+        ipcRenderer.removeListener(IPC.settingsChanged, handler)
+      }
     }
   },
   window: {
