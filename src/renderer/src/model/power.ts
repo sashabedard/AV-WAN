@@ -33,10 +33,16 @@ export function resolvePsu(spec: Psu | undefined): ResolvedPsu {
   return { ...(v !== undefined ? { volts: v } : {}), ...(a !== undefined ? { amps: a } : {}), ...(w !== undefined ? { watts: w } : {}) }
 }
 
+// Capacité d'une alimentation : une valeur calculée qui s'arrondit à 0 (5 V × 0,005 A) est inconnue, jamais un ratio infini.
+export function psuCapacityW(spec: Psu | undefined): number | undefined {
+  const w = resolvePsu(spec).watts
+  return w !== undefined && w > 0 ? w : undefined
+}
+
 // Puissance d'un appareil : calculée pour une bande, nominale pour une alimentation, sinon le champ.
 export function devicePowerW(device: Device): number | undefined {
   if (device.ledStrip) return stripPower(device.ledStrip)?.watts
-  if (device.psu) return resolvePsu(device.psu).watts
+  if (device.psu) return psuCapacityW(device.psu)
   return device.powerW
 }
 
@@ -85,7 +91,7 @@ export function psuLoad(project: Project, psuId: string): PsuLoad {
   const viaPixel = psu?.psu ? project.devices.filter((d) => d.ledStrip && !direct.includes(d) && feedingPsu(project, d.id)?.id === psuId) : []
   const fed = [...direct, ...viaPixel]
   const loadW = round1(fed.reduce((sum, d) => sum + (devicePowerW(d) ?? 0), 0))
-  const capacityW = resolvePsu(psu?.psu).watts
+  const capacityW = psuCapacityW(psu?.psu)
   return {
     ...(capacityW !== undefined ? { capacityW } : {}),
     loadW,

@@ -121,6 +121,14 @@ describe('powerBudget', () => {
     expect(b.zones.flatMap((z) => z.rows).some((r) => r.device === 'PP-1')).toBe(false)
   })
 
+  it('capacité qui s’arrondit à 0 : comptée comme inconnue, jamais Infinity ni NaN', () => {
+    const p = unratedPsu()
+    const b = powerBudget({ ...p, devices: p.devices.map((d) => (d.id === 'psu' ? { ...d, psu: { volts: 5, amps: 0.005 } } : d)) })
+    expect(b.totalW).toBe(288)
+    expect(b.psus[0]).toEqual({ name: 'PSU-1', volts: 5, loadW: 288, fed: ['LED-1', 'LED-2', 'LED-3'], remark: 'capacité inconnue' })
+    expect(b.zones[0]!.rows.find((r) => r.device === 'PSU-1')?.remark).toBe('charge 288 W, capacité inconnue')
+  })
+
   it('projet vide : zéro partout, jamais NaN', () => {
     const b = powerBudget(createProject())
     expect([b.totalW, b.amps, b.zones.length, b.psus.length, b.missing.length]).toEqual([0, 0, 0, 0, 0])

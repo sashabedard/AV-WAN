@@ -1,7 +1,7 @@
 // src/renderer/src/reports/bom.ts
 import type { LedStrip, Medium, Project, Psu } from '../model/types'
 import { LED_STRIP_TYPES } from '../model/led'
-import { resolvePsu } from '../model/power'
+import { psuCapacityW, resolvePsu } from '../model/power'
 import { formatFr } from '../model/fields'
 import { MediumSchema } from '../model/schema'
 import { findPort } from '../model/rules'
@@ -23,7 +23,8 @@ const FIBER: Partial<Record<Medium, 'multimode' | 'monomode'>> = { om3: 'multimo
 
 function psuDetail(psu: Psu): string {
   const r = resolvePsu(psu)
-  return [r.volts !== undefined ? `${formatFr(r.volts)} V` : '', r.watts !== undefined ? `${formatFr(r.watts)} W` : ''].filter(Boolean).join(' · ')
+  const watts = psuCapacityW(psu)
+  return [r.volts !== undefined ? `${formatFr(r.volts)} V` : '', watts !== undefined ? `${formatFr(watts)} W` : ''].filter(Boolean).join(' · ')
 }
 
 function tally<K>(map: Map<string, { key: K; n: number }>, id: string, key: K): void {

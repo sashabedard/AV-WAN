@@ -77,6 +77,20 @@ describe('psuLoad', () => {
   })
 })
 
+describe('capacité qui s’arrondit à 0', () => {
+  it('5 V × 0,005 A : capacité inconnue, jamais Infinity ni NaN', () => {
+    const p = bench()
+    const tiny = (q: Project): Project => ({ ...q, devices: q.devices.map((d) => (d.id === 'psu' ? { ...d, psu: { volts: 5, amps: 0.005 } } : d)) })
+    const load = psuLoad(tiny(p), 'psu')
+    expect(load.capacityW).toBeUndefined()
+    expect(load.ratio).toBeUndefined()
+    expect(load.loadW).toBe(288)
+    const empty = psuLoad(tiny({ ...p, links: [] }), 'psu')
+    expect([empty.capacityW, empty.ratio, empty.loadW]).toEqual([undefined, undefined, 0])
+    expect(devicePowerW(tiny(p).devices[0]!)).toBeUndefined()
+  })
+})
+
 describe('loadLevel', () => {
   it('80 % pile reste dans la marge', () => {
     expect(loadLevel(0.8)).toBe('ok')

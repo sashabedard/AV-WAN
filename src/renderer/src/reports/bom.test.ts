@@ -78,6 +78,12 @@ describe('bom : bandes LED et alimentations', () => {
     expect(rows.some((r) => r[1] === 'Bande LED')).toBe(false)
   })
 
+  it('alimentation dont la capacité s’arrondit à 0 : pas de « 0 W »', () => {
+    const p = stripsProject()
+    const rows = bom({ ...p, devices: p.devices.map((d) => (d.id === 'p' ? { ...d, psu: { volts: 5, amps: 0.005 } } : d)) }).rows
+    expect(rows).toContainEqual(['Appareil', 'Alimentation', '5 V', 1])
+  })
+
   it('aucune longueur connue : « longueur à définir », pas « 0 m au total »', () => {
     const p = stripsProject()
     const unknown = p.devices.find((d) => d.id === 's2')! // sans longueur
