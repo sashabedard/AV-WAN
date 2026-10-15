@@ -61,7 +61,7 @@ export function createExampleProject(now: Date = new Date()): Project {
   add('mh1', 'moving-spot', 640, 700, { powerW: 400, dmx: { footprint: 16, address: 1 } })
   add('mh2', 'moving-spot', 900, 700, { powerW: 400, dmx: { footprint: 16, address: 17 } })
   add('mh3', 'moving-spot', 1160, 700, { powerW: 400, dmx: { footprint: 16, address: 33 } })
-  add('psu', 'psu', 640, 820, { psu: { volts: 12, amps: 30 } })
+  add('psu', 'psu', 80, 940, { psu: { volts: 12, amps: 30 } }) // sous LED-1 : son câble DC ne traverse pas la rangée
   add('rgb', 'led-strip', 900, 820, { model: 'Ruban de scène', ledStrip: { type: 'smd-rgb', volts: 12, wPerM: 14.4, lengthM: 10 } })
 
   link(['gw', 'LAN1'], ['sw1', '1'], 'cat6', TRUNK_ALL, { lengthM: 1 })
@@ -93,7 +93,7 @@ export function createExampleProject(now: Date = new Date()): Project {
     zones: [
       { id: 'ex-z-regie', name: 'Régie', color: '#F2A93B', rect: { x: 0, y: 0, w: 860, h: 560 }, ownPdfPage: true },
       { id: 'ex-z-salle', name: 'Salle', color: '#3E8EF7', rect: { x: 900, y: 0, w: 760, h: 560 }, ownPdfPage: true },
-      { id: 'ex-z-scene', name: 'Scène', color: '#3DBE6E', rect: { x: 0, y: 600, w: 1660, h: 320 }, ownPdfPage: false }
+      { id: 'ex-z-scene', name: 'Scène', color: '#3DBE6E', rect: { x: 0, y: 600, w: 1660, h: 440 }, ownPdfPage: false }
     ]
   }
   return assignZones(p)
