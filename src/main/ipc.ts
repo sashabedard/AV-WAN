@@ -10,6 +10,7 @@ import { discardAutoCreated, uniqueProjectPath } from './defaultLocation'
 import { atomicWriteFile, atomicWriteFileSync, backupFile, readTextFile } from './fileIO'
 import { discardRecovery, discardRecoverySync, findNewerRecovery, isRecoveryKey, keyForPath, keyForUntitled, listRecovery, parseRecoveryWrite, prepareRestore, writeRecovery } from './recovery'
 import { forgetOpenedVersion, readOpenedVersion, rememberOpenedVersion } from './versions'
+import { readDmxChannels, writeDmxChannels } from './dmxChannels'
 import { listLibrary, removeLibrary, saveLibrary } from './library'
 
 const filters = [{ name: 'Projet AV·WAN', extensions: [FILE_EXTENSION] }]
@@ -37,6 +38,7 @@ const remember = (path: string): Promise<void> =>
 
 const recoveryDir = (): string => join(app.getPath('userData'), 'recovery')
 const libraryDir = (): string => join(app.getPath('userData'), 'library')
+const dmxChannelsFile = (): string => join(app.getPath('userData'), 'dmx-channels.json')
 // Dernière copie écrite par chaque fenêtre, pour « Quitter sans enregistrer ».
 const lastRecoveryKey = new Map<number, string>()
 // Fenêtres dont l'utilisateur a abandonné le travail : une écriture tardive (perte de focus) est ignorée.
@@ -251,4 +253,6 @@ export function registerIpc(): void {
   ipcMain.handle(IPC.libraryList, (): Promise<LibraryFile[]> => listLibrary(libraryDir()))
   ipcMain.handle(IPC.librarySave, (_event, id: unknown, text: unknown) => frenchErrors(() => saveLibrary(libraryDir(), id, text)))
   ipcMain.handle(IPC.libraryRemove, (_event, id: unknown) => frenchErrors(() => removeLibrary(libraryDir(), id)))
+  ipcMain.handle(IPC.dmxChannelsRead, (): Promise<string | null> => readDmxChannels(dmxChannelsFile()))
+  ipcMain.handle(IPC.dmxChannelsWrite, (_event, text: unknown) => frenchErrors(() => writeDmxChannels(dmxChannelsFile(), text)))
 }

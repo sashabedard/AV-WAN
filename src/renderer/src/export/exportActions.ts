@@ -1,6 +1,6 @@
 import type { PdfOptions } from '../../../shared/pdfOptions'
 import { projectStore } from '../store/projectStore'
-import { serializeProject } from '../model/file'
+import { printTextOf } from '../app/fileText'
 import { suggestedName } from '../app/fileActions'
 import { fileNameOf } from '../app/fileName'
 import { ipcErrorMessage } from '../app/ipcError'
@@ -11,7 +11,7 @@ export async function exportPdfAction(options: PdfOptions): Promise<string | nul
   const s = projectStore.getState()
   s.showToast('Préparation du PDF…')
   try {
-    const path = await window.avwan.export.pdf(serializeProject(s.history.present), options, suggestedName())
+    const path = await window.avwan.export.pdf(printTextOf(s.history.present), options, suggestedName())
     if (path) projectStore.getState().showToast(`PDF exporté : ${fileNameOf(path)}`)
     else projectStore.getState().clearToast()
     return path

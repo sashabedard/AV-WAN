@@ -28,7 +28,7 @@ describe('migration 1 → 2', () => {
       ]
     }
     expect(migrate(doc)).toEqual({
-      schemaVersion: 2,
+      schemaVersion: 3,
       devices: [
         { id: 'f', templateId: 'dmx-fixture', dmx: { footprint: 1 } },
         { id: 'g', templateId: 'generic' },
@@ -38,13 +38,13 @@ describe('migration 1 → 2', () => {
   })
 
   it('un document sans liste d’appareils passe quand même', () => {
-    expect(migrate({ schemaVersion: 1 })).toEqual({ schemaVersion: 2 })
+    expect(migrate({ schemaVersion: 1 })).toEqual({ schemaVersion: 3 })
   })
 
   it('1 → 2 : une ancienne bande reçoit sa prise DC et le type WS2812B, sans longueur', () => {
     const doc = { schemaVersion: 1, devices: [{ id: 'led', templateId: 'led-strip', ports: [{ id: 'IN', label: 'IN', connector: 'pixel' }] }] }
     expect(migrate(doc)).toEqual({
-      schemaVersion: 2,
+      schemaVersion: 3,
       devices: [
         {
           id: 'led',
@@ -54,5 +54,11 @@ describe('migration 1 → 2', () => {
         }
       ]
     })
+  })
+})
+
+describe('migration 2 → 3', () => {
+  it('2 → 3 : seul le numéro de version change', () => {
+    expect(migrate({ schemaVersion: 2, devices: [] })).toEqual({ schemaVersion: 3, devices: [] })
   })
 })

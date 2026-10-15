@@ -26,7 +26,17 @@ export const DmxPatchSchema = z.object({
   universe: DmxUniverseSchema.optional(),
   mode: z.string().optional()
 })
-export const DmxModeSchema = z.object({ name: z.string(), channels: DmxSlotSchema })
+// Noms des canaux DMX (spec canaux-dmx § 3.2) : params[i] nomme le canal i + 1 ; un trou est ''.
+export const DMX_PARAM_MAX = 60
+const DmxParamsSchema = z.array(z.string().max(DMX_PARAM_MAX)).max(512)
+export const DmxModeSchema = z.object({ name: z.string(), channels: DmxSlotSchema, params: DmxParamsSchema.optional() })
+// Liste d'un modèle + mode, dans le projet ou les réglages : clé (gabarit, modèle, mode), '' quand absent.
+export const DmxChannelListSchema = z.object({
+  templateId: z.string(),
+  model: z.string().optional(),
+  mode: z.string().optional(),
+  params: DmxParamsSchema
+})
 // modes[0] : le mode le plus courant, choisi à la création de l'appareil.
 export const TemplateDmxSchema = z.object({ footprint: DmxSlotSchema, modes: z.array(DmxModeSchema).min(1).optional() })
 // Alimentation : deux valeurs suffisent, la troisième se calcule (P = V × I).
@@ -165,7 +175,7 @@ export const VlanSchema = z.object({
 })
 
 export const ProjectSchema = z.object({
-  schemaVersion: z.literal(2),
+  schemaVersion: z.literal(3),
   meta: z.object({
     title: z.string(),
     course: z.string().optional(),
@@ -186,5 +196,6 @@ export const ProjectSchema = z.object({
   links: z.array(LinkSchema),
   zones: z.array(ZoneSchema),
   templates: z.array(DeviceTemplateSchema),
+  dmxChannels: z.array(DmxChannelListSchema).optional(),
   viewport: z.object({ x: z.number(), y: z.number(), zoom: z.number() }).optional()
 })

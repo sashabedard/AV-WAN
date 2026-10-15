@@ -2,6 +2,7 @@ import { Fragment } from 'react'
 import type { Project } from '../model/types'
 import type { DataTable } from '../../../shared/tables'
 import { deviceSheets } from '../reports/deviceSheets'
+import { CHANNEL_COLUMNS, channelBlocks } from '../reports/channelSheets'
 import { PATCH_PDF_COLUMNS, patchGroups } from '../reports/patch'
 import { POWER_PDF_COLUMNS, PSU_COLUMNS, powerBudget } from '../reports/powerBudget'
 import { formatFr } from '../model/fields'
@@ -65,6 +66,26 @@ export function PatchPage({ project }: { project: Project }) {
           />
         </div>
       ))}
+    </section>
+  )
+}
+
+// Section « Canaux DMX » : un bloc par appareil, adresses réelles, sur trois colonnes (spec canaux-dmx § 5).
+export function ChannelsPage({ project }: { project: Project }) {
+  const blocks = channelBlocks(project)
+  return (
+    <section className="pg pg--sheet">
+      <h2 className="pg__h">Canaux DMX</h2>
+      {blocks.length === 0 && <p className="pg__empty">Aucun canal nommé. Les canaux se nomment dans l’inspecteur, section Patch DMX.</p>}
+      <div className="cs">
+        {blocks.map((b) => (
+          <article key={b.deviceId} className="cs__block">
+            <h3 className="cs__h">{b.title}</h3>
+            {b.subtitle && <p className="cs__sub">{b.subtitle}</p>}
+            <ReportTable table={{ id: `canaux-${b.deviceId}`, title: b.title, columns: CHANNEL_COLUMNS, rows: b.rows }} />
+          </article>
+        ))}
+      </div>
     </section>
   )
 }

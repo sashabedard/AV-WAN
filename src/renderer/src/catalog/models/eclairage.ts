@@ -1,4 +1,5 @@
 // Éclairage nommé (spec patch-puissance-catalogue § 7). Chaque valeur vient de la source citée au-dessus du gabarit.
+// Le `model` d’un gabarit fait partie de la clé des listes de canaux des utilisateurs : le garder stable (le changer détache leurs listes modifiées).
 import type { DeviceTemplate } from '../../model/types'
 import { ic } from '../ic'
 import { dmxThru, range, rj45, simple } from '../ports'
@@ -10,6 +11,7 @@ export const LIGHTING_MODELS: readonly DeviceTemplate[] = [
   // Source : https://chauvetprofessional.com/wp-content/uploads/2018/10/ROGUE_R2X_Spot_UM_Rev6.pdf (manuel du fabricant, rév. 6)
   // et https://chauvetprofessional.com/products/rogue-r2x-spot (consultés le 2026-10-14)
   // Deux personnalités, 18CH et 21CH ; DMX par XLR 3 et 5 broches, aucune entrée réseau ; 488 W à 120 V (480–488 W selon la tension).
+  // Noms des canaux : https://chauvetprofessional.com/wp-content/uploads/2018/10/ROGUE_R2X_Spot_UM_Rev6.pdf (Rogue R2X Spot User Manual, rév. 6), section « DMX Values », tableaux 18CH (pp. 23–25) et 21CH (pp. 20–23), consulté le 2026-10-15
   {
     id: 'chauvet-rogue-r2x-spot',
     category: 'eclairage',
@@ -23,8 +25,8 @@ export const LIGHTING_MODELS: readonly DeviceTemplate[] = [
     dmx: {
       footprint: 18,
       modes: [
-        { name: '18CH', channels: 18 },
-        { name: '21CH', channels: 21 }
+        { name: '18CH', channels: 18, params: ['Pan', 'Fine Pan', 'Tilt', 'Fine Tilt', 'Pan/Tilt Speed', 'Dimmer', 'Shutter', 'Color Wheel 2', 'Color Wheel 1', 'Gobo Wheel 1', 'Gobo Wheel 1 Rotate', 'Gobo Wheel 2', 'Focus', 'Prism', 'Prism Rotate', 'Iris', 'Frost', 'Control'] },
+        { name: '21CH', channels: 21, params: ['Pan', 'Fine Pan', 'Tilt', 'Fine Tilt', 'Pan/Tilt Speed', 'Dimmer', 'Fine Dimmer', 'Shutter', 'Color Wheel 2', 'Color Wheel 1', 'Gobo Wheel 1', 'Gobo Wheel 1 Rotate', 'Gobo Wheel 2', 'Focus', 'Prism', 'Prism Rotate', 'Iris', 'Frost', 'Movement Macros', 'Movement Macro Speed', 'Control'] }
       ]
     },
     note: 'Puissance maximale relevée à 120 V (480 à 488 W selon la tension). Ordre des modes (18CH d’abord) : choix, le manuel ne désigne pas de mode par défaut.'
@@ -32,6 +34,7 @@ export const LIGHTING_MODELS: readonly DeviceTemplate[] = [
   // Source : https://www.martin.com/en/products/mac-aura-xb (page produit du fabricant)
   // et manuel https://www.martin.com/en/site_elements/martin-mac-aura-xb-user-manual (v. C) et fiche https://www.martin.com/en/site_elements/mac-aura-xb-spec-sheet-english (consultés le 2026-10-14)
   // Modes STD (14 canaux) et EXT (25 canaux) ; 400 W maximum ; DMX par XLR 5 broches, aucune entrée réseau.
+  // Noms des canaux : manuel https://www.martin.com/en/site_elements/martin-mac-aura-xb-user-manual (P/N 35000280, rév. C), « DMX protocol », Table 2 « MAC Aura XB DMX Protocol », pp. 23–27 (colonnes Std. et Ext.), consulté le 2026-10-15
   {
     id: 'martin-mac-aura-xb',
     category: 'eclairage',
@@ -45,14 +48,15 @@ export const LIGHTING_MODELS: readonly DeviceTemplate[] = [
     dmx: {
       footprint: 14,
       modes: [
-        { name: 'Standard (STD)', channels: 14 },
-        { name: 'Étendu (EXT)', channels: 25 }
+        { name: 'Standard (STD)', channels: 14, params: ['Beam electronic shutter effect', 'Beam dimmer', 'Zoom', 'Pan', 'Pan fine', 'Tilt', 'Tilt fine', 'Fixture control settings', 'Beam color wheel effect', 'Beam red', 'Beam green', 'Beam blue', 'Beam white', 'Beam CTC (Color Temperature Control)'] },
+        { name: 'Étendu (EXT)', channels: 25, params: ['Beam electronic shutter effect', 'Beam dimmer', 'Zoom', 'Pan', 'Pan fine', 'Tilt', 'Tilt fine', 'Fixture control settings', 'Beam color wheel effect', 'Beam red', 'Beam green', 'Beam blue', 'Beam white', 'Beam CTC (Color Temperature Control)', 'FX1 select', 'FX1 adjust, sync speed adjust', 'FX2 select', 'FX2 adjust', 'Sync (FX synchronization)', 'Aura shutter and strobe effect', 'Aura dimmer', 'Aura color wheel effect', 'Aura red', 'Aura green', 'Aura blue'] }
       ]
     }
   },
   // Source : fiche technique Clay Paky Sharpy C61375 https://e-assist.tech/servlet/checkDocumentsFile?Id=2030 (fiche du fabricant, 08/2023)
   // et manuel d’instructions C61375, copie hébergée par 4Wall : https://cdn01.4wall.com/cms/rentals/files/f60ef02cea55e4.pdf (tableau « Channel function », consultés le 2026-10-14)
   // Modes Standard (16 canaux) et Vector (20 canaux) ; Art-Net / RDM annoncés mais aucune prise réseau nommée (ni fiche, ni manuel, ni page claypaky.it) ; 350 VA à 230 V (pas de puissance en watts publiée).
+  // Noms des canaux : manuel d’instructions C61375 IST005/001 – EN – Rev.G 05/2016, copie 4Wall https://cdn01.4wall.com/cms/rentals/files/f60ef02cea55e4.pdf, « Channel function », tableau « CHANNEL MODE » (colonnes STANDARD et VECTOR), p. 23, consulté le 2026-10-15
   {
     id: 'claypaky-sharpy',
     category: 'eclairage',
@@ -65,8 +69,8 @@ export const LIGHTING_MODELS: readonly DeviceTemplate[] = [
     dmx: {
       footprint: 16,
       modes: [
-        { name: 'Standard', channels: 16 },
-        { name: 'Vector', channels: 20 }
+        { name: 'Standard', channels: 16, params: ['Colour wheel', 'Stop / strobe', 'Dimmer', 'Static gobo change', 'Prism insertion', 'Prism rotation', 'Effects movement', 'Frost', 'Focus', 'Pan', 'Pan fine', 'Tilt', 'Tilt fine', 'Function', 'Reset', 'Lamp control (Lamp Dmx option ON)'] },
+        { name: 'Vector', channels: 20, params: ['Colour wheel', 'Stop / strobe', 'Dimmer', 'Static gobo change', 'Prism insertion', 'Prism rotation', 'Effects movement', 'Frost', 'Focus', 'Pan', 'Pan fine', 'Tilt', 'Tilt fine', 'Function', 'Reset', 'Lamp control (Lamp Dmx option ON)', 'Pan - tilt time', 'Colour time', 'Beam time', 'Gobo time'] }
       ]
     },
     note: 'Modèle d’origine (C61375, lampe 189 W). Puissance en watts non publiée par le fabricant : 350 VA à 230 V. Art-Net/RDM annoncés ; prise réseau non précisée par le fabricant.'
@@ -74,6 +78,7 @@ export const LIGHTING_MODELS: readonly DeviceTemplate[] = [
   // Source : https://www.robe.cz/res/downloads/catalogues/ROBE_MegaPointe_leaflet.pdf (fiche du fabricant : 2 modes, 39 et 34 canaux, 670 W, RJ45 Ethernet, Art-Net/sACN)
   // et table DMX Robe v1.5 « Mode 1 – Standard 16 bits, Mode 2 – Réduit 8 bits », copie hébergée par Storm Lighting :
   // https://cdn.stormltd.co.uk/content/2018/09/Robe_megaPointe_DMX.pdf (dernier canal : 39 en mode 1, 34 en mode 2) (consultées le 2026-10-14)
+  // Noms des canaux : « Robin MegaPointe – DMX protocol » version 1.5, copie Storm Lighting https://cdn.stormltd.co.uk/content/2018/09/Robe_megaPointe_DMX.pdf, colonnes de mode 1 et 2, pp. 1–11, consulté le 2026-10-15
   {
     id: 'robe-megapointe',
     category: 'eclairage',
@@ -88,14 +93,15 @@ export const LIGHTING_MODELS: readonly DeviceTemplate[] = [
     dmx: {
       footprint: 39,
       modes: [
-        { name: 'Mode 1 – Standard 16 bits', channels: 39 },
-        { name: 'Mode 2 – Réduit 8 bits', channels: 34 }
+        { name: 'Mode 1 – Standard 16 bits', channels: 39, params: ['Pan', 'Pan Fine', 'Tilt', 'Tilt fine', 'Pan/Tilt speed, Pan/Tilt time', 'Power/Special functions', 'Cyan', 'Magenta', 'Yellow', 'Colour wheel', 'Colour wheel - fine positioning', 'Virtual colour wheel', 'Effect Speed', 'CMY & Colour wheel time', 'Zoom & Focus & Frost & Prism time', 'Effect wheel positioning', 'Effect wheel rotation', 'Effect wheel animations', 'Static gobo wheel', 'Rotating gobo wheel', 'Rot. gobo indexing and rotation', 'Rot. gobo indexing/rotation - fine', 'Prism wheel 1', 'Prism wheel 1 indexing/rotation', 'Prism wheel 2', 'Prism wheel 2 indexing/rotation', 'Pattern selection', 'Pattern rotation and indexing', 'Beam shaper selection', 'Beam shaper rotation and indexing', 'Frost', 'Zoom', 'Zoom - fine', 'Focus', 'Focus Fine', 'Hot-Spot control', 'Shutter/ strobe', 'Dimmer intensity', 'Dimmer intensity - fine'] },
+        { name: 'Mode 2 – Réduit 8 bits', channels: 34, params: ['Pan', 'Pan Fine', 'Tilt', 'Tilt fine', 'Pan/Tilt speed, Pan/Tilt time', 'Power/Special functions', 'Cyan', 'Magenta', 'Yellow', 'Colour wheel', 'Virtual colour wheel', 'Effect Speed', 'CMY & Colour wheel time', 'Zoom & Focus & Frost & Prism time', 'Effect wheel positioning', 'Effect wheel rotation', 'Effect wheel animations', 'Static gobo wheel', 'Rotating gobo wheel', 'Rot. gobo indexing and rotation', 'Prism wheel 1', 'Prism wheel 1 indexing/rotation', 'Prism wheel 2', 'Prism wheel 2 indexing/rotation', 'Pattern selection', 'Pattern rotation and indexing', 'Beam shaper selection', 'Beam shaper rotation and indexing', 'Frost', 'Zoom', 'Focus', 'Hot-Spot control', 'Shutter/ strobe', 'Dimmer intensity'] }
       ]
     },
     note: 'Entrée Ethernet RJ45 (Art-Net, sACN) ; la fiche ne précise pas la vitesse du port.'
   },
   // Source : guide d’installation ETC ColorSource PAR v1.5 https://www.etcconnect.com/workarea/DownloadAsset.aspx?id=10737478060 (fabricant, consulté le 2026-10-14)
   // 4 modes DMX (tableau « DMX control channels ») ; consommation maximale 120 W ; « not Ethernet/data network compatible ».
+  // Noms des canaux : guide d’installation ColorSource PAR v1.5 (7412M2100-1.5 Rev A), https://www.etcconnect.com/workarea/DownloadAsset.aspx?id=10737478060, tableau « DMX control channels », p. 8 sur 12, consulté le 2026-10-15
   {
     id: 'etc-colorsource-par',
     category: 'eclairage',
@@ -109,10 +115,10 @@ export const LIGHTING_MODELS: readonly DeviceTemplate[] = [
     dmx: {
       footprint: 5,
       modes: [
-        { name: '5 canaux', channels: 5 },
-        { name: 'Direct', channels: 6 },
-        { name: 'RGB', channels: 3 },
-        { name: '1 canal', channels: 1 }
+        { name: '5 canaux', channels: 5, params: ['Intensity', 'Red', 'Green', 'Blue', 'Strobe'] },
+        { name: 'Direct', channels: 6, params: ['Intensity', 'Red', 'Green', 'Blue/Indigo', 'Lime', 'Strobe'] },
+        { name: 'RGB', channels: 3, params: ['Red', 'Green', 'Blue'] },
+        { name: '1 canal', channels: 1, params: ['Intensity'] }
       ]
     },
     note: 'Consommation maximale 120 W ; pas de réseau (les versions à RJ45 portent du DMX, pas de l’Ethernet).'
@@ -120,6 +126,7 @@ export const LIGHTING_MODELS: readonly DeviceTemplate[] = [
   // Source : manuel ETC Source Four LED Series 3 v1.2.0 (tableau « DMX Modes », colonne Lustr X8 ; « Maximum power consumption is 375 W »),
   // copie hébergée par UsedLighting : https://cdn01.usedlighting.com/products/files/f63fff00240f21.pdf
   // et page du fabricant https://shop.etcconnect.com/s4-s3-lustr-x8-etl-lteng-w-barl-svr (5 modes, 1–12 canaux ; XLR 5 broches, Multiverse sans fil) (consultés le 2026-10-14)
+  // Noms des canaux : manuel Source Four LED Series 3 v1.2.0 (7462M1200-1.2.0 Rev A), copie UsedLighting https://cdn01.usedlighting.com/products/files/f63fff00240f21.pdf, tableau « DMX Modes » (colonne Lustr X8 pour Direct), p. 14, consulté le 2026-10-15
   {
     id: 'etc-source-four-led-s3-lustr-x8',
     category: 'eclairage',
@@ -133,11 +140,11 @@ export const LIGHTING_MODELS: readonly DeviceTemplate[] = [
     dmx: {
       footprint: 12,
       modes: [
-        { name: 'Direct', channels: 12 },
-        { name: 'Expanded', channels: 11 },
-        { name: 'Studio', channels: 7 },
-        { name: '3 Ch RGB', channels: 3 },
-        { name: '1 Channel', channels: 1 }
+        { name: 'Direct', channels: 12, params: ['Intensity', 'Deep Red', 'Red', 'Amber', 'Lime', 'Green', 'Cyan', 'Blue', 'Indigo', 'Strobe', 'Curve', 'Fan'] },
+        { name: 'Expanded', channels: 11, params: ['Intensity', 'CCT', 'Tint', 'Tuning', 'Mix', 'Red', 'Green', 'Blue', 'Strobe', 'Curve', 'Fan'] },
+        { name: 'Studio', channels: 7, params: ['Intensity', 'CCT', 'Tint', 'Tuning', 'Strobe', 'Curve', 'Fan'] },
+        { name: '3 Ch RGB', channels: 3, params: ['Red', 'Green', 'Blue'] },
+        { name: '1 Channel', channels: 1, params: ['Intensity'] }
       ]
     },
     note: 'Mode Direct par défaut. Consommation maximale 375 W (≈ 307 W typique à pleine intensité sur 120 V).'
@@ -145,6 +152,7 @@ export const LIGHTING_MODELS: readonly DeviceTemplate[] = [
   // Source : https://www.martin.com/en/products/atomic-3000-led, manuel https://www.martin.com/en/site_elements/martin-manuals-atomic-3000-led-user-manual (v. C)
   // et fiche https://www.martin.com/en/site_elements/atomic-3000-led-spec-sheet-english (consultés le 2026-10-14)
   // Modes 3 canaux, 4 canaux et Extended (14 canaux) ; 740 W maximum ; DMX par XLR 5 broches, pas de réseau.
+  // Noms des canaux : manuel https://www.martin.com/en/site_elements/martin-manuals-atomic-3000-led-user-manual (P/N 35000290, rév. C), « DMX protocol », tableaux 2 (3 canaux), 3 (4 canaux, p. 26) et 4 (Extended, pp. 27–29), consulté le 2026-10-15
   {
     id: 'martin-atomic-3000-led',
     category: 'eclairage',
@@ -158,15 +166,16 @@ export const LIGHTING_MODELS: readonly DeviceTemplate[] = [
     dmx: {
       footprint: 4,
       modes: [
-        { name: '4 canaux', channels: 4 },
-        { name: 'Extended', channels: 14 },
-        { name: '3 canaux', channels: 3 }
+        { name: '4 canaux', channels: 4, params: ['Beam flash intensity', 'Beam flash duration', 'Beam flash rate', 'Beam special effects'] },
+        { name: 'Extended', channels: 14, params: ['Beam flash intensity', 'Beam flash duration', 'Beam flash rate', 'Beam special effects', 'Control / settings', 'FX select', 'FX adjustment', 'FX synchronization', 'Aura strobe/shutter effect', 'Aura dimmer', 'Aura red', 'Aura green', 'Aura blue', 'Aura color presets (‘color wheel’ effect)'] },
+        { name: '3 canaux', channels: 3, params: ['Beam flash intensity', 'Beam flash duration', 'Beam flash rate'] }
       ]
     },
     note: 'Le mode 4 canaux est celui de l’Atomic 3000 xénon d’origine ; le fabricant ne désigne pas de mode par défaut.'
   },
   // Source (brochure du fabricant, copie hébergée par CCS Light & Sound, pas de page fabricant accessible) : https://www.ccslightsound.com.au/assets/brochures/KIT-358.pdf (consultée le 2026-10-14)
   // DMX 512 sur deux canaux consécutifs (pompe et ventilateur), « Power requirement 1500 Watt » ; pas de réseau.
+  // Noms des canaux (ordre pompe puis ventilateur) : manuel d’utilisation https://www.looksolutions.com/uploads/pdf/en_fr/bed_unique21_1e.pdf (version 05/2021), § 5.4.1 « Operating via DMX 512 », p. 11, confirmé § 5.4.1.2 p. 12, consulté le 2026-10-15
   {
     id: 'look-unique-2-1',
     category: 'eclairage',
@@ -177,12 +186,13 @@ export const LIGHTING_MODELS: readonly DeviceTemplate[] = [
     icon: ic('fog'),
     ports: dmxThru(),
     powerW: 1500,
-    dmx: { footprint: 2, modes: [{ name: 'Pompe et ventilateur', channels: 2 }] },
+    dmx: { footprint: 2, modes: [{ name: 'Pompe et ventilateur', channels: 2, params: ['Pump', 'Fan'] }] },
     note: 'Deux canaux consécutifs : pompe, puis ventilateur. Une seule configuration DMX annoncée.'
   },
   // Source : fiche technique MDG theONE https://goknight.com/content/documentation/Product-data-sheet_theONE.pdf (fiche du fabricant MDG, copie hébergée par Knight)
   // et guide de démarrage rapide MDG https://goknight.com/content/documentation/theONE_Quick_Start_Rev_Ba.pdf (copie hébergée par Knight) (consultés le 2026-10-14)
   // « The Interface uses five (5) DMX channels » ; 1100–1480 W ; DMX XLR 5 broches et nœud RJ45 (Art-Net, sACN).
+  // Noms des canaux : guide de démarrage rapide MDG, rév. B/a, février 2022 (déjà cité), « Working with DMX/RDM Control », p. 2 ; le guide ne donne que les libellés de valeurs, les noms en sont tirés, consulté le 2026-10-15
   {
     id: 'mdg-theone',
     category: 'eclairage',
@@ -194,7 +204,7 @@ export const LIGHTING_MODELS: readonly DeviceTemplate[] = [
     ports: [...dmxThru(), rj45('ETH')],
     powerW: 1480,
     defaults: { vlanId: 50 },
-    dmx: { footprint: 5, modes: [{ name: 'Standard', channels: 5 }] },
+    dmx: { footprint: 5, modes: [{ name: 'Standard', channels: 5, params: ['Unit off / on', 'Mode haze / fog', 'Fog output', 'Fog off / on', 'External fan'] }] },
     note: 'Puissance de 1 100 à 1 480 W (valeur maximale retenue) ; la fiche ne précise pas la vitesse du port RJ45.'
   },
 

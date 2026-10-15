@@ -56,7 +56,7 @@ describe('parseFragment', () => {
   it('relit un fragment sérialisé et refuse tout le reste', () => {
     const p = sampleProject()
     const f = copyFragment(p, ['sw1', 'cam1'])!
-    expect(parseFragment(serializeFragment(f))).toEqual(f)
+    expect(parseFragment(serializeFragment(f))).toEqual({ ...f, dmxChannels: [] })
     expect(parseFragment('{pas du json')).toBeNull()
     expect(parseFragment(JSON.stringify({ devices: [], links: [] }))).toBeNull()
     expect(parseFragment(JSON.stringify({ avwanFragment: 1, devices: 'non', links: [] }))).toBeNull()
@@ -89,7 +89,7 @@ describe('composantes perso dans le presse-papiers', () => {
 
   it('relit un fragment sans composantes (copié par une version précédente)', () => {
     const old = JSON.stringify({ avwanFragment: 1, devices: [], links: [] })
-    expect(parseFragment(old)).toEqual({ devices: [], links: [], templates: [] })
+    expect(parseFragment(old)).toEqual({ devices: [], links: [], templates: [], dmxChannels: [] })
   })
 })
 
@@ -155,5 +155,30 @@ describe('patch et presse-papiers', () => {
     const p = patched()
     copyFragment(p, ['f1'])
     expect(p.devices.find((d) => d.id === 'f1')!.dmx?.universe).toBeUndefined()
+  })
+})
+
+describe('presse-papier : listes de canaux DMX', () => {
+  const WASH = { templateId: 'dmx-fixture', model: 'Wash', mode: '9CH' }
+  function withWash(params: string[]): Project {
+    const p = createProject(new Date(2026, 9, 15))
+    const w = { ...createDevice(p, 'dmx-fixture', { x: 0, y: 0 }, { id: 'w' }), model: 'Wash', dmx: { footprint: 9, mode: '9CH' } }
+    const cam = createDevice({ ...p, devices: [w] }, 'ptz-ndi', { x: 0, y: 0 }, { id: 'cam' })
+    return { ...p, devices: [w, cam], dmxChannels: [{ ...WASH, params }, { templateId: 'autre', params: ['X'] }] }
+  }
+
+  it('la copie emporte seulement les listes des appareils copiés', () => {
+    const f = copyFragment(withWash(['Red']), ['w'])!
+    expect(f.dmxChannels).toEqual([{ ...WASH, params: ['Red'] }])
+    expect(copyFragment(withWash(['Red']), ['cam'])!.dmxChannels).toBeUndefined()
+    expect(parseFragment(serializeFragment(f))?.dmxChannels).toEqual([{ ...WASH, params: ['Red'] }])
+  })
+
+  it('le collage ajoute les listes absentes ; celles du projet cible gagnent', () => {
+    const f = copyFragment(withWash(['Theirs']), ['w'])!
+    const empty = createProject(new Date(2026, 9, 15))
+    expect(pasteFragment(empty, f, { x: 10, y: 10 }).project.dmxChannels).toEqual([{ ...WASH, params: ['Theirs'] }])
+    const mine = { ...empty, dmxChannels: [{ ...WASH, params: ['Mine'] }] }
+    expect(pasteFragment(mine, f, { x: 10, y: 10 }).project.dmxChannels).toEqual([{ ...WASH, params: ['Mine'] }])
   })
 })

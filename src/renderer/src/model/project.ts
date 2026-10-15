@@ -17,7 +17,7 @@ function localDate(now: Date): string {
 
 export function createProject(now: Date = new Date()): Project {
   return {
-    schemaVersion: 2,
+    schemaVersion: 3,
     meta: { title: 'Nouveau projet', authors: [], date: localDate(now), revision: 'A', status: 'conception' },
     settings: { colorMode: 'vlan', pageFormat: 'na', cableIdPrefix: 'C-', snapToGrid: true },
     vlans: DEFAULT_PROJECT_VLAN_IDS.map((id) => vlanPreset(id)),

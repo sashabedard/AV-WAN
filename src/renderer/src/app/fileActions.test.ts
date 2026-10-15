@@ -22,6 +22,7 @@ function fakeApi(file: Partial<AvwanApi['file']> = {}): AvwanApi {
       findNewer: vi.fn(async () => null)
     },
     library: { list: vi.fn(async () => []), save: vi.fn(async () => undefined), remove: vi.fn(async () => undefined) },
+    dmxChannels: { read: async () => null, write: async () => undefined },
     onMenu: () => () => undefined,
     onOpenRequest: () => () => undefined,
     rendererReady: vi.fn(),
@@ -83,7 +84,7 @@ describe('fileActions', () => {
 
   it('ouvre en lecture seule un fichier plus récent, sans chemin (Enregistrer sous obligatoire)', async () => {
     vi.stubGlobal('window', { avwan: fakeApi(), confirm: () => true })
-    const text = serializeProject(sampleProject()).replace('"schemaVersion": 2', '"schemaVersion": 3')
+    const text = serializeProject(sampleProject()).replace('"schemaVersion": 3', '"schemaVersion": 4')
     expect(await loadFromText('/tmp/futur.avwan', text)).toBe(true)
     expect(projectStore.getState().readOnly).toBe(true)
     expect(projectStore.getState().filePath).toBeNull()
@@ -236,7 +237,7 @@ describe('restauration', () => {
 
   it('une copie d’une version plus récente se restaure en lecture seule', async () => {
     const api = fakeApi()
-    const future = JSON.stringify({ ...sampleProject(), schemaVersion: 3 })
+    const future = JSON.stringify({ ...sampleProject(), schemaVersion: 4 })
     vi.mocked(api.recovery.restore).mockResolvedValue({ key: 'f-0123456789abcdef', path: '/x/salle-b.avwan', text: future })
     vi.stubGlobal('window', { avwan: api, confirm: () => true })
     expect(await restoreRecoveryAction('f-0123456789abcdef')).toBe(true)

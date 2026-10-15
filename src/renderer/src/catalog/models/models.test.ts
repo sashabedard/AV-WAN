@@ -70,3 +70,29 @@ describe('vidéo nommée', () => {
     expect(d.ports.some((x) => isUniverseOutput(p, d, x))).toBe(false)
   })
 })
+
+describe('éclairage : noms des canaux DMX', () => {
+  const modes = LIGHTING_MODELS.flatMap((t) => (t.dmx?.modes ?? []).map((m) => ({ t, m })))
+
+  it('chaque mode sourcé a exactement un nom par canal, non vide, de 60 caractères au plus', () => {
+    for (const { t, m } of modes) {
+      if (!m.params) continue
+      expect(m.params, `${t.id} · ${m.name}`).toHaveLength(m.channels)
+      for (const p of m.params) {
+        expect(p.trim(), `${t.id} · ${m.name}`).not.toBe('')
+        expect(p.length, `${t.id} · ${m.name}`).toBeLessThanOrEqual(60)
+      }
+    }
+  })
+
+  it('un mode sans noms est expliqué dans la note du gabarit', () => {
+    for (const { t, m } of modes) {
+      if (m.params) continue
+      expect(t.note ?? '', `${t.id} · ${m.name} : sans noms, la note doit dire pourquoi`).toContain(m.name)
+    }
+  })
+
+  it('au moins un mode sourcé par appareil nommé', () => {
+    for (const t of LIGHTING_MODELS.filter((x) => x.dmx?.modes)) expect(t.dmx!.modes!.some((m) => m.params), t.id).toBe(true)
+  })
+})

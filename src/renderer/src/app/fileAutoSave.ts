@@ -1,8 +1,7 @@
 import { useEffect } from 'react'
 import type { StoreApi } from 'zustand/vanilla'
 import type { Project } from '../model/types'
-import { serializeProject } from '../model/file'
-import { pruneTemplates } from '../model/customTemplate'
+import { fileTextOf } from './fileText'
 import { isDirty, projectStore, type ProjectState } from '../store/projectStore'
 import { uiStore } from '../store/uiStore'
 import { autosave } from './autosave'
@@ -27,7 +26,7 @@ export interface FileAutoSave {
   stop(): void
 }
 
-const fileText = (project: Project): string => serializeProject(pruneTemplates(project))
+const fileText = (project: Project): string => fileTextOf(project)
 
 // Enregistrement automatique (spec § 3) : le fichier est écrit 2 s après la dernière modification, tout de
 // suite à la perte de focus, et de façon synchrone à la fermeture. Un projet sans titre reçoit son fichier

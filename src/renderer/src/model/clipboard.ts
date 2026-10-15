@@ -1,9 +1,10 @@
 // src/renderer/src/model/clipboard.ts
 import { z } from 'zod'
-import type { Device, DeviceTemplate, Link, Project } from './types'
-import { DeviceSchema, DeviceTemplateSchema, LinkSchema } from './schema'
+import type { Device, DeviceTemplate, DmxChannelList, Link, Project } from './types'
+import { DeviceSchema, DeviceTemplateSchema, DmxChannelListSchema, LinkSchema } from './schema'
 import { withTemplate } from './customTemplate'
 import { canConnectPorts, nextCableId } from './rules'
+import { channelKey, keyId, listKey, mergeProjectLists } from './dmxChannels'
 import { newId } from './project'
 import { nextFreeAddress, patchIndex, type PatchIndex, type PatchRange } from './dmx'
 
@@ -14,13 +15,16 @@ export interface Fragment {
   links: Link[]
   // Composantes perso des appareils copiés : le collage les embarque dans le projet cible.
   templates?: DeviceTemplate[]
+  // Listes de canaux DMX des appareils copiés (le projet cible garde les siennes).
+  dmxChannels?: DmxChannelList[]
 }
 
 const FragmentSchema = z.object({
   avwanFragment: z.literal(1),
   devices: z.array(DeviceSchema),
   links: z.array(LinkSchema),
-  templates: z.array(DeviceTemplateSchema).optional()
+  templates: z.array(DeviceTemplateSchema).optional(),
+  dmxChannels: z.array(DmxChannelListSchema).optional()
 })
 
 export function copyFragment(project: Project, deviceIds: readonly string[]): Fragment | null {
@@ -37,17 +41,22 @@ export function copyFragment(project: Project, deviceIds: readonly string[]): Fr
     const u = index.entries.get(d.id)?.universe
     return u ? { ...d, dmx: { ...d.dmx, universe: u.universe } } : d
   })
-  return structuredClone({ devices: frozen, links, templates })
+  const keys = new Set(devices.flatMap((d) => {
+    const k = channelKey(d)
+    return k ? [keyId(k)] : []
+  }))
+  const dmxChannels = (project.dmxChannels ?? []).filter((l) => keys.has(keyId(listKey(l))))
+  return structuredClone({ devices: frozen, links, templates, ...(dmxChannels.length > 0 ? { dmxChannels } : {}) })
 }
 
 export function serializeFragment(f: Fragment): string {
-  return JSON.stringify({ avwanFragment: 1, devices: f.devices, links: f.links, templates: f.templates ?? [] })
+  return JSON.stringify({ avwanFragment: 1, devices: f.devices, links: f.links, templates: f.templates ?? [], dmxChannels: f.dmxChannels ?? [] })
 }
 
 export function parseFragment(text: string): Fragment | null {
   try {
     const r = FragmentSchema.safeParse(JSON.parse(text))
-    return r.success ? { devices: r.data.devices, links: r.data.links, templates: r.data.templates ?? [] } : null
+    return r.success ? { devices: r.data.devices, links: r.data.links, templates: r.data.templates ?? [], dmxChannels: r.data.dmxChannels ?? [] } : null
   } catch {
     return null
   }
@@ -78,7 +87,7 @@ export function pasteFragment(
   offset: { x: number; y: number },
   makeId: () => string = newId
 ): { project: Project; deviceIds: string[]; linkIds: string[] } {
-  let p = (fragment.templates ?? []).reduce(withTemplate, project)
+  let p = mergeProjectLists((fragment.templates ?? []).reduce(withTemplate, project), fragment.dmxChannels ?? [])
   // L'index est calculé une fois ; la plage de chaque copie s'ajoute à une liste locale (jamais à l'index en cache)
   // pour que les copies suivantes la voient. Les câbles des copies n'arrivent qu'après : ils ne changent aucun univers ici.
   const base = patchIndex(p)
