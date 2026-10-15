@@ -33,6 +33,10 @@ const api: AvwanApi = {
     save: (id, text) => ipcRenderer.invoke(IPC.librarySave, id, text),
     remove: (id) => ipcRenderer.invoke(IPC.libraryRemove, id)
   },
+  dmxChannels: {
+    read: () => ipcRenderer.invoke(IPC.dmxChannelsRead),
+    write: (text) => ipcRenderer.invoke(IPC.dmxChannelsWrite, text)
+  },
   export: {
     pdf: (projectText, options, suggestedName) => ipcRenderer.invoke(IPC.exportPdf, projectText, options, suggestedName),
     csv: (tables, suggestedName) => ipcRenderer.invoke(IPC.exportCsv, tables, suggestedName),

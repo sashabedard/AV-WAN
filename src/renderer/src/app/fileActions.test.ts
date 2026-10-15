@@ -22,6 +22,7 @@ function fakeApi(file: Partial<AvwanApi['file']> = {}): AvwanApi {
       findNewer: vi.fn(async () => null)
     },
     library: { list: vi.fn(async () => []), save: vi.fn(async () => undefined), remove: vi.fn(async () => undefined) },
+    dmxChannels: { read: async () => null, write: async () => undefined },
     onMenu: () => () => undefined,
     onOpenRequest: () => () => undefined,
     rendererReady: vi.fn(),

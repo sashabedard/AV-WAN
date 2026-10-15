@@ -74,6 +74,11 @@ export interface AvwanApi {
     save(id: string, text: string): Promise<void>
     remove(id: string): Promise<void>
   }
+  // Listes de canaux DMX des réglages (userData/dmx-channels.json), validées par le renderer.
+  dmxChannels: {
+    read(): Promise<string | null>
+    write(text: string): Promise<void>
+  }
   export: {
     pdf(projectText: string, options: PdfOptions, suggestedName: string): Promise<string | null>
     csv(tables: DataTable[], suggestedName: string): Promise<string[] | null>
@@ -126,6 +131,8 @@ export const IPC = {
   libraryList: 'library:list',
   librarySave: 'library:save',
   libraryRemove: 'library:remove',
+  dmxChannelsRead: 'dmxChannels:read',
+  dmxChannelsWrite: 'dmxChannels:write',
   exportPdf: 'export:pdf',
   exportCsv: 'export:csv',
   exportXlsx: 'export:xlsx',
