@@ -13,10 +13,11 @@ export interface DmxChannelsState {
   remove(key: ChannelKey): Promise<void>
 }
 
-// Réglages (spec canaux-dmx § 3.5) : listes valables pour tous les projets. Le store ne change qu'après une
-// écriture réussie ; les écritures passent l'une après l'autre (chacune repart de la liste à jour).
+// Réglages (spec canaux-dmx § 3.5) : listes valables pour tous les projets. Les écritures passent l'une après
+// l'autre ; chacune relit le fichier d'abord (une autre fenêtre a pu l'écrire depuis notre dernière lecture, sa liste
+// ne doit pas être perdue), n'écrit que s'il change, puis le store prend le résultat. Un échec ne change pas le store.
 export function createDmxChannelsStore(api: () => ChannelsApi): StoreApi<DmxChannelsState> {
-  return createStore<DmxChannelsState>()((set, get) => {
+  return createStore<DmxChannelsState>()((set) => {
     let queue: Promise<void> = Promise.resolve()
     const serial = (op: () => Promise<void>): Promise<void> => {
       const run = queue.then(op)
@@ -25,9 +26,9 @@ export function createDmxChannelsStore(api: () => ChannelsApi): StoreApi<DmxChan
     }
     const write = (next: (lists: readonly DmxChannelList[]) => readonly DmxChannelList[]): Promise<void> =>
       serial(async () => {
-        const lists = next(get().lists)
-        if (lists === get().lists) return
-        await api().write(serializeSettingsLists(lists))
+        const fresh = parseSettingsLists(await api().read())
+        const lists = next(fresh)
+        if (lists !== fresh) await api().write(serializeSettingsLists(lists))
         set({ lists })
       })
     return {
