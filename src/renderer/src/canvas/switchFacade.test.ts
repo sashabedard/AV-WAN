@@ -26,6 +26,23 @@ describe('switchFacade', () => {
     expect(p2).toMatchObject({ row: 'bottom', y: 62, x: p1.x })
   })
 
+  it('24 ports + 3 SFP+ : trois positions distinctes, sans NaN, plus large que 24 + 2', () => {
+    const f3 = switchFacade(buildSwitchPorts({ portCount: 24, poe: 'none', sfpPlus: 3, managed: true }))
+    const f2 = switchFacade(buildSwitchPorts({ portCount: 24, poe: 'none', sfpPlus: 2, managed: true }))
+    const sfp = f3.ports.filter((p) => p.kind === 'sfp+')
+    expect(sfp).toHaveLength(3)
+    expect(new Set(sfp.map((p) => `${p.x},${p.y}`)).size).toBe(3)
+    for (const p of f3.ports) for (const v of [p.x, p.y, p.w, p.h]) expect(Number.isNaN(v)).toBe(false)
+    expect(Number.isNaN(f3.width)).toBe(false)
+    expect(f3.width).toBeGreaterThanOrEqual(f2.width)
+  })
+
+  it('buildSwitchPorts : 3 SFP+ nommés SFP+1…SFP+3, libellés S1…S3', () => {
+    const sfp = buildSwitchPorts({ portCount: 24, poe: 'at', sfpPlus: 3, managed: true }).filter((p) => p.connector === 'sfp+')
+    expect(sfp.map((p) => p.id)).toEqual(['SFP+1', 'SFP+2', 'SFP+3'])
+    expect(sfp.map((p) => p.label)).toEqual(['S1', 'S2', 'S3'])
+  })
+
   it('48 ports occupent 24 colonnes', () => {
     const f = switchFacade(buildSwitchPorts({ portCount: 48, poe: 'at', sfpPlus: 4, managed: true }))
     const xs = new Set(f.ports.filter((p) => p.kind === 'rj45').map((p) => p.x))

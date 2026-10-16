@@ -67,7 +67,7 @@ export const SwitchSpecSchema = z.object({
   portCount: z.union([z.literal(4), z.literal(5), z.literal(8), z.literal(12), z.literal(16), z.literal(24), z.literal(48)]),
   poe: z.enum(['none', 'af', 'at', 'bt']),
   poeBudgetW: z.number().nonnegative().optional(),
-  sfpPlus: z.union([z.literal(0), z.literal(2), z.literal(4)]),
+  sfpPlus: z.number().int().min(0).max(4),
   managed: z.boolean()
 })
 

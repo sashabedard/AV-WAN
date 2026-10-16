@@ -22,6 +22,16 @@ describe('SwitchConfigurator', () => {
     expect(onSubmit).toHaveBeenCalledWith({ portCount: 24, poe: 'at', poeBudgetW: 400, sfpPlus: 2, managed: true })
   })
 
+  it('propose 3 cages SFP+ et le résumé suit', async () => {
+    const user = userEvent.setup()
+    const onSubmit = vi.fn()
+    render(<SwitchConfigurator initial={{ ...initial, portCount: 24, poeBudgetW: 400 }} submitLabel="Créer" onSubmit={onSubmit} onCancel={() => undefined} />)
+    await user.click(within(screen.getByRole('group', { name: 'Cages SFP+' })).getByRole('button', { name: '3' }))
+    expect(screen.getByTestId('cfg-summary').textContent).toBe('24×PoE+ · 3×SFP+')
+    await user.click(screen.getByRole('button', { name: 'Créer' }))
+    expect(onSubmit).toHaveBeenCalledWith({ portCount: 24, poe: 'at', poeBudgetW: 400, sfpPlus: 3, managed: true })
+  })
+
   it('garde un budget saisi à la main et le retire sans PoE', async () => {
     const user = userEvent.setup()
     const onSubmit = vi.fn()

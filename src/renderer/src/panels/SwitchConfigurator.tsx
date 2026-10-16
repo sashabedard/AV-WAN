@@ -22,7 +22,7 @@ export interface SwitchConfiguratorProps {
 }
 
 const PORT_OPTIONS = SWITCH_PORT_COUNTS.map((n) => ({ value: String(n), label: String(n) }))
-const SFP_OPTIONS = [0, 2, 4].map((n) => ({ value: String(n), label: String(n) }))
+const SFP_OPTIONS = [0, 1, 2, 3, 4].map((n) => ({ value: String(n), label: String(n) }))
 
 export function SwitchConfigurator({ initial, submitLabel, onSubmit, onCancel }: SwitchConfiguratorProps) {
   const { m } = useT()
@@ -94,7 +94,7 @@ export function SwitchConfigurator({ initial, submitLabel, onSubmit, onCancel }:
           ariaLabel={m.switchConfigurator.sfpCages}
           options={SFP_OPTIONS}
           value={String(spec.sfpPlus)}
-          onChange={(v) => update({ sfpPlus: Number(v) as SwitchSpec['sfpPlus'] })}
+          onChange={(v) => update({ sfpPlus: Number(v) })}
         />
       </div>
       <label className="field--inline">

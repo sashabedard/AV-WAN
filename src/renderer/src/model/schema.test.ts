@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { DeviceSchema, DeviceTemplateSchema, IconRefSchema, PortStateSchema, ProjectSchema } from './schema'
+import { SwitchSpecSchema, DeviceSchema, DeviceTemplateSchema, IconRefSchema, PortStateSchema, ProjectSchema } from './schema'
 import { sampleProject } from './__fixtures__/sample'
 
 describe('ProjectSchema', () => {
@@ -74,5 +74,16 @@ describe('schéma v2 : patch, puissance, bandes', () => {
 
   it('accepte la prise et le câble « Alim DC »', () => {
     expect(DeviceSchema.safeParse({ ...device, ports: [{ id: 'DC-IN', label: 'DC IN', connector: 'dc' }] }).success).toBe(true)
+  })
+})
+
+describe('SwitchSpecSchema', () => {
+  const base = { portCount: 24, poe: 'at', managed: true }
+  it('accepte 0 à 4 cages SFP+, impairs compris', () => {
+    for (const n of [0, 1, 2, 3, 4]) expect(SwitchSpecSchema.safeParse({ ...base, sfpPlus: n }).success).toBe(true)
+  })
+  it('refuse 5 et 2,5 cages', () => {
+    expect(SwitchSpecSchema.safeParse({ ...base, sfpPlus: 5 }).success).toBe(false)
+    expect(SwitchSpecSchema.safeParse({ ...base, sfpPlus: 2.5 }).success).toBe(false)
   })
 })
