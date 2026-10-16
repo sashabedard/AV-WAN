@@ -2,6 +2,7 @@ import { useRef } from 'react'
 import { isDirty, useProjectStore } from '../store/projectStore'
 import { fileNameOf } from './fileName'
 import { BrandMark } from './BrandMark'
+import { LangToggle } from './LangToggle'
 import { ThemeToggle } from './ThemeToggle'
 import { uiStore } from '../store/uiStore'
 import { Icon } from '../icons/Icon'
@@ -48,6 +49,7 @@ export function TopBar() {
       <button type="button" className="topbar__btn" title="Exporter le PDF, le CSV ou le classeur Excel (⌘E)" onClick={() => uiStore.getState().setExportOpen(true)}>
         Exporter
       </button>
+      <LangToggle />
       <ThemeToggle />
     </header>
   )

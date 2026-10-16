@@ -4,5 +4,6 @@ import { menu } from './menu'
 import { dialogs } from './dialogs'
 import { errors } from './errors'
 import { update } from './update'
+import { topbar } from './topbar'
 
-export const en: Messages = { common, menu, dialogs, errors, update }
+export const en: Messages = { common, menu, dialogs, errors, update, topbar }

@@ -1,9 +1,10 @@
 // src/renderer/src/app/Welcome.tsx
 import { useEffect, useState } from 'react'
-import { messages } from '../../../shared/i18n/messages'
+import { useT } from '../i18n/useT'
 import { createExampleProject } from '../samples/exampleProject'
 import { projectStore } from '../store/projectStore'
 import { uiStore, useUiStore } from '../store/uiStore'
+import { LangToggle } from './LangToggle'
 import { BrandMark } from './BrandMark'
 import { openProjectAction, openRecentAction } from './fileActions'
 import { fileNameOf } from './fileName'
@@ -11,6 +12,7 @@ import { RecoveryBanner } from './RecoveryBanner'
 
 export function Welcome() {
   const open = useUiStore((s) => s.welcome)
+  const { m } = useT()
   const [recent, setRecent] = useState<string[]>([])
   useEffect(() => {
     if (!open) return
@@ -26,11 +28,14 @@ export function Welcome() {
           if (e.key === 'Escape') close()
         }}
       >
+        <div className="welcome__lang">
+          <LangToggle />
+        </div>
         <BrandMark size={56} />
         <h1 className="welcome__word">
           AV<span className="wordmark__dot">·</span>WAN
         </h1>
-        <p className="welcome__sub">{messages(window.avwan.initialLang).common.appSubtitle}</p>
+        <p className="welcome__sub">{m.common.appSubtitle}</p>
         <p className="welcome__tagline">Planifier. Brancher. Documenter.</p>
         <RecoveryBanner />
         <div className="welcome__actions">
