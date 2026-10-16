@@ -108,16 +108,16 @@ They are added in one click. Everything stays editable: numbers, colors, subnets
 
 | | ID | Name | Subnet | Key UniFi settings |
 |---|---|---|---|---|
-| <img src="https://img.shields.io/badge/%20-%20-8E969F?style=flat-square" height="14"> | 10 | Gestion (Management) | 10.10.10.0/24 | Network Isolation |
-| <img src="https://img.shields.io/badge/%20-%20-A78BFA?style=flat-square" height="14"> | 20 | Contrôle / OSC (Control) | 10.20.0.0/24 | IGMP Snooping, Querier, mDNS |
+| <img src="https://img.shields.io/badge/%20-%20-8E969F?style=flat-square" height="14"> | 10 | Management | 10.10.10.0/24 | Network Isolation |
+| <img src="https://img.shields.io/badge/%20-%20-A78BFA?style=flat-square" height="14"> | 20 | Control / OSC | 10.20.0.0/24 | IGMP Snooping, Querier, mDNS |
 | <img src="https://img.shields.io/badge/%20-%20-E5484D?style=flat-square" height="14"> | 30 | Dante A | 10.30.0.0/24 | IGMP, Querier, Fast Leave, Flood Known Protocols, ProAV profile "Dante Audio" |
 | <img src="https://img.shields.io/badge/%20-%20-E86FB0?style=flat-square" height="14"> | 31 | Dante B | 172.31.0.0/16 | Same as Dante A, no DHCP, never routed |
 | <img src="https://img.shields.io/badge/%20-%20-3E8EF7?style=flat-square" height="14"> | 40 | NDI | 10.40.0.0/23 | IGMP, Querier, jumbo frames off |
-| <img src="https://img.shields.io/badge/%20-%20-3DBE6E?style=flat-square" height="14"> | 50 | Éclairage (Lighting) | 10.50.0.0/24 | sACN / Art-Net isolated |
+| <img src="https://img.shields.io/badge/%20-%20-3DBE6E?style=flat-square" height="14"> | 50 | Lighting | 10.50.0.0/24 | sACN / Art-Net isolated |
 | <img src="https://img.shields.io/badge/%20-%20-F2C94C?style=flat-square" height="14"> | 60 | IoT / MQTT | 10.60.0.0/24 | Network Isolation, Wi-Fi 2.4 GHz |
-| <img src="https://img.shields.io/badge/%20-%20-F08A3C?style=flat-square" height="14"> | 70 | Caméras (Cameras) | 10.70.0.0/24 | Network Isolation |
-| <img src="https://img.shields.io/badge/%20-%20-36C2C9?style=flat-square" height="14"> | 80 | Médias (Media) | 10.80.0.0/24 | Jumbo frames possible |
-| <img src="https://img.shields.io/badge/%20-%20-C9B28A?style=flat-square" height="14"> | 99 | Invités (Guests) | 10.99.0.0/24 | Isolation, Internet access |
+| <img src="https://img.shields.io/badge/%20-%20-F08A3C?style=flat-square" height="14"> | 70 | Cameras | 10.70.0.0/24 | Network Isolation |
+| <img src="https://img.shields.io/badge/%20-%20-36C2C9?style=flat-square" height="14"> | 80 | Media | 10.80.0.0/24 | Jumbo frames possible |
+| <img src="https://img.shields.io/badge/%20-%20-C9B28A?style=flat-square" height="14"> | 99 | Guests | 10.99.0.0/24 | Isolation, Internet access |
 
 Why separate Dante, NDI and lighting? Their multicast streams all fall in the `239.255.x.x` range. On the same VLAN, they step on each other.
 
