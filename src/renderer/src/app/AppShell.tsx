@@ -1,3 +1,4 @@
+import { useT } from '../i18n/useT'
 import { TopBar } from './TopBar'
 import { Toast } from './Toast'
 import { Welcome } from './Welcome'
@@ -10,10 +11,11 @@ import { UpdateBanner } from './UpdateBanner'
 import { SidebarResizer } from './SidebarResizer'
 
 export function AppShell() {
+  const { m } = useT()
   return (
     <div className="shell">
       <TopBar />
-      <aside className="shell__left" aria-label="Panneau de gauche">
+      <aside className="shell__left" aria-label={m.app.shell.leftPanel}>
         <Sidebar />
       </aside>
       <SidebarResizer />
@@ -21,7 +23,7 @@ export function AppShell() {
         <Canvas />
         <UpdateBanner />
       </main>
-      <aside className="shell__right" aria-label="Inspecteur">
+      <aside className="shell__right" aria-label={m.app.shell.inspector}>
         <Inspector />
       </aside>
       <Toast />

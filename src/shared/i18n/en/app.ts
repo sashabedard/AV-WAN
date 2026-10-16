@@ -9,6 +9,7 @@ export const app: Messages['app'] = {
     hours: (p) => `${p.n} h ago`,
     days: (p) => `${p.n} d ago`
   },
+  shell: { leftPanel: 'Left panel', inspector: 'Inspector' },
   sidebar: {
     resizerLabel: 'Left panel width',
     resizerTitle: 'Drag to resize · double-click: default width'
@@ -37,6 +38,7 @@ export const app: Messages['app'] = {
     revertConfirm: (p) => `Revert to the opened version of ${p.name}? Changes made since will be replaced (⌘Z can undo this).`,
     autoSavedAt: (p) => `Saved to Documents › AV·WAN › ${p.name}`,
     autoSaveFailed: (p) => `Auto save failed: ${p.reason}`,
+    dmxListsUnreadable: (p) => `DMX channel lists unreadable: ${p.reason}`,
     libraryUnreadable: (p) => `Library unreadable: ${p.reason}`
   },
   toast: {

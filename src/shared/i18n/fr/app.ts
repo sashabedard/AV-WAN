@@ -8,6 +8,7 @@ export const app = {
     hours: (p: { n: number }) => `il y a ${p.n} h`,
     days: (p: { n: number }) => `il y a ${p.n} j`
   },
+  shell: { leftPanel: 'Panneau de gauche', inspector: 'Inspecteur' },
   sidebar: {
     resizerLabel: 'Largeur du panneau de gauche',
     resizerTitle: 'Glisser pour élargir · double-clic : largeur d’origine'
@@ -36,6 +37,7 @@ export const app = {
     revertConfirm: (p: { name: string }) => `Revenir à la version d’ouverture de ${p.name} ? Les modifications faites depuis seront remplacées (⌘Z permet d’annuler).`,
     autoSavedAt: (p: { name: string }) => `Enregistré dans Documents › AV·WAN › ${p.name}`,
     autoSaveFailed: (p: { reason: string }) => `Enregistrement automatique impossible : ${p.reason}`,
+    dmxListsUnreadable: (p: { reason: string }) => `Listes de canaux illisibles : ${p.reason}`,
     libraryUnreadable: (p: { reason: string }) => `Bibliothèque illisible : ${p.reason}`
   },
   toast: {
