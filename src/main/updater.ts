@@ -37,6 +37,8 @@ export function setupUpdater(isE2E: boolean): void {
     autoUpdater.quitAndInstall(false, true)
   })
   if (!app.isPackaged || isE2E) return
+  // Paquet du Microsoft Store (MSIX, en lecture seule) : le Store installe lui-même les nouvelles versions.
+  if (process.windowsStore) return
   enabled = true
   autoUpdater.autoDownload = true
   autoUpdater.autoInstallOnAppQuit = true
@@ -56,7 +58,8 @@ export function setupUpdater(isE2E: boolean): void {
 
 export async function checkForUpdatesManually(win: BrowserWindow | null): Promise<void> {
   let result: ManualCheck
-  if (!enabled) result = { kind: 'not-packaged' }
+  if (process.windowsStore) result = { kind: 'store' }
+  else if (!enabled) result = { kind: 'not-packaged' }
   else if (readyVersion) result = { kind: 'ready', version: readyVersion }
   else {
     try {

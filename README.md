@@ -16,6 +16,18 @@
   <img alt="Interface en français" src="https://img.shields.io/badge/interface-fran%C3%A7ais-3DBE6E?style=flat-square&labelColor=1D2125">
 </p>
 
+## Télécharger
+
+Dernière version : page [Releases](https://github.com/sashabedard/AV-WAN/releases/latest), avec un guide d'installation d'une page (PDF).
+
+- **macOS 13 et plus** (Intel et Apple Silicon) : `AV-WAN-<version>-universal.dmg`. Glisser AV·WAN dans Applications. L'app est signée et vérifiée par Apple.
+- **Windows 10 et 11** : `AV-WAN-<version>-setup.exe`, sans droits d'administrateur.
+
+> [!WARNING]
+> **Windows : au premier lancement, la fenêtre bleue « Windows a protégé votre ordinateur » s'affiche.** C'est normal, l'installeur n'est pas signé. Cliquez **Informations complémentaires**, puis **Exécuter quand même**. Une version Microsoft Store, sans cet avertissement, arrive bientôt.
+
+AV·WAN se met à jour seul : la nouvelle version se télécharge en arrière-plan, puis un bandeau propose **Redémarrer maintenant**. Menu **Aide › Rechercher les mises à jour…** pour vérifier tout de suite.
+
 ---
 
 ## Pourquoi AV·WAN
@@ -134,16 +146,7 @@ npm run guide        # guide d'installation PDF dans release/
 npm run build        # build de production dans out/
 ```
 
-## Télécharger et installer
-
-Les versions sont sur la page [Releases](https://github.com/sashabedard/AV-WAN/releases), avec un guide d'installation d'une page (PDF).
-
-- **macOS 13 et plus** (Intel et Apple Silicon) : `AV-WAN-<version>-universal.dmg`. Glisser AV·WAN dans Applications. L'app est signée et vérifiée par Apple.
-- **Windows 10 et 11** : `AV-WAN-<version>-setup.exe`, sans droits d'administrateur. L'installeur n'est pas signé : dans la fenêtre SmartScreen, **Informations complémentaires › Exécuter quand même**.
-
-AV·WAN se met à jour seul : la nouvelle version se télécharge en arrière-plan, puis un bandeau propose **Redémarrer maintenant**. Menu **Aide › Rechercher les mises à jour…** pour vérifier tout de suite.
-
-### Publier une version
+## Publier une version
 
 1. Une seule fois, ajouter les secrets du dépôt (Settings › Secrets and variables › Actions) :
    - `MAC_CERT_P12_BASE64` : le certificat « Developer ID Application » exporté en `.p12`, encodé en base64 (`base64 -i certificat.p12 | pbcopy`) ;
@@ -153,6 +156,7 @@ AV·WAN se met à jour seul : la nouvelle version se télécharge en arrière-pl
 2. `npm version 1.0.0` pour la première version publique, puis `npm version minor` (ou `patch`) pour les suivantes ; ensuite `git push --follow-tags`.
 3. La CI construit le DMG notarisé et l'installeur Windows, vérifie l'association `.avwan`, et crée un **brouillon** de release avec le guide PDF.
 4. Tester les fichiers du brouillon, puis **Publish**. Les apps installées proposent alors la mise à jour.
+5. Microsoft Store : télécharger l'artefact `microsoft-store` du run (`AV-WAN-<version>-store.appx`, non signé) et le téléverser dans une nouvelle soumission sur Partner Center. Le Store le signe et le distribue après certification.
 
 ## Architecture
 

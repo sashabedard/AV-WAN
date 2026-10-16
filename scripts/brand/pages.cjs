@@ -16,20 +16,21 @@ function fontFaces() {
 
 // Rastérise l'icône à n'importe quelle taille en gardant la transparence (canvas → PNG).
 // Le SVG est redessiné à chaque taille : pas de réduction floue d'une grande image.
+// Une toile plus grande que l'icône (tuile large du Microsoft Store) la reçoit centrée.
 function iconPage(svg) {
   return `<!doctype html><html><head><meta charset="utf-8"></head><body style="margin:0"><script>
 const img = new Image()
 const ready = new Promise((resolve, reject) => { img.onload = resolve; img.onerror = () => reject(new Error('SVG illisible')) })
 img.src = ${JSON.stringify(svgDataUri(svg))}
-window.renderIcon = async (size) => {
+window.renderIcon = async (size, width = size, height = size) => {
   await ready
   const c = document.createElement('canvas')
-  c.width = size
-  c.height = size
+  c.width = width
+  c.height = height
   const g = c.getContext('2d')
   g.imageSmoothingEnabled = true
   g.imageSmoothingQuality = 'high'
-  g.drawImage(img, 0, 0, size, size)
+  g.drawImage(img, (width - size) / 2, (height - size) / 2, size, size)
   return c.toDataURL('image/png')
 }
 </script></body></html>`

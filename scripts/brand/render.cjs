@@ -1,6 +1,6 @@
 // scripts/brand/render.cjs
 'use strict'
-// Génère l'identité : icône d'app (PNG, ICNS, ICO) et logos du README, depuis build/icon.svg.
+// Génère l'identité : icône d'app (PNG, ICNS, ICO), tuiles du Microsoft Store et logos du README, depuis build/icon.svg.
 // Aucune fenêtre à l'écran : fenêtres hors écran (offscreen) et icône du Dock masquée.
 // Lancer : npm run brand (macOS pour l'ICNS, qui demande iconutil).
 const { app, BrowserWindow } = require('electron')
@@ -19,6 +19,11 @@ const ICONSET = [
   [512, 'icon_512x512'], [1024, 'icon_512x512@2x']
 ]
 const ICO_SIZES = [16, 24, 32, 48, 64, 128, 256]
+// Tuiles du paquet Microsoft Store, lues par electron-builder dans build/appx : [fichier, icône, largeur, hauteur].
+const APPX_TILES = [
+  ['StoreLogo.png', 50, 50, 50], ['Square44x44Logo.png', 44, 44, 44],
+  ['Square150x150Logo.png', 150, 150, 150], ['Wide310x150Logo.png', 150, 310, 150]
+]
 
 app.dock?.hide()
 
@@ -52,8 +57,13 @@ async function main() {
   const svg = fs.readFileSync(path.join(BUILD, 'icon.svg'), 'utf8')
   const sizes = [...new Set([...ICONSET.map(([s]) => s), ...ICO_SIZES])]
   const pngs = new Map()
+  const appx = path.join(BUILD, 'appx')
+  fs.mkdirSync(appx, { recursive: true })
   await withPage(iconPage(svg), 64, 64, async (win) => {
     for (const size of sizes) pngs.set(size, pngFromDataUrl(await win.webContents.executeJavaScript(`renderIcon(${size})`)))
+    for (const [name, size, width, height] of APPX_TILES) {
+      fs.writeFileSync(path.join(appx, name), pngFromDataUrl(await win.webContents.executeJavaScript(`renderIcon(${size}, ${width}, ${height})`)))
+    }
   })
   fs.writeFileSync(path.join(BUILD, 'icon.png'), pngs.get(1024))
   fs.writeFileSync(path.join(ASSETS, 'icone-app.png'), pngs.get(512))
@@ -77,7 +87,7 @@ async function main() {
     })
   }
   shared?.destroy()
-  console.log(`Identité générée : icône ${sizes.sort((a, b) => a - b).join(', ')} px, ICO, ICNS, logos.`)
+  console.log(`Identité générée : icône ${sizes.sort((a, b) => a - b).join(', ')} px, ICO, ICNS, tuiles du Store, logos.`)
 }
 
 app.whenReady().then(main).then(

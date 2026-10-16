@@ -19,6 +19,7 @@
     "preview": "electron-vite preview",
     "dist": "electron-vite build && electron-builder --mac --publish never",
     "dist:win": "electron-vite build && electron-builder --win --publish never",
+    "dist:store": "electron-vite build && electron-builder --win appx --publish never",
     "dist:dir": "electron-vite build && CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --mac dir --universal --publish never -c.mac.identity=- -c.mac.hardenedRuntime=false",
     "typecheck": "tsc -p tsconfig.json",
     "test": "vitest run",
