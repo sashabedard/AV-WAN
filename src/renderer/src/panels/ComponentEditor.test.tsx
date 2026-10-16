@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { ComponentEditor } from './ComponentEditor'
 import { libraryStore } from '../store/libraryStore'
@@ -129,5 +129,18 @@ describe('ComponentEditor', () => {
     await user.type(screen.getByLabelText('Puissance (W)'), '470')
     await user.click(screen.getByRole('button', { name: 'Enregistrer' }))
     expect(save).toHaveBeenCalledWith(expect.objectContaining({ dmx: { footprint: 16 }, powerW: 470 }))
+  })
+})
+
+describe('ComponentEditor en anglais', () => {
+  it('le message de validation est en anglais', () => {
+    act(() => uiStore.getState().setLang('en'))
+    try {
+      render(<ComponentEditor />)
+      expect(screen.getByRole('dialog', { name: 'New component' })).toBeTruthy()
+      expect(screen.getByText('Give the component a name.')).toBeTruthy()
+    } finally {
+      act(() => uiStore.getState().setLang('fr'))
+    }
   })
 })

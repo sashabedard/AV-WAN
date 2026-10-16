@@ -1,9 +1,10 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { cleanup, render, screen, within } from '@testing-library/react'
+import { act, cleanup, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { SwitchConfigurator, withBudget } from './SwitchConfigurator'
 import { DEFAULT_SWITCH_SPEC } from '../catalog/switch'
+import { uiStore } from '../store/uiStore'
 
 afterEach(cleanup)
 
@@ -60,5 +61,19 @@ describe('withBudget', () => {
     expect(document.activeElement?.textContent).toBe('8')
     await user.keyboard('{Escape}')
     expect(onCancel).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('SwitchConfigurator en anglais', () => {
+  it('le libellé du nombre de ports et le bouton Annuler sont en anglais', () => {
+    act(() => uiStore.getState().setLang('en'))
+    try {
+      render(<SwitchConfigurator initial={initial} submitLabel="Create" onSubmit={() => undefined} onCancel={() => undefined} />)
+      expect(screen.getByRole('group', { name: 'Number of ports' })).toBeTruthy()
+      expect(screen.getByRole('dialog', { name: 'Configure the switch' })).toBeTruthy()
+      expect(screen.getByRole('button', { name: 'Cancel' })).toBeTruthy()
+    } finally {
+      act(() => uiStore.getState().setLang('fr'))
+    }
   })
 })

@@ -1,4 +1,6 @@
 import type { IconRef } from '../model/types'
+import { currentMessages } from '../i18n/useT'
+import type { Messages } from '../../../shared/i18n/messages'
 
 // Icône d'une composante perso (spec plan 4 § 6.3) : PNG gardé tel quel, SVG reconstruit par liste blanche.
 // Le SVG assaini n'entre jamais dans le DOM : il est affiché par <img> ou par masque CSS.
@@ -103,18 +105,18 @@ export function sanitizeSvg(text: string): CleanSvg | null {
   return { svg: new XMLSerializer().serializeToString(out), monochrome: colors.size <= 1 }
 }
 
-export function importIconFile(_name: string, bytes: Uint8Array): IconImport {
-  if (bytes.length > ICON_MAX_BYTES) return { ok: false, error: 'L’icône dépasse 256 Ko.' }
+export function importIconFile(_name: string, bytes: Uint8Array, m: Messages['componentEditor']['iconErrors'] = currentMessages().componentEditor.iconErrors): IconImport {
+  if (bytes.length > ICON_MAX_BYTES) return { ok: false, error: m.tooBig }
   if (isPng(bytes)) return { ok: true, icon: { kind: 'image', dataUri: `data:image/png;base64,${base64(bytes)}` } }
   const text = new TextDecoder('utf-8').decode(bytes)
-  if (!/<svg[\s>]/i.test(text)) return { ok: false, error: 'Ce fichier n’est ni un SVG ni un PNG.' }
+  if (!/<svg[\s>]/i.test(text)) return { ok: false, error: m.notImage }
   let clean: CleanSvg | null = null
   try {
     clean = sanitizeSvg(text)
   } catch {
     clean = null // SVG pathologique (imbrication extrême) : refus, pas d'exception
   }
-  if (!clean) return { ok: false, error: 'Ce SVG ne contient aucune forme utilisable.' }
+  if (!clean) return { ok: false, error: m.noShape }
   const dataUri = `data:image/svg+xml;base64,${base64(new TextEncoder().encode(clean.svg))}`
   return { ok: true, icon: { kind: 'image', dataUri, ...(clean.monochrome ? { tint: true } : {}) } }
 }

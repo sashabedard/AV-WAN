@@ -9,5 +9,11 @@ import { welcome } from './welcome'
 import { app } from './app'
 import { theme } from './theme'
 import { canvas } from './canvas'
+import { palette } from './palette'
+import { quickSearch } from './quickSearch'
+import { vlanPanel } from './vlanPanel'
+import { componentEditor } from './componentEditor'
+import { switchConfigurator } from './switchConfigurator'
+import { panels } from './panels'
 
-export const en: Messages = { common, menu, dialogs, errors, update, topbar, welcome, app, theme, canvas }
+export const en: Messages = { common, menu, dialogs, errors, update, topbar, welcome, app, theme, canvas, palette, quickSearch, vlanPanel, componentEditor, switchConfigurator, panels }

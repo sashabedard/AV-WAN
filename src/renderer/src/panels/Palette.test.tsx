@@ -161,3 +161,17 @@ describe('Palette : Mes composantes et Ce projet', () => {
     expect(within(screen.getByRole('list', { name: 'Résultats du filtre' })).getByTestId('palette-custom-balise0001')).toBeTruthy()
   })
 })
+
+describe('Palette en anglais', () => {
+  it('titre et champ de recherche en anglais', () => {
+    act(() => uiStore.getState().setLang('en'))
+    try {
+      render(<Palette />)
+      expect(screen.getByRole('navigation', { name: 'Device palette' })).toBeTruthy()
+      expect(screen.getByRole('heading', { name: 'My components' })).toBeTruthy()
+      expect((screen.getByPlaceholderText('Filter…') as HTMLInputElement).type).toBe('search')
+    } finally {
+      act(() => uiStore.getState().setLang('fr'))
+    }
+  })
+})

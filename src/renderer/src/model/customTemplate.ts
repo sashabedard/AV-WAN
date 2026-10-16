@@ -2,6 +2,8 @@
 // et embarquement dans le projet. Fonctions pures.
 import { nanoid } from 'nanoid'
 import { parseDecimalField, parseIntField } from './fields'
+import { currentMessages } from '../i18n/useT'
+import type { Messages } from '../../../shared/i18n/messages'
 import type { Category, Connector, DeviceTemplate, IconRef, PoeClass, PortDef, Project } from './types'
 
 export const CUSTOM_ID = /^custom-[A-Za-z0-9_-]{6,40}$/
@@ -101,16 +103,16 @@ export function normalizeCode(code: string): string {
   return stripAccents(code).toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 4)
 }
 
-export function validateDraft(d: TemplateDraft): DraftErrors {
+export function validateDraft(d: TemplateDraft, m: Messages['componentEditor']['errors'] = currentMessages().componentEditor.errors): DraftErrors {
   const errors: DraftErrors = {}
   const name = d.name.trim()
-  if (!name) errors.name = 'Donnez un nom à la composante.'
-  else if (name.length > MAX_NAME) errors.name = `${MAX_NAME} caractères au plus.`
-  if (!/^[A-Z0-9]{1,4}$/.test(d.code)) errors.code = 'De 1 à 4 lettres ou chiffres.'
-  if (d.ports.length > MAX_PORTS) errors.ports = `${MAX_PORTS} ports au plus.`
-  else if (d.ports.some((p) => !p.label.trim())) errors.ports = 'Chaque port a besoin d’un nom.'
-  if (d.patchable && typeof parseIntField(d.footprint, 1, 512) !== 'number') errors.dmx = 'Canaux : un nombre entier de 1 à 512.'
-  if (parseDecimalField(d.powerW) === undefined) errors.power = 'Puissance : un nombre positif ou nul, en watts.'
+  if (!name) errors.name = m.nameRequired
+  else if (name.length > MAX_NAME) errors.name = m.nameTooLong({ max: MAX_NAME })
+  if (!/^[A-Z0-9]{1,4}$/.test(d.code)) errors.code = m.code
+  if (d.ports.length > MAX_PORTS) errors.ports = m.tooManyPorts({ max: MAX_PORTS })
+  else if (d.ports.some((p) => !p.label.trim())) errors.ports = m.portNeedsName
+  if (d.patchable && typeof parseIntField(d.footprint, 1, 512) !== 'number') errors.dmx = m.channels
+  if (parseDecimalField(d.powerW) === undefined) errors.power = m.power
   return errors
 }
 
@@ -152,14 +154,12 @@ export function templateFromDraft(d: TemplateDraft, id: string): DeviceTemplate 
   }
 }
 
-const COPY_SUFFIX = ' (copie)'
-
 // Une copie est toujours perso ; le nom est tronqué avant le suffixe pour que « (copie) » reste visible.
-export function duplicateTemplate(t: DeviceTemplate): DeviceTemplate {
+export function duplicateTemplate(t: DeviceTemplate, copySuffix: string = currentMessages().componentEditor.copySuffix): DeviceTemplate {
   return {
     ...structuredClone(t),
     id: newCustomId(),
-    name: `${t.name.slice(0, MAX_NAME - COPY_SUFFIX.length)}${COPY_SUFFIX}`,
+    name: `${t.name.slice(0, MAX_NAME - copySuffix.length)}${copySuffix}`,
     isCustom: true
   }
 }
