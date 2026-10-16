@@ -32,9 +32,12 @@ test('bascule en anglais par le bouton FR | EN, puis exporte le projet exemple e
 test('le choix de langue survit au redémarrage', async () => {
   const userData = mkdtempSync(join(tmpdir(), 'avwan-en-'))
   const first = await launchApp({ keepWelcome: true, userData })
-  await first.page.getByRole('dialog', { name: 'Accueil' }).getByRole('button', { name: 'EN' }).click()
-  await expect(first.page.getByRole('dialog', { name: 'Welcome' })).toBeVisible()
-  await first.app.close()
+  try {
+    await first.page.getByRole('dialog', { name: 'Accueil' }).getByRole('button', { name: 'EN' }).click()
+    await expect(first.page.getByRole('dialog', { name: 'Welcome' })).toBeVisible()
+  } finally {
+    await first.app.close()
+  }
   // launchApp réécrit settings.json avec lang 'fr' : on vérifie d'abord que le main a écrit le choix à la fermeture,
   // puis on relance en lui demandant 'en' pour vérifier la lecture.
   expect(JSON.parse(readFileSync(join(userData, 'settings.json'), 'utf8')).lang).toBe('en')
