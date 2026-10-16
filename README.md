@@ -12,7 +12,8 @@
 </p>
 
 <p align="center">
-  <img alt="Statut : plan 4 terminé" src="https://img.shields.io/badge/statut-plan%204%20termin%C3%A9-F2A93B?style=flat-square&labelColor=1D2125">
+  <a href="https://github.com/sashabedard/AV-WAN/releases/latest"><img alt="Dernière version" src="https://img.shields.io/github/v/release/sashabedard/AV-WAN?style=flat-square&labelColor=1D2125&color=F2A93B&label=version"></a>
+  <a href="https://apps.microsoft.com/detail/9NR2WJRZZ5JG"><img alt="Disponible sur le Microsoft Store" src="https://img.shields.io/badge/Microsoft%20Store-disponible-0078D4?style=flat-square&labelColor=1D2125"></a>
   <img alt="macOS et Windows, hors ligne" src="https://img.shields.io/badge/macOS%20%C2%B7%20Windows-hors%20ligne-8E969F?style=flat-square&labelColor=1D2125">
   <img alt="Electron, React, React Flow" src="https://img.shields.io/badge/Electron%20%C2%B7%20React%20%C2%B7%20React%20Flow-3E8EF7?style=flat-square&labelColor=1D2125">
   <img alt="Interface en français et en anglais" src="https://img.shields.io/badge/interface-fran%C3%A7ais%20%C2%B7%20anglais-3DBE6E?style=flat-square&labelColor=1D2125">
@@ -54,12 +55,13 @@ AV·WAN est gratuit, fonctionne hors ligne sur macOS et Windows, et est en fran�
 
 <p align="center"><sub>Le projet exemple livré avec l'app : régie, salle et scène, deux switchs reliés en fibre, cordons colorés par VLAN. L'app suit le thème clair ou sombre du système, ou celui choisi en haut à droite.</sub></p>
 
-## Ce que fait la v1
+## Ce que fait AV·WAN
 
 | | |
 |---|---|
 | **Dessiner** | Canvas infini. Glisser un appareil depuis la palette (97 gabarits avec leurs icônes : switch, AP, caméras PTZ NDI, Dante AVIO, ESP32-POE, PixLite, broker MQTT, panneau de brassage…) ou le trouver avec `⌘K`, puis glisser pour le déplacer, avec alignement sur une grille de 8 px. |
 | **Organiser** | Zones (régie, salle, scène) qui emportent leurs appareils, `⌘G` pour en créer une autour de la sélection. Copier, coller, dupliquer, renommer d'un double-clic. |
+| **Baies** | Vue **Baies** (bascule *Schéma ↔ Baies*) : élévations de baie en U, façades réelles, câbles dessinés. On place un appareil dans une baie en le glissant, on branche et on débranche directement dans la baie ; les câbles qui sortent de la baie finissent en bouts nommés. Une page par baie dans le PDF. |
 | **Voir** | Couleur des cordons par VLAN, par type de câble ou par port. Un clic sur un VLAN de la légende met ses appareils en évidence. Minicarte, `⌘0` pour tout cadrer. **Vue épinglée** (`⇧⌘P`) : une vignette figée sur un cadre du schéma, à jour en direct, pendant que la vue principale reste libre ; un clic y sélectionne, un double-clic y recentre la vue principale. |
 | **Patcher** | Adresse DMX, canaux et mode de chaque appareil, univers de chaque sortie de nœud. L'univers se déduit du câble DMX (nœud › DMX 2 → lyre → lyre) ou se tape à la main. « Suivante libre » trouve la première plage libre, ⌘D place la copie à la suite, et les chevauchements sont notés sans jamais bloquer. Les bandes pixel occupent leurs univers à partir de la sortie du contrôleur. |
 | **Alimenter** | Puissance de chaque appareil, alimentations 12/24 V (deux valeurs suffisent : P = V × I), câble « Alim DC », charge de chaque alimentation avec la marge de 20 %. Bandes LED COB, FCOB, RGBW, pixel… : W/m × longueur, ampères, pixels et univers. |

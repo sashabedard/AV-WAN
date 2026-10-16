@@ -12,7 +12,8 @@
 </p>
 
 <p align="center">
-  <img alt="Status: plan 4 complete" src="https://img.shields.io/badge/status-plan%204%20complete-F2A93B?style=flat-square&labelColor=1D2125">
+  <a href="https://github.com/sashabedard/AV-WAN/releases/latest"><img alt="Latest version" src="https://img.shields.io/github/v/release/sashabedard/AV-WAN?style=flat-square&labelColor=1D2125&color=F2A93B&label=version"></a>
+  <a href="https://apps.microsoft.com/detail/9NR2WJRZZ5JG"><img alt="Available on the Microsoft Store" src="https://img.shields.io/badge/Microsoft%20Store-available-0078D4?style=flat-square&labelColor=1D2125"></a>
   <img alt="macOS and Windows, offline" src="https://img.shields.io/badge/macOS%20%C2%B7%20Windows-offline-8E969F?style=flat-square&labelColor=1D2125">
   <img alt="Electron, React, React Flow" src="https://img.shields.io/badge/Electron%20%C2%B7%20React%20%C2%B7%20React%20Flow-3E8EF7?style=flat-square&labelColor=1D2125">
   <img alt="Interface in French and English" src="https://img.shields.io/badge/interface-French%20%C2%B7%20English-3DBE6E?style=flat-square&labelColor=1D2125">
@@ -54,12 +55,13 @@ AV·WAN is free, works offline on macOS and Windows, and comes in French and Eng
 
 <p align="center"><sub>The example project shipped with the app: control room, hall and stage, two switches linked by fiber, cables colored by VLAN. The app follows the system light or dark theme, or the one chosen at the top right.</sub></p>
 
-## What v1 does
+## What AV·WAN does
 
 | | |
 |---|---|
 | **Draw** | Infinite canvas. Drag a device from the palette (97 templates with their icons: switch, AP, NDI PTZ cameras, Dante AVIO, ESP32-POE, PixLite, MQTT broker, patch panel…) or find it with `⌘K`, then drag to move it, snapping to an 8 px grid. |
 | **Organize** | Zones (control room, hall, stage) that carry their devices along, `⌘G` to create one around the selection. Copy, paste, duplicate, rename with a double-click. |
+| **Racks** | **Racks** view (*Diagram ↔ Racks* toggle): U-height rack elevations, real faceplates, cables drawn. Drag a device into a rack, plug and unplug right in the rack; cables leaving the rack end in named stubs. One page per rack in the PDF. |
 | **See** | Cable color by VLAN, by cable type or by port. Click a VLAN in the legend to highlight its devices. Minimap, `⌘0` to fit everything. **Pinned view** (`⇧⌘P`): a frozen thumbnail of a frame of the diagram, live-updated, while the main view stays free; click in it to select, double-click to recenter the main view. |
 | **Patch** | DMX address, channels and mode of each device, universe of each node output. The universe is derived from the DMX cable (node › DMX 2 → moving head → moving head) or typed by hand. "Next free" finds the first free range, ⌘D places the copy right after, and overlaps are flagged without ever blocking. Pixel strips occupy their universes starting from the controller output. |
 | **Power** | Power draw of each device, 12/24 V power supplies (two values are enough: P = V × I), "DC power" cable, load of each supply with a 20% margin. COB, FCOB, RGBW, pixel LED strips…: W/m × length, amps, pixels and universes. |
