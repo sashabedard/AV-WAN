@@ -105,4 +105,29 @@ describe('langue des documents', () => {
     await user.click(await screen.findByRole('button', { name: 'Excel…' }))
     expect(onXlsx).toHaveBeenCalledWith('en')
   })
+  it('sans baie : les deux sections de baie sont grisées avec une note, et rien de baie n’est exporté', async () => {
+    const user = userEvent.setup()
+    const onExport = vi.fn()
+    render(<ExportDialog onExport={onExport} />)
+    expect((screen.getByRole('checkbox', { name: /Élévations de baie$/ }) as HTMLInputElement).disabled).toBe(true)
+    expect((screen.getByRole('checkbox', { name: /Élévations de baie avec câbles/ }) as HTMLInputElement).disabled).toBe(true)
+    expect(screen.getByText(/Aucune baie dans le projet/)).toBeTruthy()
+    await user.click(screen.getByRole('button', { name: 'Exporter le PDF…' }))
+    expect(onExport.mock.calls[0]![0].sections).not.toContain('baies')
+  })
+
+  it('avec une baie : « propre » cochée, « avec câbles » décochée, et on peut cocher les deux', async () => {
+    const user = userEvent.setup()
+    const onExport = vi.fn()
+    projectStore.getState().addRack()
+    render(<ExportDialog onExport={onExport} />)
+    const clean = screen.getByRole('checkbox', { name: /Élévations de baie$/ }) as HTMLInputElement
+    const cabled = screen.getByRole('checkbox', { name: /Élévations de baie avec câbles/ }) as HTMLInputElement
+    expect(clean.checked).toBe(true)
+    expect(cabled.checked).toBe(false)
+    expect(screen.queryByText(/Aucune baie dans le projet/)).toBeNull()
+    await user.click(cabled)
+    await user.click(screen.getByRole('button', { name: 'Exporter le PDF…' }))
+    expect(onExport.mock.calls[0]![0].sections.slice(-2)).toEqual(['baies', 'baies-cables'])
+  })
 })

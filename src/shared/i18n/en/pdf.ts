@@ -27,6 +27,10 @@ export const pdf: Messages['pdf'] = {
     simple: 'Simple links',
     poe: 'Active PoE'
   },
+  rack: {
+    title: (p) => `Elevation · ${p.name}${p.zone ? ` · ${p.zone}` : ''} · ${p.heightU}U`,
+    tooMany: 'Too many cables for this scale — see the cable schedule.'
+  },
   empty: {
     cabling: 'No cables in the project.',
     ip: 'No IP addresses in the project.',

@@ -1,6 +1,6 @@
 // src/renderer/src/export/ExportDialog.tsx
 import { useState } from 'react'
-import { PDF_SECTION_IDS, pdfSectionLabel, type PdfFormat, type PdfOptions, type PdfSection } from '../../../shared/pdfOptions'
+import { PDF_SECTION_IDS, defaultPdfOptions, pdfSectionLabel, type PdfFormat, type PdfOptions, type PdfSection } from '../../../shared/pdfOptions'
 import type { Lang } from '../../../shared/i18n/lang'
 import { projectStore, useProject } from '../store/projectStore'
 import { uiStore, useUiStore } from '../store/uiStore'
@@ -34,12 +34,15 @@ function ExportForm({ onExport, onCsv, onXlsx }: Required<Props>) {
   const formats = (['na', 'iso'] as const).map((value) => ({ value, label: m.export.formats[value] }))
   const project = useProject()
   const last = useUiStore((s) => s.lastPdfChoice)
-  const [sections, setSections] = useState<ReadonlySet<PdfSection>>(() => new Set(last?.sections ?? ALL_SECTIONS))
+  const [sections, setSections] = useState<ReadonlySet<PdfSection>>(() => new Set(last?.sections ?? defaultPdfOptions().sections))
   const [format, setFormat] = useState<PdfFormat>(project.settings.pageFormat)
   const [zonePages, setZonePages] = useState(last?.zonePages ?? true)
   // Langue des fichiers (PDF, CSV, Excel) : retenue d'un export à l'autre, la langue de l'interface au premier.
   const [docLang, setDocLang] = useState<Lang>(() => loadDocLang(lang))
   const zoneCount = project.zones.filter((z) => z.ownPdfPage).length
+  const hasRacks = (project.racks?.length ?? 0) > 0
+  const rackSection = (id: PdfSection): boolean => id === 'baies' || id === 'baies-cables'
+  const effective = (id: PdfSection): boolean => sections.has(id) && (hasRacks || !rackSection(id))
   const zonesPossible = sections.has('schema') && zoneCount > 0
   const close = (): void => uiStore.getState().setExportOpen(false)
   const exportList = (run: (lang: Lang) => unknown): void => {
@@ -55,7 +58,7 @@ function ExportForm({ onExport, onCsv, onXlsx }: Required<Props>) {
       return next
     })
   const submit = (): void => {
-    const options: PdfOptions = { sections: ALL_SECTIONS.filter((id) => sections.has(id)), format, zonePages, lang: docLang }
+    const options: PdfOptions = { sections: ALL_SECTIONS.filter(effective), format, zonePages, lang: docLang }
     saveDocLang(docLang)
     if (format !== project.settings.pageFormat) projectStore.getState().setPageFormat(format)
     uiStore.getState().rememberPdfChoice({ sections: options.sections, zonePages })
@@ -84,10 +87,11 @@ function ExportForm({ onExport, onCsv, onXlsx }: Required<Props>) {
           <legend className="xd__legend">{t.sections}</legend>
           {ALL_SECTIONS.map((id, i) => (
             <label key={id} className="xd__check">
-              <input type="checkbox" checked={sections.has(id)} autoFocus={i === 0} onChange={(e) => toggle(id, e.target.checked)} />
+              <input type="checkbox" checked={effective(id)} disabled={!hasRacks && rackSection(id)} autoFocus={i === 0} onChange={(e) => toggle(id, e.target.checked)} />
               <span>{`${i + 1}. ${pdfSectionLabel(id, m)}`}</span>
             </label>
           ))}
+          {!hasRacks && <p className="xd__note">{t.noRacks}</p>}
         </fieldset>
         <label className="xd__check">
           <input type="checkbox" checked={zonesPossible && zonePages} disabled={!zonesPossible} onChange={(e) => setZonePages(e.target.checked)} />
@@ -122,7 +126,7 @@ function ExportForm({ onExport, onCsv, onXlsx }: Required<Props>) {
           <button type="button" className="btn" onClick={close}>
             {m.common.cancel}
           </button>
-          <button type="submit" className="btn btn--primary" disabled={sections.size === 0}>
+          <button type="submit" className="btn btn--primary" disabled={!ALL_SECTIONS.some(effective)}>
             {t.submit}
           </button>
         </div>

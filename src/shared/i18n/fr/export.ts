@@ -10,7 +10,9 @@ export const exportMessages = {
     patch: 'Patch DMX',
     canaux: 'Canaux DMX',
     puissance: 'Bilan de puissance',
-    nomenclature: 'Nomenclature'
+    nomenclature: 'Nomenclature',
+    baies: 'Élévations de baie',
+    'baies-cables': 'Élévations de baie avec câbles'
   },
   formats: { na: 'Tabloïd 11×17 + Lettre', iso: 'A3 + A4' },
   dialog: {
@@ -19,6 +21,7 @@ export const exportMessages = {
     zonePages: (p: { n: number }) => `Pages de zone agrandies (${p.n})`,
     format: 'Format',
     formatAria: 'Format des pages',
+    noRacks: 'Aucune baie dans le projet : ces deux sections sont indisponibles.',
     docLang: 'Langue des documents',
     lists: 'Listes (branchement, plan IP, nomenclature)',
     csv: 'CSV…',

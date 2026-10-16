@@ -27,6 +27,10 @@ export const pdf = {
     simple: 'Liens simples',
     poe: 'PoE actif'
   },
+  rack: {
+    title: (p: { name: string; zone?: string; heightU: number }) => `Élévation · ${p.name}${p.zone ? ` · ${p.zone}` : ''} · ${p.heightU}U`,
+    tooMany: 'Trop de câbles pour cette échelle — voir la liste de branchement.'
+  },
   empty: {
     cabling: 'Aucun câble dans le projet.',
     ip: 'Aucune adresse IP dans le projet.',

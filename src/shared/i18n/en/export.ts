@@ -12,7 +12,9 @@ export const exportMessages: Messages['export'] = {
     patch: 'DMX patch',
     canaux: 'DMX channels',
     puissance: 'Power budget',
-    nomenclature: 'Bill of materials'
+    nomenclature: 'Bill of materials',
+    baies: 'Rack elevations',
+    'baies-cables': 'Rack elevations with cables'
   },
   formats: { na: 'Tabloid 11×17 + Letter', iso: 'A3 + A4' },
   dialog: {
@@ -21,6 +23,7 @@ export const exportMessages: Messages['export'] = {
     zonePages: (p) => `Enlarged zone pages (${p.n})`,
     format: 'Format',
     formatAria: 'Page format',
+    noRacks: 'No rack in the project: these two sections are unavailable.',
     docLang: 'Document language',
     lists: 'Lists (cabling, IP plan, bill of materials)',
     csv: 'CSV…',

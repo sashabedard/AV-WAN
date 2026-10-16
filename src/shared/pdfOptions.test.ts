@@ -2,14 +2,18 @@ import { describe, expect, it } from 'vitest'
 import { defaultPdfOptions, normalizePdfOptions } from './pdfOptions'
 
 describe('options du PDF', () => {
-  it('coche toutes les sections par défaut, dans l’ordre de la spec', () => {
+  it('coche toutes les sections par défaut sauf les élévations câblées, dans l’ordre de la spec', () => {
     expect(defaultPdfOptions()).toEqual({
-      sections: ['schema', 'appareils', 'ports', 'branchement', 'vlans', 'ip', 'patch', 'canaux', 'puissance', 'nomenclature'],
+      sections: ['schema', 'appareils', 'ports', 'branchement', 'vlans', 'ip', 'patch', 'canaux', 'puissance', 'nomenclature', 'baies'],
       format: 'na',
       zonePages: true,
       lang: 'fr'
     })
     expect(defaultPdfOptions('iso').format).toBe('iso')
+  })
+
+  it('garde les deux sections de baie reçues par IPC, à la fin', () => {
+    expect(normalizePdfOptions({ sections: ['baies-cables', 'schema', 'baies', 'x'] }).sections).toEqual(['schema', 'baies', 'baies-cables'])
   })
 
   it('ne garde que les sections connues, une fois chacune, dans l’ordre d’impression', () => {
