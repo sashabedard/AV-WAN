@@ -53,4 +53,11 @@ describe('uiStore · vue Schéma | Baies', () => {
     expect(uiStore.getState().racksViewport).toBeNull()
     uiStore.getState().setView('schema')
   })
+
+  it('schemaViewport (cadrage du schéma gardé quand il est démonté) est remis à zéro par newProject', () => {
+    uiStore.getState().setSchemaViewport({ x: 3, y: 4, zoom: 0.5 })
+    expect(uiStore.getState().schemaViewport).toEqual({ x: 3, y: 4, zoom: 0.5 })
+    projectStore.getState().newProject()
+    expect(uiStore.getState().schemaViewport).toBeNull()
+  })
 })

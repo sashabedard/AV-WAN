@@ -52,6 +52,7 @@ import { clampPopover } from './popover'
 import { useDismissOnOutside } from '../panels/useDismiss'
 import { Icon } from '../icons/Icon'
 import { registerFlowInstance } from '../dev/e2eHooks'
+import { useMountedRef } from './useMountedRef'
 import './canvas.css'
 
 const nodeTypes = { device: DeviceNode, switch: SwitchNode, zone: ZoneNode }
@@ -99,7 +100,10 @@ function CanvasInner() {
   const cancelSwitch = useCallback(() => uiStore.getState().setPendingSwitch(null), [])
   useDismissOnOutside(popover, pendingSwitch !== null, cancelSwitch)
   const alt = useAltKey()
-  const { screenToFlowPosition, fitView } = useReactFlow()
+  const { screenToFlowPosition, fitView, getViewport } = useReactFlow()
+  // La vue Baies remplace le canvas : il garde son cadrage pour le retrouver au retour (spec § 8.8).
+  const [savedViewport] = useState(() => uiStore.getState().schemaViewport)
+  useEffect(() => () => uiStore.getState().setSchemaViewport(getViewport()), [getViewport])
   const onInit = useCallback((instance: ReactFlowInstance<FlowNode, CordFlowEdge>) => {
     registerFlowInstance(instance)
     registerViewport(instance, wrapper.current)
@@ -109,7 +113,7 @@ function CanvasInner() {
   const docId = useProjectStore((s) => s.docId)
   const nodesReady = useNodesInitialized()
   const nodesForDoc = nodesMatchDerived(nodes, derivedNodes)
-  const fittedDoc = useRef<number | null>(null)
+  const fittedDoc = useRef<number | null>(savedViewport ? docId : null)
   useEffect(() => {
     if (fittedDoc.current === docId) return
     const p = projectStore.getState().history.present
@@ -145,14 +149,17 @@ function CanvasInner() {
     zoneDrag.current = null
     projectStore.getState().moveSelection(selectionMoves(zd, dragged))
   }, [])
+  // Au retour de la vue Baies, le canvas remonte : sa sélection vide du montage ne doit pas effacer celle du projet.
+  const mounted = useMountedRef()
   const onSelectionChange = useCallback(({ nodes: ns, edges: es }: OnSelectionChangeParams<FlowNode, CordFlowEdge>) => {
+    if (!mounted.current) return
     if (ns.length + es.length > 0) uiStore.getState().setInspectVlan(null)
     projectStore.getState().setSelection({
       deviceIds: ns.filter((n) => !isZone(n)).map((n) => n.id),
       linkIds: es.map((e) => e.id),
       zoneIds: ns.filter(isZone).map((n) => n.id)
     })
-  }, [])
+  }, [mounted])
   const onDelete = useCallback(({ nodes: ns, edges: es }: { nodes: FlowNode[]; edges: CordFlowEdge[] }) => {
     projectStore.getState().removeElements(
       ns.filter((n) => !isZone(n)).map((n) => n.id),
@@ -314,6 +321,7 @@ function CanvasInner() {
       <ReactFlow<FlowNode, CordFlowEdge>
         nodes={nodes}
         onInit={onInit}
+        {...(savedViewport ? { defaultViewport: savedViewport } : {})}
         multiSelectionKeyCode={MULTI_SELECT_KEYS}
         disableKeyboardA11y
         nodeTypes={nodeTypes}

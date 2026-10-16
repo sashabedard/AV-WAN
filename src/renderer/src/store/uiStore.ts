@@ -57,6 +57,9 @@ export interface UiState {
   setView(v: 'schema' | 'racks'): void
   racksViewport: { x: number; y: number; zoom: number } | null
   setRacksViewport(v: { x: number; y: number; zoom: number } | null): void
+  // Cadrage du schéma gardé pendant que la vue Baies le remplace (spec § 8.8) ; null = cadrer au montage.
+  schemaViewport: { x: number; y: number; zoom: number } | null
+  setSchemaViewport(v: { x: number; y: number; zoom: number } | null): void
   resetForDocument(): void
 }
 
@@ -104,6 +107,8 @@ export const uiStore = createStore<UiState>()((set) => ({
   setView: (v) => set({ view: v }),
   racksViewport: null,
   setRacksViewport: (v) => set({ racksViewport: v }),
+  schemaViewport: null,
+  setSchemaViewport: (v) => set({ schemaViewport: v }),
   resetForDocument: () =>
     set({
       focusVlan: null,
@@ -115,7 +120,8 @@ export const uiStore = createStore<UiState>()((set) => ({
       pendingSwitch: null,
       search: null,
       pinnedRect: null,
-      racksViewport: null
+      racksViewport: null,
+      schemaViewport: null
     })
 }))
 

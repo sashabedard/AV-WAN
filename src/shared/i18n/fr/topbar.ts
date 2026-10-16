@@ -5,6 +5,9 @@ export const topbar = {
   menuTitle: 'Fichier, Édition, Affichage, Aide',
   unsaved: 'Modifications non enregistrées',
   readOnly: 'Lecture seule',
+  view: 'Vue',
+  viewSchema: 'Schéma',
+  viewRacks: 'Baies',
   export: 'Exporter',
   exportTitle: 'Exporter le PDF, le CSV ou le classeur Excel (⌘E)'
 } as const

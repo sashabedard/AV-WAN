@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { act, cleanup, render, screen } from '@testing-library/react'
+import { act, cleanup, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { TopBar } from './TopBar'
 import { Toast } from './Toast'
@@ -129,6 +129,36 @@ describe('TopBar en anglais', () => {
       expect(screen.getByText('Read-only')).toBeTruthy()
       expect(screen.getByRole('button', { name: 'Theme: system' })).toBeTruthy()
       expect(screen.getByTestId('file-name').textContent).toBe('Untitled')
+    } finally {
+      act(() => uiStore.getState().setLang('fr'))
+    }
+  })
+})
+
+describe('TopBar : bascule Schéma | Baies', () => {
+  afterEach(() => act(() => uiStore.getState().setView('schema')))
+
+  it('le groupe « Schéma | Baies » suit la barre du fichier ; « Baies » met la vue des baies', async () => {
+    const user = userEvent.setup()
+    render(<TopBar />)
+    const group = screen.getByRole('group', { name: 'Vue' })
+    expect(group.previousElementSibling?.getAttribute('data-testid')).toBe('file-name')
+    const schema = within(group).getByRole('button', { name: 'Schéma' })
+    const racks = within(group).getByRole('button', { name: 'Baies' })
+    expect(schema.getAttribute('aria-pressed')).toBe('true')
+    await user.click(racks)
+    expect(uiStore.getState().view).toBe('racks')
+    expect(racks.getAttribute('aria-pressed')).toBe('true')
+    await user.click(schema)
+    expect(uiStore.getState().view).toBe('schema')
+  })
+
+  it('en anglais : « Diagram | Racks »', () => {
+    act(() => uiStore.getState().setLang('en'))
+    try {
+      render(<TopBar />)
+      const group = screen.getByRole('group', { name: 'View' })
+      expect(within(group).getAllByRole('button').map((b) => b.textContent)).toEqual(['Diagram', 'Racks'])
     } finally {
       act(() => uiStore.getState().setLang('fr'))
     }

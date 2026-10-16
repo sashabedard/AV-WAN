@@ -1,0 +1,44 @@
+/* Vue Baies (plan 10) : élévations côte à côte. Le matériel est sombre dans les deux thèmes, comme les façades. */
+.racks { position: absolute; inset: 0; }
+.racks--empty { display: grid; place-items: center; background: var(--paper); }
+.racks__empty { display: grid; justify-items: center; gap: 14px; max-width: 360px; padding: 24px; text-align: center; }
+.racks__empty-text { margin: 0; font: 13px/1.5 var(--font-mono); color: var(--muted); }
+.racks__add { font-family: var(--font-mono); }
+.racks__add:disabled { cursor: default; opacity: 0.5; }
+
+/* Baie : seul le titre réagit (sélection) ; le corps laisse passer les clics vers le panneau. */
+.react-flow__node-rack .rack__title { pointer-events: all; }
+.rack { position: relative; }
+.rack--selected .rack__body { outline: 1.5px solid var(--accent); outline-offset: 4px; }
+.rack__title { display: flex; align-items: center; gap: 0; padding: 0 2px; overflow: hidden; white-space: nowrap; cursor: pointer; font: 600 13px/1 var(--font-mono); color: var(--ink); }
+.rack__title:hover .rack__name, .rack--selected .rack__name { color: var(--accent); }
+.rack__meta { font-weight: 400; color: var(--muted); overflow: hidden; text-overflow: ellipsis; }
+.rack__body { position: absolute; left: 0; display: block; overflow: visible; }
+.rack__inside { fill: var(--port-fill); stroke: var(--panel-stroke); }
+.rack__rail { fill: var(--panel-ear); stroke: var(--panel-stroke); }
+.rack__tick { stroke: var(--panel-stroke); stroke-width: 1; }
+.rack__u { fill: var(--port-num); font: 500 9px var(--font-mono); }
+.rack__free { stroke: var(--panel-ear); stroke-dasharray: 3 3; }
+.rack__hatch-line { stroke: var(--panel-bottom); stroke-width: 3; }
+.rack__free-text { fill: var(--port-stroke); font: 600 11px var(--font-mono); letter-spacing: 0.04em; }
+
+/* Appareil sans façade : bloc nommé, sa hauteur en U, colonne de prises à droite. */
+.rdev { position: relative; box-sizing: border-box; border: 1px solid var(--panel-stroke); border-radius: 3px; background: linear-gradient(var(--panel-top), var(--panel-bottom)); color: var(--hw-label); filter: drop-shadow(0 3px 4px var(--tile-shadow)); font-family: var(--font-mono); }
+.rdev--selected { outline: 1.5px solid var(--accent); outline-offset: 4px; }
+.rdev__ear { position: absolute; top: 0; bottom: 0; width: 12px; background: var(--panel-ear); border: 1px solid var(--panel-stroke); }
+.rdev__ear--left { left: -1px; border-radius: 2px 0 0 2px; }
+.rdev__ear--right { right: -1px; border-radius: 0 2px 2px 0; }
+.rdev__tape { position: absolute; top: 8px; left: 20px; max-width: 45%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 2px 6px 3px; background: var(--hw-tape); color: var(--hw-tape-ink); font: 600 9.5px/1 var(--font-mono); transform: rotate(-0.6deg); }
+.rdev__kind { position: absolute; top: 30px; left: 20px; right: 90px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 10.5px; color: var(--hw-label); }
+.rdev__u { position: absolute; left: 20px; bottom: 8px; font: 500 9px/1 var(--font-mono); color: var(--port-num); }
+.rdev__port-label { position: absolute; right: 22px; transform: translateY(-50%); font: 500 8.5px/1 var(--font-mono); color: var(--port-num); white-space: nowrap; }
+.rdev .react-flow__handle.port { opacity: 1; }
+.rdev.is-dim { opacity: 0.2; }
+
+/* Bout de câble vers un appareil hors baie. */
+.rstub { display: flex; align-items: center; box-sizing: border-box; padding: 0 7px 0 9px; border: 1px solid var(--line); border-left: 3px solid var(--plug, var(--muted)); border-radius: 2px; background: var(--surface); color: var(--ink-2); font: 600 10px/1 var(--font-mono); white-space: nowrap; }
+.rstub__text { overflow: hidden; text-overflow: ellipsis; }
+.react-flow__handle.rstub__handle { min-width: 0; min-height: 0; width: 4px; height: 4px; border: 0; background: transparent; }
+
+/* Le coude d'un câble est une mise en page du schéma : la vue de baie ne l'affiche ni ne le modifie. */
+.racks .elbow-grip { display: none; }
