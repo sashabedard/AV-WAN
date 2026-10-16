@@ -4,8 +4,12 @@ import { cleanup, render, screen, waitFor } from '@testing-library/react'
 import { PrintDocument } from './PrintDocument'
 import { createExampleProject } from '../samples/exampleProject'
 import { createProject } from '../model/project'
+import { LangOverrideProvider } from '../i18n/useT'
 
-afterEach(cleanup)
+afterEach(() => {
+  cleanup()
+  vi.unstubAllGlobals()
+})
 
 describe('PrintDocument', () => {
   it('imprime la liste de branchement et se déclare prêt sans schéma', async () => {
@@ -40,5 +44,23 @@ describe('PrintDocument', () => {
       'Plan d’adressage IP',
       'Nomenclature'
     ])
+  })
+
+  it('imprime en anglais quand la langue des documents est l’anglais', () => {
+    // jsdom n'a pas ResizeObserver, que React Flow exige pour le schéma.
+    vi.stubGlobal('ResizeObserver', class { observe(): void {} unobserve(): void {} disconnect(): void {} })
+    const project = createExampleProject(new Date(2026, 9, 13), 'en')
+    render(
+      <LangOverrideProvider lang="en">
+        <PrintDocument project={project} options={{ sections: ['schema', 'appareils', 'ports', 'puissance', 'branchement'], format: 'na', zonePages: true, lang: 'en' }} onReady={() => undefined} />
+      </LangOverrideProvider>
+    )
+    expect(screen.getAllByText('Overview').length).toBeGreaterThan(0)
+    expect(screen.getAllByText(/Zone: Control room/).length).toBeGreaterThan(0)
+    expect(screen.getAllByText('Design').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('Trunk (rings = VLAN)').length).toBeGreaterThan(0)
+    expect(screen.getByRole('heading', { name: 'Device sheets' })).toBeTruthy()
+    expect(document.querySelector('.print style')!.textContent).toContain('"Rev. ')
+    expect(screen.queryByText(/Aucun|Fiches|Statut/)).toBeNull()
   })
 })

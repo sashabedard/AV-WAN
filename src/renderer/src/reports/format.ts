@@ -7,11 +7,6 @@ import { messages } from '../../../shared/i18n/messages'
 
 export const DASH = '—'
 
-export const STATUS_LABELS: Record<Project['meta']['status'], string> = {
-  conception: 'Conception',
-  'tel-que-construit': 'Tel que construit'
-}
-
 const collators: Record<Lang, Intl.Collator> = {
   fr: new Intl.Collator('fr-CA', { numeric: true, sensitivity: 'base' }),
   en: new Intl.Collator('en-CA', { numeric: true, sensitivity: 'base' })

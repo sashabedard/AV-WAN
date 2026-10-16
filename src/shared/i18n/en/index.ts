@@ -20,5 +20,6 @@ import { catalog } from './catalog'
 import { model } from './model'
 import { reports } from './reports'
 import { exportMessages } from './export'
+import { pdf } from './pdf'
 
-export const en: Messages = { common, menu, dialogs, errors, update, topbar, welcome, app, theme, canvas, palette, quickSearch, vlanPanel, componentEditor, switchConfigurator, panels, inspector, catalog, model, reports, export: exportMessages }
+export const en: Messages = { common, menu, dialogs, errors, update, topbar, welcome, app, theme, canvas, palette, quickSearch, vlanPanel, componentEditor, switchConfigurator, panels, inspector, catalog, model, reports, export: exportMessages, pdf }
