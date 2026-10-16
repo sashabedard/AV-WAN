@@ -34,6 +34,7 @@ export function makeStressProject(): Project {
     for (const port of d.ports) {
       if (port.connector !== 'rj45') continue
       const target = free[next++]
+      // i18n-ignore : erreur de développeur (projet de stress des tests), jamais affichée
       if (!target) throw new Error('Plus de ports libres dans le projet de stress')
       link({ deviceId: d.id, portId: port.id }, target, 'cat6')
     }

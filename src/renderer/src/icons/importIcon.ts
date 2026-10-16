@@ -71,6 +71,7 @@ export function sanitizeSvg(text: string): CleanSvg | null {
   }
   // fill et stroke se transmettent aux enfants : on suit la valeur effective pour juger « monochrome ».
   const walk = (from: Element, to: Element, fill: string, stroke: string, depth = 0): void => {
+    // i18n-ignore : exception interne, attrapée par importIconFile (le refus affiché vient de iconErrors)
     if (depth > MAX_DEPTH) throw new Error('SVG trop imbriqué')
     for (const child of Array.from(from.children)) {
       if (child.namespaceURI !== ns || !ELEMENTS.has(child.localName)) continue
