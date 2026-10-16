@@ -47,7 +47,7 @@ export const AUDIO_MODELS: readonly DeviceTemplate[] = [
   {
     id: 'ah-sq5-dante',
     category: 'audio',
-    name: { fr: 'Console Allen & Heath SQ-5 (carte Dante)', en: 'Console Allen & Heath SQ-5 (carte Dante)' },
+    name: { fr: 'Console Allen & Heath SQ-5 (carte Dante)', en: 'Console Allen & Heath SQ-5 (Dante card)' },
     code: 'MIX',
     vendor: 'Allen & Heath',
     model: 'Allen & Heath SQ-5 + Dante',
