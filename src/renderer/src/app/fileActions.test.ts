@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { AvwanApi } from '../../../shared/api'
 import { isDirty, projectStore } from '../store/projectStore'
 import { sampleProject } from '../model/__fixtures__/sample'
+import { createDevice, createProject } from '../model/project'
 import { serializeProject } from '../model/file'
 import { loadFromText, newProjectAction, openProjectAction, openRecentAction, openRequestAction, restoreRecoveryAction, revertToOpenedAction, saveProjectAction, saveProjectAsAction } from './fileActions'
 import { autosave } from './autosave'
@@ -402,6 +403,32 @@ describe('revenir à la version d’ouverture', () => {
     expect(projectStore.getState().toast).toBe(NONE)
     expect(confirm).not.toHaveBeenCalled()
     expect(projectStore.getState().history.present).toBe(before)
+  })
+
+  it('confirmé : une adresse DMX tapée d’un ancien fichier (hors du calcul) reste en place', async () => {
+    const r = createProject(new Date(2026, 9, 14), 'fr')
+    const dev = (id: string, templateId: string, extra: object) => ({ ...createDevice(r, templateId, { x: 0, y: 0 }, { lang: 'fr', id }), ...extra })
+    const old = {
+      ...r,
+      devices: [
+        dev('ode', 'dmx-node', { name: 'ODE-1', portState: { 'DMX-1': { universe: 1 } } }),
+        dev('a', 'dmx-fixture', { dmx: { footprint: 16, address: 1 } }),
+        dev('b', 'dmx-fixture', { dmx: { footprint: 16, address: 17 } }),
+        dev('c', 'dmx-fixture', { dmx: { footprint: 21, address: 50 } })
+      ],
+      links: [
+        { id: 'l1', cableId: 'C-1', a: { deviceId: 'ode', portId: 'DMX-1' }, b: { deviceId: 'a', portId: 'DMX-IN' }, medium: 'dmx' as const },
+        { id: 'l2', cableId: 'C-2', a: { deviceId: 'a', portId: 'DMX-OUT' }, b: { deviceId: 'b', portId: 'DMX-IN' }, medium: 'dmx' as const },
+        { id: 'l3', cableId: 'C-3', a: { deviceId: 'b', portId: 'DMX-OUT' }, b: { deviceId: 'c', portId: 'DMX-IN' }, medium: 'dmx' as const }
+      ]
+    }
+    const api = fakeApi({ openedVersion: vi.fn(async () => serializeProject(old)) })
+    vi.stubGlobal('window', { avwan: api, confirm: vi.fn(() => true) })
+    projectStore.getState().updateMeta({ title: 'Modifié depuis' })
+    expect(await revertToOpenedAction()).toBe(true)
+    const devs = projectStore.getState().history.present.devices
+    expect(devs.filter((d) => d.dmx).map((d) => d.dmx!.address)).toEqual([1, 17, 50])
+    expect(devs.find((d) => d.id === 'c')!.dmx!.addressPinned).toBe(true)
   })
 
   it('confirmé : le projet redevient la version d’ouverture, et ⌘Z redonne le projet d’avant', async () => {

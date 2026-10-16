@@ -164,6 +164,19 @@ describe('patch et presse-papiers', () => {
     expect(get(b!.id)).toEqual({ footprint: 16, address: 17 })
   })
 
+  it('copie partielle (nœud + c sans b) : c n’a plus de câble vers sa source, il garde univers figé et prochaine adresse libre', () => {
+    let p = patched()
+    p = {
+      ...p,
+      devices: [...p.devices.filter((d) => d.id !== 'f1'), { ...p.devices.find((d) => d.id === 'f1')!, dmx: { footprint: 16 } }, { ...createDevice(p, 'dmx-fixture', { x: 0, y: 0 }, { lang: 'fr', id: 'f2' }), dmx: { footprint: 21 } }],
+      links: [...p.links, { id: 'l2', cableId: 'C-002', a: { deviceId: 'f1', portId: 'DMX-OUT' }, b: { deviceId: 'f2', portId: 'DMX-IN' }, medium: 'dmx' }]
+    }
+    const r = pasteFragment(p, copyFragment(p, ['ode', 'f2'])!, { x: 40, y: 40 }, freshIds)
+    const c = r.project.devices.find((d) => d.id === r.deviceIds[1])!
+    expect(c.dmx?.universe).toBe(1)
+    expect(c.dmx?.address).toBeDefined()
+  })
+
   it('la copie d’un appareil fixé n’est plus fixée', () => {
     const p = patched()
     const f1 = p.devices.find((d) => d.id === 'f1')!

@@ -1,5 +1,6 @@
 import { isDirty, projectStore } from '../store/projectStore'
 import { parseProjectFile } from '../model/file'
+import { autoAddressOnOpen } from '../model/daisyChain'
 import { fileTextOf } from './fileText'
 import { ipcErrorMessage } from './ipcError'
 import type { OpenedFile, OpenRequest, RecoveryEntry } from '../../../shared/api'
@@ -206,7 +207,7 @@ export async function revertToOpenedAction(): Promise<boolean> {
       return false
     }
     if (!window.confirm(currentMessages().app.file.revertConfirm({ name: fileNameOf(path) }))) return false
-    projectStore.getState().apply(() => res.project)
+    projectStore.getState().apply(() => autoAddressOnOpen(res.project))
     return true
   } catch (e) {
     s.showToast(currentMessages().app.file.revertFailed({ reason: ipcErrorMessage(e) }))

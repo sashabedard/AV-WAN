@@ -74,10 +74,11 @@ function buildChains(project: Project): DaisyChain[] {
 // Spec § 4.2 : curseur à 1 ; une adresse fixée (et définie) le replace après elle, sinon l'adresse suit le curseur.
 export function autoAddress(project: Project): Project {
   const wanted = new Map<string, number | undefined>()
+  const byId = new Map(project.devices.map((d) => [d.id, d]))
   for (const chain of daisyChains(project)) {
     let cursor = 1
     for (const id of chain.deviceIds) {
-      const dmx = project.devices.find((d) => d.id === id)?.dmx
+      const dmx = byId.get(id)?.dmx
       if (!dmx) continue
       if (dmx.addressPinned && dmx.address !== undefined) {
         cursor = dmx.address + dmx.footprint
@@ -100,13 +101,16 @@ export function autoAddress(project: Project): Project {
 }
 
 // Spec § 4.5 : à l'ouverture d'un ancien fichier, une adresse enregistrée qui diffère du calcul devient fixée,
-// pour qu'aucune adresse documentée ne bouge ; les automatiques sans adresse reçoivent la leur.
+// pour qu'aucune adresse documentée ne bouge (y compris hors chaîne) ; les automatiques sans adresse reçoivent la leur.
 export function autoAddressOnOpen(project: Project): Project {
   const toPin = new Set<string>()
+  const byId = new Map(project.devices.map((d) => [d.id, d]))
+  const inChain = new Set<string>()
   for (const chain of daisyChains(project)) {
     let cursor = 1
     for (const id of chain.deviceIds) {
-      const dmx = project.devices.find((d) => d.id === id)?.dmx
+      inChain.add(id)
+      const dmx = byId.get(id)?.dmx
       if (!dmx) continue
       if (dmx.address !== undefined && (dmx.addressPinned || dmx.address !== cursor)) {
         if (!dmx.addressPinned) toPin.add(id)
@@ -114,6 +118,8 @@ export function autoAddressOnOpen(project: Project): Project {
       } else cursor += dmx.footprint
     }
   }
+  // Ruling : une adresse tapée hors de toute chaîne est aussi fixée, pour qu'elle survive à un câblage ultérieur.
+  for (const d of project.devices) if (d.dmx?.address !== undefined && !d.dmx.addressPinned && !inChain.has(d.id)) toPin.add(d.id)
   const pinned =
     toPin.size === 0
       ? project

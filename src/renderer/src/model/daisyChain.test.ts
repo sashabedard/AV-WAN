@@ -116,6 +116,38 @@ describe('autoAddressOnOpen', () => {
   })
 })
 
+describe('autoAddressOnOpen : adresses tapées hors chaîne', () => {
+  const flags = (p: Project): Record<string, boolean> => Object.fromEntries(p.devices.filter((d) => d.dmx).map((d) => [d.id, d.dmx!.addressPinned === true]))
+  // Nœud sans univers sur sa prise : a et b sont câblés mais hors chaîne.
+  function offChain(universe?: number): Project {
+    const r = rig()
+    r.add('ode', 'dmx-node', node('ODE-1', universe))
+    r.add('a', 'dmx-fixture', fix(100, 16))
+    r.add('b', 'dmx-fixture', fix(116, 16))
+    r.link(['ode', 'DMX-1'], ['a', 'DMX-IN'])
+    r.link(['a', 'DMX-OUT'], ['b', 'DMX-IN'])
+    return r.p
+  }
+
+  it('fige les adresses hors chaîne, sans changer de valeur, et est idempotente', () => {
+    const q = autoAddressOnOpen(offChain())
+    expect(addr(q)).toEqual({ a: 100, b: 116 })
+    expect(flags(q)).toEqual({ a: true, b: true })
+    expect(autoAddressOnOpen(q)).toBe(q)
+  })
+
+  it('une fois fixées, elles ne bougent pas quand la chaîne apparaît', () => {
+    const q = autoAddressOnOpen(offChain())
+    const onNode = { ...q, devices: q.devices.map((d) => (d.id === 'ode' ? { ...d, portState: { 'DMX-1': { universe: 1 } } } : d)) }
+    expect(addr(autoAddress(onNode))).toEqual({ a: 100, b: 116 })
+  })
+
+  it('un appareil en chaîne dont l’adresse égale le calcul reste automatique', () => {
+    const q = autoAddressOnOpen(chain([['a', fix(1, 16)], ['b', fix(17, 16)]]))
+    expect(Object.values(flags(q))).toEqual([false, false])
+  })
+})
+
 describe('autoAddressOnOpen : cas limites', () => {
   it('garde et fige une adresse enregistrée au-delà du curseur de 512, sans l’effacer', () => {
     const p = chain([['a', fix(500, 16)], ['b', fix(20, 16)]])

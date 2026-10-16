@@ -546,7 +546,7 @@ describe('projectStore : adresses DMX en chaîne (plan 7)', () => {
     expect(d.dmx?.address).toBe(49)
   })
 
-  it('une modification sans rapport (zone) ne change aucune adresse ni la référence des appareils', () => {
+  it('une modification sans rapport (zone) ne change aucune adresse', () => {
     const s = loaded()
     const before = s.getState().history.present.devices
     const z = s.getState().addZone({ x: 0, y: 0, w: 100, h: 100 }, 'Scène')
