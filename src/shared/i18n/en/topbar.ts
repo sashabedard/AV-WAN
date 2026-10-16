@@ -1,7 +1,7 @@
 import type { Messages } from '../messages'
 
 export const topbar: Messages['topbar'] = {
-  langGroup: 'Interface language',
+  langGroup: (p: { name: string }) => `Language: ${p.name}`,
   menu: 'Menu',
   menuTitle: 'File, Edit, View, Help',
   unsaved: 'Unsaved changes',

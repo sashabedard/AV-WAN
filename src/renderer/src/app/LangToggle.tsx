@@ -15,5 +15,6 @@ export function LangToggle() {
     if (window.avwan?.settings?.setLang) void window.avwan.settings.setLang(next)
     else uiStore.getState().setLang(next)
   }
-  return <Segmented options={OPTIONS} value={lang} onChange={choose} ariaLabel={m.topbar.langGroup} />
+  const options = OPTIONS.map((o) => ({ ...o, lang: o.value, title: m.common.langName[o.value] }))
+  return <Segmented options={options} value={lang} onChange={choose} ariaLabel={m.topbar.langGroup({ name: m.common.langName[lang] })} />
 }

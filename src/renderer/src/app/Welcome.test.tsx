@@ -41,6 +41,17 @@ describe('écran d’accueil', () => {
     expect(uiStore.getState().welcome).toBe(false)
   })
 
+  it('Échap après passage en EN : repart d’un projet vierge en anglais', async () => {
+    const user = userEvent.setup()
+    render(<Welcome />)
+    expect(projectStore.getState().history.present.meta.title).toBe('Nouveau projet')
+    act(() => uiStore.getState().setLang('en'))
+    await user.keyboard('{Escape}')
+    expect(projectStore.getState().history.present.meta.title).toBe('New project')
+    expect(uiStore.getState().welcome).toBe(false)
+    act(() => uiStore.getState().setLang('fr'))
+  })
+
   it('rouvre un fichier récent', async () => {
     const user = userEvent.setup()
     render(<Welcome />)

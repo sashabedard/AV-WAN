@@ -6,6 +6,7 @@ import { POE_LABELS, isNetworkMedium, linkPoe, linkVlanView, vlanEnds, type Link
 import { mediumLabel, mediaForFamily } from '../../catalog/labels'
 import { CommitInput } from '../CommitInput'
 import { useT } from '../../i18n/useT'
+import { decimalText, parseDecimalField } from '../../model/fields'
 
 type Trunk = Extract<LinkVlanView, { kind: 'trunk' }>
 
@@ -72,7 +73,7 @@ function TrunkFields({ link, project, view }: { link: Link; project: Project; vi
 
 export function LinkForm({ link, project }: { link: Link; project: Project }) {
   const s = projectStore.getState
-  const { m } = useT()
+  const { m, lang } = useT()
   const t = m.inspector.link
   const a = findPort(project, link.a)
   const b = findPort(project, link.b)
@@ -124,10 +125,11 @@ export function LinkForm({ link, project }: { link: Link; project: Project }) {
           className="input"
           aria-label={t.lengthAria}
           inputMode="decimal"
-          value={link.lengthM !== undefined ? String(link.lengthM) : ''}
+          value={link.lengthM !== undefined ? decimalText(link.lengthM, lang) : ''}
           onCommit={(v) => {
-            const n = Number(v.replace(',', '.'))
-            s().updateLink(link.id, { lengthM: v.trim() === '' || !Number.isFinite(n) || n <= 0 ? undefined : n })
+            const n = parseDecimalField(v, true, lang)
+            if (n === undefined) s().showToast(t.lengthToast)
+            else s().updateLink(link.id, { lengthM: n ?? undefined })
           }}
         />
       </label>
