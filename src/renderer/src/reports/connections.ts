@@ -3,6 +3,7 @@ import { sameRef } from '../model/rules'
 import { linkPoe, linkVlanView, type LinkPoe, type LinkVlanView } from '../model/derive'
 import { mediumLabel } from '../catalog/labels'
 import { messages } from '../../../shared/i18n/messages'
+import type { Lang } from '../../../shared/i18n/lang'
 import { DASH, compareText, lengthLabel, poeLabel, portRefLabel, taggedLabel, vlanName } from './format'
 
 // Un câble vu depuis un de ses bouts. La liste de branchement et les fiches par appareil passent toutes
@@ -26,7 +27,8 @@ export interface Connection {
   note: string
 }
 
-export function connection(project: Project, link: Link, from: PortRef = link.a): Connection {
+export function connection(project: Project, link: Link, lang: Lang, from: PortRef = link.a): Connection {
+  const m = messages(lang)
   const to = sameRef(from, link.a) ? link.b : link.a
   const vlan = linkVlanView(project, link)
   const poe = linkPoe(project, link)
@@ -37,21 +39,21 @@ export function connection(project: Project, link: Link, from: PortRef = link.a)
     to,
     fromLabel: portRefLabel(project, from),
     toLabel: portRefLabel(project, to),
-    medium: mediumLabel(link.medium, messages('fr')), // plan 6 : langue des documents à la Task 12
+    medium: mediumLabel(link.medium, m),
     ...(link.lengthM !== undefined ? { lengthM: link.lengthM } : {}),
-    lengthLabel: lengthLabel(link.lengthM),
+    lengthLabel: lengthLabel(link.lengthM, lang),
     poe,
-    poeLabel: poeLabel(poe),
+    poeLabel: poeLabel(poe, lang),
     vlan,
-    modeLabel: vlan.kind === 'access' ? 'Accès' : vlan.kind === 'trunk' ? 'Trunk' : DASH,
+    modeLabel: vlan.kind === 'access' ? m.reports.common.access : vlan.kind === 'trunk' ? m.reports.common.trunk : DASH,
     nativeLabel:
       vlan.kind === 'access' ? vlanName(project, vlan.vlan) : vlan.kind === 'trunk' && vlan.native !== undefined ? vlanName(project, vlan.native) : DASH,
-    taggedLabel: vlan.kind === 'trunk' ? taggedLabel(vlan.tagged) : DASH,
+    taggedLabel: vlan.kind === 'trunk' ? taggedLabel(vlan.tagged, lang) : DASH,
     note: link.note ?? ''
   }
 }
 
 // Câbles triés par identifiant (C-002 avant C-010).
-export function sortedLinks(project: Project): Link[] {
-  return [...project.links].sort((a, b) => compareText(a.cableId, b.cableId))
+export function sortedLinks(project: Project, lang: Lang): Link[] {
+  return [...project.links].sort((a, b) => compareText(a.cableId, b.cableId, lang))
 }

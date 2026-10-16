@@ -2,10 +2,12 @@ import { Fragment } from 'react'
 import type { Project } from '../model/types'
 import type { DataTable } from '../../../shared/tables'
 import { deviceSheets } from '../reports/deviceSheets'
-import { CHANNEL_COLUMNS, channelBlocks } from '../reports/channelSheets'
-import { PATCH_PDF_COLUMNS, patchGroups } from '../reports/patch'
-import { POWER_PDF_COLUMNS, PSU_COLUMNS, powerBudget } from '../reports/powerBudget'
-import { formatFr } from '../model/fields'
+import { channelBlocks, channelColumns } from '../reports/channelSheets'
+import { patchGroups, patchPdfColumns } from '../reports/patch'
+import { powerBudget, powerPdfColumns, psuColumns } from '../reports/powerBudget'
+import { formatters } from '../../../shared/i18n/format'
+import { messages } from '../../../shared/i18n/messages'
+import { useLang } from '../i18n/useT'
 import { portMaps } from '../reports/portMaps'
 import { vlanSheets } from '../reports/vlanSheets'
 import { PortMapFacade } from './PortMapFacade'
@@ -13,7 +15,7 @@ import { ReportTable } from './ReportTable'
 
 // Section 2 : un bloc par appareil qui n'est pas un switch, jamais coupé entre deux pages.
 export function DeviceSheetsPage({ project }: { project: Project }) {
-  const sheets = deviceSheets(project)
+  const sheets = deviceSheets(project, useLang())
   return (
     <section className="pg pg--sheet">
       <h2 className="pg__h">Fiches par appareil</h2>
@@ -48,7 +50,8 @@ export function DeviceSheetsPage({ project }: { project: Project }) {
 
 // Section « Patch DMX » : un tableau par univers, trié par adresse (spec patch-puissance-catalogue § 6.1).
 export function PatchPage({ project }: { project: Project }) {
-  const groups = patchGroups(project)
+  const lang = useLang()
+  const groups = patchGroups(project, lang)
   return (
     <section className="pg pg--sheet">
       <h2 className="pg__h">Patch DMX</h2>
@@ -60,7 +63,7 @@ export function PatchPage({ project }: { project: Project }) {
             table={{
               id: `patch-${g.universe ?? 'sans'}`,
               title: g.title,
-              columns: PATCH_PDF_COLUMNS,
+              columns: patchPdfColumns(messages(lang)),
               rows: g.rows.map((r) => [r.address ?? null, r.end ?? null, r.channels, r.device, r.model, r.mode, r.zone, r.remark])
             }}
           />
@@ -72,7 +75,8 @@ export function PatchPage({ project }: { project: Project }) {
 
 // Section « Canaux DMX » : un bloc par appareil, adresses réelles, sur trois colonnes (spec canaux-dmx § 5).
 export function ChannelsPage({ project }: { project: Project }) {
-  const blocks = channelBlocks(project)
+  const lang = useLang()
+  const blocks = channelBlocks(project, lang)
   return (
     <section className="pg pg--sheet">
       <h2 className="pg__h">Canaux DMX</h2>
@@ -82,7 +86,7 @@ export function ChannelsPage({ project }: { project: Project }) {
           <article key={b.deviceId} className="cs__block">
             <h3 className="cs__h">{b.title}</h3>
             {b.subtitle && <p className="cs__sub">{b.subtitle}</p>}
-            <ReportTable table={{ id: `canaux-${b.deviceId}`, title: b.title, columns: CHANNEL_COLUMNS, rows: b.rows }} />
+            <ReportTable table={{ id: `canaux-${b.deviceId}`, title: b.title, columns: channelColumns(messages(lang)), rows: b.rows }} />
           </article>
         ))}
       </div>
@@ -94,7 +98,7 @@ const PORT_COLUMNS = ['Port', 'Branché à', 'Câble', 'Mode', 'VLAN natif', 'VL
 
 // Section 3 : pour chaque switch, une page avec sa façade puis le tableau port par port.
 export function PortMapsPage({ project }: { project: Project }) {
-  const maps = portMaps(project)
+  const maps = portMaps(project, useLang())
   if (maps.length === 0) {
     return (
       <section className="pg pg--sheet">
@@ -124,7 +128,7 @@ export function PortMapsPage({ project }: { project: Project }) {
 
 // Section 5 : une fiche par VLAN.
 export function VlanSheetsPage({ project }: { project: Project }) {
-  const sheets = vlanSheets(project)
+  const sheets = vlanSheets(project, useLang())
   return (
     <section className="pg pg--sheet">
       <h2 className="pg__h">Fiches VLAN</h2>
@@ -164,7 +168,10 @@ export function VlanSheetsPage({ project }: { project: Project }) {
 
 // Section « Bilan de puissance » (spec § 6.1).
 export function PowerPage({ project }: { project: Project }) {
-  const b = powerBudget(project)
+  const lang = useLang()
+  const m = messages(lang)
+  const fmt = formatters(lang)
+  const b = powerBudget(project, lang)
   const shown = b.missing.slice(0, 12)
   return (
     <section className="pg pg--sheet">
@@ -177,8 +184,8 @@ export function PowerPage({ project }: { project: Project }) {
             table={{
               id: 'alimentations',
               title: 'Alimentations',
-              columns: PSU_COLUMNS,
-              rows: b.psus.map((s) => [s.name, s.volts !== undefined ? `${formatFr(s.volts)} V` : '', s.capacityW ?? null, s.loadW, s.ratio !== undefined ? `${Math.round(s.ratio * 100)} %` : '', s.fed.join(', '), s.remark])
+              columns: psuColumns(m),
+              rows: b.psus.map((s) => [s.name, s.volts !== undefined ? `${fmt.num(s.volts)} V` : '', s.capacityW ?? null, s.loadW, s.ratio !== undefined ? `${Math.round(s.ratio * 100)} %` : '', s.fed.join(', '), s.remark])
             }}
           />
         </div>
@@ -190,13 +197,13 @@ export function PowerPage({ project }: { project: Project }) {
             table={{
               id: `puissance-${z.zoneId ?? 'hors-zone'}`,
               title: z.zone,
-              columns: POWER_PDF_COLUMNS,
-              rows: [...z.rows.map((r) => [r.device, r.type, r.watts ?? null, r.fedBy, r.mainsW ?? null, r.remark]), ['Sous-total', '', null, '', z.subtotalW, '']]
+              columns: powerPdfColumns(m),
+              rows: [...z.rows.map((r) => [r.device, r.type, r.watts ?? null, r.fedBy, r.mainsW ?? null, r.remark]), [m.reports.power.subtotal, '', null, '', z.subtotalW, '']]
             }}
           />
         </div>
       ))}
-      {b.zones.length > 0 && <p className="pw__total">{`Total : ${formatFr(b.totalW)} W · ${formatFr(b.amps, 1)} A à ${b.voltage} V`}</p>}
+      {b.zones.length > 0 && <p className="pw__total">{`Total : ${fmt.num(b.totalW)} W · ${fmt.num(b.amps, 1)} A à ${b.voltage} V`}</p>}
       {b.missing.length > 0 && (
         <p className="pw__missing">
           {`${b.missing.length} appareil${b.missing.length > 1 ? 's' : ''} sans puissance renseignée : ${shown.join(', ')}${b.missing.length > shown.length ? ` et ${b.missing.length - shown.length} autres` : ''}`}

@@ -25,7 +25,7 @@ function project(): Project {
 
 describe('section Canaux DMX', () => {
   it('un bloc par appareil nommé, adresses réelles, ordre univers › adresse ; non patchés à la fin', () => {
-    const blocks = channelBlocks(project())
+    const blocks = channelBlocks(project(), 'fr')
     expect(blocks.map((b) => b.title)).toEqual(['MH-1 · U1 · 1–3', 'MH-2 · U1 · 19–21', 'MH-9 · U2 · 1–3', 'MH-0 · non patché'])
     expect(blocks[1]!.subtitle).toBe('Lyre test · 3CH')
     expect(blocks[1]!.rows).toEqual([[19, 1, 'Dimmer'], [20, 2, 'Pan'], [21, 3, 'Tilt']])
@@ -36,7 +36,7 @@ describe('section Canaux DMX', () => {
     let p = project()
     p = { ...p, devices: p.devices.map((d) => (d.id === 'mid' ? { ...d, dmx: { footprint: 2, mode: '3CH', address: 19 } } : d)) }
     p = { ...p, dmxChannels: [{ templateId: LYRE.id, model: 'Lyre test', mode: '2CH', params: ['', 'Pan'] }] }
-    const blocks = channelBlocks(p)
+    const blocks = channelBlocks(p, 'fr')
     const mid = blocks.find((b) => b.deviceId === 'mid')!
     expect(mid.title).toBe('MH-2 · U? · 19–20')
     expect(mid.rows).toEqual([[19, 1, 'Dimmer'], [20, 2, 'Pan']])
@@ -45,15 +45,15 @@ describe('section Canaux DMX', () => {
 
   it('rien de nommé : aucun bloc ; les réglages comptent quand on les donne', () => {
     const p = project()
-    expect(channelBlocks(p).some((b) => b.deviceId === 'nameless')).toBe(false)
+    expect(channelBlocks(p, 'fr').some((b) => b.deviceId === 'nameless')).toBe(false)
     const settings = [{ templateId: LYRE.id, model: 'Lyre test', mode: '2CH', params: ['Dim'] }]
-    expect(channelBlocks(p, settings).find((b) => b.deviceId === 'nameless')!.rows[0]).toEqual([40, 1, 'Dim'])
+    expect(channelBlocks(p, 'fr', settings).find((b) => b.deviceId === 'nameless')!.rows[0]).toEqual([40, 1, 'Dim'])
   })
 
   it('gabarit intégré sans modèle : le sous-titre est son nom français', () => {
     let p: Project = createProject(new Date(2026, 9, 15), 'fr')
     p = { ...p, devices: [{ ...createDevice(p, 'moving-spot', { x: 0, y: 0 }, { lang: 'fr', id: 'ms' }), dmx: { footprint: 2, mode: 'X', address: 1, universe: 1 } }] }
     p = { ...p, dmxChannels: [{ templateId: 'moving-spot', model: '', mode: 'X', params: ['Pan', 'Tilt'] }] }
-    expect(channelBlocks(p)[0]!.subtitle).toBe('Lyre spot · X')
+    expect(channelBlocks(p, 'fr')[0]!.subtitle).toBe('Lyre spot · X')
   })
 })

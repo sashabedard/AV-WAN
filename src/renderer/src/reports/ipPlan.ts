@@ -3,16 +3,16 @@ import type { Device, IpConfig, PortRef, Project } from '../model/types'
 import { findDevice, isSwitchLike, linksOnPort } from '../model/rules'
 import { linkVlanView } from '../model/derive'
 import type { Column, DataTable } from '../../../shared/tables'
+import type { Lang } from '../../../shared/i18n/lang'
+import { messages, type Messages } from '../../../shared/i18n/messages'
 import { DASH, compareText, vlanName } from './format'
 
-export const IP_COLUMNS: Column[] = [
-  { label: 'Appareil', width: 16 },
-  { label: 'Interface', width: 14 },
-  { label: 'Adresse IP', width: 16 },
-  { label: 'Mode', width: 10 },
-  { label: 'VLAN', width: 18 },
-  { label: 'Nom d’hôte', width: 18 }
-]
+const WIDTHS = [16, 14, 16, 10, 18, 18]
+
+export function ipColumns(m: Messages): Column[] {
+  const c = m.reports.ip
+  return [c.device, c.iface, c.address, c.mode, c.vlan, c.hostname].map((label, i) => ({ label, width: WIDTHS[i]! }))
+}
 
 interface Entry {
   device: Device
@@ -59,7 +59,7 @@ function ipv4(address: string): number[] | null {
   return parts.every((n) => n <= 255) ? parts : null
 }
 
-function compareEntries(a: Entry, b: Entry): number {
+function compareEntries(a: Entry, b: Entry, lang: Lang): number {
   if (a.vlan !== b.vlan) {
     if (a.vlan === undefined) return 1
     if (b.vlan === undefined) return -1
@@ -72,18 +72,19 @@ function compareEntries(a: Entry, b: Entry): number {
   } else if (ka) return -1
   else if (kb) return 1
   else {
-    const t = compareText(a.ip.address, b.ip.address)
+    const t = compareText(a.ip.address, b.ip.address, lang)
     if (t !== 0) return t
   }
-  return compareText(a.device.name, b.device.name) || compareText(a.iface, b.iface)
+  return compareText(a.device.name, b.device.name, lang) || compareText(a.iface, b.iface, lang)
 }
 
 // Plan d'adressage IP (spec § 11.1, section 6) : trié par VLAN, puis par adresse.
-export function ipPlan(project: Project): DataTable {
+export function ipPlan(project: Project, lang: Lang): DataTable {
+  const m = messages(lang)
   const entries: Entry[] = []
   for (const device of project.devices) {
     if (device.ip) {
-      entries.push({ device, iface: 'Principale', ip: device.ip, vlan: deviceVlan(project, device), ...(device.hostname ? { hostname: device.hostname } : {}) })
+      entries.push({ device, iface: m.reports.ip.main, ip: device.ip, vlan: deviceVlan(project, device), ...(device.hostname ? { hostname: device.hostname } : {}) })
     }
     for (const port of device.ports) {
       const ip = device.portState[port.id]?.ip
@@ -91,7 +92,7 @@ export function ipPlan(project: Project): DataTable {
     }
   }
   const rows = entries
-    .sort(compareEntries)
-    .map((e) => [e.device.name, e.iface, e.ip.address || DASH, e.ip.mode === 'static' ? 'Statique' : 'DHCP', e.vlan !== undefined ? vlanName(project, e.vlan) : DASH, e.hostname ?? ''])
-  return { id: 'plan-ip', title: 'Plan d’adressage IP', columns: IP_COLUMNS, rows }
+    .sort((a, b) => compareEntries(a, b, lang))
+    .map((e) => [e.device.name, e.iface, e.ip.address || DASH, e.ip.mode === 'static' ? m.reports.ip.static : 'DHCP', e.vlan !== undefined ? vlanName(project, e.vlan) : DASH, e.hostname ?? ''])
+  return { id: m.reports.files.ip, title: m.reports.ip.title, columns: ipColumns(m), rows }
 }

@@ -2,6 +2,7 @@ import { BrowserWindow, dialog, ipcMain, type SaveDialogOptions } from 'electron
 import { basename, join } from 'node:path'
 import { IPC } from '../shared/api'
 import { isDataTables, toCsv } from '../shared/tables'
+import { isLang } from '../shared/i18n/lang'
 import type { PdfOptions } from '../shared/pdfOptions'
 import { atomicWriteFile } from './fileIO'
 import { withFsErrors } from './errors'
@@ -38,7 +39,7 @@ export function registerExportIpc(): void {
     })
   )
 
-  ipcMain.handle(IPC.exportCsv, (event, tables: unknown, suggestedName: unknown) =>
+  ipcMain.handle(IPC.exportCsv, (event, tables: unknown, suggestedName: unknown, lang: unknown) =>
     withFsErrors(async () => {
       if (!isDataTables(tables)) throw new Error(mainMessages().errors.invalidExport)
       const target = await chooseExportPath(BrowserWindow.fromWebContents(event.sender), 'csv', String(suggestedName))
@@ -59,17 +60,17 @@ export function registerExportIpc(): void {
         const { response } = win ? await dialog.showMessageBox(win, options) : await dialog.showMessageBox(options)
         if (response !== 0) return null
       }
-      for (const [i, t] of tables.entries()) await atomicWriteFile(paths[i]!, toCsv(t))
+      for (const [i, t] of tables.entries()) await atomicWriteFile(paths[i]!, toCsv(t, isLang(lang) ? lang : 'fr'))
       return paths
     })
   )
 
-  ipcMain.handle(IPC.exportXlsx, (event, tables: unknown, suggestedName: unknown) =>
+  ipcMain.handle(IPC.exportXlsx, (event, tables: unknown, suggestedName: unknown, lang: unknown) =>
     withFsErrors(async () => {
       if (!isDataTables(tables)) throw new Error(mainMessages().errors.invalidExport)
       const target = await chooseExportPath(BrowserWindow.fromWebContents(event.sender), 'xlsx', String(suggestedName))
       if (!target) return null
-      await atomicWriteFile(target, await buildXlsx(tables))
+      await atomicWriteFile(target, await buildXlsx(tables, isLang(lang) ? lang : 'fr'))
       return target
     })
   )

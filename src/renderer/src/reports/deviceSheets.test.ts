@@ -6,11 +6,11 @@ import { cableSchedule } from './cableSchedule'
 import { deviceSheets } from './deviceSheets'
 
 const p = createExampleProject(new Date(2026, 9, 13), 'fr')
-const sheet = (name: string) => deviceSheets(p).find((s) => s.name === name)!
+const sheet = (name: string) => deviceSheets(p, 'fr').find((s) => s.name === name)!
 
 describe('deviceSheets', () => {
   it('fait une fiche par appareil qui n’est pas un switch, triée par nom', () => {
-    expect(deviceSheets(p).map((s) => s.name)).toEqual([
+    expect(deviceSheets(p, 'fr').map((s) => s.name)).toEqual([
       'AP-1', 'CAM-1', 'CAM-2', 'DMX-1', 'DNT-1', 'FIX-1', 'GW-1', 'IOT-1', 'IOT-2',
       'LED-1', 'LED-2', 'LX-1', 'MAC-1', 'MH-1', 'MH-2', 'MH-3', 'MQT-1', 'PC-1', 'PIX-1', 'PSU-1', 'SPK-1', 'SPK-2'
     ])
@@ -34,9 +34,9 @@ describe('deviceSheets', () => {
   })
 
   it('ne contredit jamais la liste de branchement (spec § 1, critère 2)', () => {
-    const rows = new Map(cableSchedule(p).rows.map((r) => [r[0], r]))
+    const rows = new Map(cableSchedule(p, 'fr').rows.map((r) => [r[0], r]))
     let checked = 0
-    for (const s of deviceSheets(p)) {
+    for (const s of deviceSheets(p, 'fr')) {
       for (const { connection: c } of s.lines) {
         const r = rows.get(c.cableId)
         expect(r, c.cableId).toBeDefined()
@@ -54,7 +54,7 @@ describe('deviceSheets : ligne DMX', () => {
   it('ajoute le résumé du patch aux appareils patchables seulement', () => {
     let q = createExampleProject(new Date(2026, 9, 13), 'fr')
     q = { ...q, devices: [...q.devices, { ...createDevice(q, 'dmx-fixture', { x: 0, y: 0 }, { lang: 'fr', id: 'wash' }), name: 'WASH-9', dmx: { footprint: 16, address: 33, universe: 2, mode: 'Standard 16 ch' } }] }
-    const find = (name: string) => deviceSheets(q).find((s) => s.name === name)!
+    const find = (name: string) => deviceSheets(q, 'fr').find((s) => s.name === name)!
     expect(find('WASH-9').extras).toEqual(['DMX : U2 · 33–48 · 16 ch · Standard 16 ch'])
     expect(find('CAM-1').extras).toEqual([])
   })
@@ -81,7 +81,7 @@ function benchWithLyre(): Project {
 
 describe('deviceSheets : puissance', () => {
   it('ajoute puissance, bande et alimentation aux fiches', () => {
-    const sheets = deviceSheets(benchWithLyre())
+    const sheets = deviceSheets(benchWithLyre(), 'fr')
     const extras = (name: string) => sheets.find((s) => s.name === name)!.extras
     expect(extras('MH-1')).toEqual(['Puissance : 470 W'])
     expect(extras('LED-1')).toEqual(['COB mono · 24 V · 14,4 W/m · 10 m · 144 W'])

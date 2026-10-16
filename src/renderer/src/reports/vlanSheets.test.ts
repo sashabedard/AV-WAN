@@ -7,11 +7,11 @@ const p = createExampleProject(new Date(2026, 9, 13), 'fr')
 
 describe('vlanSheets', () => {
   it('fait une fiche par VLAN, par numéro croissant', () => {
-    expect(vlanSheets(p).map((s) => s.id)).toEqual([10, 20, 30, 40, 50, 60])
+    expect(vlanSheets(p, 'fr').map((s) => s.id)).toEqual([10, 20, 30, 40, 50, 60])
   })
 
   it('donne le réseau, les réglages UniFi sous leurs noms exacts, les membres et la note', () => {
-    const ndi = vlanSheets(p).find((s) => s.id === 40)!
+    const ndi = vlanSheets(p, 'fr').find((s) => s.id === 40)!
     expect(ndi).toMatchObject({ name: 'NDI', short: 'NDI', color: '#2563C9', cables: 5 })
     expect(ndi.network).toEqual([
       ['Sous-réseau', '10.40.0.0/23'],
@@ -35,12 +35,12 @@ describe('vlanSheets', () => {
   })
 
   it('cache les sous-réglages IGMP quand l’IGMP est coupé, comme l’inspecteur', () => {
-    const mgmt = vlanSheets(p).find((s) => s.id === 10)!
+    const mgmt = vlanSheets(p, 'fr').find((s) => s.id === 10)!
     expect(mgmt.unifi.map(([k]) => k)).toEqual(['IGMP Snooping', 'mDNS Proxy', 'Network Isolation', 'Profil de port ProAV', 'Jumbo Frames'])
   })
 
   it('affiche la plage DHCP quand elle est connue', () => {
     const q = { ...p, vlans: p.vlans.map((v) => (v.id === 60 ? { ...v, dhcp: { enabled: true, range: '10.60.0.100-10.60.0.199' } } : v)) }
-    expect(vlanSheets(q).find((s) => s.id === 60)!.network[2]).toEqual(['DHCP', 'Oui · 10.60.0.100-10.60.0.199'])
+    expect(vlanSheets(q, 'fr').find((s) => s.id === 60)!.network[2]).toEqual(['DHCP', 'Oui · 10.60.0.100-10.60.0.199'])
   })
 })

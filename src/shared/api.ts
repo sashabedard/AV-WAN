@@ -90,8 +90,8 @@ export interface AvwanApi {
   }
   export: {
     pdf(projectText: string, options: PdfOptions, suggestedName: string): Promise<string | null>
-    csv(tables: DataTable[], suggestedName: string): Promise<string[] | null>
-    xlsx(tables: DataTable[], suggestedName: string): Promise<string | null>
+    csv(tables: DataTable[], suggestedName: string, lang: Lang): Promise<string[] | null>
+    xlsx(tables: DataTable[], suggestedName: string, lang: Lang): Promise<string | null>
   }
   print: {
     job(): Promise<PrintJob>

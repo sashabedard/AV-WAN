@@ -7,11 +7,11 @@ import { createDevice, createProject } from '../model/project'
 import type { Project } from '../model/types'
 
 const p = createExampleProject(new Date(2026, 9, 13), 'fr')
-const of = (kind: string, project = p) => bom(project).rows.filter((r) => r[0] === kind)
+const of = (kind: string, project = p) => bom(project, 'fr').rows.filter((r) => r[0] === kind)
 
 describe('bom', () => {
   it('compte les appareils par gabarit et modèle ; un switch est décrit par sa configuration', () => {
-    const t = bom(p)
+    const t = bom(p, 'fr')
     expect(t).toMatchObject({ id: 'nomenclature', title: 'Nomenclature' })
     expect(t.columns.map((c) => c.label)).toEqual(['Catégorie', 'Désignation', 'Détail', 'Quantité'])
     const devices = of('Appareil')
@@ -72,7 +72,7 @@ function stripsProject(): Project {
 
 describe('bom : bandes LED et alimentations', () => {
   it('regroupe les bandes par type, tension et W/m, avec la longueur totale', () => {
-    const rows = bom(stripsProject()).rows
+    const rows = bom(stripsProject(), 'fr').rows
     expect(rows).toContainEqual(['Appareil', 'Bande LED COB mono', '24 V · 10 W/m · 15 m au total + longueur à définir', 3])
     expect(rows).toContainEqual(['Appareil', 'Alimentation', '24 V · 360 W', 1])
     expect(rows.some((r) => r[1] === 'Bande LED')).toBe(false)
@@ -80,14 +80,25 @@ describe('bom : bandes LED et alimentations', () => {
 
   it('alimentation dont la capacité s’arrondit à 0 : pas de « 0 W »', () => {
     const p = stripsProject()
-    const rows = bom({ ...p, devices: p.devices.map((d) => (d.id === 'p' ? { ...d, psu: { volts: 5, amps: 0.005 } } : d)) }).rows
+    const rows = bom({ ...p, devices: p.devices.map((d) => (d.id === 'p' ? { ...d, psu: { volts: 5, amps: 0.005 } } : d)) }, 'fr').rows
     expect(rows).toContainEqual(['Appareil', 'Alimentation', '5 V', 1])
   })
 
   it('aucune longueur connue : « longueur à définir », pas « 0 m au total »', () => {
     const p = stripsProject()
     const unknown = p.devices.find((d) => d.id === 's2')! // sans longueur
-    const rows = bom({ ...p, devices: [unknown, { ...unknown, id: 's9' }] }).rows
+    const rows = bom({ ...p, devices: [unknown, { ...unknown, id: 's9' }] }, 'fr').rows
     expect(rows).toContainEqual(['Appareil', 'Bande LED COB mono', '24 V · 10 W/m · longueur à définir', 2])
+  })
+})
+
+describe('bom en anglais', () => {
+  it('écrit la nomenclature en anglais', () => {
+    const q = createExampleProject(new Date(2026, 9, 13), 'en')
+    const t = bom(q, 'en')
+    expect([t.id, t.title]).toEqual(['bill-of-materials', 'Bill of materials'])
+    expect(t.columns.map((c) => c.label)).toEqual(['Category', 'Item', 'Details', 'Qty'])
+    expect(t.rows.filter((r) => r[0] === 'Cable').length).toBeGreaterThan(0)
+    expect(t.rows.filter((r) => r[0] === 'Device').length).toBeGreaterThan(0)
   })
 })

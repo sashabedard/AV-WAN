@@ -5,15 +5,15 @@ const table = (rows: Cell[][]): DataTable => ({ id: 't', title: 'T', columns: [{
 
 describe('toCsv', () => {
   it('écrit un CSV pour Excel en français : BOM, « ; », virgule décimale, CRLF', () => {
-    expect(toCsv(table([['C-001', 12], ['C-002', 1.5], ['C-003', null]]))).toBe('﻿Nom;Longueur (m)\r\nC-001;12\r\nC-002;1,5\r\nC-003;\r\n')
+    expect(toCsv(table([['C-001', 12], ['C-002', 1.5], ['C-003', null]]), 'fr')).toBe('﻿Nom;Longueur (m)\r\nC-001;12\r\nC-002;1,5\r\nC-003;\r\n')
   })
 
   it('met entre guillemets une cellule qui contient « ; », un guillemet ou un saut de ligne', () => {
-    expect(toCsv(table([['Régie; baie "A"\nhaut', 1]])).split('\r\n')[1]).toBe('"Régie; baie ""A""\nhaut";1')
+    expect(toCsv(table([['Régie; baie "A"\nhaut', 1]]), 'fr').split('\r\n')[1]).toBe('"Régie; baie ""A""\nhaut";1')
   })
 
   it('neutralise un texte qu’Excel prendrait pour une formule, mais pas un nombre négatif', () => {
-    const lines = toCsv(table([['=HYPERLINK("x")', 1], ['+33', 2], ['-cmd', 3], ['@SUM', 4], ['C-1', -2]])).split('\r\n')
+    const lines = toCsv(table([['=HYPERLINK("x")', 1], ['+33', 2], ['-cmd', 3], ['@SUM', 4], ['C-1', -2]]), 'fr').split('\r\n')
     expect(lines.slice(1, 6)).toEqual(['"\'=HYPERLINK(""x"")";1', "'+33;2", "'-cmd;3", "'@SUM;4", 'C-1;-2'])
   })
 })
@@ -31,5 +31,13 @@ describe('isDataTables', () => {
     expect(isDataTables([{ ...ok, rows: [[{ a: 1 }]] }])).toBe(false)
     expect(isDataTables([{ ...ok, columns: [{}] }])).toBe(false)
     expect(isDataTables('tableaux')).toBe(false)
+  })
+})
+
+describe('toCsv selon la langue', () => {
+  it('écrit un CSV à l’anglaise : virgule, point décimal, texte à virgule entre guillemets', () => {
+    const t = { id: 'cabling', title: 'Cabling', columns: [{ label: 'Note' }, { label: 'Length (m)' }], rows: [['Rack A, U12', 12.5]] }
+    expect(toCsv(t, 'en')).toBe('\uFEFFNote,Length (m)\r\n"Rack A, U12",12.5\r\n')
+    expect(toCsv(t, 'fr')).toBe('\uFEFFNote;Length (m)\r\nRack A, U12;12,5\r\n')
   })
 })

@@ -41,8 +41,8 @@ const api: AvwanApi = {
   },
   export: {
     pdf: (projectText, options, suggestedName) => ipcRenderer.invoke(IPC.exportPdf, projectText, options, suggestedName),
-    csv: (tables, suggestedName) => ipcRenderer.invoke(IPC.exportCsv, tables, suggestedName),
-    xlsx: (tables, suggestedName) => ipcRenderer.invoke(IPC.exportXlsx, tables, suggestedName)
+    csv: (tables, suggestedName, lang) => ipcRenderer.invoke(IPC.exportCsv, tables, suggestedName, lang),
+    xlsx: (tables, suggestedName, lang) => ipcRenderer.invoke(IPC.exportXlsx, tables, suggestedName, lang)
   },
   print: {
     job: () => ipcRenderer.invoke(IPC.printJob),

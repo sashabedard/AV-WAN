@@ -1,19 +1,25 @@
 // src/renderer/src/export/ExportDialog.tsx
 import { useState } from 'react'
-import { PDF_FORMAT_LABELS, PDF_SECTIONS, type PdfFormat, type PdfOptions, type PdfSection } from '../../../shared/pdfOptions'
+import { PDF_SECTION_IDS, pdfSectionLabel, type PdfFormat, type PdfOptions, type PdfSection } from '../../../shared/pdfOptions'
+import type { Lang } from '../../../shared/i18n/lang'
 import { projectStore, useProject } from '../store/projectStore'
 import { uiStore, useUiStore } from '../store/uiStore'
 import { Segmented } from '../panels/Segmented'
+import { useT } from '../i18n/useT'
+import { loadDocLang, saveDocLang } from './docLang'
 import { exportCsvAction, exportPdfAction, exportXlsxAction } from './exportActions'
 import './export.css'
 
-const FORMATS = (['na', 'iso'] as const).map((value) => ({ value, label: PDF_FORMAT_LABELS[value] }))
-const ALL_SECTIONS = PDF_SECTIONS.map((s) => s.id)
+const ALL_SECTIONS = PDF_SECTION_IDS
+const DOC_LANGS: ReadonlyArray<{ value: Lang; label: string }> = [
+  { value: 'fr', label: 'FR' },
+  { value: 'en', label: 'EN' }
+]
 
 interface Props {
   onExport?: (options: PdfOptions) => unknown
-  onCsv?: () => unknown
-  onXlsx?: () => unknown
+  onCsv?: (lang: Lang) => unknown
+  onXlsx?: (lang: Lang) => unknown
 }
 
 // Boîte « Exporter » (spec § 11) : le PDF (sections, format, pages de zone), ou les listes en CSV et en Excel.
@@ -23,14 +29,24 @@ export function ExportDialog({ onExport = exportPdfAction, onCsv = exportCsvActi
 }
 
 function ExportForm({ onExport, onCsv, onXlsx }: Required<Props>) {
+  const { m, lang } = useT()
+  const t = m.export.dialog
+  const formats = (['na', 'iso'] as const).map((value) => ({ value, label: m.export.formats[value] }))
   const project = useProject()
   const last = useUiStore((s) => s.lastPdfChoice)
   const [sections, setSections] = useState<ReadonlySet<PdfSection>>(() => new Set(last?.sections ?? ALL_SECTIONS))
   const [format, setFormat] = useState<PdfFormat>(project.settings.pageFormat)
   const [zonePages, setZonePages] = useState(last?.zonePages ?? true)
+  // Langue des fichiers (PDF, CSV, Excel) : retenue d'un export à l'autre, la langue de l'interface au premier.
+  const [docLang, setDocLang] = useState<Lang>(() => loadDocLang(lang))
   const zoneCount = project.zones.filter((z) => z.ownPdfPage).length
   const zonesPossible = sections.has('schema') && zoneCount > 0
   const close = (): void => uiStore.getState().setExportOpen(false)
+  const exportList = (run: (lang: Lang) => unknown): void => {
+    saveDocLang(docLang)
+    close()
+    void run(docLang)
+  }
   const toggle = (id: PdfSection, on: boolean): void =>
     setSections((prev) => {
       const next = new Set(prev)
@@ -39,7 +55,8 @@ function ExportForm({ onExport, onCsv, onXlsx }: Required<Props>) {
       return next
     })
   const submit = (): void => {
-    const options: PdfOptions = { sections: ALL_SECTIONS.filter((id) => sections.has(id)), format, zonePages }
+    const options: PdfOptions = { sections: ALL_SECTIONS.filter((id) => sections.has(id)), format, zonePages, lang: docLang }
+    saveDocLang(docLang)
     if (format !== project.settings.pageFormat) projectStore.getState().setPageFormat(format)
     uiStore.getState().rememberPdfChoice({ sections: options.sections, zonePages })
     close()
@@ -50,7 +67,7 @@ function ExportForm({ onExport, onCsv, onXlsx }: Required<Props>) {
       className="xd"
       role="dialog"
       aria-modal="true"
-      aria-label="Exporter le PDF"
+      aria-label={t.title}
       onKeyDown={(e) => {
         if (e.key === 'Escape') close()
       }}
@@ -62,53 +79,51 @@ function ExportForm({ onExport, onCsv, onXlsx }: Required<Props>) {
           submit()
         }}
       >
-        <h2 className="xd__title">Exporter le PDF</h2>
+        <h2 className="xd__title">{t.title}</h2>
         <fieldset className="xd__group">
-          <legend className="xd__legend">Sections</legend>
-          {PDF_SECTIONS.map((s, i) => (
-            <label key={s.id} className="xd__check">
-              <input type="checkbox" checked={sections.has(s.id)} autoFocus={i === 0} onChange={(e) => toggle(s.id, e.target.checked)} />
-              <span>{`${i + 1}. ${s.label}`}</span>
+          <legend className="xd__legend">{t.sections}</legend>
+          {ALL_SECTIONS.map((id, i) => (
+            <label key={id} className="xd__check">
+              <input type="checkbox" checked={sections.has(id)} autoFocus={i === 0} onChange={(e) => toggle(id, e.target.checked)} />
+              <span>{`${i + 1}. ${pdfSectionLabel(id, m)}`}</span>
             </label>
           ))}
         </fieldset>
         <label className="xd__check">
           <input type="checkbox" checked={zonesPossible && zonePages} disabled={!zonesPossible} onChange={(e) => setZonePages(e.target.checked)} />
-          <span>{`Pages de zone agrandies (${zoneCount})`}</span>
+          <span>{t.zonePages({ n: zoneCount })}</span>
         </label>
         <div className="xd__group">
-          <span className="xd__legend">Format</span>
-          <Segmented ariaLabel="Format des pages" options={FORMATS} value={format} onChange={setFormat} />
+          <span className="xd__legend">{t.docLang}</span>
+          <Segmented ariaLabel={t.docLang} options={DOC_LANGS} value={docLang} onChange={setDocLang} />
+        </div>
+        <div className="xd__group">
+          <span className="xd__legend">{t.format}</span>
+          <Segmented ariaLabel={t.formatAria} options={formats} value={format} onChange={setFormat} />
         </div>
         <div className="xd__data">
-          <span className="xd__legend">Listes (branchement, plan IP, nomenclature)</span>
+          <span className="xd__legend">{t.lists}</span>
           <button
             type="button"
             className="btn"
-            onClick={() => {
-              close()
-              void onCsv()
-            }}
+            onClick={() => exportList(onCsv)}
           >
-            CSV…
+            {t.csv}
           </button>
           <button
             type="button"
             className="btn"
-            onClick={() => {
-              close()
-              void onXlsx()
-            }}
+            onClick={() => exportList(onXlsx)}
           >
-            Excel…
+            {t.xlsx}
           </button>
         </div>
         <div className="xd__actions">
           <button type="button" className="btn" onClick={close}>
-            Annuler
+            {m.common.cancel}
           </button>
           <button type="submit" className="btn btn--primary" disabled={sections.size === 0}>
-            Exporter le PDF…
+            {t.submit}
           </button>
         </div>
       </form>

@@ -18,5 +18,7 @@ import { panels } from './panels'
 import { inspector } from './inspector'
 import { catalog } from './catalog'
 import { model } from './model'
+import { reports } from './reports'
+import { exportMessages } from './export'
 
-export const en: Messages = { common, menu, dialogs, errors, update, topbar, welcome, app, theme, canvas, palette, quickSearch, vlanPanel, componentEditor, switchConfigurator, panels, inspector, catalog, model }
+export const en: Messages = { common, menu, dialogs, errors, update, topbar, welcome, app, theme, canvas, palette, quickSearch, vlanPanel, componentEditor, switchConfigurator, panels, inspector, catalog, model, reports, export: exportMessages }

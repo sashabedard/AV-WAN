@@ -48,13 +48,13 @@ export function PrintDocument({ project, options, onReady }: { project: Project;
       ))}
       {has('appareils') && <DeviceSheetsPage project={project} />}
       {has('ports') && <PortMapsPage project={project} />}
-      {has('branchement') && <TablePage table={cableSchedule(project)} empty="Aucun câble dans le projet." />}
+      {has('branchement') && <TablePage table={cableSchedule(project, options.lang)} empty="Aucun câble dans le projet." />}
       {has('vlans') && <VlanSheetsPage project={project} />}
-      {has('ip') && <TablePage table={ipPlan(project)} empty="Aucune adresse IP dans le projet." />}
+      {has('ip') && <TablePage table={ipPlan(project, options.lang)} empty="Aucune adresse IP dans le projet." />}
       {has('patch') && <PatchPage project={project} />}
       {has('canaux') && <ChannelsPage project={project} />}
       {has('puissance') && <PowerPage project={project} />}
-      {has('nomenclature') && <TablePage table={bom(project)} empty="Projet vide : rien à commander." />}
+      {has('nomenclature') && <TablePage table={bom(project, options.lang)} empty="Projet vide : rien à commander." />}
     </div>
   )
 }

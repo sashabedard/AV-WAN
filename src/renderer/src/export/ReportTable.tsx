@@ -1,7 +1,9 @@
 import type { DataTable } from '../../../shared/tables'
 import { cellText } from '../reports/format'
+import { useLang } from '../i18n/useT'
 
 export function ReportTable({ table }: { table: DataTable }) {
+  const lang = useLang()
   return (
     <table className="rt">
       <thead>
@@ -18,7 +20,7 @@ export function ReportTable({ table }: { table: DataTable }) {
           <tr key={i}>
             {row.map((c, j) => (
               <td key={j} className={typeof c === 'number' ? 'rt__num' : undefined}>
-                {cellText(c)}
+                {cellText(c, lang)}
               </td>
             ))}
           </tr>

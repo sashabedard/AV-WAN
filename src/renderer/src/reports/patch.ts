@@ -7,21 +7,18 @@ import { LED_STRIP_TYPES } from '../model/led'
 import { issueTexts, overlapsIn, patchIndex, patchIssues, rangeLabel, sourceLabel, sourceText, TYPED_SOURCE, type PatchEntry } from '../model/dmx'
 import type { Cell, Column, DataTable } from '../../../shared/tables'
 import { compareText } from './format'
-import { messages } from '../../../shared/i18n/messages'
+import { messages, type Messages } from '../../../shared/i18n/messages'
+import type { Lang } from '../../../shared/i18n/lang'
 
-export const PATCH_COLUMNS: Column[] = [
-  { label: 'Univers', width: 9 },
-  { label: 'Adresse', width: 9 },
-  { label: 'Fin', width: 7 },
-  { label: 'Canaux', width: 8 },
-  { label: 'Appareil', width: 16 },
-  { label: 'Modèle', width: 26 },
-  { label: 'Mode', width: 20 },
-  { label: 'Source', width: 18 },
-  { label: 'Zone', width: 14 },
-  { label: 'Remarque', width: 30 }
-]
-export const PATCH_PDF_COLUMNS: Column[] = ['Adresse', 'Fin', 'Canaux', 'Appareil', 'Modèle', 'Mode', 'Zone', 'Remarque'].map((label) => ({ label }))
+export function patchColumns(m: Messages): Column[] {
+  const c = m.reports.patch
+  const widths = [9, 9, 7, 8, 16, 26, 20, 18, 14, 30]
+  return [c.universe, c.address, c.end, c.channels, c.device, c.model, c.mode, c.source, c.zone, c.remark].map((label, i) => ({ label, width: widths[i]! }))
+}
+export function patchPdfColumns(m: Messages): Column[] {
+  const c = m.reports.patch
+  return [c.address, c.end, c.channels, c.device, c.model, c.mode, c.zone, c.remark].map((label) => ({ label }))
+}
 
 export interface PatchRow {
   universe?: number
@@ -45,7 +42,8 @@ const zoneName = (project: Project, id: string | undefined): string => project.z
 const undefinedLast = (a: number | undefined, b: number | undefined): number => (a === b ? 0 : a === undefined ? 1 : b === undefined ? -1 : a - b)
 
 // Une ligne par appareil patchable (spec § 6.1) ; la partie B y ajoute les bandes pixel.
-export function patchRows(project: Project): PatchRow[] {
+export function patchRows(project: Project, lang: Lang): PatchRow[] {
+  const m = messages(lang)
   const index = patchIndex(project)
   const rows: PatchRow[] = []
   for (const entry of index.entries.values()) {
@@ -57,11 +55,11 @@ export function patchRows(project: Project): PatchRow[] {
       ...(dmx.address !== undefined ? { address: dmx.address, end: dmx.address + dmx.footprint - 1 } : {}),
       channels: dmx.footprint,
       device: d.name,
-      model: d.model ?? t?.model ?? (t ? displayName(t, 'fr') : '') /* plan 6 : langue des documents à la Task 12 */,
-      mode: dmx.mode ? modeLabel(dmx.mode, 'fr') /* plan 6 : langue des documents à la Task 12 */ : '',
+      model: d.model ?? t?.model ?? (t ? displayName(t, lang) : ''),
+      mode: dmx.mode ? modeLabel(dmx.mode, lang) : '',
       source: entry.universe ? sourceLabel(project, entry.universe.source) : '',
       zone: zoneName(project, d.zoneId),
-      remark: issueTexts(patchIssues(index, d.id), messages('fr')).join(' · ') /* plan 6 : langue des documents à la Task 12 */
+      remark: issueTexts(patchIssues(index, d.id), m).join(' · ')
     })
   }
   for (const sp of index.strips.values()) {
@@ -75,21 +73,22 @@ export function patchRows(project: Project): PatchRow[] {
         end: span.channels,
         channels: span.channels,
         device: d.name,
-        model: d.model ?? t?.model ?? (t ? displayName(t, 'fr') : '') /* plan 6 : langue des documents à la Task 12 */,
+        model: d.model ?? t?.model ?? (t ? displayName(t, lang) : ''),
         mode: `${label} · ${span.pixels} px`,
         source: sourceLabel(project, { kind: 'port', ref: sp.source }),
         zone: zoneName(project, d.zoneId),
-        remark: issueTexts({ overlaps: overlapsIn(index, span.universe, 1, span.channels, d.id), overflow: false }, messages('fr')).join(' · ') /* plan 6 : langue des documents à la Task 12 */
+        remark: issueTexts({ overlaps: overlapsIn(index, span.universe, 1, span.channels, d.id), overflow: false }, m).join(' · ')
       })
     }
   }
-  return rows.sort((a, b) => undefinedLast(a.universe, b.universe) || undefinedLast(a.address, b.address) || compareText(a.device, b.device))
+  return rows.sort((a, b) => undefinedLast(a.universe, b.universe) || undefinedLast(a.address, b.address) || compareText(a.device, b.device, lang))
 }
 
 // Un bloc par univers ; l'en-tête nomme la ou les sorties qui le portent (la source « typed », univers tapé, n'en est pas une).
-export function patchGroups(project: Project): PatchGroup[] {
+export function patchGroups(project: Project, lang: Lang): PatchGroup[] {
+  const c = messages(lang).reports.patch
   const groups: PatchGroup[] = []
-  for (const row of patchRows(project)) {
+  for (const row of patchRows(project, lang)) {
     let g = groups.at(-1)
     if (!g || g.universe !== row.universe) {
       g = { ...(row.universe !== undefined ? { universe: row.universe } : {}), title: '', rows: [] }
@@ -99,22 +98,24 @@ export function patchGroups(project: Project): PatchGroup[] {
   }
   for (const g of groups) {
     const sources = [...new Set(g.rows.map((r) => r.source).filter((s) => s && s !== TYPED_SOURCE))]
-    g.title = g.universe === undefined ? 'Sans univers' : `Univers ${g.universe}${sources.length > 0 ? ` · ${sources.join(', ')}` : ''}`
+    g.title = g.universe === undefined ? c.noUniverse : `${c.groupTitle({ n: g.universe })}${sources.length > 0 ? ` · ${sources.join(', ')}` : ''}`
   }
   return groups
 }
 
 const num = (n: number | undefined): Cell => (n === undefined ? null : n)
 
-export function patchTable(project: Project): DataTable {
-  const rows = patchRows(project).map((r): Cell[] => [num(r.universe), num(r.address), num(r.end), r.channels, r.device, r.model, r.mode, sourceText(r.source, messages('fr')) /* plan 6 : langue des documents à la Task 12 */, r.zone, r.remark])
-  return { id: 'patch-dmx', title: 'Patch DMX', columns: PATCH_COLUMNS, rows }
+export function patchTable(project: Project, lang: Lang): DataTable {
+  const m = messages(lang)
+  const rows = patchRows(project, lang).map((r): Cell[] => [num(r.universe), num(r.address), num(r.end), r.channels, r.device, r.model, r.mode, sourceText(r.source, m), r.zone, r.remark])
+  return { id: m.reports.files.patch, title: m.reports.patch.title, columns: patchColumns(m), rows }
 }
 
 // « DMX : U2 · 33–48 · 16 ch · Standard 16 ch » (fiches par appareil, § 6.3).
-export function dmxSummary(entry: PatchEntry): string {
+export function dmxSummary(entry: PatchEntry, lang: Lang): string {
+  const c = messages(lang).reports.patch
   const dmx = entry.device.dmx!
-  const universe = entry.universe ? `U${entry.universe.universe}` : 'univers inconnu'
-  const range = dmx.address !== undefined ? rangeLabel(dmx.address, dmx.address + dmx.footprint - 1) : 'adresse à définir'
-  return [`DMX : ${universe}`, range, `${dmx.footprint} ch`, ...(dmx.mode ? [modeLabel(dmx.mode, 'fr') /* plan 6 : langue des documents à la Task 12 */] : [])].join(' · ')
+  const universe = entry.universe ? `U${entry.universe.universe}` : c.unknownUniverse
+  const range = dmx.address !== undefined ? rangeLabel(dmx.address, dmx.address + dmx.footprint - 1) : c.addressTbd
+  return [c.summaryHead({ universe }), range, `${dmx.footprint} ${c.channelsShort}`, ...(dmx.mode ? [modeLabel(dmx.mode, lang)] : [])].join(' · ')
 }

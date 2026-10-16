@@ -6,7 +6,8 @@ describe('options du PDF', () => {
     expect(defaultPdfOptions()).toEqual({
       sections: ['schema', 'appareils', 'ports', 'branchement', 'vlans', 'ip', 'patch', 'canaux', 'puissance', 'nomenclature'],
       format: 'na',
-      zonePages: true
+      zonePages: true,
+      lang: 'fr'
     })
     expect(defaultPdfOptions('iso').format).toBe('iso')
   })
@@ -15,12 +16,22 @@ describe('options du PDF', () => {
     expect(normalizePdfOptions({ sections: ['ip', 'schema', 'inconnue', 'ip'], format: 'iso', zonePages: true })).toEqual({
       sections: ['schema', 'ip'],
       format: 'iso',
-      zonePages: true
+      zonePages: true,
+      lang: 'fr'
     })
   })
 
   it('remplace une valeur douteuse par la valeur sûre', () => {
-    expect(normalizePdfOptions(null)).toEqual({ sections: [], format: 'na', zonePages: false })
-    expect(normalizePdfOptions({ sections: 'schema', format: 'A0', zonePages: 'oui' })).toEqual({ sections: [], format: 'na', zonePages: false })
+    expect(normalizePdfOptions(null)).toEqual({ sections: [], format: 'na', zonePages: false, lang: 'fr' })
+    expect(normalizePdfOptions({ sections: 'schema', format: 'A0', zonePages: 'oui' })).toEqual({ sections: [], format: 'na', zonePages: false, lang: 'fr' })
+  })
+})
+
+describe('langue des documents', () => {
+  it('garde la langue des documents, français par défaut', () => {
+    expect(normalizePdfOptions({ sections: ['schema'], format: 'na', zonePages: true, lang: 'en' }).lang).toBe('en')
+    expect(normalizePdfOptions({ sections: ['schema'], format: 'na', zonePages: true }).lang).toBe('fr')
+    expect(normalizePdfOptions({ lang: 'de' }).lang).toBe('fr')
+    expect(defaultPdfOptions('na', 'en').lang).toBe('en')
   })
 })

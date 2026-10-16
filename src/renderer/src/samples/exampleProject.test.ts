@@ -45,13 +45,13 @@ describe('createExampleProject', () => {
 
   it('montre le patch, les alimentations et les bandes', () => {
     expect(p.settings.mainsVoltage).toBe(120)
-    const groups = patchGroups(p)
+    const groups = patchGroups(p, 'fr')
     expect(groups.map((g) => g.title)).toEqual(expect.arrayContaining(['Univers 1 · DMX-1 › DMX 1', 'Univers 2 · DMX-1 › DMX 2']))
     expect(groups.find((g) => g.universe === 2)!.rows.map((r) => r.address)).toEqual([1, 17, 33])
-    expect(patchTable(p).rows.some((r) => r[0] === 10 && r[4] === 'LED-1')).toBe(true)
+    expect(patchTable(p, 'fr').rows.some((r) => r[0] === 10 && r[4] === 'LED-1')).toBe(true)
     const psu = p.devices.find((d) => d.psu)!
     expect(psuLoad(p, psu.id)).toMatchObject({ capacityW: 360, loadW: 216 })
-    expect(patchTable(p).rows.every((r) => r[9] === '')).toBe(true)
+    expect(patchTable(p, 'fr').rows.every((r) => r[9] === '')).toBe(true)
   })
 
   it('place l’alimentation sous LED-1, dans la Scène agrandie, sans qu’une tuile en chevauche une autre', () => {

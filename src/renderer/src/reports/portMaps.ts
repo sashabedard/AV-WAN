@@ -4,6 +4,7 @@ import { linksOnPort, sameRef } from '../model/rules'
 import { POE_LABELS, linkPoe, switchPoeUsage, type LinkPoe } from '../model/derive'
 import { switchSummary } from '../catalog/switch'
 import { messages } from '../../../shared/i18n/messages'
+import type { Lang } from '../../../shared/i18n/lang'
 import { DASH, compareText, formatNumber, ipLabel, poeLabel, portRefLabel, taggedLabel, vlanName } from './format'
 
 export interface PortMapRow {
@@ -30,18 +31,20 @@ export interface PortMap {
   rows: PortMapRow[]
 }
 
-function portPoe(port: PortDef, st: PortState, poe: LinkPoe, supplying: boolean): string {
+function portPoe(port: PortDef, st: PortState, poe: LinkPoe, supplying: boolean, lang: Lang): string {
+  const c = messages(lang).reports.common
   if (!port.poeOut) return DASH
-  if (st.poeEnabled === false) return 'Désactivé'
-  if (supplying) return poeLabel(poe)
-  return `${POE_LABELS[port.poeOut]} disponible`
+  if (st.poeEnabled === false) return c.disabled
+  if (supplying) return poeLabel(poe, lang)
+  return c.poeAvailable({ label: POE_LABELS[port.poeOut] })
 }
 
 // Carte des ports de chaque switch (spec § 11.1, section 3). Le réglage VLAN est lu sur le port du switch lui-même.
-export function portMaps(project: Project): PortMap[] {
+export function portMaps(project: Project, lang: Lang): PortMap[] {
+  const m = messages(lang)
   return project.devices
     .filter((d): d is Device & { switch: SwitchSpec } => d.switch !== undefined)
-    .sort((a, b) => compareText(a.name, b.name))
+    .sort((a, b) => compareText(a.name, b.name, lang))
     .map((device) => {
       const usage = switchPoeUsage(project, device.id)
       const rows = device.ports.map((port): PortMapRow => {
@@ -57,23 +60,23 @@ export function portMaps(project: Project): PortMap[] {
           port: port.label,
           peer: link ? portRefLabel(project, sameRef(link.a, ref) ? link.b : link.a) : DASH,
           cableId: link?.cableId ?? DASH,
-          mode: trunk ? 'Trunk' : st.nativeVlan !== undefined ? 'Accès' : DASH,
+          mode: trunk ? m.reports.common.trunk : st.nativeVlan !== undefined ? m.reports.common.access : DASH,
           native: st.nativeVlan !== undefined ? vlanName(project, st.nativeVlan) : DASH,
-          tagged: trunk ? taggedLabel(st.taggedVlans ?? 'all') : DASH,
-          poe: portPoe(port, st, poe, supplying),
+          tagged: trunk ? taggedLabel(st.taggedVlans ?? 'all', lang) : DASH,
+          poe: portPoe(port, st, poe, supplying, lang),
           ...(fill ? { fill } : {}),
           trunk,
           poeActive: supplying
         }
       })
-      const budget = usage.budgetW !== undefined ? ` / ${formatNumber(usage.budgetW)}` : ''
+      const budget = usage.budgetW !== undefined ? ` / ${formatNumber(usage.budgetW, lang)}` : ''
       return {
         deviceId: device.id,
         name: device.name,
-        summary: switchSummary(device.switch, messages('fr')), // plan 6 : langue des documents à la Task 12
+        summary: switchSummary(device.switch, m),
         ...(device.model ? { model: device.model } : {}),
-        ip: ipLabel(device.ip),
-        ...(device.switch.poe !== 'none' ? { poe: `PoE ${formatNumber(usage.usedW)}${budget} W` } : {}),
+        ip: ipLabel(device.ip, lang),
+        ...(device.switch.poe !== 'none' ? { poe: `PoE ${formatNumber(usage.usedW, lang)}${budget} W` } : {}),
         rows
       }
     })

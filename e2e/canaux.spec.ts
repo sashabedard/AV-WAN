@@ -38,7 +38,7 @@ test('canaux DMX : nommés dans l’inspecteur, retenus dans les réglages, impr
     await expect(menu).toBeHidden()
     const settingsFile = join(userData, 'dmx-channels.json')
     await expect.poll(() => existsSync(settingsFile) && readFileSync(settingsFile, 'utf8').includes('Green')).toBe(true)
-    const path = await page.evaluate(() => window.__avwan!.exportPdf({ sections: ['canaux'], format: 'na', zonePages: false }))
+    const path = await page.evaluate(() => window.__avwan!.exportPdf({ sections: ['canaux'], format: 'na', zonePages: false, lang: 'fr' }))
     const { pages } = await readPdf(path!)
     const text = pages.map((p) => p.text).join(' ')
     expect(text).toContain('Canaux DMX')
