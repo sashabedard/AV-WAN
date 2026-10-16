@@ -47,6 +47,11 @@ linux:
   category: Office
   maintainer: Sasha Bédard <85566308+sashabedard@users.noreply.github.com>
   synopsis: Schémas de câblage et réseau pour installations AV
+  executableName: avwan
+  # Le « · » du nom est refusé dans un nom de fichier : dist:linux force productName=AV-WAN, le menu garde AV·WAN.
+  desktop:
+    entry:
+      Name: AV·WAN
   artifactName: AV-WAN-${version}-${arch}.${ext}
 
 nsis:
