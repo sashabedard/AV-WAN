@@ -24,7 +24,9 @@ export const DmxPatchSchema = z.object({
   footprint: DmxSlotSchema,
   address: DmxSlotSchema.optional(),
   universe: DmxUniverseSchema.optional(),
-  mode: z.string().optional()
+  mode: z.string().optional(),
+  // Spec daisy-chain § 4.2 : adresse fixée à la main, la chaîne la respecte et repart après elle.
+  addressPinned: z.literal(true).optional()
 })
 // Noms des canaux DMX (spec canaux-dmx § 3.2) : params[i] nomme le canal i + 1 ; un trou est ''.
 export const DMX_PARAM_MAX = 60
