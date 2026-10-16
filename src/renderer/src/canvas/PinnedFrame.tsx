@@ -1,4 +1,5 @@
 import { useEffect, useRef, type MouseEvent as ReactMouseEvent, type ReactNode } from 'react'
+import { useT } from '../i18n/useT'
 import { Icon } from '../icons/Icon'
 import { clampVignette, type Box, type Size } from './pinnedView'
 import './pinned.css'
@@ -18,6 +19,7 @@ type Gesture = { kind: 'move' | 'resize'; x: number; y: number; box: Box }
 // La boîte flottante de la vue épinglée (spec 2026-10-14 § 3.2) : on la déplace par sa barre de titre et
 // on la redimensionne par le coin. Le geste part de la boîte d'origine : aucune dérive pendant le glisser.
 export function PinnedFrame({ box, bounds, onBoxChange, onRepin, onClose, onPointerInside, children }: PinnedFrameProps) {
+  const { m } = useT()
   const gesture = useRef<Gesture | null>(null)
   useEffect(() => {
     const onMove = (e: MouseEvent): void => {
@@ -48,18 +50,18 @@ export function PinnedFrame({ box, bounds, onBoxChange, onRepin, onClose, onPoin
   return (
     <section
       className="pinned"
-      aria-label="Vue épinglée"
+      aria-label={m.canvas.pinned.title}
       style={{ left: box.left, top: box.top, width: box.width, height: box.height }}
       onMouseEnter={() => onPointerInside(true)}
       onMouseLeave={() => onPointerInside(false)}
     >
       <header className="pinned__bar" onMouseDown={start('move')}>
         <Icon name="pin" size={13} />
-        <span className="pinned__title">Vue épinglée</span>
-        <button type="button" className="pinned__btn" onClick={onRepin} title="Épingler la vue actuelle du canvas">
-          Recadrer
+        <span className="pinned__title">{m.canvas.pinned.title}</span>
+        <button type="button" className="pinned__btn" onClick={onRepin} title={m.canvas.pinned.repinHint}>
+          {m.canvas.pinned.repin}
         </button>
-        <button type="button" className="pinned__btn pinned__btn--icon" onClick={onClose} aria-label="Retirer la vue épinglée" title="Retirer la vue épinglée">
+        <button type="button" className="pinned__btn pinned__btn--icon" onClick={onClose} aria-label={m.canvas.pinned.remove} title={m.canvas.pinned.remove}>
           <Icon name="close" size={13} />
         </button>
       </header>

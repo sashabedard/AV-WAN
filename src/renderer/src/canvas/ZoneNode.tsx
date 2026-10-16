@@ -4,9 +4,11 @@ import { NodeResizer, type NodeProps } from '@xyflow/react'
 import { projectStore } from '../store/projectStore'
 import { useLocked } from './staticView'
 import type { ZoneFlowNode } from './toFlow'
+import { useT } from '../i18n/useT'
 import { InlineName } from './InlineName'
 
 function ZoneNodeImpl({ id, data, selected }: NodeProps<ZoneFlowNode>) {
+  const { m } = useT()
   const readOnly = useLocked()
   const [renaming, setRenaming] = useState(false)
   const { zone } = data
@@ -25,7 +27,7 @@ function ZoneNodeImpl({ id, data, selected }: NodeProps<ZoneFlowNode>) {
       {renaming ? (
         <InlineName
           value={zone.name}
-          label="Nom de la zone"
+          label={m.canvas.tile.zoneNameLabel}
           className="inline-name--zone"
           onCommit={(name) => projectStore.getState().updateZone(id, { name })}
           onDone={() => setRenaming(false)}
@@ -33,7 +35,7 @@ function ZoneNodeImpl({ id, data, selected }: NodeProps<ZoneFlowNode>) {
       ) : (
         <div
           className="zone__title"
-          title={readOnly ? zone.name : `${zone.name} · glisser pour déplacer la zone et ses appareils · double-clic pour renommer`}
+          title={readOnly ? zone.name : m.canvas.tile.renameZone({ name: zone.name })}
           onDoubleClick={(e) => {
             if (readOnly) return
             e.stopPropagation()

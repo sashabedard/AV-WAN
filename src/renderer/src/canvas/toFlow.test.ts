@@ -10,7 +10,7 @@ import { analyzeLinks, cordTag, createFlowCache, toFlowEdges, toFlowNodes, toFlo
 describe('toFlowNodes', () => {
   it('crée un nœud switch et un nœud appareil avec les infos de ports', () => {
     const p = sampleProject()
-    const nodes = toFlowNodes(p, analyzeLinks(p, 'dark'), createFlowCache())
+    const nodes = toFlowNodes(p, analyzeLinks(p, 'dark'), createFlowCache(), 'fr')
     expect(nodes.map((n) => n.type)).toEqual(['switch', 'device'])
     expect(nodes[0]!.data.ports['1']).toEqual({ linkId: 'l1', color: '#3E8EF7', poe: true })
     expect(nodes[1]!.data.ports['ETH']).toEqual({ linkId: 'l1', color: '#3E8EF7', poe: false })
@@ -21,15 +21,15 @@ describe('toFlowNodes', () => {
   it('dessine le panneau de brassage comme une façade de rack', () => {
     const p = createProject()
     p.devices.push(createDevice(p, 'patch-panel-24', { x: 0, y: 0 }))
-    expect(toFlowNodes(p, analyzeLinks(p, 'dark'), createFlowCache())[0]!.type).toBe('switch')
+    expect(toFlowNodes(p, analyzeLinks(p, 'dark'), createFlowCache(), 'fr')[0]!.type).toBe('switch')
   })
 
   it("réutilise le même objet nœud tant que rien ne change pour l'appareil", () => {
     const p = sampleProject()
     const cache = createFlowCache()
-    const first = toFlowNodes(p, analyzeLinks(p, 'dark'), cache)
+    const first = toFlowNodes(p, analyzeLinks(p, 'dark'), cache, 'fr')
     const p2 = { ...p, meta: { ...p.meta, title: 'Autre' } }
-    const second = toFlowNodes(p2, analyzeLinks(p2, 'dark'), cache)
+    const second = toFlowNodes(p2, analyzeLinks(p2, 'dark'), cache, 'fr')
     expect(second[0]).toBe(first[0])
     expect(second[1]).toBe(first[1])
   })
@@ -37,9 +37,9 @@ describe('toFlowNodes', () => {
   it("recrée le nœud quand le côté de ses prises change à cause d'un voisin déplacé", () => {
     const p = sampleProject()
     const cache = createFlowCache()
-    const first = toFlowNodes(p, analyzeLinks(p, 'dark'), cache)
+    const first = toFlowNodes(p, analyzeLinks(p, 'dark'), cache, 'fr')
     const moved = { ...p, devices: p.devices.map((d, i) => (i === 0 ? { ...d, position: { x: 0, y: 600 } } : d)) }
-    const second = toFlowNodes(moved, analyzeLinks(moved, 'dark'), cache)
+    const second = toFlowNodes(moved, analyzeLinks(moved, 'dark'), cache, 'fr')
     expect(second[1]).not.toBe(first[1])
     expect(second[1]!.data.side).toBe('bottom')
   })
@@ -51,7 +51,7 @@ describe('toFlowNodes', () => {
     const cam = createDevice(p, 'ptz-ndi', { x: 371, y: 200 })
     p.devices.push(cam)
     p.links.push({ id: 'l1', cableId: 'C-001', a: { deviceId: sw.id, portId: '40' }, b: { deviceId: cam.id, portId: 'ETH' }, medium: 'cat6' })
-    const nodes = toFlowNodes(p, analyzeLinks(p, 'dark'), createFlowCache())
+    const nodes = toFlowNodes(p, analyzeLinks(p, 'dark'), createFlowCache(), 'fr')
     expect(nodes[1]!.data.side).toBe('top')
   })
 
@@ -61,10 +61,10 @@ describe('toFlowNodes', () => {
     const f = { ...createDevice(p, 'dmx-fixture', { x: 0, y: 200 }, { id: 'f' }), dmx: { footprint: 16, address: 33 } }
     p = { ...p, devices: [ode, f], links: [{ id: 'l', cableId: 'C-001', a: { deviceId: 'ode', portId: 'DMX-1' }, b: { deviceId: 'f', portId: 'DMX-IN' }, medium: 'dmx' }] }
     const cache = createFlowCache()
-    const first = toFlowNodes(p, analyzeLinks(p, 'dark'), cache).find((n) => n.id === 'f')!
+    const first = toFlowNodes(p, analyzeLinks(p, 'dark'), cache, 'fr').find((n) => n.id === 'f')!
     expect(first.data.line2).toBe('U1 · 33')
     const q = { ...p, devices: [{ ...ode, portState: { 'DMX-1': { universe: 4 } } }, f] }
-    const second = toFlowNodes(q, analyzeLinks(q, 'dark'), cache).find((n) => n.id === 'f')!
+    const second = toFlowNodes(q, analyzeLinks(q, 'dark'), cache, 'fr').find((n) => n.id === 'f')!
     expect(second.data.line2).toBe('U4 · 33')
     expect(second).not.toBe(first)
   })
@@ -110,7 +110,7 @@ describe('VLAN des nœuds et des arêtes', () => {
   it('chaque nœud et chaque câble connaissent leurs VLAN', () => {
     const p = sampleProject()
     const analysis = analyzeLinks(p, 'dark')
-    const nodes = toFlowNodes(p, analysis, createFlowCache())
+    const nodes = toFlowNodes(p, analysis, createFlowCache(), 'fr')
     const [edge] = toFlowEdges(p, analysis, createFlowCache())
     expect(nodes.map((n) => n.data.vlans)).toEqual([[40], [40]])
     expect(edge!.data!.vlans).toEqual([40])

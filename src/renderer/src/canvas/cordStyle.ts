@@ -2,6 +2,7 @@
 import type { Link, Medium, Project } from '../model/types'
 import { linkVlanView } from '../model/derive'
 import { MEDIUM_LABELS } from '../catalog/labels'
+import type { Messages } from '../../../shared/i18n/messages'
 
 export type ThemeMode = 'dark' | 'light'
 export type MediumKind = 'copper' | 'multimode' | 'singlemode' | 'dac' | 'wifi' | 'simple'
@@ -20,14 +21,7 @@ export const TYPE_COLORS: Record<MediumKind, { dark: string; light: string }> = 
   simple: { dark: '#C08A5B', light: '#8B5A2B' }
 }
 export const MEDIUM_KIND_ORDER: readonly MediumKind[] = ['copper', 'multimode', 'singlemode', 'dac', 'wifi', 'simple']
-export const MEDIUM_KIND_LABELS: Record<MediumKind, string> = {
-  copper: 'Cuivre',
-  multimode: 'Fibre multimode',
-  singlemode: 'Fibre monomode',
-  dac: 'DAC',
-  wifi: 'Wi-Fi',
-  simple: 'Liens simples'
-}
+export const mediumKindLabels = (m: Messages): Record<MediumKind, string> => m.canvas.mediumKinds
 
 export interface CordStyle {
   color: string

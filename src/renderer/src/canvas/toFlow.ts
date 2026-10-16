@@ -6,6 +6,7 @@ import { findPort, isRackDevice, sameRef } from '../model/rules'
 import { POE_LABELS, linkPoe, linkVlanIds } from '../model/derive'
 import { NEUTRAL, cordStyle, type CordStyle, type ThemeMode } from './cordStyle'
 import { patchIndex } from '../model/dmx'
+import type { Lang } from '../../../shared/i18n/lang'
 import { deviceSecondLine } from './canvasHelpers'
 import { nodeSize } from './nodeGeometry'
 import { facadeExit, switchFacade } from './switchFacade'
@@ -97,7 +98,7 @@ export function analyzeLinks(project: Project, theme: ThemeMode): LinkAnalysis {
 const NO_PORTS: Record<string, PortInfo> = {}
 const NO_VLANS: number[] = []
 
-export function toFlowNodes(project: Project, analysis: LinkAnalysis, cache: FlowCache): DeviceFlowNode[] {
+export function toFlowNodes(project: Project, analysis: LinkAnalysis, cache: FlowCache, lang: Lang): DeviceFlowNode[] {
   const out: DeviceFlowNode[] = []
   const alive = new Set<string>()
   const index = project.devices.some((d) => d.dmx) ? patchIndex(project) : undefined
@@ -112,7 +113,7 @@ export function toFlowNodes(project: Project, analysis: LinkAnalysis, cache: Flo
           ...(device.switch.poeBudgetW !== undefined ? { budgetW: device.switch.poeBudgetW } : {})
         }
       : undefined
-    const line2 = deviceSecondLine(device, index?.entries.get(device.id))
+    const line2 = deviceSecondLine(device, index?.entries.get(device.id), lang)
     const key = `${side}|${JSON.stringify(ports)}|${JSON.stringify(poeUsage ?? null)}|${vlans.join(',')}|${line2}`
     const hit = cache.nodes.get(device.id)
     if (hit && hit.device === device && hit.key === key) {

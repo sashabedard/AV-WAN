@@ -7,6 +7,7 @@ import { useLocked } from './staticView'
 import { DeviceIcon } from '../icons/Icon'
 import type { DeviceFlowNode } from './toFlow'
 import { useEffectiveFocus } from './useEffectiveFocus'
+import { useT } from '../i18n/useT'
 import { usePortCompatibility } from './useConnectingFrom'
 import { InlineName } from './InlineName'
 import { DEVICE_NODE_HEIGHT, TAPE_TOP_MAX_WIDTH, deviceNodeWidth, devicePortOffset } from './nodeGeometry'
@@ -15,6 +16,7 @@ const POSITION: Record<Side, Position> = { top: Position.Top, bottom: Position.B
 
 function DeviceNodeImpl({ id, data, selected }: NodeProps<DeviceFlowNode>) {
   const { device, template, side, ports } = data
+  const { m } = useT()
   const readOnly = useLocked()
   const focus = useEffectiveFocus()
   const dim = focus !== null && !data.vlans.includes(focus)
@@ -26,14 +28,14 @@ function DeviceNodeImpl({ id, data, selected }: NodeProps<DeviceFlowNode>) {
   const compat = usePortCompatibility(id)
   const width = deviceNodeWidth(device.ports.length)
   const horizontal = side === 'top' || side === 'bottom'
-  const line1 = device.model ?? template?.name ?? 'Appareil'
+  const line1 = device.model ?? template?.name ?? m.canvas.tile.device
   const line2 = data.line2
   return (
     <div className={`dn${selected ? ' dn--selected' : ''}${dim ? ' is-dim' : ''}`} style={{ width, height: DEVICE_NODE_HEIGHT }} data-testid={`device-${device.name}`}>
       {renaming ? (
         <InlineName
           value={device.name}
-          label="Nom de l’appareil"
+          label={m.canvas.tile.deviceNameLabel}
           onCommit={(name) => projectStore.getState().updateDevice(id, { name })}
           onDone={() => setRenaming(false)}
         />
@@ -41,7 +43,7 @@ function DeviceNodeImpl({ id, data, selected }: NodeProps<DeviceFlowNode>) {
         <span
           className="dn__tape"
           style={side === 'top' ? { maxWidth: TAPE_TOP_MAX_WIDTH } : undefined}
-          title={readOnly ? device.name : `${device.name} · double-clic pour renommer`}
+          title={readOnly ? device.name : m.canvas.tile.renameDevice({ title: device.name })}
           onDoubleClick={(e) => {
             if (readOnly) return
             e.stopPropagation()
@@ -71,7 +73,7 @@ function DeviceNodeImpl({ id, data, selected }: NodeProps<DeviceFlowNode>) {
             position={POSITION[side]}
             className={`port port--${kind}${info ? ' port--linked' : ''}${state ? ` port--${state}` : ''}`}
             style={style}
-            title={`${p.label} · ${p.connector.toUpperCase()}${p.poeIn ? ` · alimenté ${POE_LABELS[p.poeIn]}` : ''}`}
+            title={`${p.label} · ${p.connector.toUpperCase()}${p.poeIn ? ` · ${m.canvas.tile.poweredBy({ label: POE_LABELS[p.poeIn] })}` : ''}`}
           />
         )
       })}

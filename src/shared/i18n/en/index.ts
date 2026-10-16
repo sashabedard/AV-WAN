@@ -8,5 +8,6 @@ import { topbar } from './topbar'
 import { welcome } from './welcome'
 import { app } from './app'
 import { theme } from './theme'
+import { canvas } from './canvas'
 
-export const en: Messages = { common, menu, dialogs, errors, update, topbar, welcome, app, theme }
+export const en: Messages = { common, menu, dialogs, errors, update, topbar, welcome, app, theme, canvas }

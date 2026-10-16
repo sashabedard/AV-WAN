@@ -7,10 +7,12 @@ import { useEffectiveFocus } from './useEffectiveFocus'
 import { usePortCompatibility } from './useConnectingFrom'
 import { projectStore } from '../store/projectStore'
 import { useLocked } from './staticView'
+import { useT } from '../i18n/useT'
 import { InlineName } from './InlineName'
 
 function SwitchNodeImpl({ id, data, selected }: NodeProps<DeviceFlowNode>) {
   const { device, template, ports, poeUsage } = data
+  const { m } = useT()
   const readOnly = useLocked()
   const focus = useEffectiveFocus()
   const dim = focus !== null && !data.vlans.includes(focus)
@@ -90,7 +92,7 @@ function SwitchNodeImpl({ id, data, selected }: NodeProps<DeviceFlowNode>) {
       {renaming ? (
         <InlineName
           value={device.name}
-          label="Nom de l’appareil"
+          label={m.canvas.tile.deviceNameLabel}
           className="inline-name--rack"
           onCommit={(name) => projectStore.getState().updateDevice(id, { name })}
           onDone={() => setRenaming(false)}
@@ -99,7 +101,7 @@ function SwitchNodeImpl({ id, data, selected }: NodeProps<DeviceFlowNode>) {
         <div
           className="sw__tape-hit"
           style={{ width: labels.tapeWidth }}
-          title={readOnly ? fullTitle : `${fullTitle} · double-clic pour renommer`}
+          title={readOnly ? fullTitle : m.canvas.tile.renameDevice({ title: fullTitle })}
           onDoubleClick={(e) => {
             if (readOnly) return
             e.stopPropagation()
@@ -117,7 +119,7 @@ function SwitchNodeImpl({ id, data, selected }: NodeProps<DeviceFlowNode>) {
             position={facade.twoRows && p.row === 'top' ? Position.Top : Position.Bottom}
             className={`sw__handle${state ? ` port--${state}` : ''}`}
             style={{ left: p.x, top: p.y, width: p.w, height: p.h, transform: 'none' }}
-            title={`Port ${p.label}`}
+            title={m.canvas.tile.portTitle({ label: p.label })}
           />
         )
       })}

@@ -47,11 +47,23 @@ describe('canvasHelpers', () => {
 
 describe('deviceIpLine', () => {
   it('dit DHCP quand l’appareil en DHCP n’a pas d’adresse, comme les fiches', () => {
-    expect(deviceIpLine({ address: '', mode: 'dhcp' })).toBe('DHCP')
-    expect(deviceIpLine({ address: '10.0.0.5', mode: 'dhcp' })).toBe('10.0.0.5 · DHCP')
-    expect(deviceIpLine({ address: '10.0.0.5', mode: 'static' })).toBe('10.0.0.5 · FIXE')
-    expect(deviceIpLine({ address: '', mode: 'static' })).toBe('IP non définie')
-    expect(deviceIpLine(undefined)).toBe('IP non définie')
+    expect(deviceIpLine({ address: '', mode: 'dhcp' }, 'fr')).toBe('DHCP')
+    expect(deviceIpLine({ address: '10.0.0.5', mode: 'dhcp' }, 'fr')).toBe('10.0.0.5 · DHCP')
+    expect(deviceIpLine({ address: '10.0.0.5', mode: 'static' }, 'fr')).toBe('10.0.0.5 · FIXE')
+    expect(deviceIpLine({ address: '', mode: 'static' }, 'fr')).toBe('IP non définie')
+    expect(deviceIpLine(undefined, 'fr')).toBe('IP non définie')
+  })
+})
+
+describe('deviceIpLine en anglais', () => {
+  it('traduit les libellés des tuiles', () => {
+    expect(deviceIpLine(undefined, 'en')).toBe('IP not set')
+    expect(deviceIpLine({ address: '10.0.0.5', mode: 'static' }, 'en')).toBe('10.0.0.5 · FIXED')
+    expect(deviceIpLine({ address: '', mode: 'dhcp' }, 'en')).toBe('DHCP')
+  })
+  it('formate les nombres de la deuxième ligne à l’anglaise', () => {
+    const base = createDevice(createProject(), 'generic', { x: 0, y: 0 }, { id: 'x' })
+    expect(deviceSecondLine({ ...base, ledStrip: { type: 'sk6812-rgbw', volts: 24, wPerM: 14.4, lengthM: 5.5, pxPerM: 60 } }, undefined, 'en')).toBe('79.2 W · 5.5 m')
   })
 })
 
@@ -62,17 +74,17 @@ describe('deviceSecondLine', () => {
     const cam = { ...createDevice(p, 'ip-camera', { x: 0, y: 0 }, { id: 'c' }), ip: { address: '10.70.0.5', mode: 'static' as const } }
     p = { ...p, devices: [f, cam] }
     const index = patchIndex(p)
-    expect(deviceSecondLine(f, index.entries.get('f'))).toBe('U0 · 33')
-    expect(deviceSecondLine(cam, undefined)).toBe('10.70.0.5 · FIXE')
+    expect(deviceSecondLine(f, index.entries.get('f'), 'fr')).toBe('U0 · 33')
+    expect(deviceSecondLine(cam, undefined, 'fr')).toBe('10.70.0.5 · FIXE')
   })
 })
 
 describe('deviceSecondLine : puissance', () => {
   it('bande : watts et longueur ; alimentation : tension et puissance', () => {
     const base = createDevice(createProject(), 'generic', { x: 0, y: 0 }, { id: 'x' })
-    expect(deviceSecondLine({ ...base, ledStrip: { type: 'sk6812-rgbw', volts: 24, wPerM: 14.4, lengthM: 5, pxPerM: 60 } }, undefined)).toBe('72 W · 5 m')
-    expect(deviceSecondLine({ ...base, ledStrip: { type: 'ws2812b', volts: 5, wPerM: 18 } }, undefined)).toBe('Pixel WS2812B')
-    expect(deviceSecondLine({ ...base, psu: { volts: 24, amps: 15 } }, undefined)).toBe('24 V · 360 W')
-    expect(deviceSecondLine({ ...base, psu: { volts: 24 } }, undefined)).toBe('24 V')
+    expect(deviceSecondLine({ ...base, ledStrip: { type: 'sk6812-rgbw', volts: 24, wPerM: 14.4, lengthM: 5, pxPerM: 60 } }, undefined, 'fr')).toBe('72 W · 5 m')
+    expect(deviceSecondLine({ ...base, ledStrip: { type: 'ws2812b', volts: 5, wPerM: 18 } }, undefined, 'fr')).toBe('Pixel WS2812B')
+    expect(deviceSecondLine({ ...base, psu: { volts: 24, amps: 15 } }, undefined, 'fr')).toBe('24 V · 360 W')
+    expect(deviceSecondLine({ ...base, psu: { volts: 24 } }, undefined, 'fr')).toBe('24 V')
   })
 })

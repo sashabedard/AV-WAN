@@ -4,30 +4,34 @@ import type { Device, IpConfig } from '../model/types'
 import { patchLine, type PatchEntry } from '../model/dmx'
 import { LED_STRIP_TYPES, stripPower } from '../model/led'
 import { resolvePsu } from '../model/power'
-import { formatFr } from '../model/fields'
+import { messages } from '../../../shared/i18n/messages'
+import { formatters } from '../../../shared/i18n/format'
+import type { Lang } from '../../../shared/i18n/lang'
 
 export const GRID = 8
 
 // Deuxième ligne de la tuile d'un appareil : « adresse · FIXE/DHCP », « DHCP » sans adresse, sinon « IP non définie ».
-export function deviceIpLine(ip: IpConfig | undefined): string {
-  if (!ip) return 'IP non définie'
-  if (ip.address) return `${ip.address} · ${ip.mode === 'static' ? 'FIXE' : 'DHCP'}`
-  return ip.mode === 'dhcp' ? 'DHCP' : 'IP non définie'
+export function deviceIpLine(ip: IpConfig | undefined, lang: Lang): string {
+  const t = messages(lang).canvas.tile
+  if (!ip) return t.ipUnset
+  if (ip.address) return `${ip.address} · ${ip.mode === 'static' ? t.fixed : t.dhcp}`
+  return ip.mode === 'dhcp' ? t.dhcp : t.ipUnset
 }
 
 // 2ᵉ ligne d'une tuile (spec patch-puissance-catalogue § 4.7) : l'adresse DMX d'un appareil patchable, sinon l'IP.
-export function deviceSecondLine(device: Device, patch: PatchEntry | undefined): string {
+export function deviceSecondLine(device: Device, patch: PatchEntry | undefined, lang: Lang): string {
+  const fmt = formatters(lang)
   if (device.ledStrip) {
     const power = stripPower(device.ledStrip)
     const len = device.ledStrip.lengthM
-    return power && len !== undefined ? `${formatFr(power.watts)} W · ${formatFr(len)} m` : LED_STRIP_TYPES[device.ledStrip.type].label
+    return power && len !== undefined ? `${fmt.qty(power.watts, 'W')} · ${fmt.qty(len, 'm')}` : LED_STRIP_TYPES[device.ledStrip.type].label
   }
   if (device.psu) {
     const r = resolvePsu(device.psu)
-    return [r.volts !== undefined ? `${formatFr(r.volts)} V` : '', r.watts !== undefined ? `${formatFr(r.watts)} W` : ''].filter(Boolean).join(' · ')
+    return [r.volts !== undefined ? fmt.qty(r.volts, 'V') : '', r.watts !== undefined ? fmt.qty(r.watts, 'W') : ''].filter(Boolean).join(' · ')
   }
   if (device.dmx) return patchLine(patch)
-  return deviceIpLine(device.ip)
+  return deviceIpLine(device.ip, lang)
 }
 
 export function snapPoint(p: { x: number; y: number }, on: boolean): { x: number; y: number } {

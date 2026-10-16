@@ -1,5 +1,6 @@
 import type { Project } from '../model/types'
-import { MEDIUM_KIND_LABELS, MEDIUM_KIND_ORDER, NEUTRAL, TRUNK, TYPE_COLORS } from '../canvas/cordStyle'
+import { mediumKindLabels, MEDIUM_KIND_ORDER, NEUTRAL, TRUNK, TYPE_COLORS } from '../canvas/cordStyle'
+import { useT } from '../i18n/useT'
 import { BOLT_PATH } from '../canvas/cordGeometry'
 
 // Styles de trait (spec § 8.4) : indépendants de la couleur, toujours imprimés.
@@ -20,6 +21,7 @@ const TITLES: Record<Project['settings']['colorMode'], string> = { vlan: 'Couleu
 // Légende du schéma imprimé : la clé de couleur du mode courant (décision 4), puis les styles de trait.
 export function PrintLegend({ project }: { project: Project }) {
   const mode = project.settings.colorMode
+  const kindLabels = mediumKindLabels(useT().m)
   return (
     <div className="pl" aria-label="Légende">
       <div className="pl__col">
@@ -47,7 +49,7 @@ export function PrintLegend({ project }: { project: Project }) {
             {MEDIUM_KIND_ORDER.map((k) => (
               <li key={k}>
                 <Swatch color={TYPE_COLORS[k].light} />
-                {MEDIUM_KIND_LABELS[k]}
+                {kindLabels[k]}
               </li>
             ))}
           </ul>
