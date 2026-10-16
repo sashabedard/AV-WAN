@@ -9,6 +9,7 @@ import { pasteFragment as pasteFragmentModel, type Fragment } from '../model/cli
 import { addVlan as addVlanModel, changeVlanId as changeVlanIdModel, removeVlan as removeVlanModel, updateVlan as updateVlanModel, type VlanPatch } from '../model/vlans'
 import { assignZones, createZone, moveZones, placeDevices, removeZones, resizeZone as resizeZoneModel, zoneAround, zonesWithin, type ZoneRect } from '../model/zones'
 import { withTemplate } from '../model/customTemplate'
+import { autoAddress, autoAddressOnOpen } from '../model/daisyChain'
 import { ownNewKeys, removeProjectList, setProjectList, type ChannelKey } from '../model/dmxChannels'
 import { uiStore } from './uiStore'
 import { currentLang, currentMessages } from '../i18n/useT'
@@ -112,8 +113,8 @@ export function createProjectStore(initial: Project = createProject(undefined, c
         set({ toast: currentMessages().app.toast.readOnly })
         return
       }
-      // Une clé de canaux qui apparaît reçoit sa liste dans la même étape (spec canaux-dmx § 3.7).
-      const next = ownNewKeys(history.present, fn(history.present), dmxChannelsStore.getState().lists)
+      // Une clé de canaux qui apparaît reçoit sa liste dans la même étape (spec canaux-dmx § 3.7) ; les adresses suivent le câblage dans cette même étape.
+      const next = autoAddress(ownNewKeys(history.present, fn(history.present), dmxChannelsStore.getState().lists))
       if (next !== history.present) set({ history: commit(history, next) })
     }
 
@@ -134,10 +135,11 @@ export function createProjectStore(initial: Project = createProject(undefined, c
       },
       // restored : une copie de récupération, chargée comme « modifiée » (rien n'est encore enregistré).
       loadProject: (project, filePath, opts) => {
+        const opened = autoAddressOnOpen(project) // aucune adresse documentée ne bouge ; ce n'est pas une modification
         set({
-          history: initHistory(project),
+          history: initHistory(opened),
           filePath,
-          savedRef: opts?.restored ? null : project,
+          savedRef: opts?.restored ? null : opened,
           readOnly: opts?.readOnly ?? false,
           selection: EMPTY_SELECTION,
           docId: get().docId + 1,

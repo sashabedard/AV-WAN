@@ -145,6 +145,14 @@ describe('patch et presse-papiers', () => {
     expect(r.project.devices[0]!.dmx).toEqual({ footprint: 16, address: 1, mode: 'Standard', universe: 1 })
   })
 
+  it('la copie d’un appareil fixé n’est plus fixée', () => {
+    const p = patched()
+    const f1 = p.devices.find((d) => d.id === 'f1')!
+    const pinnedP = { ...p, devices: p.devices.map((d) => (d.id === 'f1' ? { ...f1, dmx: { ...f1.dmx!, addressPinned: true as const } } : d)) }
+    const r = pasteFragment(pinnedP, copyFragment(pinnedP, ['f1'])!, { x: 24, y: 24 }, freshIds)
+    expect(r.project.devices.find((d) => d.id === r.deviceIds[0])!.dmx?.addressPinned).toBeUndefined()
+  })
+
   it('sans univers, la copie perd son adresse', () => {
     const p = patched()
     const r = pasteFragment(p, copyFragment(p, ['f9'])!, { x: 24, y: 24 }, freshIds)

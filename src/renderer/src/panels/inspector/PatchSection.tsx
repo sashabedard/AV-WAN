@@ -16,6 +16,7 @@ function compactDmx(d: DmxPatch): DmxPatch {
   return {
     footprint: d.footprint,
     ...(d.address !== undefined ? { address: d.address } : {}),
+    ...(d.addressPinned === true ? { addressPinned: true as const } : {}),
     ...(d.universe !== undefined ? { universe: d.universe } : {}),
     ...(d.mode ? { mode: d.mode } : {})
   }
@@ -39,10 +40,11 @@ export function PatchSection({ device, project }: { device: Device; project: Pro
       return
     }
     if (n === null) {
-      if (key !== 'footprint') save({ [key]: undefined }) // les canaux ne s'effacent pas
+      if (key === 'address') save({ address: undefined, addressPinned: undefined }) // plus d'adresse tapée : la chaîne reprend la main
+      else if (key !== 'footprint') save({ [key]: undefined }) // les canaux ne s'effacent pas
       return
     }
-    save({ [key]: n })
+    save(key === 'address' ? { address: n, addressPinned: true } : { [key]: n }) // une adresse tapée est fixée
   }
   const fillNext = (): void => {
     if (!resolved) return

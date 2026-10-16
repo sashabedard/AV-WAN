@@ -98,3 +98,25 @@ export function autoAddress(project: Project): Project {
   })
   return changed ? { ...project, devices } : project
 }
+
+// Spec § 4.6 : à l'ouverture d'un ancien fichier, une adresse enregistrée qui diffère du calcul devient fixée,
+// pour qu'aucune adresse documentée ne bouge ; les automatiques sans adresse reçoivent la leur.
+export function autoAddressOnOpen(project: Project): Project {
+  const toPin = new Set<string>()
+  for (const chain of daisyChains(project)) {
+    let cursor = 1
+    for (const id of chain.deviceIds) {
+      const dmx = project.devices.find((d) => d.id === id)?.dmx
+      if (!dmx) continue
+      if (dmx.address !== undefined && (dmx.addressPinned || dmx.address !== cursor)) {
+        if (!dmx.addressPinned) toPin.add(id)
+        cursor = dmx.address + dmx.footprint
+      } else cursor += dmx.footprint
+    }
+  }
+  const pinned =
+    toPin.size === 0
+      ? project
+      : { ...project, devices: project.devices.map((d): Device => (toPin.has(d.id) ? { ...d, dmx: { ...d.dmx!, addressPinned: true } } : d)) }
+  return autoAddress(pinned)
+}

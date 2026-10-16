@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { Device, Link, Project } from './types'
 import { createDevice, createProject } from './project'
-import { autoAddress, chainOf, daisyChains } from './daisyChain'
+import { autoAddress, autoAddressOnOpen, chainOf, daisyChains } from './daisyChain'
 import { DmxPatchSchema } from './schema'
 
 // Petit banc : des appareils créés depuis le catalogue, branchés en DMX.
@@ -102,6 +102,17 @@ describe('autoAddress', () => {
     const once = autoAddress(p)
     expect(once).not.toBe(p)
     expect(autoAddress(once)).toBe(once)
+  })
+})
+
+describe('autoAddressOnOpen', () => {
+  const flags = (p: Project): Record<string, boolean> => Object.fromEntries(p.devices.filter((d) => d.dmx).map((d) => [d.id, d.dmx!.addressPinned === true]))
+  it('fige ce qui diffère du calcul, donne une adresse aux automatiques, et est idempotente', () => {
+    const p = chain([['a', fix(1, 16)], ['b', fix(17, 16)], ['c', fix(50, 21)], ['d', fix(undefined, 16)]])
+    const q = autoAddressOnOpen(p)
+    expect(addr(q)).toEqual({ a: 1, b: 17, c: 50, d: 71 })
+    expect(flags(q)).toEqual({ a: false, b: false, c: true, d: false })
+    expect(autoAddressOnOpen(q)).toBe(q)
   })
 })
 

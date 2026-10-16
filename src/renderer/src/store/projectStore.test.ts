@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest'
-import { createProject } from '../model/project'
+import { createDevice, createProject } from '../model/project'
+import type { Device, Project } from '../model/types'
 import { createProjectStore, isDirty, linksOnRemovedPorts } from './projectStore'
 import { copyFragment } from '../model/clipboard'
 import { vlanPreset } from '../catalog/vlanPresets'
@@ -444,5 +445,119 @@ describe('projectStore : création dans la langue de l’interface (plan 6)', ()
     } finally {
       uiStore.getState().setLang('fr')
     }
+  })
+})
+
+describe('projectStore : adresses DMX en chaîne (plan 7)', () => {
+  function base(addresses: Array<number | undefined> = [undefined, undefined, undefined], c = 21): Project {
+    let p = createProject(new Date(2026, 9, 14), 'fr')
+    const add = (id: string, tpl: string, extra: Partial<Device>): void => {
+      p = { ...p, devices: [...p.devices, { ...createDevice(p, tpl, { x: 0, y: 0 }, { lang: 'fr', id }), ...extra }] }
+    }
+    add('ode', 'dmx-node', { name: 'ODE-1', portState: { 'DMX-1': { universe: 1 } } })
+    const fp = [16, 16, c]
+    ;['a', 'b', 'c'].forEach((id, i) => add(id, 'dmx-fixture', { dmx: { footprint: fp[i]!, ...(addresses[i] !== undefined ? { address: addresses[i] } : {}) } }))
+    const ref = (d: string, portId: string) => ({ deviceId: d, portId })
+    const links = [
+      ['ode', 'DMX-1', 'a', 'DMX-IN'],
+      ['a', 'DMX-OUT', 'b', 'DMX-IN'],
+      ['b', 'DMX-OUT', 'c', 'DMX-IN']
+    ].map(([d1, p1, d2, p2], i) => ({ id: `l${i + 1}`, cableId: `C-${i + 1}`, a: ref(d1!, p1!), b: ref(d2!, p2!), medium: 'dmx' as const }))
+    return { ...p, links }
+  }
+  const loaded = (p: Project = base()) => {
+    const s = createProjectStore()
+    s.getState().loadProject(p, null)
+    return s
+  }
+  const addrs = (s: ReturnType<typeof loaded>): Record<string, number | undefined> =>
+    Object.fromEntries(s.getState().history.present.devices.filter((d) => d.id.length === 1).map((d) => [d.id, d.dmx?.address]))
+
+  it('recâbler : adresses suivies, un seul undo/redo', () => {
+    const s = loaded()
+    expect(addrs(s)).toEqual({ a: 1, b: 17, c: 33 })
+    s.getState().removeElements([], ['l2', 'l3'])
+    s.getState().connect({ deviceId: 'a', portId: 'DMX-OUT' }, { deviceId: 'c', portId: 'DMX-IN' })
+    s.getState().connect({ deviceId: 'c', portId: 'DMX-OUT' }, { deviceId: 'b', portId: 'DMX-IN' })
+    expect(addrs(s)).toEqual({ a: 1, c: 17, b: 38 })
+    s.getState().undo()
+    s.getState().undo()
+    s.getState().undo()
+    expect(addrs(s)).toEqual({ a: 1, b: 17, c: 33 })
+    expect(s.getState().history.present.links).toHaveLength(3)
+    s.getState().redo()
+    s.getState().redo()
+    s.getState().redo()
+    expect(addrs(s)).toEqual({ a: 1, c: 17, b: 38 })
+  })
+
+  it('un seul undo remet câble et adresses d’une reconnexion', () => {
+    const s = loaded()
+    s.getState().removeElements([], ['l2', 'l3'])
+    s.getState().connect({ deviceId: 'a', portId: 'DMX-OUT' }, { deviceId: 'c', portId: 'DMX-IN' })
+    const before = addrs(s)
+    expect(before.c).toBe(17)
+    s.getState().undo()
+    expect(s.getState().history.present.links.some((l) => l.b.deviceId === 'c' && l.a.deviceId === 'a')).toBe(false)
+    s.getState().redo()
+    expect(addrs(s)).toEqual(before)
+  })
+
+  it('changer le mode (16 → 21 canaux) décale la suite, annulé en une étape', () => {
+    const s = loaded(base(undefined, 16))
+    const past = s.getState().history.past.length
+    s.getState().updateDevice('a', { dmx: { footprint: 21 } })
+    expect(addrs(s)).toEqual({ a: 1, b: 22, c: 38 })
+    expect(s.getState().history.past.length).toBe(past + 1)
+    s.getState().undo()
+    expect(addrs(s)).toEqual({ a: 1, b: 17, c: 33 })
+  })
+
+  it('supprimer b au milieu : c garde son adresse, rebrancher a → c la fait remonter', () => {
+    const s = loaded()
+    s.getState().removeElements(['b'], [])
+    expect(addrs(s)).toEqual({ a: 1, c: 33 })
+    s.getState().connect({ deviceId: 'a', portId: 'DMX-OUT' }, { deviceId: 'c', portId: 'DMX-IN' })
+    expect(addrs(s)).toEqual({ a: 1, c: 17 })
+  })
+
+  it('ouvre un ancien projet sans bouger une adresse ni le rendre modifié', () => {
+    const s = loaded(base([1, 17, 50]))
+    expect(addrs(s)).toEqual({ a: 1, b: 17, c: 50 })
+    expect(isDirty(s.getState())).toBe(false)
+    expect(s.getState().history.present.devices.find((d) => d.id === 'c')!.dmx!.addressPinned).toBe(true)
+    expect(s.getState().history.past).toHaveLength(0)
+  })
+
+  it('une copie de récupération reste modifiée', () => {
+    const s = createProjectStore()
+    s.getState().loadProject(base(), null, { restored: true })
+    expect(isDirty(s.getState())).toBe(true)
+  })
+
+  it('un appareil ajouté puis câblé au bout de la chaîne prend l’adresse suivante', () => {
+    const s = loaded(base(undefined, 16))
+    const id = s.getState().addDevice('dmx-fixture', { x: 0, y: 0 })
+    s.getState().updateDevice(id, { dmx: { footprint: 16 } })
+    s.getState().connect({ deviceId: 'c', portId: 'DMX-OUT' }, { deviceId: id, portId: 'DMX-IN' })
+    const d = s.getState().history.present.devices.find((x) => x.id === id)!
+    expect(d.dmx?.addressPinned).toBeUndefined()
+    expect(d.dmx?.address).toBe(49)
+  })
+
+  it('une modification sans rapport (zone) ne change aucune adresse ni la référence des appareils', () => {
+    const s = loaded()
+    const before = s.getState().history.present.devices
+    const z = s.getState().addZone({ x: 0, y: 0, w: 100, h: 100 }, 'Scène')
+    s.getState().updateZone(z, { name: 'Salle' })
+    expect(s.getState().history.present.devices.map((d) => d.dmx?.address)).toEqual(before.map((d) => d.dmx?.address))
+  })
+
+  it('en lecture seule, rien n’est recalculé ni modifié', () => {
+    const s = createProjectStore()
+    s.getState().loadProject(base(), null, { readOnly: true })
+    s.getState().updateDevice('a', { dmx: { footprint: 21 } })
+    expect(addrs(s)).toEqual({ a: 1, b: 17, c: 33 })
+    expect(isDirty(s.getState())).toBe(false)
   })
 })

@@ -65,7 +65,7 @@ export function parseFragment(text: string): Fragment | null {
 // § 4.5 : une copie patchée prend l'adresse suivante libre de son univers ; sans univers, pas d'adresse.
 function withNextAddress(index: PatchIndex, device: Device): Device {
   if (!device.dmx) return device
-  const { address: _previous, ...dmx } = device.dmx
+  const { address: _previous, addressPinned: _pinned, ...dmx } = device.dmx
   if (dmx.universe === undefined) return { ...device, dmx }
   const address = nextFreeAddress(index, dmx.universe, dmx.footprint)
   return { ...device, dmx: address !== undefined ? { ...dmx, address } : dmx }

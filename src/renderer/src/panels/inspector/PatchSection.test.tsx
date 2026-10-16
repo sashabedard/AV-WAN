@@ -51,26 +51,38 @@ describe('bloc Patch DMX', () => {
     const user = userEvent.setup()
     select('f1')
     render(<Inspector />)
+    await user.clear(screen.getByLabelText('Adresse DMX')) // f1 est en chaîne : son champ affiche déjà l'adresse calculée
     await user.type(screen.getByLabelText('Adresse DMX'), '33{Enter}')
-    expect(dev('f1').dmx).toEqual({ footprint: 16, address: 33 })
+    expect(dev('f1').dmx).toEqual({ footprint: 16, address: 33, addressPinned: true })
     expect(screen.getByText('33–48')).toBeTruthy()
   })
 
   it('refuse une adresse hors bornes avec un message', async () => {
     const user = userEvent.setup()
-    select('f1')
+    select('lone')
     render(<Inspector />)
     await user.type(screen.getByLabelText('Adresse DMX'), '600{Enter}')
-    expect(dev('f1').dmx).toEqual({ footprint: 16 })
+    expect(dev('lone').dmx).toEqual({ footprint: 16 })
     expect(projectStore.getState().toast).toBe('Adresse DMX : un nombre entier de 1 à 512.')
   })
 
   it('« Suivante libre » saute la plage occupée de FIX-2', async () => {
     const user = userEvent.setup()
+    projectStore.getState().updateDevice('f1', { dmx: { footprint: 16, address: 1, addressPinned: true } }) // fixée : la chaîne ne la recalcule pas
     select('f1')
     render(<Inspector />)
     await user.click(screen.getByRole('button', { name: 'Suivante libre' }))
     expect(dev('f1').dmx?.address).toBe(17)
+  })
+
+  it('une adresse tapée sur un appareil en chaîne est fixée et survit au recalcul', async () => {
+    const user = userEvent.setup()
+    select('f1')
+    render(<Inspector />)
+    await user.clear(screen.getByLabelText('Adresse DMX'))
+    await user.type(screen.getByLabelText('Adresse DMX'), '101{Enter}')
+    expect(dev('f1').dmx?.addressPinned).toBe(true)
+    expect(dev('f1').dmx?.address).toBe(101)
   })
 
   it('« Suivante libre » est grisé sans univers', () => {
@@ -86,7 +98,7 @@ describe('bloc Patch DMX', () => {
     render(<Inspector />)
     await user.clear(screen.getByLabelText('Univers DMX'))
     await user.tab()
-    expect(dev('f1').dmx).toEqual({ footprint: 16 })
+    expect(dev('f1').dmx).toEqual({ footprint: 16, address: 1 }) // redevenu automatique : la chaîne lui donne 1
     await user.clear(screen.getByLabelText('Canaux DMX'))
     await user.tab()
     expect(dev('f1').dmx?.footprint).toBe(16)
@@ -105,6 +117,7 @@ describe('bloc Patch DMX', () => {
     const user = userEvent.setup()
     select('f1')
     render(<Inspector />)
+    await user.clear(screen.getByLabelText('Adresse DMX'))
     await user.type(screen.getByLabelText('Adresse DMX'), '10{Enter}')
     expect(dev('f1').dmx?.address).toBe(10)
     expect(screen.getByText('Chevauche FIX-2 (1–16)')).toBeTruthy()
