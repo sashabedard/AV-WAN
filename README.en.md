@@ -121,14 +121,6 @@ They are added in one click. Everything stays editable: numbers, colors, subnets
 
 Why separate Dante, NDI and lighting? Their multicast streams all fall in the `239.255.x.x` range. On the same VLAN, they step on each other.
 
-## Roadmap
-
-- [x] **Plan 1 — Foundations**: canvas, palette, switch faceplate, cables, connecting, inspector, `.avwan` file, undo/redo, end-to-end test and smoothness benchmark (150 devices, 400 cables).
-- [x] **Plan 2 — Full canvas and identity**: **logo and app icon**, custom icon set, zones (control room, hall, stage), VLAN panel, *Type* and *Port* color modes, `⌘K` search, example project, **screenshots for this README**.
-- [x] **Plan 3 — Reports and exports**: vector PDF (diagram, zone pages, sheets, port maps, patch list, VLANs, IP plan, bill of materials), CSV and Excel, VLANs through the patch panel.
-- [x] **Plan 4 — Delivery**: notarized universal DMG and Windows installer published by CI, PDF installation guide, automatic updates, open by double-click, autosave and recovery, custom components with icon import.
-- [x] **Plan 5 — Production**: DMX patch and patch list, power supplies and LED strips, power budget, catalog of named models (sensors, lighting, video / LED wall, audio).
-
 ## Getting started (development)
 
 Node.js 24 or newer is required (tested with Node 26), and npm 11.
