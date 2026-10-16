@@ -70,6 +70,10 @@ textarea {
 .topbar__spacer { flex: 1; }
 .topbar__btn { padding: 4px 10px; border: 1px solid var(--line); border-radius: 3px; background: var(--surface-2); color: var(--ink-2); font: 500 11px/1 var(--font-mono); letter-spacing: 0.04em; text-transform: uppercase; cursor: pointer; }
 .topbar__btn:hover { border-color: var(--accent); color: var(--accent); }
+.topbar .seg { flex-wrap: nowrap; gap: 2px; align-items: center; }
+.topbar .seg__btn { padding: 4px 10px; font: 500 11px/1 var(--font-mono); letter-spacing: 0.04em; color: var(--ink-2); }
+.topbar .seg__btn:hover { border-color: var(--accent); color: var(--accent); }
+.topbar .seg__btn[aria-pressed='true'] { color: var(--accent); }
 /* Fenêtre sans barre de titre : la barre de l'app sert de poignée et accueille les contrôles natifs.
    Les éléments cliquables (et les boîtes posées par-dessus) sont exclus de la poignée. */
 .topbar { -webkit-app-region: drag; user-select: none; }
