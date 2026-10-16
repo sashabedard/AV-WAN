@@ -25,10 +25,13 @@ export function parseIntField(text: string, min: number, max: number): number | 
 }
 
 // Nombre décimal (« 14,4 », « 14.4 » ou « 1 500,5 ») ; positive : strictement plus grand que 0, sinon 0 accepté.
-export function parseDecimalField(text: string, positive = false): number | null | undefined {
+// En anglais, « 1,200 » ou « 12,345.5 » (virgules de milliers, décimales au point) se lit comme l'affichage anglais ; tout le reste : virgule ou point décimal.
+const EN_GROUPED = /^\d{1,3}(,\d{3})+(\.\d+)?$/
+
+export function parseDecimalField(text: string, positive = false, lang: Lang = 'fr'): number | null | undefined {
   const trimmed = text.trim()
   if (trimmed === '') return null
-  const t = withoutThousands(trimmed)?.replace(',', '.')
+  const t = lang === 'en' && EN_GROUPED.test(trimmed) ? trimmed.replace(/,/g, '') : withoutThousands(trimmed)?.replace(',', '.')
   if (t === undefined || !DECIMAL.test(t)) return undefined
   const n = Number(t)
   return positive ? (n > 0 ? n : undefined) : n

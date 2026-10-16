@@ -50,7 +50,7 @@ export function PsuSection({ device, project }: { device: Device; project: Proje
               value={psu[key] !== undefined ? decimalText(psu[key]!, lang) : ''}
               placeholder={r.computed === key && r[key] !== undefined ? fmt.num(r[key]!) : '—'}
               onCommit={(v) => {
-                const n = parseDecimalField(v, true)
+                const n = parseDecimalField(v, true, lang)
                 if (n === undefined) s().showToast(t.toast({ label }))
                 else s().updateDevice(device.id, { psu: compactPsu({ ...psu, [key]: n ?? undefined }) })
               }}

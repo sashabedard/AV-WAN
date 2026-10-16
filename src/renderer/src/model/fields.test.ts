@@ -84,3 +84,17 @@ describe('nombres selon la langue (plan 6)', () => {
     expect(formatFr(12.5)).toBe(formatters('fr').num(12.5))
   })
 })
+
+describe('virgule de milliers en anglais', () => {
+  it('EN : « 1,200 » → 1200, « 12,345.5 » → 12345.5, le reste inchangé', () => {
+    expect(parseDecimalField('1,200', false, 'en')).toBe(1200)
+    expect(parseDecimalField('12,345.5', false, 'en')).toBe(12345.5)
+    expect(parseDecimalField('12,5', false, 'en')).toBe(12.5)
+    expect(parseDecimalField('12.5', false, 'en')).toBe(12.5)
+  })
+  it('FR inchangé : « 1,200 » → 1,2', () => {
+    expect(parseDecimalField('1,200', false, 'fr')).toBe(1.2)
+    expect(parseDecimalField('1,200')).toBe(1.2)
+    expect(parseDecimalField('12,5', false, 'fr')).toBe(12.5)
+  })
+})

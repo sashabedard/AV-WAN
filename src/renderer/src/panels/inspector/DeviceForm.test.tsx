@@ -44,4 +44,14 @@ describe('DeviceForm en deux langues', () => {
     expect(screen.getByText('Connected to')).toBeTruthy()
     expect(screen.getByText(/^Zone: /)).toBeTruthy()
   })
+
+  it('en anglais, « 1,200 » dans la puissance vaut 1200 W', async () => {
+    const user = userEvent.setup()
+    act(() => uiStore.getState().setLang('en'))
+    render(<Inspector />)
+    const power = screen.getByRole('textbox', { name: 'Power (W)' })
+    await user.clear(power)
+    await user.type(power, '1,200{Enter}')
+    expect(projectStore.getState().history.present.devices.find((d) => d.id === 'cam1')!.powerW).toBe(1200)
+  })
 })

@@ -88,7 +88,7 @@ export function DeviceForm({ device, project }: { device: Device; project: Proje
               placeholder="—"
               value={device.powerW !== undefined ? decimalText(device.powerW, lang) : ''}
               onCommit={(v) => {
-                const n = parseDecimalField(v)
+                const n = parseDecimalField(v, false, lang)
                 if (n === undefined) s().showToast(t.powerToast)
                 else s().updateDevice(device.id, { powerW: n ?? undefined })
               }}

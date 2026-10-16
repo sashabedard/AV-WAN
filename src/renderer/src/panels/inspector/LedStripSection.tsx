@@ -62,7 +62,7 @@ export function LedStripSection({ device, project }: { device: Device; project: 
             inputMode="decimal"
             value={strip.wPerM !== undefined ? decimalText(strip.wPerM, lang) : ''}
             onCommit={(v) => {
-              const n = parseDecimalField(v)
+              const n = parseDecimalField(v, false, lang)
               if (n === undefined) s().showToast(t.powerToast)
               else if (n !== null) save({ ...strip, wPerM: n })
             }}
@@ -80,7 +80,7 @@ export function LedStripSection({ device, project }: { device: Device; project: 
             placeholder="—"
             value={strip.lengthM !== undefined ? decimalText(strip.lengthM, lang) : ''}
             onCommit={(v) => {
-              const n = parseDecimalField(v, true)
+              const n = parseDecimalField(v, true, lang)
               if (n === undefined) s().showToast(t.lengthToast)
               else save({ ...strip, lengthM: n ?? undefined })
             }}
