@@ -1,0 +1,42 @@
+import type { Messages } from '../messages'
+
+export const errors: Messages['errors'] = {
+  fs: {
+    ENOENT: 'File or folder not found',
+    EACCES: 'Access denied',
+    EPERM: 'Operation not permitted',
+    EISDIR: 'This is a folder, not a file',
+    ENOTDIR: 'A part of the path is not a folder',
+    ENOSPC: 'No space left on the disk',
+    EROFS: 'Disk is read-only',
+    EBUSY: 'File is in use by another application',
+    EMFILE: 'Too many open files',
+    EEXIST: 'The file already exists',
+    EINVAL: 'Invalid name or path',
+    ENAMETOOLONG: 'File name too long',
+    ENOTEMPTY: 'The folder is not empty',
+    EXDEV: 'Cannot move between two disks'
+  },
+  fsKnown: (p) => `${p.reason} (${p.code}).`,
+  fsUnknown: (p) => `File system error (${p.code}).`,
+  printLoad: (p) => `Could not load the print window (${p.code}).`,
+  expectedExtension: (p) => `Expected extension: ${p.ext}`,
+  invalidExport: 'Invalid export data.',
+  invalidProject: 'Invalid project content.',
+  invalidSaveRequest: 'Invalid save request.',
+  invalidRecoveryKey: 'Invalid recovery key.',
+  recoveryGone: 'This recovery copy no longer exists.',
+  invalidRecovery: 'Invalid recovery copy.',
+  recoveryTooLarge: 'Project too large for a recovery copy.',
+  notGranted: 'This file was not chosen in an AV·WAN dialog.',
+  notRecent: 'This file is not among the recent files.',
+  noPrintJob: 'No print job in progress for this window.',
+  printLayoutFailed: (p) => `Could not lay out the PDF: ${p.reason}`,
+  printTimeout: 'The PDF layout took too long.',
+  printWindowGone: 'The print window stopped.',
+  invalidComponentId: 'Invalid component identifier.',
+  invalidComponent: 'Invalid component.',
+  componentTooLarge: 'Component too large (2 MB at most).',
+  invalidChannelLists: 'Invalid channel lists.',
+  channelListsTooLarge: 'Channel lists too large (2 MB at most).'
+}

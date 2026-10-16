@@ -2,15 +2,15 @@ import { app, BrowserWindow, dialog, ipcMain, shell } from 'electron'
 import { join } from 'node:path'
 import { IPC, type OpenRequest, type SettingsView } from '../shared/api'
 import { isLang, langArg } from '../shared/i18n/lang'
-import { APP_NAME, APP_SUBTITLE, RELEASES_URL } from '../shared/appInfo'
+import { APP_NAME, RELEASES_URL } from '../shared/appInfo'
 import { discardLastRecoverySync, grants, keepOpenedVersion, registerIpc, resetRecoverySession } from './ipc'
 import { buildMenu } from './menu'
-import { effectiveLang, mainLang, setMainLang } from './lang'
+import { effectiveLang, mainLang, mainMessages, setMainLang } from './lang'
 import { DEFAULT_SETTINGS, readSettings, writeSettings, type Settings } from './settings'
 import { loadRenderer } from './windows'
 import { registerExportIpc } from './exports'
 import { readTextFile } from './fileIO'
-import { frenchFsMessage } from './errors'
+import { fsErrorMessage } from './errors'
 import { cancelInstallRequest, checkForUpdatesManually, setupUpdater } from './updater'
 import { createOpenQueue, pathsFromArgv } from './openRequests'
 import { chromeOptions } from './windowChrome'
@@ -46,7 +46,7 @@ async function deliverOpen(path: string): Promise<void> {
     keepOpenedVersion(path, text)
     request = { path, text }
   } catch (e) {
-    request = { path, error: frenchFsMessage(e) }
+    request = { path, error: fsErrorMessage(e) }
   }
   if (!win.isDestroyed()) win.webContents.send(IPC.openRequest, request)
 }
@@ -112,11 +112,11 @@ function createWindow(): BrowserWindow {
   win.webContents.on('will-prevent-unload', (event) => {
     const choice = dialog.showMessageBoxSync(win, {
       type: 'question',
-      buttons: ['Quitter sans enregistrer', 'Annuler'],
+      buttons: [mainMessages().dialogs.quitWithoutSaving, mainMessages().common.cancel],
       defaultId: 1,
       cancelId: 1,
-      message: 'Des modifications ne sont pas enregistrées.',
-      detail: 'Elles seront perdues si vous quittez maintenant.'
+      message: mainMessages().dialogs.unsavedMessage,
+      detail: mainMessages().dialogs.unsavedDetail
     })
     if (choice === 0) {
       // Abandon volontaire : la copie de récupération de cette fenêtre ne doit pas être proposée au prochain lancement.
@@ -133,7 +133,8 @@ function createWindow(): BrowserWindow {
 
 // « À propos » sous Windows : macOS a le panneau natif du menu de l'app.
 function showAbout(): void {
-  const options = { type: 'info' as const, title: `À propos d’${APP_NAME}`, message: APP_NAME, detail: `${APP_SUBTITLE}\nVersion ${app.getVersion()}`, buttons: ['OK'] }
+  const m = mainMessages()
+  const options = { type: 'info' as const, title: m.dialogs.aboutTitle({ app: APP_NAME }), message: APP_NAME, detail: `${m.common.appSubtitle}\n${m.dialogs.aboutVersion({ version: app.getVersion() })}`, buttons: ['OK'] }
   const win = BrowserWindow.getFocusedWindow()
   void (win ? dialog.showMessageBox(win, options) : dialog.showMessageBox(options))
 }
@@ -161,6 +162,7 @@ if (!primary) {
     for (const w of BrowserWindow.getAllWindows()) if (!w.isDestroyed()) w.webContents.send(IPC.settingsChanged, settingsView())
   }
   function rebuildMenu(): void {
+    app.setAboutPanelOptions({ applicationName: APP_NAME, applicationVersion: app.getVersion(), version: '', credits: mainMessages().common.appSubtitle })
     buildMenu(
       {
         about: showAbout,
@@ -200,7 +202,6 @@ if (!primary) {
     registerExportIpc()
     registerWindowChromeIpc()
     setupUpdater(isE2E)
-    app.setAboutPanelOptions({ applicationName: APP_NAME, applicationVersion: app.getVersion(), version: '', credits: APP_SUBTITLE })
     settings = await readSettings(settingsFile())
     setMainLang(effectiveLang(settings.lang, app.getPreferredSystemLanguages()))
     rebuildMenu()

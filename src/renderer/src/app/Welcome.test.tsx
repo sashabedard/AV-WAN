@@ -14,7 +14,7 @@ import { sampleProject } from '../model/__fixtures__/sample'
 const open = vi.fn()
 beforeEach(() => {
   open.mockResolvedValue({ path: '/x/lumen.avwan', text: serializeProject(sampleProject()) })
-  window.avwan = { recent: { list: vi.fn().mockResolvedValue(['/x/lumen.avwan']), open, remember: vi.fn().mockResolvedValue(undefined) } } as unknown as AvwanApi
+  window.avwan = { initialLang: 'fr', recent: { list: vi.fn().mockResolvedValue(['/x/lumen.avwan']), open, remember: vi.fn().mockResolvedValue(undefined) } } as unknown as AvwanApi
   projectStore.getState().newProject()
   uiStore.getState().setWelcome(true)
 })

@@ -1,6 +1,6 @@
 // src/renderer/src/app/Welcome.tsx
 import { useEffect, useState } from 'react'
-import { APP_SUBTITLE } from '../../../shared/appInfo'
+import { messages } from '../../../shared/i18n/messages'
 import { createExampleProject } from '../samples/exampleProject'
 import { projectStore } from '../store/projectStore'
 import { uiStore, useUiStore } from '../store/uiStore'
@@ -30,7 +30,7 @@ export function Welcome() {
         <h1 className="welcome__word">
           AV<span className="wordmark__dot">·</span>WAN
         </h1>
-        <p className="welcome__sub">{APP_SUBTITLE}</p>
+        <p className="welcome__sub">{messages(window.avwan.initialLang).common.appSubtitle}</p>
         <p className="welcome__tagline">Planifier. Brancher. Documenter.</p>
         <RecoveryBanner />
         <div className="welcome__actions">

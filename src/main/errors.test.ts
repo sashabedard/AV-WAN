@@ -1,41 +1,54 @@
 import { describe, expect, it } from 'vitest'
-import { frenchErrors, frenchFsMessage } from './errors'
+import { fsErrorMessage, withFsErrors } from './errors'
+import { setMainLang } from './lang'
 
 const errno = (code: string): Error => Object.assign(new Error(`${code}: some english text`), { code })
 
-describe('frenchFsMessage', () => {
+describe('fsErrorMessage', () => {
   it('traduit les erreurs de fichier courantes et garde le code', () => {
-    expect(frenchFsMessage(errno('ENOENT'))).toBe('Fichier ou dossier introuvable (ENOENT).')
-    expect(frenchFsMessage(errno('EACCES'))).toBe('Accès refusé (EACCES).')
-    expect(frenchFsMessage(errno('ENOSPC'))).toBe('Plus d’espace sur le disque (ENOSPC).')
+    expect(fsErrorMessage(errno('ENOENT'))).toBe('Fichier ou dossier introuvable (ENOENT).')
+    expect(fsErrorMessage(errno('EACCES'))).toBe('Accès refusé (EACCES).')
+    expect(fsErrorMessage(errno('ENOSPC'))).toBe('Plus d’espace sur le disque (ENOSPC).')
   })
 
   it('traduit les autres codes courants', () => {
-    expect(frenchFsMessage(errno('EINVAL'))).toBe('Nom ou chemin invalide (EINVAL).')
-    expect(frenchFsMessage(errno('ENAMETOOLONG'))).toBe('Nom de fichier trop long (ENAMETOOLONG).')
-    expect(frenchFsMessage(errno('ENOTEMPTY'))).toBe('Le dossier n’est pas vide (ENOTEMPTY).')
-    expect(frenchFsMessage(errno('EXDEV'))).toBe('Déplacement impossible entre deux disques (EXDEV).')
+    expect(fsErrorMessage(errno('EINVAL'))).toBe('Nom ou chemin invalide (EINVAL).')
+    expect(fsErrorMessage(errno('ENAMETOOLONG'))).toBe('Nom de fichier trop long (ENAMETOOLONG).')
+    expect(fsErrorMessage(errno('ENOTEMPTY'))).toBe('Le dossier n’est pas vide (ENOTEMPTY).')
+    expect(fsErrorMessage(errno('EXDEV'))).toBe('Déplacement impossible entre deux disques (EXDEV).')
   })
 
   it('reste en français pour un code inconnu et pour une erreur de chargement', () => {
-    expect(frenchFsMessage(errno('EWHATEVER'))).toBe('Erreur du système de fichiers (EWHATEVER).')
-    expect(frenchFsMessage(new Error('ERR_FILE_NOT_FOUND (-6) loading \'file:///x\''))).toBe(
+    expect(fsErrorMessage(errno('EWHATEVER'))).toBe('Erreur du système de fichiers (EWHATEVER).')
+    expect(fsErrorMessage(new Error('ERR_FILE_NOT_FOUND (-6) loading \'file:///x\''))).toBe(
       'Chargement de la fenêtre d’impression impossible (ERR_FILE_NOT_FOUND).'
     )
   })
 
   it('garde tel quel un message déjà écrit par l’app', () => {
-    expect(frenchFsMessage(new Error('Extension attendue : .avwan'))).toBe('Extension attendue : .avwan')
-    expect(frenchFsMessage('texte')).toBe('texte')
+    expect(fsErrorMessage(new Error('Extension attendue : .avwan'))).toBe('Extension attendue : .avwan')
+    expect(fsErrorMessage('texte')).toBe('texte')
   })
 })
 
-describe('frenchErrors', () => {
+describe('withFsErrors', () => {
   it('rejette avec le message français', async () => {
-    await expect(frenchErrors(async () => Promise.reject(errno('EROFS')))).rejects.toThrow('Disque en lecture seule (EROFS).')
+    await expect(withFsErrors(async () => Promise.reject(errno('EROFS')))).rejects.toThrow('Disque en lecture seule (EROFS).')
   })
 
   it('rend la valeur quand tout va bien', async () => {
-    await expect(frenchErrors(async () => 42)).resolves.toBe(42)
+    await expect(withFsErrors(async () => 42)).resolves.toBe(42)
+  })
+})
+
+describe('fsErrorMessage en anglais', () => {
+  it('dit les erreurs du système de fichiers en anglais quand le main est en anglais', () => {
+    setMainLang('en')
+    try {
+      expect(fsErrorMessage(errno('ENOENT'))).toBe('File or folder not found (ENOENT).')
+      expect(fsErrorMessage(errno('EWHATEVER'))).toBe('File system error (EWHATEVER).')
+    } finally {
+      setMainLang('fr')
+    }
   })
 })

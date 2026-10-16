@@ -4,5 +4,6 @@ export const common = {
   cancel: 'Annuler',
   close: 'Fermer',
   langName: { fr: 'Français', en: 'Anglais' },
-  langLabel: 'Langue'
+  langLabel: 'Langue',
+  appSubtitle: 'Audio-Vidéo · Wiring, Addressing, Networking'
 } as const

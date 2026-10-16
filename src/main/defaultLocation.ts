@@ -2,6 +2,7 @@
 import { promises as fs } from 'node:fs'
 import { join } from 'node:path'
 import { isSameFile } from './fileIO'
+import { mainMessages } from './lang'
 
 const MAX_NAME = 80
 // Noms que Windows réserve à des périphériques, quelle que soit la casse : « AUX.avwan » ne s'écrit pas.
@@ -16,8 +17,8 @@ export function projectFileName(title: string): string {
     .replace(/^[.\s-]+/, '')
     .slice(0, MAX_NAME)
     .trim()
-  if (RESERVED.test(cleaned)) return `${cleaned} (projet)`
-  return cleaned || 'Nouveau projet'
+  if (RESERVED.test(cleaned)) return `${cleaned} (${mainMessages().dialogs.reservedSuffix})`
+  return cleaned || mainMessages().dialogs.defaultProjectName
 }
 
 export function uniqueProjectPath(dir: string, title: string, exists: (path: string) => boolean): string {

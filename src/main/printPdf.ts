@@ -2,6 +2,7 @@ import { BrowserWindow, ipcMain } from 'electron'
 import { join } from 'node:path'
 import { IPC, type PrintJob } from '../shared/api'
 import { loadRenderer } from './windows'
+import { mainMessages } from './lang'
 
 const PRINT_TIMEOUT_MS = 60_000
 
@@ -16,12 +17,12 @@ const pending = new Map<number, Pending>()
 export function registerPrintIpc(): void {
   ipcMain.handle(IPC.printJob, (event): PrintJob => {
     const p = pending.get(event.sender.id)
-    if (!p) throw new Error('Aucune impression en cours pour cette fenêtre.')
+    if (!p) throw new Error(mainMessages().errors.noPrintJob)
     return p.job
   })
   ipcMain.on(IPC.printReady, (event) => pending.get(event.sender.id)?.settle())
   ipcMain.on(IPC.printFailed, (event, message: unknown) =>
-    pending.get(event.sender.id)?.settle(new Error(`Mise en page du PDF impossible : ${String(message)}`))
+    pending.get(event.sender.id)?.settle(new Error(mainMessages().errors.printLayoutFailed({ reason: String(message) })))
   )
 }
 
@@ -44,14 +45,14 @@ export async function renderPdf(job: PrintJob, timeoutMs = PRINT_TIMEOUT_MS): Pr
   const id = win.webContents.id
   let timer: NodeJS.Timeout | undefined
   const ready = new Promise<void>((resolve, reject) => {
-    timer = setTimeout(() => reject(new Error('La mise en page du PDF a pris trop de temps.')), timeoutMs)
+    timer = setTimeout(() => reject(new Error(mainMessages().errors.printTimeout)), timeoutMs)
     pending.set(id, { job, settle: (error) => (error ? reject(error) : resolve()) })
   })
   ready.catch(() => undefined) // un échec avant l'attente (chargement) ne doit pas devenir un rejet non géré
   try {
     win.webContents.on('will-navigate', (e) => e.preventDefault())
     win.webContents.setWindowOpenHandler(() => ({ action: 'deny' }))
-    win.webContents.on('render-process-gone', () => pending.get(id)?.settle(new Error('La fenêtre d’impression s’est arrêtée.')))
+    win.webContents.on('render-process-gone', () => pending.get(id)?.settle(new Error(mainMessages().errors.printWindowGone)))
     await Promise.race([loadRenderer(win, { print: '1' }), ready])
     await ready
     return await win.webContents.printToPDF({ preferCSSPageSize: true, printBackground: true })

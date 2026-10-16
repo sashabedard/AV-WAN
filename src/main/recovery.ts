@@ -5,6 +5,7 @@ import { promises as fs, rmSync } from 'node:fs'
 import { join } from 'node:path'
 import type { RecoveryEntry, RecoveryWrite, RestoredRecovery } from '../shared/api'
 import { atomicWriteFile } from './fileIO'
+import { mainMessages } from './lang'
 
 export const RECOVERY_MAX_BYTES = 20 * 1024 * 1024
 export const RECOVERY_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000
@@ -37,7 +38,7 @@ const fileFor = (dir: string, key: string): string => join(dir, `${key}.json`)
 export function parseRecoveryWrite(value: unknown): RecoveryWrite {
   const o = typeof value === 'object' && value !== null ? (value as Record<string, unknown>) : null
   if (!o || (o['path'] !== null && typeof o['path'] !== 'string') || typeof o['untitledId'] !== 'string' || typeof o['title'] !== 'string' || typeof o['text'] !== 'string') {
-    throw new Error('Copie de récupération invalide.')
+    throw new Error(mainMessages().errors.invalidRecovery)
   }
   return { path: o['path'] as string | null, untitledId: o['untitledId'], title: o['title'], text: o['text'] }
 }
@@ -57,9 +58,9 @@ export function parseRecoveryDoc(text: string): RecoveryDoc | null {
 }
 
 export async function writeRecovery(dir: string, key: string, doc: RecoveryDoc): Promise<void> {
-  if (!isRecoveryKey(key)) throw new Error('Clé de récupération invalide.')
+  if (!isRecoveryKey(key)) throw new Error(mainMessages().errors.invalidRecoveryKey)
   const body = JSON.stringify(doc)
-  if (Buffer.byteLength(body, 'utf8') > RECOVERY_MAX_BYTES) throw new Error('Projet trop volumineux pour la copie de récupération.')
+  if (Buffer.byteLength(body, 'utf8') > RECOVERY_MAX_BYTES) throw new Error(mainMessages().errors.recoveryTooLarge)
   await fs.mkdir(dir, { recursive: true })
   await atomicWriteFile(fileFor(dir, key), body)
 }

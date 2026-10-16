@@ -4,10 +4,11 @@ import { IPC } from '../shared/api'
 import { isDataTables, toCsv } from '../shared/tables'
 import type { PdfOptions } from '../shared/pdfOptions'
 import { atomicWriteFile } from './fileIO'
-import { frenchErrors } from './errors'
-import { EXPORT_FILTERS, csvPaths, existingPaths, safeFileName, withExtension, type ExportKind } from './exportPaths'
+import { withFsErrors } from './errors'
+import { exportFilters, csvPaths, existingPaths, safeFileName, withExtension, type ExportKind } from './exportPaths'
 import { registerPrintIpc, renderPdf } from './printPdf'
 import { buildXlsx } from './spreadsheet'
+import { mainMessages } from './lang'
 
 // Chemin choisi par l'utilisateur dans un dialogue système. En test seulement (AVWAN_E2E=1),
 // un dossier imposé remplace le dialogue : le renderer ne passe jamais de chemin.
@@ -19,7 +20,7 @@ export async function chooseExportPath(win: BrowserWindow | null, kind: ExportKi
   const name = withExtension(safeFileName(suggestedName), kind)
   const testDir = testExportDir()
   if (testDir) return join(testDir, name)
-  const options: SaveDialogOptions = { defaultPath: name, filters: [EXPORT_FILTERS[kind]] }
+  const options: SaveDialogOptions = { defaultPath: name, filters: [exportFilters()[kind]] }
   const res = win ? await dialog.showSaveDialog(win, options) : await dialog.showSaveDialog(options)
   if (res.canceled || !res.filePath) return null
   return withExtension(res.filePath, kind)
@@ -28,7 +29,7 @@ export async function chooseExportPath(win: BrowserWindow | null, kind: ExportKi
 export function registerExportIpc(): void {
   registerPrintIpc()
   ipcMain.handle(IPC.exportPdf, (event, projectText: unknown, options: PdfOptions, suggestedName: unknown) =>
-    frenchErrors(async () => {
+    withFsErrors(async () => {
       const target = await chooseExportPath(BrowserWindow.fromWebContents(event.sender), 'pdf', String(suggestedName))
       if (!target) return null
       const pdf = await renderPdf({ projectText: String(projectText), options })
@@ -38,8 +39,8 @@ export function registerExportIpc(): void {
   )
 
   ipcMain.handle(IPC.exportCsv, (event, tables: unknown, suggestedName: unknown) =>
-    frenchErrors(async () => {
-      if (!isDataTables(tables)) throw new Error('Données d’export invalides.')
+    withFsErrors(async () => {
+      if (!isDataTables(tables)) throw new Error(mainMessages().errors.invalidExport)
       const target = await chooseExportPath(BrowserWindow.fromWebContents(event.sender), 'csv', String(suggestedName))
       if (!target) return null
       const paths = csvPaths(target, tables.map((t) => t.id))
@@ -48,10 +49,10 @@ export function registerExportIpc(): void {
       if (taken.length > 0) {
         const options = {
           type: 'question' as const,
-          buttons: ['Remplacer', 'Annuler'],
+          buttons: [mainMessages().dialogs.replace, mainMessages().common.cancel],
           defaultId: 1,
           cancelId: 1,
-          message: 'Remplacer les fichiers CSV existants ?',
+          message: mainMessages().dialogs.replaceCsvMessage,
           detail: taken.map((p) => basename(p)).join('\n')
         }
         const win = BrowserWindow.fromWebContents(event.sender)
@@ -64,8 +65,8 @@ export function registerExportIpc(): void {
   )
 
   ipcMain.handle(IPC.exportXlsx, (event, tables: unknown, suggestedName: unknown) =>
-    frenchErrors(async () => {
-      if (!isDataTables(tables)) throw new Error('Données d’export invalides.')
+    withFsErrors(async () => {
+      if (!isDataTables(tables)) throw new Error(mainMessages().errors.invalidExport)
       const target = await chooseExportPath(BrowserWindow.fromWebContents(event.sender), 'xlsx', String(suggestedName))
       if (!target) return null
       await atomicWriteFile(target, await buildXlsx(tables))

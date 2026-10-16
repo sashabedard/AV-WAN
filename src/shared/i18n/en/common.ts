@@ -5,5 +5,6 @@ export const common: Messages['common'] = {
   cancel: 'Cancel',
   close: 'Close',
   langName: { fr: 'French', en: 'English' },
-  langLabel: 'Language'
+  langLabel: 'Language',
+  appSubtitle: 'Audio-Video · Wiring, Addressing, Networking'
 }
