@@ -1,6 +1,6 @@
 // src/renderer/src/reports/ipPlan.ts
 import type { Device, IpConfig, PortRef, Project } from '../model/types'
-import { findDevice, isSwitchLike, linksOnPort } from '../model/rules'
+import { findDevice, isSwitchLike, linksOnPort, portDisplayLabel } from '../model/rules'
 import { linkVlanView } from '../model/derive'
 import type { Column, DataTable } from '../../../shared/tables'
 import type { Lang } from '../../../shared/i18n/lang'
@@ -88,7 +88,7 @@ export function ipPlan(project: Project, lang: Lang): DataTable {
     }
     for (const port of device.ports) {
       const ip = device.portState[port.id]?.ip
-      if (ip) entries.push({ device, iface: port.label, ip, vlan: portVlan(project, { deviceId: device.id, portId: port.id }) })
+      if (ip) entries.push({ device, iface: portDisplayLabel(device, port, m), ip, vlan: portVlan(project, { deviceId: device.id, portId: port.id }) })
     }
   }
   const rows = entries

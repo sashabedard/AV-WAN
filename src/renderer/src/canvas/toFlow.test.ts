@@ -1,3 +1,4 @@
+import { messages } from '../../../shared/i18n/messages'
 import { describe, expect, it } from 'vitest'
 import { sampleProject } from '../model/__fixtures__/sample'
 import { createDevice, createProject } from '../model/project'
@@ -73,16 +74,16 @@ describe('toFlowNodes', () => {
 describe('toFlowEdges', () => {
   it('indique le bout qui fournit le PoE', () => {
     const p = sampleProject()
-    const [edge] = toFlowEdges(p, analyzeLinks(p, 'dark', 'fr'), createFlowCache())
+    const [edge] = toFlowEdges(p, analyzeLinks(p, 'dark', 'fr'), createFlowCache(), messages('fr'))
     expect(edge!.data!.poeAt).toBe('source')
     const flipped = { ...p, links: [{ ...p.links[0]!, a: p.links[0]!.b, b: p.links[0]!.a }] }
-    expect(toFlowEdges(flipped, analyzeLinks(flipped, 'dark', 'fr'), createFlowCache())[0]!.data!.poeAt).toBe('target')
+    expect(toFlowEdges(flipped, analyzeLinks(flipped, 'dark', 'fr'), createFlowCache(), messages('fr'))[0]!.data!.poeAt).toBe('target')
     const off = { ...p, devices: p.devices.map((d) => (d.id === 'sw1' ? { ...d, portState: { '1': { ...d.portState['1'], poeEnabled: false } } } : d)) }
-    expect(toFlowEdges(off, analyzeLinks(off, 'dark', 'fr'), createFlowCache())[0]!.data!.poeAt).toBeNull()
+    expect(toFlowEdges(off, analyzeLinks(off, 'dark', 'fr'), createFlowCache(), messages('fr'))[0]!.data!.poeAt).toBeNull()
   })
   it('mesure, depuis la poignée, la distance jusqu’au bord du nœud : positive sur une façade de rack, nulle sur une tuile', () => {
     const p = sampleProject()
-    const edge = toFlowEdges(p, analyzeLinks(p, 'dark', 'fr'), createFlowCache())[0]!
+    const edge = toFlowEdges(p, analyzeLinks(p, 'dark', 'fr'), createFlowCache(), messages('fr'))[0]!
     const sw = p.devices.find((d) => d.switch)!
     const facade = switchFacade(sw.ports)
     const port = facade.ports.find((f) => f.id === edge.sourceHandle)!
@@ -93,15 +94,15 @@ describe('toFlowEdges', () => {
 
   it('relie les poignées de ports et décrit le câble', () => {
     const p = sampleProject()
-    const [edge] = toFlowEdges(p, analyzeLinks(p, 'light', 'fr'), createFlowCache())
+    const [edge] = toFlowEdges(p, analyzeLinks(p, 'light', 'fr'), createFlowCache(), messages('fr'))
     expect(edge).toMatchObject({ id: 'l1', type: 'cord', source: 'sw1', sourceHandle: '1', target: 'cam1', targetHandle: 'ETH' })
     expect(edge!.data!.style.color).toBe('#2563C9')
-    expect(cordTag(p, p.links[0]!)).toBe('C-001 · SW-1:1 ⇄ CAM-1:ETH · PoE+')
+    expect(cordTag(p, p.links[0]!, messages('fr'))).toBe('C-001 · SW-1:1 ⇄ CAM-1:ETH · PoE+')
   })
 
   it('donne l’étiquette de port de chaque bout', () => {
     const p = sampleProject()
-    const [edge] = toFlowEdges(p, analyzeLinks(p, 'dark', 'fr'), createFlowCache())
+    const [edge] = toFlowEdges(p, analyzeLinks(p, 'dark', 'fr'), createFlowCache(), messages('fr'))
     expect(edge!.data!.portLabels).toEqual(['1', 'ETH'])
   })
 })
@@ -111,7 +112,7 @@ describe('VLAN des nœuds et des arêtes', () => {
     const p = sampleProject()
     const analysis = analyzeLinks(p, 'dark', 'fr')
     const nodes = toFlowNodes(p, analysis, createFlowCache(), 'fr')
-    const [edge] = toFlowEdges(p, analysis, createFlowCache())
+    const [edge] = toFlowEdges(p, analysis, createFlowCache(), messages('fr'))
     expect(nodes.map((n) => n.data.vlans)).toEqual([[40], [40]])
     expect(edge!.data!.vlans).toEqual([40])
   })

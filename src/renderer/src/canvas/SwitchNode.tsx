@@ -8,6 +8,7 @@ import { useEffectiveFocus } from './useEffectiveFocus'
 import { usePortCompatibility } from './useConnectingFrom'
 import { projectStore } from '../store/projectStore'
 import { useLocked } from './staticView'
+import { isPatchPanel, passThroughPeer, portDisplayLabel } from '../model/rules'
 import { useT } from '../i18n/useT'
 import { InlineName } from './InlineName'
 
@@ -18,7 +19,12 @@ function SwitchNodeImpl({ id, data, selected }: NodeProps<DeviceFlowNode>) {
   const focus = useEffectiveFocus()
   const dim = focus !== null && !data.vlans.includes(focus)
   const [renaming, setRenaming] = useState(false)
-  const facade = useMemo(() => switchFacade(device.ports), [device.ports])
+  const panel = isPatchPanel(device)
+  const facade = useMemo(() => switchFacade(device.ports, { patchPanel: panel }), [device.ports, panel])
+  const portsById = useMemo(() => new Map(device.ports.map((q) => [q.id, q])), [device.ports])
+  // Survol d'une prise de panneau : sa jumelle est mise en évidence (jamais dans une vue figée).
+  const [hovered, setHovered] = useState<string | null>(null)
+  const twin = !readOnly && hovered ? passThroughPeer(device, hovered) : undefined
   const compat = usePortCompatibility(id)
   const updateInternals = useUpdateNodeInternals()
   useEffect(() => {
@@ -30,7 +36,7 @@ function SwitchNodeImpl({ id, data, selected }: NodeProps<DeviceFlowNode>) {
   const gradientId = `swg-${id}`
   const { width, height } = facade
   return (
-    <div className={`sw${selected ? ' sw--selected' : ''}${dim ? ' is-dim' : ''}`} style={{ width, height }} data-testid={`device-${device.name}`}>
+    <div className={`sw${panel ? ' sw--panel' : ''}${selected ? ' sw--selected' : ''}${dim ? ' is-dim' : ''}`} style={{ width, height }} data-testid={`device-${device.name}`}>
       <svg className="sw__svg" width={width} height={height} aria-hidden="true">
         <defs>
           <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
@@ -60,6 +66,21 @@ function SwitchNodeImpl({ id, data, selected }: NodeProps<DeviceFlowNode>) {
             {labels.poe}
           </text>
         )}
+        {facade.ties?.map((t) => {
+          const state = ports[t.front] && ports[t.back] ? 'complete' : ports[t.front] || ports[t.back] ? 'partial' : 'empty'
+          return <line key={t.position} className={`sw__tie sw__tie--${state}`} x1={t.x} y1={t.y1} x2={t.x} y2={t.y2} />
+        })}
+        {facade.rowLabelX !== undefined &&
+          (['top', 'bottom'] as const).map((row) => {
+            const sample = facade.ports.find((q) => q.row === row)
+            return (
+              sample && (
+                <text key={row} className="sw__row" x={facade.rowLabelX} y={sample.y + sample.h / 2 + 2.5}>
+                  {row === 'top' ? m.model.patchPanel.frontRow : m.model.patchPanel.backRow}
+                </text>
+              )
+            )
+          })}
         {facade.ports.map((p) => {
           const info = ports[p.id]
           const rj = p.kind === 'rj45'
@@ -82,10 +103,12 @@ function SwitchNodeImpl({ id, data, selected }: NodeProps<DeviceFlowNode>) {
                   style={{ fill: info.color }}
                 />
               )}
-              <circle className={ledClass} cx={p.x + p.w / 2} cy={p.y - 4} r={1.6} />
-              <text className="sw__num" x={p.x + p.w / 2} y={numberY} textAnchor="middle">
-                {p.label}
-              </text>
+              <circle className={ledClass} cx={p.x + p.w / 2} cy={panel && p.row === 'bottom' ? p.y + p.h + 5 : p.y - 4} r={1.6} />
+              {p.number !== undefined && (
+                <text className="sw__num" x={p.x + p.w / 2} y={numberY} textAnchor="middle">
+                  {p.number}
+                </text>
+              )}
             </g>
           )
         })}
@@ -112,15 +135,18 @@ function SwitchNodeImpl({ id, data, selected }: NodeProps<DeviceFlowNode>) {
       )}
       {facade.ports.map((p) => {
         const state = compat(p.id)
+        const def = portsById.get(p.id)
         return (
           <Handle
             key={p.id}
             id={p.id}
             type="source"
             position={facade.twoRows && p.row === 'top' ? Position.Top : Position.Bottom}
-            className={`sw__handle${state ? ` port--${state}` : ''}`}
+            className={`sw__handle${state ? ` port--${state}` : ''}${twin === p.id ? ' port--twin' : ''}`}
             style={{ left: p.x, top: p.y, width: p.w, height: p.h, transform: 'none' }}
-            title={m.canvas.tile.portTitle({ label: p.label })}
+            title={m.canvas.tile.portTitle({ label: def ? portDisplayLabel(device, def, m) : p.label })}
+            onMouseEnter={panel && !readOnly ? () => setHovered(p.id) : undefined}
+            onMouseLeave={panel && !readOnly ? () => setHovered(null) : undefined}
           />
         )
       })}

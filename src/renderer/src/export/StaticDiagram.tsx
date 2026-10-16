@@ -22,9 +22,10 @@ const PADDING = 0.04
 // le projet, ou une zone (seulement ses appareils et ses câbles, avec des renvois pour ceux qui sortent),
 // puis appelle onReady une seule fois. `pages` : numéro de page de chaque zone qui a la sienne.
 export function StaticDiagram({ project, zone, pages, onReady }: { project: Project; zone?: Zone; pages: Map<string, number>; onReady: () => void }) {
-  const { pdf } = useT().m
+  const { m, lang } = useT()
+  const { pdf } = m
   const flowAll = useStaticFlow(project, 'light')
-  const sheet = useMemo(() => (zone ? zoneSheet(project, zone, pages) : null), [project, zone, pages])
+  const sheet = useMemo(() => (zone ? zoneSheet(project, zone, pages, lang) : null), [project, zone, pages, lang])
   const nodes = useMemo(
     () => (zone && sheet ? flowAll.nodes.filter((n) => n.id === zone.id || sheet.deviceIds.has(n.id)) : flowAll.nodes),
     [flowAll.nodes, zone, sheet]

@@ -39,7 +39,7 @@ describe('resolveUniverse', () => {
     r.link(['f1', 'DMX-OUT'], ['f2', 'DMX-IN'])
     const u = resolveUniverse(r.p, 'f2')
     expect(u?.universe).toBe(2)
-    expect(u && sourceLabel(r.p, u.source)).toBe('ODE-1 › DMX 2')
+    expect(u && sourceLabel(r.p, u.source, messages('fr'))).toBe('ODE-1 › DMX 2')
   })
 
   it('préfère l’univers tapé', () => {
@@ -48,7 +48,7 @@ describe('resolveUniverse', () => {
     r.add('f1', 'dmx-fixture', fix(1, 16, 7))
     r.link(['ode', 'DMX-1'], ['f1', 'DMX-IN'])
     expect(resolveUniverse(r.p, 'f1')).toEqual({ universe: 7, source: { kind: 'typed' } })
-    expect(sourceLabel(r.p, { kind: 'typed' })).toBe('typed')
+    expect(sourceLabel(r.p, { kind: 'typed' }, messages('fr'))).toBe('typed')
   })
 
   it('garde l’univers 0 (Art-Net)', () => {
@@ -252,7 +252,7 @@ describe('bandes pixel', () => {
       { universe: 11, pixels: 128, channels: 512 },
       { universe: 12, pixels: 44, channels: 176 }
     ])
-    expect(sourceLabel(pixels().p, { kind: 'port', ref: index.strips.get('led')!.source })).toBe('PIX-1 › OUT1')
+    expect(sourceLabel(pixels().p, { kind: 'port', ref: index.strips.get('led')!.source }, messages('fr'))).toBe('PIX-1 › OUT1')
   })
 
   it('un appareil patché dans un univers de la bande la chevauche', () => {

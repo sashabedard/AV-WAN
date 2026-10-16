@@ -9,6 +9,11 @@ export const model: Messages['model'] = {
     overlap: (p) => `Overlaps ${p.name} (${p.range})`,
     overflow: 'Exceeds 512'
   },
+  patchPanel: {
+    frontRow: 'FRONT',
+    backRow: 'BACK',
+    port: (p) => `${p.n} ${p.side}`
+  },
   family: {
     ethernet: 'RJ45',
     optical: 'SFP/SFP+',

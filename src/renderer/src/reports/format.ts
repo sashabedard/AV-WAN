@@ -1,5 +1,5 @@
 import type { IpConfig, PortRef, Project } from '../model/types'
-import { findPort, isRackDevice } from '../model/rules'
+import { findPort, isRackDevice, portDisplayLabel } from '../model/rules'
 import { POE_LABELS, type LinkPoe } from '../model/derive'
 import type { Cell } from '../../../shared/tables'
 import type { Lang } from '../../../shared/i18n/lang'
@@ -28,12 +28,13 @@ export function cellText(c: Cell, lang: Lang): string {
   return typeof c === 'number' ? formatNumber(c, lang) : c
 }
 
-// « SW-1 · port 3 » pour un port numéroté de façade, sinon « CAM-1 · ETH ». « ? » si le port a disparu.
-export function portRefLabel(project: Project, ref: PortRef): string {
+// « SW-1 · port 3 » pour un port numéroté de façade, sinon « CAM-1 · ETH » ; une prise de panneau se lit « PP-1 · 3 avant ». « ? » si le port a disparu.
+export function portRefLabel(project: Project, ref: PortRef, lang: Lang): string {
   const found = findPort(project, ref)
   if (!found) return `? · ${ref.portId}`
   const { device, port } = found
-  return `${device.name} · ${isRackDevice(device) && /^\d+$/.test(port.label) ? `port ${port.label}` : port.label}`
+  const label = isRackDevice(device) && /^\d+$/.test(port.label) ? `port ${port.label}` : portDisplayLabel(device, port, messages(lang))
+  return `${device.name} · ${label}`
 }
 
 // « 40 NDI » ; le numéro seul si le VLAN n'est plus dans le projet.

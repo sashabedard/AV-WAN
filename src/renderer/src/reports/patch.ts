@@ -57,7 +57,7 @@ export function patchRows(project: Project, lang: Lang): PatchRow[] {
       device: d.name,
       model: d.model ?? t?.model ?? (t ? displayName(t, lang) : ''),
       mode: dmx.mode ? modeLabel(dmx.mode, lang) : '',
-      source: entry.universe ? sourceLabel(project, entry.universe.source) : '',
+      source: entry.universe ? sourceLabel(project, entry.universe.source, m) : '',
       zone: zoneName(project, d.zoneId),
       remark: issueTexts(patchIssues(index, d.id), m).join(' · ')
     })
@@ -75,7 +75,7 @@ export function patchRows(project: Project, lang: Lang): PatchRow[] {
         device: d.name,
         model: d.model ?? t?.model ?? (t ? displayName(t, lang) : ''),
         mode: `${label} · ${span.pixels} px`,
-        source: sourceLabel(project, { kind: 'port', ref: sp.source }),
+        source: sourceLabel(project, { kind: 'port', ref: sp.source }, m),
         zone: zoneName(project, d.zoneId),
         remark: issueTexts({ overlaps: overlapsIn(index, span.universe, 1, span.channels, d.id), overflow: false }, m).join(' · ')
       })

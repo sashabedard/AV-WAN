@@ -60,6 +60,15 @@ describe('switchFacade', () => {
   })
 })
 
+describe('panneau : écart plus haut entre les rangées', () => {
+  it('A1 à 38, R1 à 64, hauteur inchangée', () => {
+    const f = switchFacade(patchPanelPorts(24), { patchPanel: true })
+    expect(f.ports.find((p) => p.id === 'A1')).toMatchObject({ y: 38 })
+    expect(f.ports.find((p) => p.id === 'R1')).toMatchObject({ y: 64 })
+    expect(f.height).toBe(92)
+  })
+})
+
 describe('facadeExit', () => {
   it('compte la distance jusqu’au bord de la façade par où sort le cordon', () => {
     const one = switchFacade(buildSwitchPorts({ portCount: 8, poe: 'at', sfpPlus: 2, managed: true }))
@@ -91,5 +100,34 @@ describe('facadeLabels', () => {
         expect(TAPE_X + labels.tapeWidth, `${portCount} ports, ${sfpPlus} SFP+`).toBeLessThanOrEqual(width - 22 - poeWidth + 0.5)
       }
     }
+  })
+})
+
+describe('switchFacade — panneau de brassage', () => {
+  const ports = patchPanelPorts(24)
+  const f = switchFacade(ports, { patchPanel: true })
+  const at = (id: string) => f.ports.find((p) => p.id === id)!
+
+  it('24 traits ; la position 3 relie le bas de A3 au haut de R3, au centre de la colonne', () => {
+    expect(f.ties).toHaveLength(24)
+    const tie = f.ties!.find((t) => t.position === 3)!
+    expect(tie).toMatchObject({ front: 'A3', back: 'R3', x: at('A3').x + at('A3').w / 2, y1: at('A3').y + at('A3').h, y2: at('R3').y })
+    expect(at('A3').x).toBe(at('R3').x)
+  })
+
+  it('un numéro par position : sur la prise avant seulement', () => {
+    expect(at('A3').number).toBe('3')
+    expect(at('R3').number).toBeUndefined()
+  })
+
+  it('marge gauche élargie et étiquettes de rangée', () => {
+    expect(f.width).toBeGreaterThan(switchFacade(ports).width)
+    expect(f.rowLabelX).toBeDefined()
+  })
+
+  it('sans l’option : ni traits, ni changement de numéro', () => {
+    const sw = switchFacade(buildSwitchPorts({ portCount: 24, poe: 'none', sfpPlus: 0, managed: true }))
+    expect(sw.ties).toBeUndefined()
+    expect(sw.ports.find((p) => p.id === '1')!.number).toBe('1')
   })
 })

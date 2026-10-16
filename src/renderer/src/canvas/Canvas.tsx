@@ -80,7 +80,7 @@ function CanvasInner() {
   const derivedNodes = useMemo<FlowNode[]>(() => [...toFlowZones(project, cache.current), ...toFlowNodes(project, analysis, cache.current, lang)], [project, analysis, lang])
   const [nodes, setNodes] = useState(derivedNodes)
   useEffect(() => setNodes((prev) => mergeNodes(derivedNodes, prev)), [derivedNodes])
-  const derivedEdges = useMemo(() => toFlowEdges(project, analysis, cache.current), [project, analysis])
+  const derivedEdges = useMemo(() => toFlowEdges(project, analysis, cache.current, m), [project, analysis, m])
   const [edges, setEdges] = useState(derivedEdges)
   useEffect(() => setEdges((prev) => mergeEdges(derivedEdges, prev)), [derivedEdges])
   const selection = useProjectStore((s) => s.selection)

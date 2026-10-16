@@ -135,3 +135,21 @@ export function passThroughPeer(device: Device, portId: string): string | undefi
   const peer = `${m[1] === 'A' ? 'R' : 'A'}${m[2]}`
   return device.ports.some((p) => p.id === peer) ? peer : undefined
 }
+
+export function isPatchPanel(device: Device): boolean {
+  return PATCH_PANEL_TEMPLATE_IDS.has(device.templateId)
+}
+
+// Position d'une prise de panneau : A<n> = face avant, R<n> = face arrière ; les identifiants stockés ne changent pas.
+export function patchPanelPosition(device: Device, portId: string): { n: number; side: 'front' | 'back' } | undefined {
+  if (!isPatchPanel(device)) return undefined
+  const m = /^([AR])(\d+)$/.exec(portId)
+  if (!m) return undefined
+  return { n: Number(m[2]), side: m[1] === 'A' ? 'front' : 'back' }
+}
+
+// Nom montré à une personne : « 3 avant » / « 3 front » pour un panneau, sinon le libellé du port.
+export function portDisplayLabel(device: Device, port: PortDef, m: Messages): string {
+  const pos = patchPanelPosition(device, port.id)
+  return pos ? m.model.patchPanel.port(pos) : port.label
+}

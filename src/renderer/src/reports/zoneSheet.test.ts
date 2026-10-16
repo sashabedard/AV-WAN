@@ -29,7 +29,7 @@ describe('pageLabel', () => {
 
 describe('zoneSheet', () => {
   const pages = zonePageNumbers(project, true)
-  const regie = zoneSheet(project, zone('Régie'), pages)
+  const regie = zoneSheet(project, zone('Régie'), pages, 'fr')
 
   it('ne garde que les appareils de la zone', () => {
     const names = [...regie.deviceIds].map(name)
@@ -55,21 +55,21 @@ describe('zoneSheet', () => {
 
   it('sans pages de zone, tout renvoie à la p. 1', () => {
     const none = zonePageNumbers(project, false)
-    const sheet = zoneSheet(project, zone('Régie'), none)
+    const sheet = zoneSheet(project, zone('Régie'), none, 'fr')
     expect(none.size).toBe(0)
     expect(sheet.renvois.map((r) => r.label).some((l) => l.endsWith('Salle p. 1'))).toBe(true)
   })
 
   it('un lien dont l’autre bout n’est dans aucune zone renvoie à « p. 1 » seul', () => {
     const lonely = { ...project, devices: project.devices.map((d) => (d.id === 'ex-pix' ? { ...d, zoneId: undefined } : d)) }
-    const sheet = zoneSheet(lonely, zone('Régie'), pages)
+    const sheet = zoneSheet(lonely, zone('Régie'), pages, 'fr')
     expect(sheet.renvois.some((r) => r.label.includes('PIX-1') && r.label.endsWith(' · p. 1'))).toBe(true)
   })
 
   it('un lien Wi-Fi qui sort de la zone est un renvoi comme un câble', () => {
     const wifi = project.links.find((l) => l.medium === 'wifi')!
     const moved = { ...project, devices: project.devices.map((d) => (d.id === wifi.a.deviceId ? { ...d, zoneId: zone('Scène').id } : d)) }
-    const sheet = zoneSheet(moved, zone('Salle'), pages)
+    const sheet = zoneSheet(moved, zone('Salle'), pages, 'fr')
     expect(sheet.linkIds.has(wifi.id)).toBe(false)
     expect(sheet.renvois.find((r) => r.linkId === wifi.id)?.label).toMatch(/Scène p\. 1$/)
   })

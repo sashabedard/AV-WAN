@@ -119,7 +119,7 @@ export function LedStripSection({ device, project }: { device: Device; project: 
             const warnings = [...new Set(sp.spans.flatMap((span) => issueTexts({ overlaps: overlapsIn(index, span.universe, 1, span.channels, device.id), overflow: false }, m)))]
             return (
               <>
-                <p className="insp__note">{t.universes({ range: first === last ? String(first) : `${first}–${last}`, via: sourceLabel(project, { kind: 'port', ref: sp.source }) })}</p>
+                <p className="insp__note">{t.universes({ range: first === last ? String(first) : `${first}–${last}`, via: sourceLabel(project, { kind: 'port', ref: sp.source }, m) })}</p>
                 {warnings.map((w) => (
                   <p key={w} className="insp__warn">
                     {w}

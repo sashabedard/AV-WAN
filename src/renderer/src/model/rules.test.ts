@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import { messages } from '../../../shared/i18n/messages'
 import { sampleProject } from './__fixtures__/sample'
-import { familyLabels, connectorFamily, isRackDevice, canConnectPorts, canReconnect, defaultMedium, isPortFree, nextCableId, nextDeviceName, pickPort } from './rules'
+import { familyLabels, connectorFamily, isRackDevice, canConnectPorts, canReconnect, defaultMedium, isPortFree, nextCableId, nextDeviceName, pickPort, isPatchPanel, patchPanelPosition, portDisplayLabel, passThroughPeer } from './rules'
 import { createDevice, createProject } from './project'
-import type { Project } from './types'
+import type { PortDef, Project } from './types'
 
 function withDevices(p: Project, ...templateIds: string[]): Project {
   let out = p
@@ -96,4 +96,33 @@ it('range la prise « Alim DC » dans sa propre famille', () => {
   expect(connectorFamily('dc')).toBe('dc')
   expect(defaultMedium('dc')).toBe('dc')
   expect(familyLabels(messages('fr')).dc).toBe('alim DC')
+})
+
+describe('prises d’un panneau de brassage', () => {
+  const p0 = withDevices(sampleProject(), 'patch-panel-24', 'led-strip')
+  const pp = p0.devices.find((d) => d.id === 'patch-panel-24')!
+  const port = (id: string) => pp.ports.find((x) => x.id === id)!
+
+  it('donne la position (numéro, face) d’une prise sans toucher à son identifiant', () => {
+    expect(isPatchPanel(pp)).toBe(true)
+    expect(patchPanelPosition(pp, 'A3')).toEqual({ n: 3, side: 'front' })
+    expect(patchPanelPosition(pp, 'R12')).toEqual({ n: 12, side: 'back' })
+    expect(patchPanelPosition(p0.devices[0]!, '1')).toBeUndefined()
+    expect(patchPanelPosition(p0.devices.find((d) => d.id === 'led-strip')!, 'A3')).toBeUndefined()
+  })
+
+  it('nomme la prise « 3 avant » / « 3 front » ; les autres appareils gardent leur libellé', () => {
+    expect(portDisplayLabel(pp, port('A3'), messages('fr'))).toBe('3 avant')
+    expect(portDisplayLabel(pp, port('A3'), messages('en'))).toBe('3 front')
+    expect(portDisplayLabel(pp, port('R3'), messages('fr'))).toBe('3 arrière')
+    expect(portDisplayLabel(pp, port('R3'), messages('en'))).toBe('3 back')
+    const sw = p0.devices[0]!
+    expect(portDisplayLabel(sw, sw.ports.find((x) => x.id === '1')!, messages('fr'))).toBe('1')
+    const eth = { id: 'ETH', label: 'ETH', connector: 'rj45', speedMbps: 1000 } as PortDef
+    expect(portDisplayLabel(sw, eth, messages('fr'))).toBe('ETH')
+  })
+
+  it('le passage avant ⇄ arrière ne change pas', () => {
+    expect(passThroughPeer(pp, 'A3')).toBe('R3')
+  })
 })
