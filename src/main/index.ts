@@ -1,9 +1,11 @@
 import { app, BrowserWindow, dialog, ipcMain, shell } from 'electron'
 import { join } from 'node:path'
-import { IPC, type OpenRequest } from '../shared/api'
+import { IPC, type OpenRequest, type SettingsView } from '../shared/api'
+import { isLang, langArg } from '../shared/i18n/lang'
 import { APP_NAME, APP_SUBTITLE, RELEASES_URL } from '../shared/appInfo'
 import { discardLastRecoverySync, grants, keepOpenedVersion, registerIpc, resetRecoverySession } from './ipc'
 import { buildMenu } from './menu'
+import { effectiveLang, mainLang, setMainLang } from './lang'
 import { DEFAULT_SETTINGS, readSettings, writeSettings, type Settings } from './settings'
 import { loadRenderer } from './windows'
 import { registerExportIpc } from './exports'
@@ -80,6 +82,7 @@ function createWindow(): BrowserWindow {
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: true,
+      additionalArguments: [langArg(mainLang())],
       backgroundThrottling: !isE2E
     }
   })
@@ -153,19 +156,11 @@ if (!primary) {
   // Windows : l'app lancée par un double-clic reçoit le chemin dans son argv.
   if (process.platform !== 'darwin') for (const path of pathsFromArgv(process.argv.slice(1))) openQueue.push(path)
 
-  ipcMain.handle(IPC.settingsGet, () => settings)
-  ipcMain.on(IPC.rendererReady, (event) => {
-    if (mainWindow && event.sender === mainWindow.webContents) openQueue.ready()
-  })
-
-  void app.whenReady().then(async () => {
-    if (process.platform === 'darwin' && !app.isPackaged && !isE2E) app.dock?.setIcon(devIcon)
-    registerIpc()
-    registerExportIpc()
-    registerWindowChromeIpc()
-    setupUpdater(isE2E)
-    app.setAboutPanelOptions({ applicationName: APP_NAME, applicationVersion: app.getVersion(), version: '', credits: APP_SUBTITLE })
-    settings = await readSettings(settingsFile())
+  const settingsView = (): SettingsView => ({ autoSave: settings.autoSave, lang: mainLang() })
+  const broadcastSettings = (): void => {
+    for (const w of BrowserWindow.getAllWindows()) if (!w.isDestroyed()) w.webContents.send(IPC.settingsChanged, settingsView())
+  }
+  function rebuildMenu(): void {
     buildMenu(
       {
         about: showAbout,
@@ -178,10 +173,37 @@ if (!primary) {
         toggleAutoSave: (on) => {
           settings = { ...settings, autoSave: on }
           void writeSettings(settingsFile(), settings).catch(() => undefined)
-          for (const w of BrowserWindow.getAllWindows()) if (!w.isDestroyed()) w.webContents.send(IPC.settingsChanged, settings)
+          broadcastSettings()
         }
       }
     )
+  }
+
+  ipcMain.handle(IPC.settingsGet, () => settingsView())
+  // Bouton FR | EN (spec plan 6 § 4.1) : écrit le choix, reconstruit le menu natif, prévient toutes les fenêtres.
+  // L'écriture est attendue avant de prévenir : une fenêtre qui voit la nouvelle langue peut se fermer sans perdre le choix.
+  ipcMain.handle(IPC.settingsSetLang, async (_event, lang: unknown) => {
+    if (!isLang(lang) || lang === mainLang()) return
+    settings = { ...settings, lang }
+    setMainLang(lang)
+    await writeSettings(settingsFile(), settings).catch(() => undefined)
+    rebuildMenu()
+    broadcastSettings()
+  })
+  ipcMain.on(IPC.rendererReady, (event) => {
+    if (mainWindow && event.sender === mainWindow.webContents) openQueue.ready()
+  })
+
+  void app.whenReady().then(async () => {
+    if (process.platform === 'darwin' && !app.isPackaged && !isE2E) app.dock?.setIcon(devIcon)
+    registerIpc()
+    registerExportIpc()
+    registerWindowChromeIpc()
+    setupUpdater(isE2E)
+    app.setAboutPanelOptions({ applicationName: APP_NAME, applicationVersion: app.getVersion(), version: '', credits: APP_SUBTITLE })
+    settings = await readSettings(settingsFile())
+    setMainLang(effectiveLang(settings.lang, app.getPreferredSystemLanguages()))
+    rebuildMenu()
     createWindow()
     app.on('activate', () => {
       if (BrowserWindow.getAllWindows().length === 0) createWindow()

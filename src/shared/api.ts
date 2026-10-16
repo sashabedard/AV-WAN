@@ -1,3 +1,4 @@
+import type { Lang } from './i18n/lang'
 import type { PdfOptions } from './pdfOptions'
 import type { DataTable } from './tables'
 
@@ -41,8 +42,16 @@ export interface PrintJob {
   options: PdfOptions
 }
 
+// Réglages vus par la fenêtre : la langue est toujours la langue effective (choisie, ou celle du système).
+export interface SettingsView {
+  autoSave: boolean
+  lang: Lang
+}
+
 export interface AvwanApi {
   platform: string
+  // Langue effective au chargement de la fenêtre (passée par le main en argument de lancement).
+  initialLang: Lang
   isE2E: boolean
   autosaveMs: number
   file: {
@@ -99,8 +108,9 @@ export interface AvwanApi {
   onUpdateReady(callback: (version: string) => void): () => void
   // Réglages de l'app (menu Fichier › Enregistrement automatique).
   settings: {
-    get(): Promise<{ autoSave: boolean }>
-    onChange(callback: (settings: { autoSave: boolean }) => void): () => void
+    get(): Promise<SettingsView>
+    onChange(callback: (settings: SettingsView) => void): () => void
+    setLang(lang: Lang): Promise<void>
   }
   // Fenêtre sans barre de titre : couleurs des boutons Windows, menu ☰, plein écran (pastilles macOS masquées).
   window: {
@@ -146,6 +156,7 @@ export const IPC = {
   updateInstall: 'update:install',
   settingsGet: 'settings:get',
   settingsChanged: 'settings:changed',
+  settingsSetLang: 'settings:setLang',
   windowTitleBarColors: 'window:titleBarColors',
   windowShowMenu: 'window:showMenu',
   windowFullscreen: 'window:fullscreen',

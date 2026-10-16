@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import type { MenuItemConstructorOptions } from 'electron'
+import { setMainLang } from './lang'
 import { menuTemplate, type FileMenuOptions, type HelpHandlers } from './menuTemplate'
 
 const labels = (items: MenuItemConstructorOptions[]): string[] => items.map((i) => i.label ?? i.type ?? '')
@@ -60,5 +61,17 @@ describe('menuTemplate', () => {
     click(submenu(menu, 'Fichier').find((i) => i.label === 'Nouveau projet'))
     click(submenu(menu, 'Affichage').find((i) => i.label === 'Épingler cette vue'))
     expect(send.mock.calls).toEqual([['new'], ['pinView']])
+  })
+
+  it('construit le menu en anglais quand la langue du main est l’anglais', () => {
+    setMainLang('en')
+    try {
+      const t = menuTemplate(false, () => undefined, { about() {}, checkUpdates() {}, releases() {} }, { autoSave: true, toggleAutoSave() {} })
+      expect(t.map((i) => i.label)).toEqual(['File', 'Edit', 'View', 'Help'])
+      const f = t[0]!.submenu as MenuItemConstructorOptions[]
+      expect(f.find((i) => i.accelerator === 'CmdOrCtrl+E')?.label).toBe('Export PDF…')
+    } finally {
+      setMainLang('fr')
+    }
   })
 })

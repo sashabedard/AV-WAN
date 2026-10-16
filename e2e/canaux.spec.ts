@@ -7,7 +7,7 @@ import { readPdf } from './pdf'
 
 test('canaux DMX : nommés dans l’inspecteur, retenus dans les réglages, imprimés avec leurs adresses', async () => {
   const userData = mkdtempSync(join(tmpdir(), 'avwan-e2e-'))
-  writeFileSync(join(userData, 'settings.json'), JSON.stringify({ autoSave: false }))
+  writeFileSync(join(userData, 'settings.json'), JSON.stringify({ autoSave: false, lang: 'fr' }))
   const dir = mkdtempSync(join(tmpdir(), 'avwan-export-'))
   const { app, page } = await launchApp({ keepWelcome: true, userData, env: { AVWAN_E2E_EXPORT_DIR: dir } })
   try {

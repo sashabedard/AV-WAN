@@ -12,6 +12,7 @@ import { uiStore } from '../store/uiStore'
 function fakeApi(file: Partial<AvwanApi['file']> = {}): AvwanApi {
   return {
     platform: 'darwin',
+    initialLang: 'fr',
     isE2E: false,
     autosaveMs: 30_000,
     recovery: {
@@ -28,7 +29,7 @@ function fakeApi(file: Partial<AvwanApi['file']> = {}): AvwanApi {
     rendererReady: vi.fn(),
     updates: { pending: vi.fn(async () => null), install: vi.fn() },
     onUpdateReady: () => () => undefined,
-    settings: { get: vi.fn(async () => ({ autoSave: true })), onChange: () => () => undefined },
+    settings: { get: vi.fn(async () => ({ autoSave: true, lang: 'fr' as const })), onChange: () => () => undefined, setLang: vi.fn(async () => undefined) },
     window: { setTitleBarColors: vi.fn(), showMenu: vi.fn(), onFullscreen: () => () => undefined },
     recent: {
       list: vi.fn(async () => []),

@@ -1,8 +1,10 @@
 import { contextBridge, ipcRenderer, type IpcRendererEvent } from 'electron'
-import { IPC, type AvwanApi, type MenuAction, type OpenRequest } from '../shared/api'
+import { IPC, type AvwanApi, type MenuAction, type OpenRequest, type SettingsView } from '../shared/api'
+import { langFromArgv } from '../shared/i18n/lang'
 
 const api: AvwanApi = {
   platform: process.platform,
+  initialLang: langFromArgv(process.argv),
   isE2E: process.env['AVWAN_E2E'] === '1',
   autosaveMs: Number(process.env['AVWAN_AUTOSAVE_MS']) || 30_000,
   file: {
@@ -76,12 +78,13 @@ const api: AvwanApi = {
   settings: {
     get: () => ipcRenderer.invoke(IPC.settingsGet),
     onChange: (callback) => {
-      const handler = (_event: IpcRendererEvent, settings: { autoSave: boolean }): void => callback(settings)
+      const handler = (_event: IpcRendererEvent, settings: SettingsView): void => callback(settings)
       ipcRenderer.on(IPC.settingsChanged, handler)
       return () => {
         ipcRenderer.removeListener(IPC.settingsChanged, handler)
       }
-    }
+    },
+    setLang: (lang) => ipcRenderer.invoke(IPC.settingsSetLang, lang)
   },
   window: {
     setTitleBarColors: (colors) => ipcRenderer.send(IPC.windowTitleBarColors, colors),
