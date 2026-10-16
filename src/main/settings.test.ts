@@ -28,4 +28,11 @@ describe('réglages', () => {
     writeFileSync(file, 'cassé')
     expect(await readSettings(file)).toEqual({ autoSave: true })
   })
+
+  it('lit la langue choisie et ignore une valeur inconnue (Review Focus 5)', () => {
+    expect(parseSettings('{"autoSave":false,"lang":"en"}')).toEqual({ autoSave: false, lang: 'en' })
+    expect(parseSettings('{"autoSave":true,"lang":"de"}')).toEqual({ autoSave: true })
+    expect(parseSettings('{"lang":42}')).toEqual({ autoSave: true })
+    expect(parseSettings('pas du json')).toEqual({ autoSave: true })
+  })
 })

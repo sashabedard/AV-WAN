@@ -24,6 +24,7 @@ import {
 import { projectStore, useProject, useProjectStore } from '../store/projectStore'
 import { uiStore, useUiStore } from '../store/uiStore'
 import { useThemeMode } from '../theme/useThemeMode'
+import { currentMessages, useT } from '../i18n/useT'
 import { TEMPLATE_MIME } from '../panels/Palette'
 import { analyzeLinks, createFlowCache, toFlowEdges, toFlowNodes, toFlowZones, type CordFlowEdge, type FlowNode } from './toFlow'
 import { GRID, mergeEdges, mergeNodes, nodesMatchDerived, snapPoint, syncSelected } from './canvasHelpers'
@@ -45,6 +46,7 @@ import { canvasPointer, centreOf } from './pointer'
 import { SwitchConfigurator } from '../panels/SwitchConfigurator'
 import { DEFAULT_SWITCH_SPEC } from '../catalog/switch'
 import { getTemplate } from '../catalog'
+import { isStored } from '../catalog/templateText'
 import { libraryTemplate } from '../store/libraryStore'
 import { clampPopover } from './popover'
 import { useDismissOnOutside } from '../panels/useDismiss'
@@ -72,9 +74,10 @@ function CanvasInner() {
   const project = useProject()
   const readOnly = useProjectStore((s) => s.readOnly)
   const theme = useThemeMode()
+  const { m, lang } = useT()
   const cache = useRef(createFlowCache())
-  const analysis = useMemo(() => analyzeLinks(project, theme), [project, theme])
-  const derivedNodes = useMemo<FlowNode[]>(() => [...toFlowZones(project, cache.current), ...toFlowNodes(project, analysis, cache.current)], [project, analysis])
+  const analysis = useMemo(() => analyzeLinks(project, theme, lang), [project, theme, lang])
+  const derivedNodes = useMemo<FlowNode[]>(() => [...toFlowZones(project, cache.current), ...toFlowNodes(project, analysis, cache.current, lang)], [project, analysis, lang])
   const [nodes, setNodes] = useState(derivedNodes)
   useEffect(() => setNodes((prev) => mergeNodes(derivedNodes, prev)), [derivedNodes])
   const derivedEdges = useMemo(() => toFlowEdges(project, analysis, cache.current), [project, analysis])
@@ -210,10 +213,10 @@ function CanvasInner() {
       // Composante perso : celle du projet si elle y est, sinon celle de la bibliothèque, embarquée au placement.
       const template = getTemplate(s.history.present, templateId) ?? libraryTemplate(templateId)
       if (!template) {
-        s.showToast('Cet appareil n’existe plus dans votre bibliothèque.')
+        s.showToast(currentMessages().canvas.view.templateGone)
         return
       }
-      s.addDevice(templateId, position, template.isCustom ? { template } : undefined)
+      s.addDevice(templateId, position, isStored(template) ? { template } : undefined)
     },
     [screenToFlowPosition, project.settings.snapToGrid]
   )
@@ -346,11 +349,11 @@ function CanvasInner() {
         <Background id="minor" className="bg-minor" variant={BackgroundVariant.Lines} gap={GRID} lineWidth={0.5} />
         <Background id="major" className="bg-major" variant={BackgroundVariant.Lines} gap={GRID * 5} lineWidth={0.7} />
         <Controls position="bottom-left" showInteractive={false} fitViewOptions={FIT_OPTIONS}>
-          <ControlButton onClick={pinCurrentView} title="Épingler cette vue (⇧⌘P)" aria-label="Épingler cette vue">
+          <ControlButton onClick={pinCurrentView} title={m.canvas.view.pinWithKey} aria-label={m.canvas.view.pin}>
             <Icon name="pin" size={14} />
           </ControlButton>
         </Controls>
-        <MiniMap position="bottom-left" style={MINIMAP_STYLE} pannable zoomable nodeClassName={minimapNodeClass} ariaLabel="Minicarte" />
+        <MiniMap position="bottom-left" style={MINIMAP_STYLE} pannable zoomable nodeClassName={minimapNodeClass} ariaLabel={m.canvas.view.minimap} />
       </ReactFlow>
       <Legend />
       {pendingSwitch && (
@@ -364,7 +367,7 @@ function CanvasInner() {
         >
           <SwitchConfigurator
             initial={DEFAULT_SWITCH_SPEC}
-            submitLabel="Créer"
+            submitLabel={m.canvas.view.create}
             onCancel={cancelSwitch}
             onSubmit={(spec) => {
               projectStore.getState().addDevice('switch', pendingSwitch.position, { switchSpec: spec })

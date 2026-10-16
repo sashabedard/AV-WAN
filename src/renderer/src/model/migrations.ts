@@ -1,4 +1,5 @@
 import { stripWithType } from './led'
+import type { Messages } from '../../../shared/i18n/messages'
 
 export const CURRENT_SCHEMA_VERSION = 3
 
@@ -25,11 +26,11 @@ export const MIGRATIONS: Record<number, (doc: RawDoc) => RawDoc> = {
   2: (doc) => ({ ...doc, schemaVersion: 3 })
 }
 
-export function migrate(doc: RawDoc): RawDoc {
+export function migrate(doc: RawDoc, m: Messages): RawDoc {
   let current = doc
   while (current.schemaVersion < CURRENT_SCHEMA_VERSION) {
     const step = MIGRATIONS[current.schemaVersion]
-    if (!step) throw new Error(`Aucune migration depuis la version ${current.schemaVersion}`)
+    if (!step) throw new Error(m.model.file.noMigration({ version: current.schemaVersion }))
     current = step(current)
   }
   return current

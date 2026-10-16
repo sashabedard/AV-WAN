@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { sampleProject } from './__fixtures__/sample'
 import { linkPoe, linkVlanIds, linkVlanView, setLinkVlan, switchPoeUsage, vlanEnds, vlanMembers } from './derive'
-import { VLAN_PRESETS } from '../catalog/vlanPresets'
+import { VLAN_PRESETS, vlanFromPreset } from '../catalog/vlanPresets'
 import { createDevice } from './project'
 import type { Project } from './types'
 import { passThroughPeer } from './rules'
@@ -35,7 +35,7 @@ describe('linkVlanView / setLinkVlan', () => {
 
   it("en Wi-Fi, stocke le VLAN côté client (un SSID par client), pas sur la radio du point d'accès", () => {
     let p: Project = sampleProject()
-    p = { ...p, devices: [...p.devices, createDevice(p, 'ap', { x: 0, y: 0 }, { id: 'ap' }), createDevice(p, 'esp32-devkit', { x: 0, y: 0 }, { id: 'esp' })] }
+    p = { ...p, devices: [...p.devices, createDevice(p, 'ap', { x: 0, y: 0 }, { lang: 'fr', id: 'ap' }), createDevice(p, 'esp32-devkit', { x: 0, y: 0 }, { lang: 'fr', id: 'esp' })] }
     p = { ...p, links: [...p.links, { id: 'w', cableId: 'C-002', a: { deviceId: 'ap', portId: 'WIFI' }, b: { deviceId: 'esp', portId: 'WIFI' }, medium: 'wifi' }] }
     expect(vlanEnds(p, p.links[1]!)).toEqual([{ deviceId: 'esp', portId: 'WIFI' }])
     const q = setLinkVlan(p, 'w', { kind: 'access', vlan: 60 })
@@ -66,7 +66,7 @@ describe('linkPoe / switchPoeUsage', () => {
 
 describe('linkVlanIds et vlanMembers', () => {
   it('donne les VLAN d’un câble : accès, trunk explicite, trunk « tous », aucun', () => {
-    const p = { ...sampleProject(), vlans: [...VLAN_PRESETS] }
+    const p = { ...sampleProject(), vlans: VLAN_PRESETS.map((v) => vlanFromPreset(v, 'fr')) }
     const l = p.links[0]!
     expect(linkVlanIds(p, l)).toEqual([40])
     p.devices[0]!.portState['1'] = { mode: 'trunk', nativeVlan: 10, taggedVlans: [40, 30, 40] }
@@ -88,7 +88,7 @@ describe('VLAN de passage par un panneau de brassage', () => {
   // SW-1 port 1 → PP-1 A1 (l1) ; PP-1 R1 → caméra (l2). Le port 1 du switch est en accès VLAN 40.
   function withPanel(): Project {
     const p: Project = sampleProject()
-    const pp = createDevice(p, 'patch-panel-24', { x: 0, y: 100 }, { id: 'pp' })
+    const pp = createDevice(p, 'patch-panel-24', { x: 0, y: 100 }, { lang: 'fr', id: 'pp' })
     return {
       ...p,
       devices: [...p.devices, pp],
@@ -122,7 +122,7 @@ describe('VLAN de passage par un panneau de brassage', () => {
 
   it('traverse deux panneaux à la suite et ne boucle jamais', () => {
     let p: Project = withPanel()
-    const pp2 = createDevice(p, 'patch-panel-24', { x: 0, y: 200 }, { id: 'pp2' })
+    const pp2 = createDevice(p, 'patch-panel-24', { x: 0, y: 200 }, { lang: 'fr', id: 'pp2' })
     // SW-1:1 → PP-1:A1 ; PP-1:R1 → PP-2:A1 ; PP-2:R1 → caméra.
     p = {
       ...p,
@@ -148,7 +148,7 @@ describe('VLAN de passage par un panneau de brassage', () => {
   it('n’ouvre aucun passage hors d’un panneau de brassage', () => {
     const p = sampleProject()
     expect(passThroughPeer(p.devices[0]!, '1')).toBeUndefined()
-    const pp = createDevice(p, 'patch-panel-24', { x: 0, y: 0 })
+    const pp = createDevice(p, 'patch-panel-24', { x: 0, y: 0 }, { lang: 'fr' })
     expect(passThroughPeer(pp, 'A7')).toBe('R7')
     expect(passThroughPeer(pp, 'R24')).toBe('A24')
     expect(passThroughPeer(pp, 'A25')).toBeUndefined()

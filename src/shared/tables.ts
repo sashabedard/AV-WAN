@@ -1,3 +1,5 @@
+import type { Lang } from './i18n/lang'
+
 // Tableau de données commun au PDF, au CSV et au classeur Excel : une seule source pour les trois.
 export type Cell = string | number | null
 
@@ -7,7 +9,7 @@ export interface Column {
 }
 
 export interface DataTable {
-  id: string // suffixe des fichiers CSV : « branchement », « plan-ip », « nomenclature »
+  id: string // suffixe des fichiers CSV (m.reports.files : « branchement » / « cabling »…)
   title: string // titre de page dans le PDF, nom de feuille dans le classeur
   columns: Column[]
   rows: Cell[][]
@@ -16,16 +18,19 @@ export interface DataTable {
 // Texte qu'Excel prendrait pour une formule (injection CSV) : préfixé d'une apostrophe.
 const FORMULA_START = /^[=+\-@\t\r]/
 
-function csvCell(c: Cell): string {
+// CSV pour Excel : en français « ; » et virgule décimale ; en anglais « , » et point. UTF-8 avec BOM, CRLF.
+const CSV: Record<Lang, { sep: string; decimal: string }> = { fr: { sep: ';', decimal: ',' }, en: { sep: ',', decimal: '.' } }
+
+function csvCell(c: Cell, lang: Lang): string {
+  const { sep, decimal } = CSV[lang]
   if (c === null) return ''
-  const text = typeof c === 'number' ? String(c).replace('.', ',') : FORMULA_START.test(c) ? `'${c}` : c
-  return /[";\r\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text
+  const text = typeof c === 'number' ? String(c).replace('.', decimal) : FORMULA_START.test(c) ? `'${c}` : c
+  return text.includes(sep) || /["\r\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text
 }
 
-// CSV pour Excel en français : séparateur « ; », virgule décimale, UTF-8 avec BOM, fins de ligne CRLF.
-export function toCsv(table: DataTable): string {
-  const lines = [table.columns.map((c) => csvCell(c.label)), ...table.rows.map((r) => r.map(csvCell))].map((cells) => cells.join(';'))
-  return `﻿${lines.join('\r\n')}\r\n`
+export function toCsv(table: DataTable, lang: Lang): string {
+  const lines = [table.columns.map((c) => csvCell(c.label, lang)), ...table.rows.map((r) => r.map((c) => csvCell(c, lang)))].map((cells) => cells.join(CSV[lang].sep))
+  return `\uFEFF${lines.join('\r\n')}\r\n`
 }
 
 const SAFE_ID = /^[a-z0-9-]{1,40}$/

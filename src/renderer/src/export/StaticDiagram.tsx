@@ -9,6 +9,7 @@ import { SwitchNode } from '../canvas/SwitchNode'
 import { ZoneNode } from '../canvas/ZoneNode'
 import { CordEdge } from '../canvas/CordEdge'
 import { zoneSheet } from '../reports/zoneSheet'
+import { useT } from '../i18n/useT'
 import { fallbackInput, layoutStubs, unionRect, type Stub, type StubInput } from './renvoiLayout'
 import '../canvas/canvas.css'
 
@@ -21,6 +22,7 @@ const PADDING = 0.04
 // le projet, ou une zone (seulement ses appareils et ses câbles, avec des renvois pour ceux qui sortent),
 // puis appelle onReady une seule fois. `pages` : numéro de page de chaque zone qui a la sienne.
 export function StaticDiagram({ project, zone, pages, onReady }: { project: Project; zone?: Zone; pages: Map<string, number>; onReady: () => void }) {
+  const { pdf } = useT().m
   const flowAll = useStaticFlow(project, 'light')
   const sheet = useMemo(() => (zone ? zoneSheet(project, zone, pages) : null), [project, zone, pages])
   const nodes = useMemo(
@@ -105,7 +107,7 @@ export function StaticDiagram({ project, zone, pages, onReady }: { project: Proj
         <ViewportPortal>
           {detail.map((z) => (
             <div key={z.id} className="renvoi renvoi--detail" style={{ transform: `translate(-100%, 0) translate(${z.rect.x + z.rect.w - 10}px, ${z.rect.y + 8}px)` }}>
-              Détail p. {pages.get(z.id)}
+              {pdf.detailPage({ page: pages.get(z.id) ?? 1 })}
             </div>
           ))}
           {stubs.length > 0 && (

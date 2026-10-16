@@ -12,6 +12,7 @@ import { uiStore } from '../store/uiStore'
 function fakeApi(file: Partial<AvwanApi['file']> = {}): AvwanApi {
   return {
     platform: 'darwin',
+    initialLang: 'fr',
     isE2E: false,
     autosaveMs: 30_000,
     recovery: {
@@ -28,7 +29,7 @@ function fakeApi(file: Partial<AvwanApi['file']> = {}): AvwanApi {
     rendererReady: vi.fn(),
     updates: { pending: vi.fn(async () => null), install: vi.fn() },
     onUpdateReady: () => () => undefined,
-    settings: { get: vi.fn(async () => ({ autoSave: true })), onChange: () => () => undefined },
+    settings: { get: vi.fn(async () => ({ autoSave: true, lang: 'fr' as const })), onChange: () => () => undefined, setLang: vi.fn(async () => undefined) },
     window: { setTitleBarColors: vi.fn(), showMenu: vi.fn(), onFullscreen: () => () => undefined },
     recent: {
       list: vi.fn(async () => []),
@@ -36,7 +37,7 @@ function fakeApi(file: Partial<AvwanApi['file']> = {}): AvwanApi {
       remember: vi.fn(async () => undefined)
     },
     export: { pdf: vi.fn(async () => null), csv: vi.fn(async () => null), xlsx: vi.fn(async () => null) },
-    print: { job: vi.fn(async () => ({ projectText: '', options: { sections: [], format: 'na' as const, zonePages: false } })), ready: vi.fn(), failed: vi.fn() },
+    print: { job: vi.fn(async () => ({ projectText: '', options: { sections: [], format: 'na' as const, zonePages: false, lang: 'fr' as const } })), ready: vi.fn(), failed: vi.fn() },
     file: {
       open: vi.fn(async () => null),
       read: vi.fn(async (path: string) => ({ path, text: '' })),
@@ -334,7 +335,7 @@ describe('enregistrer un projet avec des composantes', () => {
   it('n’écrit que les composantes utilisées, sans toucher au projet ouvert', async () => {
     const api = fakeApi()
     vi.stubGlobal('window', { avwan: api, confirm: () => true })
-    const unused = templateFromDraft({ ...blankDraft(), name: 'Inutile', code: 'INU' }, 'custom-inutile001')
+    const unused = templateFromDraft({ ...blankDraft(), name: 'Inutile', code: 'INU' }, 'custom-inutile001', 'fr')
     projectStore.getState().apply((p) => ({ ...p, templates: [unused] }))
     await saveProjectAction()
     const written = JSON.parse(vi.mocked(api.file.save).mock.calls[0]![1]) as { templates: unknown[] }

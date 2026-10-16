@@ -3,12 +3,12 @@ import { describe, expect, it } from 'vitest'
 import { createExampleProject } from '../samples/exampleProject'
 import { portMaps } from './portMaps'
 
-const p = createExampleProject(new Date(2026, 9, 13))
-const sw2 = (project = p) => portMaps(project).find((m) => m.name === 'SW-2')!
+const p = createExampleProject(new Date(2026, 9, 13), 'fr')
+const sw2 = (project = p) => portMaps(project, 'fr').find((m) => m.name === 'SW-2')!
 
 describe('portMaps', () => {
   it('fait une carte par switch, triée par nom, avec la configuration et l’usage PoE', () => {
-    expect(portMaps(p).map((m) => [m.name, m.summary, m.poe, m.ip])).toEqual([
+    expect(portMaps(p, 'fr').map((m) => [m.name, m.summary, m.poe, m.ip])).toEqual([
       ['SW-1', '24×PoE+ · 2×SFP+', 'PoE 3 / 400 W', '10.10.10.2 statique'],
       ['SW-2', '8×PoE+ · 2×SFP+', 'PoE 123 / 150 W', '10.10.10.3 statique']
     ])
@@ -40,6 +40,6 @@ describe('portMaps', () => {
   })
 
   it('ne fait aucune carte sans switch', () => {
-    expect(portMaps({ ...p, devices: p.devices.filter((d) => !d.switch), links: [] })).toEqual([])
+    expect(portMaps({ ...p, devices: p.devices.filter((d) => !d.switch), links: [] }, 'fr')).toEqual([])
   })
 })

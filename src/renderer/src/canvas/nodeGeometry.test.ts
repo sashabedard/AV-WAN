@@ -46,14 +46,14 @@ describe('devicePortOffset', () => {
 
 describe('nodeSize', () => {
   it('l’estimation du modèle (côté des prises) suit exactement la géométrie du canvas', () => {
-    const p = createProject()
+    const p = createProject(undefined, 'fr')
     for (const t of TEMPLATES.filter((t) => !t.switch)) {
-      const d = createDevice(p, t.id, { x: 0, y: 0 })
+      const d = createDevice(p, t.id, { x: 0, y: 0 }, { lang: 'fr' })
       expect(estimateNodeSize(d), t.id).toEqual(nodeSize(d))
     }
     for (const portCount of SWITCH_PORT_COUNTS) {
       for (const sfpPlus of [0, 2, 4] as const) {
-        const d = createDevice(p, 'switch', { x: 0, y: 0 }, { switchSpec: { portCount, poe: 'at', sfpPlus, managed: true } })
+        const d = createDevice(p, 'switch', { x: 0, y: 0 }, { lang: 'fr', switchSpec: { portCount, poe: 'at', sfpPlus, managed: true } })
         expect(estimateNodeSize(d), `${portCount} ports, ${sfpPlus} SFP+`).toEqual(nodeSize(d))
       }
     }

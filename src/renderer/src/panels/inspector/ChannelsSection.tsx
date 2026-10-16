@@ -5,6 +5,7 @@ import { catalogParams, channelKey, fillParams, pastedNames, resolveChannels, sa
 import { projectStore } from '../../store/projectStore'
 import { dmxChannelsStore, useDmxChannelsStore } from '../../store/dmxChannelsStore'
 import { ipcErrorMessage } from '../../app/ipcError'
+import { currentMessages, useT } from '../../i18n/useT'
 import { CommitInput } from '../CommitInput'
 
 const SUGGESTIONS = [
@@ -24,7 +25,7 @@ function writeList(key: ChannelKey, params: readonly string[]): boolean {
   dmxChannelsStore
     .getState()
     .save(key, params)
-    .catch((e: unknown) => projectStore.getState().showToast(`Liste non retenue pour vos autres projets : ${ipcErrorMessage(e)}`))
+    .catch((e: unknown) => projectStore.getState().showToast(currentMessages().inspector.channels.notSavedForOthers({ error: ipcErrorMessage(e) })))
   return true
 }
 
@@ -39,11 +40,13 @@ function restoreManual(key: ChannelKey, manual: readonly string[]): void {
   dmxChannelsStore
     .getState()
     .remove(key)
-    .catch((e: unknown) => projectStore.getState().showToast(`Réglages non modifiés : ${ipcErrorMessage(e)}`))
+    .catch((e: unknown) => projectStore.getState().showToast(currentMessages().inspector.channels.settingsNotChanged({ error: ipcErrorMessage(e) })))
 }
 
 // Bloc « Canaux » du patch DMX (spec canaux-dmx § 4) : une liste par modèle + mode, partagée par les appareils identiques.
 export function ChannelsSection({ device, project }: { device: Device; project: Project }) {
+  const { m } = useT()
+  const t = m.inspector.channels
   const settings = useDmxChannelsStore((s) => s.lists)
   const inputs = useRef<Array<HTMLInputElement | null>>([])
   const key = channelKey(device)
@@ -53,7 +56,7 @@ export function ChannelsSection({ device, project }: { device: Device; project: 
   const catalog = catalogParams(project, key)
   const manual = catalog !== undefined && sameParams(params, catalog)
   const shared = sharedCount(project, key)
-  const tail = [shared > 1 ? `partagés par ${shared} appareils` : '', catalog === undefined ? '' : manual ? 'd’après le manuel' : 'modifiée'].filter(Boolean).join(' · ')
+  const tail = [shared > 1 ? t.sharedBy({ n: shared }) : '', catalog === undefined ? '' : manual ? t.fromManual : t.edited].filter(Boolean).join(' · ')
   const commit = (i: number) => (text: string): void => {
     const next = [...params]
     while (next.length <= i) next.push('')
@@ -62,7 +65,7 @@ export function ChannelsSection({ device, project }: { device: Device; project: 
   }
   return (
     <details className="field chan">
-      <summary className="chan__sum">{tail ? `Canaux · ${footprint} — ${tail}` : `Canaux · ${footprint}`}</summary>
+      <summary className="chan__sum">{tail ? t.summaryWith({ footprint, tail }) : t.summary({ footprint })}</summary>
       <ol className="chan__list">
         {Array.from({ length: footprint }, (_, i) => (
           <li key={i} className="chan__row">
@@ -72,7 +75,7 @@ export function ChannelsSection({ device, project }: { device: Device; project: 
                 inputs.current[i] = el
               }}
               className="input"
-              aria-label={`Canal ${i + 1}`}
+              aria-label={t.channelAria({ n: i + 1 })}
               suggestions={SUGGESTIONS}
               maxLength={60}
               value={params[i] ?? ''}
@@ -83,7 +86,7 @@ export function ChannelsSection({ device, project }: { device: Device; project: 
                 if (!pasted) return
                 e.preventDefault() // CommitInput abandonne le brouillon : le collage est une seule étape
                 const { params: next, ignored } = fillParams(params, i, pasted, footprint)
-                if (writeList(key, next) && ignored > 0) projectStore.getState().showToast(`${ignored} ligne${ignored > 1 ? 's' : ''} ignorée${ignored > 1 ? 's' : ''} après le canal ${footprint}.`)
+                if (writeList(key, next) && ignored > 0) projectStore.getState().showToast(t.ignored({ n: ignored, footprint }))
               }}
             />
           </li>
@@ -91,7 +94,7 @@ export function ChannelsSection({ device, project }: { device: Device; project: 
       </ol>
       {catalog !== undefined && !manual && (
         <button type="button" className="btn chan__reset" onClick={() => restoreManual(key, catalog)}>
-          Rétablir le manuel
+          {t.restore}
         </button>
       )}
     </details>

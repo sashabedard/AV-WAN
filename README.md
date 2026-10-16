@@ -5,6 +5,8 @@
   </picture>
 </p>
 
+**Français** | [English](README.en.md)
+
 <p align="center">
   <b>Planifier. Brancher. Documenter.</b>
 </p>
@@ -13,7 +15,7 @@
   <img alt="Statut : plan 4 terminé" src="https://img.shields.io/badge/statut-plan%204%20termin%C3%A9-F2A93B?style=flat-square&labelColor=1D2125">
   <img alt="macOS et Windows, hors ligne" src="https://img.shields.io/badge/macOS%20%C2%B7%20Windows-hors%20ligne-8E969F?style=flat-square&labelColor=1D2125">
   <img alt="Electron, React, React Flow" src="https://img.shields.io/badge/Electron%20%C2%B7%20React%20%C2%B7%20React%20Flow-3E8EF7?style=flat-square&labelColor=1D2125">
-  <img alt="Interface en français" src="https://img.shields.io/badge/interface-fran%C3%A7ais-3DBE6E?style=flat-square&labelColor=1D2125">
+  <img alt="Interface en français et en anglais" src="https://img.shields.io/badge/interface-fran%C3%A7ais%20%C2%B7%20anglais-3DBE6E?style=flat-square&labelColor=1D2125">
 </p>
 
 ## Télécharger
@@ -38,7 +40,7 @@ Un projet d'installation interactive met en réseau des choses très différente
 - **Les outils AV professionnels** qui génèrent ces listes coûtent de 15 à 170 $ US par mois ou ne tournent que sous Windows.
 - **Les simulateurs réseau** (Packet Tracer, GNS3) ne connaissent ni Dante, ni NDI, ni l'éclairage.
 
-AV·WAN est gratuit, fonctionne hors ligne sur macOS et Windows, et est en français. Chaque câble est attaché à **un port précis**. La documentation est générée à partir du schéma, donc les deux ne se contredisent jamais.
+AV·WAN est gratuit, fonctionne hors ligne sur macOS et Windows, et est en français et en anglais. Chaque câble est attaché à **un port précis**. La documentation est générée à partir du schéma, donc les deux ne se contredisent jamais.
 
 ## Aperçu
 
@@ -82,7 +84,7 @@ AV·WAN est gratuit, fonctionne hors ligne sur macOS et Windows, et est en fran�
   7. patch DMX : un tableau par univers, trié par adresse, chevauchements en remarque ;
   8. bilan de puissance : par alimentation, par zone, total en watts et en ampères à la tension du projet (120 ou 230 V) ;
   9. nomenclature : appareils, câbles par longueur arrondie au mètre, modules SFP+ déduits.
-- **CSV** pour Excel en français (séparateur « ; », UTF-8) : les cinq listes (branchement, plan IP, patch DMX, bilan de puissance, nomenclature), un fichier chacune.
+- **CSV** pour Excel, UTF-8 (séparateur « ; » en français, « , » en anglais) : les cinq listes (branchement, plan IP, patch DMX, bilan de puissance, nomenclature), un fichier chacune.
 - **Classeur Excel** : les cinq mêmes listes, une feuille chacune, en-têtes figés et filtres activés.
 
 Le PDF, le CSV et le classeur lisent les mêmes tableaux : ils ne se contredisent jamais.

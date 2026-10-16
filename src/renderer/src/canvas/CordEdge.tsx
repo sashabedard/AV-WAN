@@ -6,6 +6,7 @@ import { useEffectiveFocus } from './useEffectiveFocus'
 import { useLocked } from './staticView'
 import { useUiStore } from '../store/uiStore'
 import { projectStore } from '../store/projectStore'
+import { useT } from '../i18n/useT'
 import { BOLT_PATH, badgePoint, bandReach, bandRects, beside, bootRect, elbowFromDrag, outward, stubLength, wavesPath } from './cordGeometry'
 
 const RADIUS = 9
@@ -28,6 +29,7 @@ const NO_ELBOW: Elbow = { dx: 0, dy: 0 }
 
 // Poignée au milieu d'un câble sélectionné : glisser pour décaler le coude, double-clic pour le recentrer.
 function ElbowGrip({ x, y, start, onDraft, onCommit, onReset }: { x: number; y: number; start: Elbow; onDraft: (e: Elbow | null) => void; onCommit: (e: Elbow) => void; onReset: () => void }) {
+  const { m } = useT()
   const zoom = useFlowStore((s) => s.transform[2])
   const origin = useRef<{ x: number; y: number } | null>(null)
   const at = (e: { clientX: number; clientY: number }): Elbow =>
@@ -42,7 +44,7 @@ function ElbowGrip({ x, y, start, onDraft, onCommit, onReset }: { x: number; y: 
       <div
         className="elbow-grip nodrag nopan"
         style={{ transform: `translate(-50%, -50%) translate(${x}px, ${y}px)` }}
-        title="Glisser pour déplacer le coude · double-clic pour le recentrer"
+        title={m.canvas.cord.elbowGrip}
         onPointerDown={(e) => {
           e.stopPropagation()
           e.currentTarget.setPointerCapture(e.pointerId)

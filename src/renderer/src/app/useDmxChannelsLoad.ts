@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import { currentMessages } from '../i18n/useT'
 import { dmxChannelsStore } from '../store/dmxChannelsStore'
 import { projectStore } from '../store/projectStore'
 import { ipcErrorMessage } from './ipcError'
@@ -11,7 +12,7 @@ export function useDmxChannelsLoad(): void {
         .getState()
         .load()
         .catch((e: unknown) => {
-          if (report) projectStore.getState().showToast(`Listes de canaux illisibles : ${ipcErrorMessage(e)}`)
+          if (report) projectStore.getState().showToast(currentMessages().app.file.dmxListsUnreadable({ reason: ipcErrorMessage(e) }))
         })
     }
     load(true)

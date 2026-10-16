@@ -54,7 +54,7 @@ describe('QuickSearch', () => {
 it('trouve aussi mes composantes', async () => {
   const user = userEvent.setup()
   const onPick = vi.fn()
-  libraryStore.setState({ templates: [templateFromDraft({ ...blankDraft(), name: 'Balise Wi-Fi', code: 'BAL' }, 'custom-balise0001')] })
+  libraryStore.setState({ templates: [templateFromDraft({ ...blankDraft(), name: 'Balise Wi-Fi', code: 'BAL' }, 'custom-balise0001', 'fr')] })
   render(<QuickSearch onPick={onPick} onClose={() => undefined} />)
   await user.type(screen.getByLabelText('Rechercher'), 'balise')
   await user.keyboard('{Enter}')

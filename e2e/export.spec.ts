@@ -14,7 +14,7 @@ test('exporte le projet exemple en PDF vectoriel : schéma en Tabloïd, tableau 
   try {
     await page.getByRole('dialog', { name: 'Accueil' }).getByRole('button', { name: /Projet exemple/ }).click()
     const path = await page.evaluate(() =>
-      window.__avwan!.exportPdf({ sections: ['schema', 'appareils', 'ports', 'branchement', 'vlans', 'ip', 'patch', 'puissance', 'nomenclature'], format: 'na', zonePages: true })
+      window.__avwan!.exportPdf({ sections: ['schema', 'appareils', 'ports', 'branchement', 'vlans', 'ip', 'patch', 'puissance', 'nomenclature'], format: 'na', zonePages: true, lang: 'fr' })
     )
     expect(path).toBe(join(dir, 'Installation interactive (exemple).pdf'))
     const { pages, bytes } = await readPdf(path!)
@@ -68,7 +68,7 @@ test('exporte un projet vide en A3 + A4 sans attendre', async () => {
   const dir = exportDir()
   const { app, page } = await launchApp({ env: { AVWAN_E2E_EXPORT_DIR: dir } })
   try {
-    const path = await page.evaluate(() => window.__avwan!.exportPdf({ sections: ['schema', 'branchement'], format: 'iso', zonePages: true }))
+    const path = await page.evaluate(() => window.__avwan!.exportPdf({ sections: ['schema', 'branchement'], format: 'iso', zonePages: true, lang: 'fr' }))
     const { pages } = await readPdf(path!)
     expect(pages).toHaveLength(2)
     expect(near(pages[0]!.width, 1191) && near(pages[0]!.height, 842)).toBe(true)

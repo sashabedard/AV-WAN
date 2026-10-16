@@ -1,11 +1,15 @@
 import { existsSync } from 'node:fs'
+import { mainMessages } from './lang'
 
 export type ExportKind = 'pdf' | 'csv' | 'xlsx'
 
-export const EXPORT_FILTERS: Record<ExportKind, { name: string; extensions: string[] }> = {
-  pdf: { name: 'Document PDF', extensions: ['pdf'] },
-  csv: { name: 'Fichiers CSV', extensions: ['csv'] },
-  xlsx: { name: 'Classeur Excel', extensions: ['xlsx'] }
+export function exportFilters(): Record<ExportKind, { name: string; extensions: string[] }> {
+  const d = mainMessages().dialogs
+  return {
+    pdf: { name: d.filterPdf, extensions: ['pdf'] },
+    csv: { name: d.filterCsv, extensions: ['csv'] },
+    xlsx: { name: d.filterXlsx, extensions: ['xlsx'] }
+  }
 }
 
 export function withExtension(path: string, kind: ExportKind): string {
@@ -17,9 +21,9 @@ const RESERVED = /^(con|prn|aux|nul|com[1-9]|lpt[1-9])$/i
 
 export function safeFileName(name: string): string {
   // eslint-disable-next-line no-control-regex
-  const clean = name.replace(/[\\/:*?"<>|\u0000-\u001f\u007f]+/g, '-').trim() || 'projet'
+  const clean = name.replace(/[\\/:*?"<>|\u0000-\u001f\u007f]+/g, '-').trim() || mainMessages().dialogs.fallbackFileName
   // Windows refuse « CON », « nul.txt »… : le nom sans extension ne doit pas être un nom d'appareil.
-  return RESERVED.test(clean.split('.')[0]!.trim()) ? `${clean}-projet` : clean
+  return RESERVED.test(clean.split('.')[0]!.trim()) ? `${clean}-${mainMessages().dialogs.reservedSuffix}` : clean
 }
 
 // Chemins déjà occupés, pour demander avant de les remplacer.

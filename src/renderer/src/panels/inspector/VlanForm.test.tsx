@@ -45,7 +45,7 @@ describe('fiche VLAN', () => {
 
   it('renumérote en suivant la fiche, et refuse un numéro déjà pris', async () => {
     const user = userEvent.setup()
-    projectStore.getState().addVlan(vlanPreset(10))
+    projectStore.getState().addVlan(vlanPreset(10, 'fr'))
     render(<Inspector />)
     const id = screen.getByLabelText('Numéro du VLAN')
     await user.clear(id)
@@ -70,7 +70,7 @@ describe('fiche VLAN', () => {
 
   it('un numéro refusé revient à la valeur du projet', async () => {
     const user = userEvent.setup()
-    projectStore.getState().addVlan(vlanPreset(10))
+    projectStore.getState().addVlan(vlanPreset(10, 'fr'))
     render(<Inspector />)
     const id = screen.getByLabelText<HTMLInputElement>('Numéro du VLAN')
     await user.clear(id)

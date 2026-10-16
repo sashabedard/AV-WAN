@@ -1,7 +1,9 @@
 import { useRef } from 'react'
+import { useT } from '../i18n/useT'
 import { isDirty, useProjectStore } from '../store/projectStore'
 import { fileNameOf } from './fileName'
 import { BrandMark } from './BrandMark'
+import { LangToggle } from './LangToggle'
 import { ThemeToggle } from './ThemeToggle'
 import { uiStore } from '../store/uiStore'
 import { Icon } from '../icons/Icon'
@@ -11,6 +13,7 @@ export function TopBar() {
   const filePath = useProjectStore((s) => s.filePath)
   const dirty = useProjectStore(isDirty)
   const readOnly = useProjectStore((s) => s.readOnly)
+  const { m } = useT()
   const bar = useRef<HTMLElement>(null)
   useWindowChrome(bar)
   // Sans barre de titre, Windows perd sa barre de menus : le bouton ☰ ouvre le même menu.
@@ -21,8 +24,8 @@ export function TopBar() {
         <button
           type="button"
           className="topbar__menu"
-          aria-label="Menu"
-          title="Fichier, Édition, Affichage, Aide"
+          aria-label={m.topbar.menu}
+          title={m.topbar.menuTitle}
           onClick={(e) => {
             const r = e.currentTarget.getBoundingClientRect()
             window.avwan.window.showMenu(r.left, r.bottom)
@@ -37,17 +40,18 @@ export function TopBar() {
       </span>
       <span className="topbar__file" data-testid="file-name">
         {dirty && (
-          <span className="topbar__dirty" title="Modifications non enregistrées">
+          <span className="topbar__dirty" title={m.topbar.unsaved}>
             ●
           </span>
         )}
         {fileNameOf(filePath)}
       </span>
-      {readOnly && <span className="topbar__badge">Lecture seule</span>}
+      {readOnly && <span className="topbar__badge">{m.topbar.readOnly}</span>}
       <span className="topbar__spacer" />
-      <button type="button" className="topbar__btn" title="Exporter le PDF, le CSV ou le classeur Excel (⌘E)" onClick={() => uiStore.getState().setExportOpen(true)}>
-        Exporter
+      <button type="button" className="topbar__btn" title={m.topbar.exportTitle} onClick={() => uiStore.getState().setExportOpen(true)}>
+        {m.topbar.export}
       </button>
+      <LangToggle />
       <ThemeToggle />
     </header>
   )

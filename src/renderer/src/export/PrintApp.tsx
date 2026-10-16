@@ -1,6 +1,8 @@
 import { Component, useCallback, useEffect, useState, type ReactNode } from 'react'
 import type { Project } from '../model/types'
 import { parseProjectFile } from '../model/file'
+import { messages } from '../../../shared/i18n/messages'
+import { LangOverrideProvider } from '../i18n/useT'
 import { normalizePdfOptions, type PdfOptions } from '../../../shared/pdfOptions'
 import { PrintDocument } from './PrintDocument'
 
@@ -24,18 +26,26 @@ export function PrintApp() {
   useEffect(() => {
     window.avwan.print.job().then(
       (j) => {
-        const res = parseProjectFile(j.projectText)
+        const options = normalizePdfOptions(j.options)
+        const res = parseProjectFile(j.projectText, messages(options.lang))
         if (!res.ok) window.avwan.print.failed(res.error)
-        else setJob({ project: res.project, options: normalizePdfOptions(j.options) })
+        else setJob({ project: res.project, options })
       },
       (e: unknown) => window.avwan.print.failed(e instanceof Error ? e.message : String(e))
     )
   }, [])
   const ready = useCallback(() => window.avwan.print.ready(), [])
+  const lang = job?.options.lang
+  // La fenêtre d'impression n'appelle pas followLang : sa langue (<html lang>) est celle des documents.
+  useEffect(() => {
+    if (lang) document.documentElement.lang = lang === 'en' ? 'en-CA' : 'fr-CA'
+  }, [lang])
   if (!job) return null
   return (
     <PrintErrorBoundary>
-      <PrintDocument project={job.project} options={job.options} onReady={ready} />
+      <LangOverrideProvider lang={job.options.lang}>
+        <PrintDocument project={job.project} options={job.options} onReady={ready} />
+      </LangOverrideProvider>
     </PrintErrorBoundary>
   )
 }

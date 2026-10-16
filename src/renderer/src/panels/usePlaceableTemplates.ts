@@ -1,13 +1,13 @@
 import { useMemo } from 'react'
 import { TEMPLATES } from '../catalog/templates'
 import { projectOnlyTemplates } from '../model/customTemplate'
-import type { DeviceTemplate } from '../model/types'
+import type { DeviceTemplate, StoredTemplate } from '../model/types'
 import { useLibraryStore } from '../store/libraryStore'
 import { useProjectStore } from '../store/projectStore'
 
 export interface PlaceableTemplates {
-  library: DeviceTemplate[]
-  projectOnly: DeviceTemplate[]
+  library: StoredTemplate[]
+  projectOnly: StoredTemplate[]
   all: DeviceTemplate[]
 }
 

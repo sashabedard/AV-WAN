@@ -1,6 +1,7 @@
 // src/renderer/src/canvas/connect.ts
 import type { Link, PortRef, Project } from '../model/types'
-import { FAMILY_LABELS, canConnectPorts, canReconnect, sameRef, connectorFamily, findDevice, findPort, pickPort } from '../model/rules'
+import { currentMessages } from '../i18n/useT'
+import { familyLabels, canConnectPorts, canReconnect, sameRef, connectorFamily, findDevice, findPort, pickPort } from '../model/rules'
 
 interface ConnectionLike {
   source: string
@@ -89,6 +90,6 @@ export function dropOnDevice(
   const source = findPort(project, from)
   if (!target || !source || targetId === from.deviceId) return { ok: false, message: '' }
   const portId = pickPort(project, from, targetId)
-  if (!portId) return { ok: false, message: `Aucun port ${FAMILY_LABELS[connectorFamily(source.port.connector)]} libre sur ${target.name}.` }
+  if (!portId) return { ok: false, message: currentMessages().canvas.connect.noFreePort({ family: familyLabels(currentMessages())[connectorFamily(source.port.connector)], name: target.name }) }
   return { ok: true, to: { deviceId: targetId, portId } }
 }

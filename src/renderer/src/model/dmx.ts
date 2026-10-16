@@ -4,6 +4,7 @@
 import type { Device, PortDef, PortRef, Project } from './types'
 import { stripPixels, type StripPixels } from './led'
 import { getTemplate } from '../catalog'
+import type { Messages } from '../../../shared/i18n/messages'
 
 export const DMX_SLOTS = 512
 export const UNIVERSE_MAX = 63999
@@ -247,11 +248,19 @@ export function nextFreeAddress(index: PatchIndex, universe: number, footprint: 
   return candidate + footprint - 1 <= DMX_SLOTS ? candidate : undefined
 }
 
+// Code de la source « univers tapé » (anglais, jamais affiché tel quel) ; une source par câble donne « Appareil › port », un nom propre.
+export const TYPED_SOURCE = 'typed'
+
 export function sourceLabel(project: Project, source: UniverseSource): string {
-  if (source.kind === 'typed') return 'tapé'
+  if (source.kind === 'typed') return TYPED_SOURCE
   const device = project.devices.find((d) => d.id === source.ref.deviceId)
   const port = device?.ports.find((p) => p.id === source.ref.portId)
   return `${device?.name ?? '?'} › ${port?.label ?? source.ref.portId}`
+}
+
+// Libellé affiché d'un résultat de sourceLabel : le code devient un texte de la langue, un chemin d'appareil reste tel quel.
+export function sourceText(label: string, m: Messages): string {
+  return label === TYPED_SOURCE ? m.model.dmxSource.typed : label
 }
 
 export function rangeLabel(start: number, end: number): string {
@@ -259,17 +268,17 @@ export function rangeLabel(start: number, end: number): string {
 }
 
 // 2ᵉ ligne d'une tuile patchable (§ 4.7).
-export function patchLine(entry: PatchEntry | undefined): string {
+export function patchLine(entry: PatchEntry | undefined, m: Messages): string {
   const address = entry?.device.dmx?.address
   if (address === undefined) return ''
-  return entry?.universe ? `U${entry.universe.universe} · ${address}` : `Adr. ${address}`
+  return entry?.universe ? `U${entry.universe.universe} · ${address}` : `${m.model.dmx.addressShort} ${address}`
 }
 
-export function issueTexts(issues: PatchIssues): string[] {
+export function issueTexts(issues: PatchIssues, m: Messages): string[] {
   const c = issues.universeConflict
   return [
-    ...(c ? [`Univers tapé ${c.typed} ; le câble donne ${c.cable}`] : []),
-    ...issues.overlaps.map((o) => `Chevauche ${o.name} (${rangeLabel(o.start, o.end)})`),
-    ...(issues.overflow ? ['Dépasse 512'] : [])
+    ...(c ? [m.model.dmx.universeConflict({ typed: c.typed, cable: c.cable })] : []),
+    ...issues.overlaps.map((o) => m.model.dmx.overlap({ name: o.name, range: rangeLabel(o.start, o.end) })),
+    ...(issues.overflow ? [m.model.dmx.overflow] : [])
   ]
 }

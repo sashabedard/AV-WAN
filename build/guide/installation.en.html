@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>AV·WAN — Installation Guide</title>
+<style>
+  @font-face { font-family: 'Archivo Narrow'; font-weight: 500; src: url('{{FONT_DIR}}/archivo-narrow/files/archivo-narrow-latin-500-normal.woff2') format('woff2'); }
+  @font-face { font-family: 'Archivo Narrow'; font-weight: 700; src: url('{{FONT_DIR}}/archivo-narrow/files/archivo-narrow-latin-700-normal.woff2') format('woff2'); }
+  @font-face { font-family: 'IBM Plex Mono'; font-weight: 400; src: url('{{FONT_DIR}}/ibm-plex-mono/files/ibm-plex-mono-latin-400-normal.woff2') format('woff2'); }
+  @font-face { font-family: 'IBM Plex Mono'; font-weight: 600; src: url('{{FONT_DIR}}/ibm-plex-mono/files/ibm-plex-mono-latin-600-normal.woff2') format('woff2'); }
+  @page { size: letter portrait; margin: 0.6in 0.7in; }
+  :root { --ink: #1e1f22; --muted: #6b675e; --line: #cfc8b8; --accent: #c2410c; --accent-bg: #f6dccb; --paper: #ffffff; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--paper); color: var(--ink); font: 500 11.5pt/1.45 'Archivo Narrow', sans-serif; }
+  header { display: flex; align-items: baseline; justify-content: space-between; padding-bottom: 8pt; border-bottom: 2pt solid var(--ink); }
+  h1 { margin: 0; font: 700 26pt/1 'Archivo Narrow', sans-serif; letter-spacing: 0.09em; }
+  .sub { margin: 4pt 0 0; font: 400 8.5pt/1.3 'IBM Plex Mono', monospace; color: var(--muted); }
+  .version { font: 600 9pt/1 'IBM Plex Mono', monospace; color: var(--muted); }
+  h2 { margin: 16pt 0 6pt; font: 700 13pt/1.2 'Archivo Narrow', sans-serif; letter-spacing: 0.04em; text-transform: uppercase; }
+  ol { margin: 0; padding-left: 16pt; }
+  li { margin: 3pt 0; }
+  .note { margin: 8pt 0 0; padding: 6pt 9pt; border-left: 3pt solid var(--accent); background: var(--accent-bg); }
+  code, .btn { font: 600 9.5pt/1 'IBM Plex Mono', monospace; }
+  .btn { display: inline-block; padding: 1.5pt 5pt; border: 1pt solid var(--ink); border-radius: 3pt; }
+  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 0 22pt; }
+  footer { margin-top: 18pt; padding-top: 6pt; border-top: 1pt solid var(--line); font: 400 8.5pt/1.4 'IBM Plex Mono', monospace; color: var(--muted); }
+</style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>AV·WAN</h1>
+      <p class="sub">Audio-Video · Wiring, Addressing, Networking — installation guide</p>
+    </div>
+    <span class="version">Version {{VERSION}}</span>
+  </header>
+
+  <div class="cols">
+    <section>
+      <h2>macOS 13 and later</h2>
+      <ol>
+        <li>Open <code>AV-WAN-{{VERSION}}-universal.dmg</code>.</li>
+        <li>Drag <strong>AV·WAN</strong> into the <strong>Applications</strong> folder.</li>
+        <li>Open AV·WAN from Applications.</li>
+        <li>The first time, macOS reminds you the app was downloaded from the Internet: click <span class="btn">Open</span>.</li>
+      </ol>
+      <p class="note">The app is signed and verified by Apple. It runs on both Intel and Apple Silicon Macs.</p>
+    </section>
+
+    <section>
+      <h2>Windows 10 and 11</h2>
+      <ol>
+        <li>Run <code>AV-WAN-{{VERSION}}-setup.exe</code>. No administrator rights are needed.</li>
+        <li>If Windows shows “Windows protected your PC”, click <span class="btn">More info</span>, then <span class="btn">Run anyway</span>.</li>
+        <li>AV·WAN opens. A shortcut is added to the Desktop and the Start menu.</li>
+      </ol>
+      <p class="note">This warning appears because the Windows installer is not signed with a paid certificate. It only appears at install time. A Microsoft Store version without this warning is coming soon.</p>
+    </section>
+  </div>
+
+  <h2>Opening a project</h2>
+  <p>Double-click an <code>.avwan</code> file: AV·WAN opens on that project. If another project has unsaved changes, the app asks you first.</p>
+
+  <h2>Updates</h2>
+  <p>AV·WAN checks for new versions on its own and downloads them in the background. A banner then offers <span class="btn">Restart now</span>; otherwise, the update installs the next time you quit. To check right away: <strong>Help › Check for Updates…</strong></p>
+
+  <h2>Unsaved work</h2>
+  <p>AV·WAN saves your project to its file on its own, two seconds after each change: <strong>File › Auto Save</strong>, on by default. A new project gets its file in the <strong>Documents › AV·WAN</strong> folder on the first change. To get a file back as it was when you opened it: <strong>File › Revert to Opened Version…</strong>; this revert can be undone like any other change.</p>
+  <p>AV·WAN also keeps a backup copy of your project every 30 seconds. After an unexpected shutdown, the start screen offers to restore it.</p>
+
+  <footer>All versions and release notes: {{RELEASES_URL}}</footer>
+</body>
+</html>

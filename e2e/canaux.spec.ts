@@ -7,7 +7,7 @@ import { readPdf } from './pdf'
 
 test('canaux DMX : nommés dans l’inspecteur, retenus dans les réglages, imprimés avec leurs adresses', async () => {
   const userData = mkdtempSync(join(tmpdir(), 'avwan-e2e-'))
-  writeFileSync(join(userData, 'settings.json'), JSON.stringify({ autoSave: false }))
+  writeFileSync(join(userData, 'settings.json'), JSON.stringify({ autoSave: false, lang: 'fr' }))
   const dir = mkdtempSync(join(tmpdir(), 'avwan-export-'))
   const { app, page } = await launchApp({ keepWelcome: true, userData, env: { AVWAN_E2E_EXPORT_DIR: dir } })
   try {
@@ -38,7 +38,7 @@ test('canaux DMX : nommés dans l’inspecteur, retenus dans les réglages, impr
     await expect(menu).toBeHidden()
     const settingsFile = join(userData, 'dmx-channels.json')
     await expect.poll(() => existsSync(settingsFile) && readFileSync(settingsFile, 'utf8').includes('Green')).toBe(true)
-    const path = await page.evaluate(() => window.__avwan!.exportPdf({ sections: ['canaux'], format: 'na', zonePages: false }))
+    const path = await page.evaluate(() => window.__avwan!.exportPdf({ sections: ['canaux'], format: 'na', zonePages: false, lang: 'fr' }))
     const { pages } = await readPdf(path!)
     const text = pages.map((p) => p.text).join(' ')
     expect(text).toContain('Canaux DMX')

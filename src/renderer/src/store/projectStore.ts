@@ -2,7 +2,7 @@ import { createStore, type StoreApi } from 'zustand/vanilla'
 import { useStore } from 'zustand'
 import type { Device, Link, MainsVoltage, PortRef, PortState, Project, SwitchSpec, Vlan, Zone } from '../model/types'
 import { createDevice, createProject, newId, type CreateDeviceOptions } from '../model/project'
-import { FAMILY_LABELS, canConnectPorts, canReconnect, connectorFamily, defaultMedium, findPort, nextCableId, sameRef } from '../model/rules'
+import { familyLabels, canConnectPorts, canReconnect, connectorFamily, defaultMedium, findPort, nextCableId, sameRef } from '../model/rules'
 import { setLinkVlan as deriveSetLinkVlan, type VlanChoice } from '../model/derive'
 import { buildSwitchPorts } from '../catalog/switch'
 import { pasteFragment as pasteFragmentModel, type Fragment } from '../model/clipboard'
@@ -11,6 +11,8 @@ import { assignZones, createZone, moveZones, placeDevices, removeZones, resizeZo
 import { withTemplate } from '../model/customTemplate'
 import { ownNewKeys, removeProjectList, setProjectList, type ChannelKey } from '../model/dmxChannels'
 import { uiStore } from './uiStore'
+import { currentLang, currentMessages } from '../i18n/useT'
+import type { Lang } from '../../../shared/i18n/lang'
 import { dmxChannelsStore } from './dmxChannelsStore'
 import { commit, initHistory, redo as historyRedo, undo as historyUndo, type History } from './history'
 
@@ -47,7 +49,7 @@ export interface ProjectState {
   loadProject(project: Project, filePath: string | null, opts?: { readOnly?: boolean; restored?: boolean }): void
   markSaved(filePath: string, saved?: Project): void
   apply(fn: (p: Project) => Project): void
-  addDevice(templateId: string, position: { x: number; y: number }, opts?: CreateDeviceOptions): string
+  addDevice(templateId: string, position: { x: number; y: number }, opts?: Omit<CreateDeviceOptions, 'lang'> & { lang?: Lang }): string
   moveDevices(moves: Array<{ id: string; position: { x: number; y: number } }>): void
   moveSelection(moves: SelectionMoves): void
   removeElements(deviceIds: string[], linkIds: string[], zoneIds?: string[]): void
@@ -82,7 +84,6 @@ export interface ProjectState {
 }
 
 const EMPTY_SELECTION: Selection = { deviceIds: [], linkIds: [] }
-const READ_ONLY_MESSAGE = 'Ce fichier vient d’une version plus récente d’AV·WAN : il est en lecture seule. Utilisez « Enregistrer sous… ».'
 
 export function isDirty(s: Pick<ProjectState, 'history' | 'savedRef'>): boolean {
   return s.history.present !== s.savedRef
@@ -103,12 +104,12 @@ export function keepViewSettings(before: History<Project>, after: History<Projec
   return { ...after, present: { ...after.present, settings: { ...s, colorMode, pageFormat } } }
 }
 
-export function createProjectStore(initial: Project = createProject()): StoreApi<ProjectState> {
+export function createProjectStore(initial: Project = createProject(undefined, currentLang())): StoreApi<ProjectState> {
   return createStore<ProjectState>()((set, get) => {
     const apply = (fn: (p: Project) => Project): void => {
       const { history, readOnly } = get()
       if (readOnly) {
-        set({ toast: READ_ONLY_MESSAGE })
+        set({ toast: currentMessages().app.toast.readOnly })
         return
       }
       // Une clé de canaux qui apparaît reçoit sa liste dans la même étape (spec canaux-dmx § 3.7).
@@ -127,7 +128,7 @@ export function createProjectStore(initial: Project = createProject()): StoreApi
       toast: null,
 
       newProject: () => {
-        const p = createProject()
+        const p = createProject(undefined, currentLang())
         set({ history: initHistory(p), filePath: null, savedRef: p, readOnly: false, selection: EMPTY_SELECTION, docId: get().docId + 1, untitledId: newId() })
         uiStore.getState().resetForDocument()
       },
@@ -151,7 +152,7 @@ export function createProjectStore(initial: Project = createProject()): StoreApi
         let id = ''
         apply((p) => {
           const base = opts?.template ? withTemplate(p, opts.template) : p
-          const device = createDevice(base, templateId, position, opts)
+          const device = createDevice(base, templateId, position, { ...opts, lang: opts?.lang ?? currentLang() })
           id = device.id
           return assignZones({ ...base, devices: [...base.devices, device] }, [device.id])
         })
@@ -211,7 +212,7 @@ export function createProjectStore(initial: Project = createProject()): StoreApi
       zoneAroundSelection: () => {
         const rect = zoneAround(get().history.present, get().selection.deviceIds)
         if (!rect) {
-          set({ toast: 'Sélectionnez au moins un appareil pour créer une zone autour.' })
+          set({ toast: currentMessages().app.toast.zoneNeedsSelection })
           return null
         }
         return get().addZone(rect) || null
@@ -225,8 +226,8 @@ export function createProjectStore(initial: Project = createProject()): StoreApi
           const pa = findPort(p, a)
           set({
             toast: pa
-              ? `Branchement impossible : port occupé ou connecteurs ${FAMILY_LABELS[connectorFamily(pa.port.connector)]} incompatibles.`
-              : 'Branchement impossible.'
+              ? currentMessages().app.toast.connectBlocked({ family: familyLabels(currentMessages())[connectorFamily(pa.port.connector)] })
+              : currentMessages().app.toast.connectImpossible
           })
           return null
         }
@@ -242,7 +243,7 @@ export function createProjectStore(initial: Project = createProject()): StoreApi
         const link = p.links.find((l) => l.id === linkId)
         if (!link || sameRef(link[end], to)) return false
         if (!canReconnect(p, linkId, end, to)) {
-          set({ toast: 'Rebranchement impossible : port occupé ou connecteurs incompatibles.' })
+          set({ toast: currentMessages().app.toast.reconnectImpossible })
           return false
         }
         apply((q) => ({
@@ -274,8 +275,8 @@ export function createProjectStore(initial: Project = createProject()): StoreApi
         if (!next) {
           set({
             toast: p.vlans.some((v) => v.id === to)
-              ? `Le VLAN ${to} existe déjà.`
-              : 'Numéro de VLAN invalide : choisissez un nombre de 1 à 4094.'
+              ? currentMessages().app.toast.vlanExists({ id: to })
+              : currentMessages().app.toast.vlanInvalid
           })
           return false
         }

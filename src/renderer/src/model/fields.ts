@@ -1,4 +1,6 @@
-// Champs numériques : saisie tolérante (virgule ou point) et affichage à la française.
+// Champs numériques : saisie tolérante (virgule ou point dans les deux langues) ; l'affichage suit la langue.
+import { formatters } from '../../../shared/i18n/format'
+import type { Lang } from '../../../shared/i18n/lang'
 
 const INTEGER = /^\d+$/
 const DECIMAL = /^\d+(\.\d+)?$/
@@ -23,25 +25,23 @@ export function parseIntField(text: string, min: number, max: number): number | 
 }
 
 // Nombre décimal (« 14,4 », « 14.4 » ou « 1 500,5 ») ; positive : strictement plus grand que 0, sinon 0 accepté.
-export function parseDecimalField(text: string, positive = false): number | null | undefined {
+// En anglais, « 1,200 » ou « 12,345.5 » (virgules de milliers, décimales au point) se lit comme l'affichage anglais ; tout le reste : virgule ou point décimal.
+const EN_GROUPED = /^\d{1,3}(,\d{3})+(\.\d+)?$/
+
+export function parseDecimalField(text: string, positive: boolean, lang: Lang): number | null | undefined {
   const trimmed = text.trim()
   if (trimmed === '') return null
-  const t = withoutThousands(trimmed)?.replace(',', '.')
+  const t = lang === 'en' && EN_GROUPED.test(trimmed) ? trimmed.replace(/,/g, '') : withoutThousands(trimmed)?.replace(',', '.')
   if (t === undefined || !DECIMAL.test(t)) return undefined
   const n = Number(t)
   return positive ? (n > 0 ? n : undefined) : n
 }
 
-const formatters = new Map<number, Intl.NumberFormat>()
-
 // 1200 → « 1 200 », 14.4 → « 14,4 » ; decimals fixe le nombre de décimales (3 → « 3,0 »).
-// Espace ordinaire pour les milliers : les espaces insécables de fr-CA compliquent les tests et les CSV.
-export function formatFr(n: number, decimals?: number): string {
-  const key = decimals ?? -1
-  let f = formatters.get(key)
-  if (!f) {
-    f = new Intl.NumberFormat('fr-CA', decimals === undefined ? { maximumFractionDigits: 1 } : { minimumFractionDigits: decimals, maximumFractionDigits: decimals })
-    formatters.set(key, f)
-  }
-  return f.format(n).replace(/[\u00A0\u202F]/g, ' ')
+// Alias français pour les documents (rapports, PDF) ; un affichage qui suit la langue passe par `fmt.num` (useT) ou `formatters(lang).num`.
+export const formatFr: (n: number, decimals?: number) => string = formatters('fr').num
+
+// Valeur d'un champ de saisie : tous les chiffres, sans espace de milliers (qui serait refusée à la relecture), séparateur décimal de la langue.
+export function decimalText(n: number, lang: Lang): string {
+  return lang === 'fr' ? String(n).replace('.', ',') : String(n)
 }

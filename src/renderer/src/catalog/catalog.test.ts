@@ -4,6 +4,9 @@ import { BUILTIN_ICON_NAMES } from './iconNames'
 import { CATEGORY_ORDER } from './categories'
 import { buildSwitchPorts, defaultPoeBudget, switchSummary } from './switch'
 import { getTemplate } from './index'
+import { messages } from '../../../shared/i18n/messages'
+import { templateText } from './templateText'
+import type { StoredTemplate } from '../model/types'
 import { DeviceTemplateSchema } from '../model/schema'
 
 describe('TEMPLATES', () => {
@@ -11,7 +14,8 @@ describe('TEMPLATES', () => {
     expect(new Set(TEMPLATES.map((t) => t.id)).size).toBe(TEMPLATES.length)
     expect(TEMPLATES.length).toBe(97)
     for (const t of TEMPLATES) {
-      expect(DeviceTemplateSchema.safeParse(t).success, t.id).toBe(true)
+      const asStored = { ...t, name: templateText(t.name, 'fr'), ports: t.ports.map((p) => ({ ...p, label: templateText(p.label, 'fr') })), ...(t.note !== undefined ? { note: templateText(t.note, 'fr') } : {}) }
+      expect(DeviceTemplateSchema.safeParse(asStored).success, t.id).toBe(true)
       expect(t.icon.kind === 'builtin' && (BUILTIN_ICON_NAMES as readonly string[]).includes(t.icon.name), t.id).toBe(true)
       expect(CATEGORY_ORDER).toContain(t.category)
     }
@@ -69,14 +73,14 @@ describe('defaultPoeBudget et switchSummary', () => {
   })
 
   it('résume la configuration', () => {
-    expect(switchSummary({ portCount: 8, poe: 'at', sfpPlus: 2, managed: true })).toBe('8×PoE+ · 2×SFP+')
-    expect(switchSummary({ portCount: 5, poe: 'none', sfpPlus: 0, managed: false })).toBe('5 ports')
+    expect(switchSummary({ portCount: 8, poe: 'at', sfpPlus: 2, managed: true }, messages('fr'))).toBe('8×PoE+ · 2×SFP+')
+    expect(switchSummary({ portCount: 5, poe: 'none', sfpPlus: 0, managed: false }, messages('fr'))).toBe('5 ports')
   })
 })
 
 describe('getTemplate', () => {
   it('préfère un gabarit perso au catalogue', () => {
-    const custom = { ...TEMPLATES[1]!, name: 'Ma passerelle', isCustom: true }
+    const custom = { ...TEMPLATES[1]!, name: 'Ma passerelle', ports: [], isCustom: true } as StoredTemplate
     expect(getTemplate({ templates: [custom] }, custom.id)?.name).toBe('Ma passerelle')
     expect(getTemplate({ templates: [] }, 'ptz-ndi')?.code).toBe('CAM')
     expect(getTemplate({ templates: [] }, 'inconnu')).toBeUndefined()
@@ -93,7 +97,7 @@ describe('getTemplate', () => {
 
   it('décrit l’alimentation : 4 sorties DC, 24 V, courant et puissance à taper', () => {
     const psu = TEMPLATES.find((t) => t.id === 'psu')!
-    expect(psu).toMatchObject({ category: 'autre', code: 'PSU', name: 'Alimentation', icon: { kind: 'builtin', name: 'psu' }, psu: { volts: 24 } })
+    expect(psu).toMatchObject({ category: 'autre', code: 'PSU', name: { fr: 'Alimentation', en: 'Power supply' }, icon: { kind: 'builtin', name: 'psu' }, psu: { volts: 24 } })
     expect(psu.ports.map((p) => [p.id, p.label, p.connector])).toEqual([
       ['DC-OUT-1', 'DC OUT 1', 'dc'],
       ['DC-OUT-2', 'DC OUT 2', 'dc'],

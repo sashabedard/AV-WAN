@@ -1,15 +1,15 @@
 import type { PortDef, SwitchSpec } from '../model/types'
+import type { Messages } from '../../../shared/i18n/messages'
 
 export const SWITCH_PORT_COUNTS = [4, 5, 8, 12, 16, 24, 48] as const
 export const DEFAULT_SWITCH_SPEC: SwitchSpec = { portCount: 8, poe: 'at', sfpPlus: 2, managed: true }
 
-export const POE_SPEC_LABELS: Record<SwitchSpec['poe'], string> = { none: 'Aucun', af: 'PoE', at: 'PoE+', bt: 'PoE++' }
-export const POE_CHOICES: Array<{ value: SwitchSpec['poe']; label: string }> = [
-  { value: 'none', label: 'Aucun' },
-  { value: 'af', label: 'PoE' },
-  { value: 'at', label: 'PoE+' },
-  { value: 'bt', label: 'PoE++' }
-]
+export function poeSpecLabel(poe: SwitchSpec['poe'], m: Messages): string {
+  return m.catalog.poeSpec[poe]
+}
+export function poeChoices(m: Messages): Array<{ value: SwitchSpec['poe']; label: string }> {
+  return (['none', 'af', 'at', 'bt'] as const).map((value) => ({ value, label: poeSpecLabel(value, m) }))
+}
 
 // Budgets indicatifs (spec § 7.1). Colonnes : 4–5, 8, 12–16, 24, 48 ports.
 const BUDGETS: Record<'af' | 'at' | 'bt', readonly [number, number, number, number, number]> = {
@@ -55,7 +55,7 @@ export function buildSwitchPorts(spec: SwitchSpec): PortDef[] {
   return ports
 }
 
-export function switchSummary(spec: SwitchSpec): string {
-  const main = spec.poe === 'none' ? `${spec.portCount} ports` : `${spec.portCount}×${POE_SPEC_LABELS[spec.poe]}`
+export function switchSummary(spec: SwitchSpec, m: Messages): string {
+  const main = spec.poe === 'none' ? m.catalog.switchPorts({ n: spec.portCount }) : `${spec.portCount}×${poeSpecLabel(spec.poe, m)}`
   return spec.sfpPlus > 0 ? `${main} · ${spec.sfpPlus}×SFP+` : main
 }

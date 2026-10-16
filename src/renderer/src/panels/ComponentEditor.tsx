@@ -1,8 +1,9 @@
 import { useRef, useState, type KeyboardEvent } from 'react'
 import { TEMPLATES } from '../catalog/templates'
-import { CATEGORY_LABELS, CATEGORY_ORDER } from '../catalog/categories'
+import { categoryLabel, CATEGORY_ORDER } from '../catalog/categories'
 import { BUILTIN_ICON_NAMES } from '../catalog/iconNames'
-import { CONNECTOR_LABELS, POE_CHOICE_LABELS } from '../catalog/labels'
+import { POE_CHOICE_IDS, connectorLabel, poeChoiceLabel } from '../catalog/labels'
+import { displayName } from '../catalog/templateText'
 import { ConnectorSchema } from '../model/schema'
 import {
   MAX_PORTS,
@@ -19,17 +20,18 @@ import {
   type PortDraft,
   type TemplateDraft
 } from '../model/customTemplate'
-import type { Category, Connector, DeviceTemplate } from '../model/types'
+import type { Category, Connector, StoredTemplate } from '../model/types'
 import { importIconFile } from '../icons/importIcon'
 import { DeviceIcon } from '../icons/Icon'
 import { libraryStore, libraryTemplate } from '../store/libraryStore'
 import { projectStore } from '../store/projectStore'
 import { uiStore, useUiStore } from '../store/uiStore'
 import { ipcErrorMessage } from '../app/ipcError'
+import { useT } from '../i18n/useT'
 import './componentEditor.css'
 
 const CONNECTORS = ConnectorSchema.options
-const POE_CHOICES = Object.keys(POE_CHOICE_LABELS) as PoeChoice[]
+const POE_CHOICES = POE_CHOICE_IDS
 // Pas de switch perso : les switchs passent par le configurateur.
 const BASES = TEMPLATES.filter((t) => !t.switch)
 
@@ -40,16 +42,18 @@ export function ComponentEditor() {
   return <EditorForm key={state.mode === 'edit' ? state.templateId : 'new'} editing={editing} />
 }
 
-function EditorForm({ editing }: { editing: DeviceTemplate | null }) {
-  const [draft, setDraft] = useState<TemplateDraft>(() => (editing ? draftFrom(editing) : blankDraft()))
+function EditorForm({ editing }: { editing: StoredTemplate | null }) {
+  const { m, lang } = useT()
+  const t = m.componentEditor
+  const [draft, setDraft] = useState<TemplateDraft>(() => (editing ? draftFrom(editing, lang) : blankDraft()))
   const [base, setBase] = useState('')
   const [batchCount, setBatchCount] = useState('1')
   const [batchConnector, setBatchConnector] = useState<Connector>('rj45')
   const [iconError, setIconError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
   const fileInput = useRef<HTMLInputElement>(null)
-  const errors = validateDraft(draft)
-  const title = editing ? 'Modifier la composante' : 'Nouvelle composante'
+  const errors = validateDraft(draft, t.errors, lang)
+  const title = editing ? t.titleEdit : t.titleNew
 
   const close = (): void => uiStore.getState().openComponentEditor(null)
   const patch = (p: Partial<TemplateDraft>): void => setDraft((d) => ({ ...d, ...p }))
@@ -66,7 +70,7 @@ function EditorForm({ editing }: { editing: DeviceTemplate | null }) {
     setBase(id)
     const t = BASES.find((x) => x.id === id)
     setDraft((d) => {
-      const from = t ? draftFrom(t) : blankDraft()
+      const from = t ? draftFrom(t, lang) : blankDraft()
       return { ...from, name: d.name, code: d.code || from.code }
     })
   }
@@ -81,7 +85,7 @@ function EditorForm({ editing }: { editing: DeviceTemplate | null }) {
     addBatch()
   }
   const importIcon = async (file: File): Promise<void> => {
-    const res = importIconFile(file.name, new Uint8Array(await file.arrayBuffer()))
+    const res = importIconFile(file.name, new Uint8Array(await file.arrayBuffer()), t.iconErrors)
     if (res.ok) {
       patch({ icon: res.icon })
       setIconError(null)
@@ -91,13 +95,13 @@ function EditorForm({ editing }: { editing: DeviceTemplate | null }) {
     if (hasErrors(errors) || saving) return
     setSaving(true)
     // Toujours un nouvel identifiant : les projets qui utilisent l'ancienne version la gardent.
-    const template = templateFromDraft(draft, newCustomId())
+    const template = templateFromDraft(draft, newCustomId(), lang)
     try {
       if (editing) await libraryStore.getState().replace(editing.id, template)
       else await libraryStore.getState().save(template)
       close()
     } catch (e) {
-      projectStore.getState().showToast(`Enregistrement de la composante impossible : ${ipcErrorMessage(e)}`)
+      projectStore.getState().showToast(t.saveFailed({ detail: ipcErrorMessage(e) }))
       setSaving(false)
     }
   }
@@ -126,12 +130,12 @@ function EditorForm({ editing }: { editing: DeviceTemplate | null }) {
 
         {!editing && (
           <div className="ce__field">
-            <label className="ce__label" htmlFor="ce-base">Ressemble à…</label>
+            <label className="ce__label" htmlFor="ce-base">{t.similarTo}</label>
             <select id="ce-base" value={base} onChange={(e) => chooseBase(e.target.value)}>
-              <option value="">Vide</option>
+              <option value="">{t.blank}</option>
               {BASES.map((t) => (
                 <option key={t.id} value={t.id}>
-                  {t.name}
+                  {displayName(t, lang)}
                 </option>
               ))}
             </select>
@@ -140,12 +144,12 @@ function EditorForm({ editing }: { editing: DeviceTemplate | null }) {
 
         <div className="ce__row">
           <div className="ce__field ce__grow">
-            <label className="ce__label" htmlFor="ce-name">Nom</label>
+            <label className="ce__label" htmlFor="ce-name">{t.name}</label>
             <input id="ce-name" autoFocus value={draft.name} maxLength={80} onChange={(e) => patch({ name: e.target.value })} />
             {errors.name && <p className="ce__error">{errors.name}</p>}
           </div>
           <div className="ce__field ce__code">
-            <label className="ce__label" htmlFor="ce-code">Code</label>
+            <label className="ce__label" htmlFor="ce-code">{t.code}</label>
             <input id="ce-code" value={draft.code} onChange={(e) => patch({ code: normalizeCode(e.target.value) })} />
             {errors.code && <p className="ce__error">{errors.code}</p>}
           </div>
@@ -153,21 +157,21 @@ function EditorForm({ editing }: { editing: DeviceTemplate | null }) {
 
         <div className="ce__row">
           <div className="ce__field">
-            <label className="ce__label" htmlFor="ce-category">Catégorie</label>
+            <label className="ce__label" htmlFor="ce-category">{t.category}</label>
             <select id="ce-category" value={draft.category} onChange={(e) => patch({ category: e.target.value as Category })}>
               {CATEGORY_ORDER.map((c) => (
                 <option key={c} value={c}>
-                  {CATEGORY_LABELS[c]}
+                  {categoryLabel(c, m)}
                 </option>
               ))}
             </select>
           </div>
           <div className="ce__field ce__grow">
-            <label className="ce__label" htmlFor="ce-vendor">Fabricant</label>
+            <label className="ce__label" htmlFor="ce-vendor">{t.vendor}</label>
             <input id="ce-vendor" value={draft.vendor} onChange={(e) => patch({ vendor: e.target.value })} />
           </div>
           <div className="ce__field ce__grow">
-            <label className="ce__label" htmlFor="ce-model">Modèle</label>
+            <label className="ce__label" htmlFor="ce-model">{t.model}</label>
             <input id="ce-model" value={draft.model} onChange={(e) => patch({ model: e.target.value })} />
           </div>
         </div>
@@ -175,29 +179,29 @@ function EditorForm({ editing }: { editing: DeviceTemplate | null }) {
         <div className="ce__row">
           <label className="ce__check">
             <input type="checkbox" checked={draft.patchable} onChange={(e) => patch({ patchable: e.target.checked })} />
-            Appareil à patcher (DMX)
+            {t.patchable}
           </label>
           {draft.patchable && (
             <div className="ce__field ce__code">
-              <label className="ce__label" htmlFor="ce-footprint">Canaux</label>
+              <label className="ce__label" htmlFor="ce-footprint">{t.channels}</label>
               <input id="ce-footprint" inputMode="numeric" value={draft.footprint} onChange={(e) => patch({ footprint: e.target.value })} />
               {errors.dmx && <p className="ce__error">{errors.dmx}</p>}
             </div>
           )}
           <div className="ce__field ce__code">
-            <label className="ce__label" htmlFor="ce-power">Puissance (W)</label>
+            <label className="ce__label" htmlFor="ce-power">{t.power}</label>
             <input id="ce-power" inputMode="decimal" value={draft.powerW} onChange={(e) => patch({ powerW: e.target.value })} />
             {errors.power && <p className="ce__error">{errors.power}</p>}
           </div>
         </div>
 
         <fieldset className="ce__group">
-          <legend className="ce__label">Icône</legend>
-          <div className="ce__icons" role="radiogroup" aria-label="Icônes maison">
+          <legend className="ce__label">{t.icon}</legend>
+          <div className="ce__icons" role="radiogroup" aria-label={t.builtinIcons}>
             {BUILTIN_ICON_NAMES.map((name) => {
               const on = draft.icon.kind === 'builtin' && draft.icon.name === name
               return (
-                <button key={name} type="button" role="radio" aria-checked={on} aria-label={`Icône ${name}`} className={`ce__icon${on ? ' is-on' : ''}`} onClick={() => patch({ icon: { kind: 'builtin', name } })}>
+                <button key={name} type="button" role="radio" aria-checked={on} aria-label={t.iconNamed({ name })} className={`ce__icon${on ? ' is-on' : ''}`} onClick={() => patch({ icon: { kind: 'builtin', name } })}>
                   <DeviceIcon icon={{ kind: 'builtin', name }} size={18} />
                 </button>
               )
@@ -208,15 +212,15 @@ function EditorForm({ editing }: { editing: DeviceTemplate | null }) {
               <DeviceIcon icon={draft.icon} size={28} />
             </span>
             <button type="button" className="btn" onClick={() => fileInput.current?.click()}>
-              Importer…
+              {t.import}
             </button>
-            <span className="ce__hint">SVG ou PNG, 256 Ko au plus</span>
+            <span className="ce__hint">{t.importHint}</span>
             <input
               ref={fileInput}
               type="file"
               hidden
               accept=".svg,.png,image/svg+xml,image/png"
-              aria-label="Fichier d’icône"
+              aria-label={t.iconFile}
               onChange={(e) => {
                 const file = e.target.files?.[0]
                 e.target.value = ''
@@ -233,17 +237,17 @@ function EditorForm({ editing }: { editing: DeviceTemplate | null }) {
 
         <fieldset className="ce__group">
           <legend className="ce__label">
-            Ports ({draft.ports.length} / {MAX_PORTS})
+            {t.ports({ n: draft.ports.length, max: MAX_PORTS })}
           </legend>
           {draft.ports.length > 0 && (
             <table className="ce__ports">
               <thead>
                 <tr>
-                  <th>Nom</th>
-                  <th>Connecteur</th>
-                  <th>PoE</th>
+                  <th>{t.colName}</th>
+                  <th>{t.colConnector}</th>
+                  <th>{t.colPoe}</th>
                   <th>
-                    <span className="ce__sr">Retirer</span>
+                    <span className="ce__sr">{t.colRemove}</span>
                   </th>
                 </tr>
               </thead>
@@ -251,28 +255,28 @@ function EditorForm({ editing }: { editing: DeviceTemplate | null }) {
                 {draft.ports.map((p, i) => (
                   <tr key={i}>
                     <td>
-                      <input aria-label={`Nom du port ${i + 1}`} value={p.label} onChange={(e) => setPort(i, { label: e.target.value })} />
+                      <input aria-label={t.portName({ n: i + 1 })} value={p.label} onChange={(e) => setPort(i, { label: e.target.value })} />
                     </td>
                     <td>
-                      <select aria-label={`Connecteur du port ${i + 1}`} value={p.connector} onChange={(e) => setPort(i, { connector: e.target.value as Connector })}>
+                      <select aria-label={t.portConnector({ n: i + 1 })} value={p.connector} onChange={(e) => setPort(i, { connector: e.target.value as Connector })}>
                         {CONNECTORS.map((c) => (
                           <option key={c} value={c}>
-                            {CONNECTOR_LABELS[c]}
+                            {connectorLabel(c, m)}
                           </option>
                         ))}
                       </select>
                     </td>
                     <td>
-                      <select aria-label={`PoE du port ${i + 1}`} value={p.poe} disabled={!poeAllowed(p.connector)} onChange={(e) => setPort(i, { poe: e.target.value as PoeChoice })}>
+                      <select aria-label={t.portPoe({ n: i + 1 })} value={p.poe} disabled={!poeAllowed(p.connector)} onChange={(e) => setPort(i, { poe: e.target.value as PoeChoice })}>
                         {POE_CHOICES.map((c) => (
                           <option key={c} value={c}>
-                            {POE_CHOICE_LABELS[c]}
+                            {poeChoiceLabel(c, m)}
                           </option>
                         ))}
                       </select>
                     </td>
                     <td>
-                      <button type="button" className="ce__remove" aria-label={`Retirer le port ${i + 1}`} onClick={() => setDraft((d) => ({ ...d, ports: d.ports.filter((_, j) => j !== i) }))}>
+                      <button type="button" className="ce__remove" aria-label={t.removePort({ n: i + 1 })} onClick={() => setDraft((d) => ({ ...d, ports: d.ports.filter((_, j) => j !== i) }))}>
                         ✕
                       </button>
                     </td>
@@ -282,17 +286,17 @@ function EditorForm({ editing }: { editing: DeviceTemplate | null }) {
             </table>
           )}
           <div className="ce__batch">
-            <input type="number" min={1} max={MAX_PORTS} aria-label="Nombre de ports" value={batchCount} onChange={(e) => setBatchCount(e.target.value)} onKeyDown={onBatchKey} />
+            <input type="number" min={1} max={MAX_PORTS} aria-label={t.batchCount} value={batchCount} onChange={(e) => setBatchCount(e.target.value)} onKeyDown={onBatchKey} />
             <span aria-hidden="true">×</span>
-            <select aria-label="Connecteur à ajouter" value={batchConnector} onChange={(e) => setBatchConnector(e.target.value as Connector)}>
+            <select aria-label={t.batchConnector} value={batchConnector} onChange={(e) => setBatchConnector(e.target.value as Connector)}>
               {CONNECTORS.map((c) => (
                 <option key={c} value={c}>
-                  {CONNECTOR_LABELS[c]}
+                  {connectorLabel(c, m)}
                 </option>
               ))}
             </select>
             <button type="button" className="btn" disabled={draft.ports.length >= MAX_PORTS} onClick={addBatch}>
-              Ajouter
+              {t.add}
             </button>
           </div>
           {errors.ports && <p className="ce__error">{errors.ports}</p>}
@@ -300,10 +304,10 @@ function EditorForm({ editing }: { editing: DeviceTemplate | null }) {
 
         <div className="ce__actions">
           <button type="button" className="btn" onClick={close}>
-            Annuler
+            {t.cancel}
           </button>
           <button type="submit" className="btn btn--primary" disabled={hasErrors(errors) || saving}>
-            Enregistrer
+            {t.save}
           </button>
         </div>
       </form>

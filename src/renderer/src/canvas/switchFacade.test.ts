@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { POE_CHAR_W, TAPE_X, facadeExit, facadeLabels, switchFacade } from './switchFacade'
 import { SWITCH_PORT_COUNTS, buildSwitchPorts, defaultPoeBudget, switchSummary } from '../catalog/switch'
+import { messages } from '../../../shared/i18n/messages'
 import { patchPanelPorts } from '../catalog/ports'
 
 describe('switchFacade', () => {
@@ -68,7 +69,7 @@ describe('facadeLabels', () => {
       for (const sfpPlus of [0, 2, 4] as const) {
         const spec = { portCount, poe: 'bt' as const, sfpPlus, managed: true }
         const width = switchFacade(buildSwitchPorts(spec)).width
-        const labels = facadeLabels('SW-12', switchSummary(spec), width, { usedW: 999.9, budgetW: defaultPoeBudget(portCount, 'bt')! })
+        const labels = facadeLabels('SW-12', switchSummary(spec, messages('fr')), width, { usedW: 999.9, budgetW: defaultPoeBudget(portCount, 'bt')! })
         const poeWidth = labels.poe ? labels.poe.length * POE_CHAR_W + 10 : 0
         expect(TAPE_X + labels.tapeWidth, `${portCount} ports, ${sfpPlus} SFP+`).toBeLessThanOrEqual(width - 22 - poeWidth + 0.5)
       }

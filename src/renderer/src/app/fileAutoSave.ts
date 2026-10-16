@@ -6,6 +6,7 @@ import { isDirty, projectStore, type ProjectState } from '../store/projectStore'
 import { uiStore } from '../store/uiStore'
 import { autosave } from './autosave'
 import { fileNameOf } from './fileName'
+import { currentMessages } from '../i18n/useT'
 import { ipcErrorMessage } from './ipcError'
 
 export const FILE_AUTOSAVE_DELAY_MS = 2000
@@ -86,7 +87,7 @@ export function createFileAutoSave(store: StoreApi<ProjectState>, deps: FileAuto
       if (path) await deps.save(path, text)
       else {
         path = await deps.createDefault(snapshot.meta.title, text)
-        deps.toast(`Enregistré dans Documents › AV·WAN › ${fileNameOf(path)}`)
+        deps.toast(currentMessages().app.file.autoSavedAt({ name: fileNameOf(path) }))
       }
       failing = false
       const after = store.getState()
@@ -100,7 +101,7 @@ export function createFileAutoSave(store: StoreApi<ProjectState>, deps: FileAuto
       // est écrit à son tour.
       schedule()
     } catch (e) {
-      if (!failing) deps.toast(`Enregistrement automatique impossible : ${ipcErrorMessage(e)}`)
+      if (!failing) deps.toast(currentMessages().app.file.autoSaveFailed({ reason: ipcErrorMessage(e) }))
       failing = true
     } finally {
       writing = null

@@ -47,7 +47,7 @@ describe('exportCsvAction et exportXlsxAction', () => {
   it('envoie les trois listes et annonce les fichiers', async () => {
     const api = withData(async () => ['/x/a-branchement.csv', '/x/a-plan-ip.csv', '/x/a-nomenclature.csv'], async () => '/x/a.xlsx')
     await exportCsvAction()
-    expect(api.export.csv).toHaveBeenCalledWith(dataTables(sampleProject()), 'Installation Lumen')
+    expect(api.export.csv).toHaveBeenCalledWith(dataTables(sampleProject(), 'fr'), 'Installation Lumen', 'fr')
     expect(projectStore.getState().toast).toBe('3 fichiers CSV exportés : a-branchement.csv, a-plan-ip.csv, a-nomenclature.csv')
     await exportXlsxAction()
     expect(projectStore.getState().toast).toBe('Classeur Excel exporté : a.xlsx')
@@ -60,5 +60,14 @@ describe('exportCsvAction et exportXlsxAction', () => {
     expect(projectStore.getState().toast).toBeNull()
     expect(await exportXlsxAction()).toBeNull()
     expect(projectStore.getState().toast).toBe('Échec de l’export Excel : Accès refusé (EACCES).')
+  })
+
+  it('écrit les listes dans la langue des documents demandée, les messages dans celle de l’interface', async () => {
+    const api = withData(async () => ['/x/a-cabling.csv'], async () => '/x/a.xlsx')
+    await exportCsvAction('en')
+    expect(api.export.csv).toHaveBeenCalledWith(dataTables(sampleProject(), 'en'), 'Installation Lumen', 'en')
+    expect(projectStore.getState().toast).toBe('1 fichiers CSV exportés : a-cabling.csv')
+    await exportXlsxAction('en')
+    expect(api.export.xlsx).toHaveBeenCalledWith(dataTables(sampleProject(), 'en'), 'Installation Lumen', 'en')
   })
 })

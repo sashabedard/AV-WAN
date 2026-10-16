@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useT } from '../i18n/useT'
 import { safeLocalStorage } from '../theme/themePreference'
 import { SIDEBAR_DEFAULT, SIDEBAR_MAX, SIDEBAR_MIN, clampSidebarWidth, loadSidebarWidth, saveSidebarWidth } from './sidebarWidth'
 
@@ -7,6 +8,7 @@ const KEY_STEP = 16
 // Poignée sur le bord droit du panneau de gauche. La largeur passe par --left-w sur .shell :
 // en glissant, seule la poignée refait un rendu (le canvas et les panneaux ne bougent pas).
 export function SidebarResizer() {
+  const { m } = useT()
   const ref = useRef<HTMLDivElement>(null)
   const drag = useRef<{ x: number; width: number } | null>(null)
   const [width, setWidth] = useState(() => loadSidebarWidth(safeLocalStorage()))
@@ -36,12 +38,12 @@ export function SidebarResizer() {
       className={`shell__resizer${dragging ? ' is-dragging' : ''}`}
       role="separator"
       aria-orientation="vertical"
-      aria-label="Largeur du panneau de gauche"
+      aria-label={m.app.sidebar.resizerLabel}
       aria-valuemin={SIDEBAR_MIN}
       aria-valuemax={SIDEBAR_MAX}
       aria-valuenow={width}
       tabIndex={0}
-      title="Glisser pour élargir · double-clic : largeur d’origine"
+      title={m.app.sidebar.resizerTitle}
       onPointerDown={(e) => {
         if (e.button !== 0) return
         e.preventDefault()

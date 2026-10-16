@@ -3,11 +3,14 @@ import { useMemo, useState } from 'react'
 import { searchTemplates } from '../catalog/search'
 import { usePlaceableTemplates } from './usePlaceableTemplates'
 import { DeviceIcon, Icon } from '../icons/Icon'
+import { displayName } from '../catalog/templateText'
+import { useT } from '../i18n/useT'
 import './panels.css'
 
 const MAX_RESULTS = 12
 
 export function QuickSearch({ onPick, onClose }: { onPick: (templateId: string) => void; onClose: () => void }) {
+  const { m, lang } = useT()
   const [query, setQuery] = useState('')
   const [active, setActive] = useState(0)
   const { all } = usePlaceableTemplates()
@@ -23,14 +26,14 @@ export function QuickSearch({ onPick, onClose }: { onPick: (templateId: string) 
         if (e.target === e.currentTarget) onClose()
       }}
     >
-      <div className="qs" role="dialog" aria-label="Rechercher un appareil">
+      <div className="qs" role="dialog" aria-label={m.quickSearch.dialog}>
         <div className="qs__field">
           <Icon name="search" size={18} />
           <input
             autoFocus
             className="qs__input"
-            aria-label="Rechercher"
-            placeholder="ptz, esp32 poe, dante…"
+            aria-label={m.quickSearch.inputLabel}
+            placeholder={m.quickSearch.placeholder}
             value={query}
             onChange={(e) => {
               setQuery(e.target.value)
@@ -54,7 +57,7 @@ export function QuickSearch({ onPick, onClose }: { onPick: (templateId: string) 
             }}
           />
         </div>
-        <ul className="qs__list" role="listbox" aria-label="Résultats">
+        <ul className="qs__list" role="listbox" aria-label={m.quickSearch.results}>
           {results.map((t, i) => (
             <li
               key={t.id}
@@ -69,11 +72,11 @@ export function QuickSearch({ onPick, onClose }: { onPick: (templateId: string) 
               }}
             >
               <DeviceIcon icon={t.icon} size={18} />
-              <span className="qs__name">{t.name}</span>
+              <span className="qs__name">{displayName(t, lang)}</span>
               <span className="qs__code">{t.code}</span>
             </li>
           ))}
-          {results.length === 0 && <li className="qs__empty">Aucun appareil ne correspond.</li>}
+          {results.length === 0 && <li className="qs__empty">{m.quickSearch.noMatch}</li>}
         </ul>
       </div>
     </div>

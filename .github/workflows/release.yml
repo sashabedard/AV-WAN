@@ -100,6 +100,7 @@ jobs:
             release/*.blockmap
             release/latest-mac.yml
             release/AV-WAN-guide-installation.pdf
+            release/AV-WAN-installation-guide.pdf
 
       - name: Effacer le certificat
         if: always()

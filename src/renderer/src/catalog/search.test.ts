@@ -74,4 +74,12 @@ describe('searchTemplates', () => {
     expect(searchTemplates('ulxd')[0]?.id).toBe('shure-ulxd4d')
     expect(searchTemplates('vx4')[0]?.id).toBe('disguise-vx-4')
   })
+
+  it('trouve un appareil par son nom ou un synonyme, dans les deux langues', () => {
+    // Au-delà des vraies correspondances, la recherche approximative (lettres dans l'ordre) ajoute du bruit propre à chaque requête.
+    expect(ids('lyre').slice(0, 3)).toEqual(['moving-spot', 'moving-wash', 'moving-beam'])
+    expect(ids('moving head').slice(0, 3)).toEqual(ids('lyre').slice(0, 3))
+    expect(ids('éclairage').length).toBeGreaterThan(0)
+    expect(ids('lighting').length).toBeGreaterThan(0)
+  })
 })

@@ -7,7 +7,7 @@ describe('buildXlsx', () => {
     const buf = await buildXlsx([
       { id: 'branchement', title: 'Liste de branchement', columns: [{ label: 'Câble', width: 9 }, { label: 'Longueur (m)' }], rows: [['C-001', 12], ['C-002', null]] },
       { id: 'plan-ip', title: 'Plan d’adressage IP', columns: [{ label: 'Appareil' }], rows: [] }
-    ])
+    ], 'fr')
     const wb = new ExcelJS.Workbook()
     await wb.xlsx.load(buf as never) // ExcelJS type ses tampons à sa façon : on lui passe le Buffer de Node tel quel
     expect(wb.worksheets.map((w) => w.name)).toEqual(['Liste de branchement', 'Plan d’adressage IP'])
@@ -23,7 +23,8 @@ describe('buildXlsx', () => {
 
 describe('sheetName', () => {
   it('retire les caractères refusés par Excel et coupe à 31 caractères', () => {
-    expect(sheetName('Plan: IP/VLAN [2026] *très* long nom de feuille')).toBe('Plan- IP-VLAN -2026- -très- lon')
-    expect(sheetName('')).toBe('Feuille')
+    expect(sheetName('Plan: IP/VLAN [2026] *très* long nom de feuille', 'fr')).toBe('Plan- IP-VLAN -2026- -très- lon')
+    expect(sheetName('', 'fr')).toBe('Feuille')
+    expect(sheetName('', 'en')).toBe('Sheet')
   })
 })

@@ -7,6 +7,7 @@ function channel(value: number): number {
 
 export function relativeLuminance(hex: string): number {
   const m = /^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(hex)
+  // i18n-ignore : erreur de développeur (jeton de thème mal formé), jamais affichée
   if (!m) throw new Error(`Couleur invalide : ${hex}`)
   const [r, g, b] = [m[1], m[2], m[3]].map((h) => channel(parseInt(h as string, 16))) as [number, number, number]
   return 0.2126 * r + 0.7152 * g + 0.0722 * b

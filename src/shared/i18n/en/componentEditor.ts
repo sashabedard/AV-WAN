@@ -1,0 +1,52 @@
+import type { Messages } from '../messages'
+
+export const componentEditor: Messages['componentEditor'] = {
+  titleEdit: 'Edit component',
+  titleNew: 'New component',
+  similarTo: 'Similar to…',
+  blank: 'Blank',
+  name: 'Name',
+  code: 'Code',
+  category: 'Category',
+  vendor: 'Manufacturer',
+  model: 'Model',
+  patchable: 'Patchable device (DMX)',
+  channels: 'Channels',
+  power: 'Power (W)',
+  icon: 'Icon',
+  builtinIcons: 'Built-in icons',
+  iconNamed: (p) => `Icon ${p.name}`,
+  import: 'Import…',
+  importHint: 'SVG or PNG, 256 KB max',
+  iconFile: 'Icon file',
+  ports: (p) => `Ports (${p.n} / ${p.max})`,
+  colName: 'Name',
+  colConnector: 'Connector',
+  colPoe: 'PoE',
+  colRemove: 'Remove',
+  portName: (p) => `Port ${p.n} name`,
+  portConnector: (p) => `Port ${p.n} connector`,
+  portPoe: (p) => `Port ${p.n} PoE`,
+  removePort: (p) => `Remove port ${p.n}`,
+  batchCount: 'Number of ports',
+  batchConnector: 'Connector to add',
+  add: 'Add',
+  cancel: 'Cancel',
+  save: 'Save',
+  saveFailed: (p) => `Could not save the component: ${p.detail}`,
+  copySuffix: ' (copy)',
+  errors: {
+    nameRequired: 'Give the component a name.',
+    nameTooLong: (p) => `${p.max} characters max.`,
+    code: '1 to 4 letters or digits.',
+    tooManyPorts: (p) => `${p.max} ports max.`,
+    portNeedsName: 'Each port needs a name.',
+    channels: 'Channels: a whole number from 1 to 512.',
+    power: 'Power: a positive number or zero, in watts.'
+  },
+  iconErrors: {
+    tooBig: 'The icon exceeds 256 KB.',
+    notImage: 'This file is neither an SVG nor a PNG.',
+    noShape: 'This SVG contains no usable shape.'
+  }
+}

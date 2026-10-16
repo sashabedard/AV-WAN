@@ -1,6 +1,7 @@
 // src/renderer/src/panels/CommitInput.tsx
 import { useEffect, useId, useRef, useState, type InputHTMLAttributes, type Ref } from 'react'
 import { createPortal } from 'react-dom'
+import { useT } from '../i18n/useT'
 
 export interface CommitInputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'value' | 'defaultValue' | 'onChange'> {
   value: string
@@ -37,6 +38,7 @@ function matches(suggestions: readonly string[], text: string): readonly string[
 // Un collage que l'appelant prend en charge (preventDefault) abandonne le brouillon, comme Échap : il écrit lui-même.
 // Choisir une suggestion (clic, ou flèches + Entrée) la valide aussitôt, en une étape.
 export function CommitInput({ value, onCommit, onEnter, onPaste, suggestions, ref, ...rest }: CommitInputProps) {
+  const { m } = useT()
   const [draft, setDraft] = useState(value)
   const [editing, setEditing] = useState(false)
   const [menu, setMenu] = useState<MenuAt | null>(null)
@@ -149,7 +151,7 @@ export function CommitInput({ value, onCommit, onEnter, onPaste, suggestions, re
             id={listId}
             className="suggest"
             role="listbox"
-            aria-label="Suggestions"
+            aria-label={m.panels.suggestions}
             style={{ left: menu.left, minWidth: menu.minWidth, top: menu.top, bottom: menu.bottom, maxHeight: menu.maxHeight }}
           >
             {options.map((s, i) => (

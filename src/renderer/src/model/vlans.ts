@@ -1,5 +1,5 @@
 import type { Device, Project, Vlan } from './types'
-import { VLAN_PRESETS } from '../catalog/vlanPresets'
+import { VLAN_PRESETS, type VlanPreset } from '../catalog/vlanPresets'
 
 export type VlanPatch = Partial<Omit<Vlan, 'id'>>
 
@@ -30,7 +30,7 @@ export function blankVlan(project: Project): Vlan {
   return { id, name: `VLAN ${id}`, short: `VLAN${id}`, color: { ...color }, internet: false, unifi: { ...VLAN_BASE_UNIFI } }
 }
 
-export function availablePresets(project: Project): Vlan[] {
+export function availablePresets(project: Project): VlanPreset[] {
   return VLAN_PRESETS.filter((p) => !project.vlans.some((v) => v.id === p.id))
 }
 

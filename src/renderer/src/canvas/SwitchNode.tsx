@@ -3,14 +3,17 @@ import { Handle, Position, useUpdateNodeInternals, type NodeProps } from '@xyflo
 import type { DeviceFlowNode } from './toFlow'
 import { TAPE_X, facadeLabels, switchFacade } from './switchFacade'
 import { switchSummary } from '../catalog/switch'
+import { displayName } from '../catalog/templateText'
 import { useEffectiveFocus } from './useEffectiveFocus'
 import { usePortCompatibility } from './useConnectingFrom'
 import { projectStore } from '../store/projectStore'
 import { useLocked } from './staticView'
+import { useT } from '../i18n/useT'
 import { InlineName } from './InlineName'
 
 function SwitchNodeImpl({ id, data, selected }: NodeProps<DeviceFlowNode>) {
   const { device, template, ports, poeUsage } = data
+  const { m, lang } = useT()
   const readOnly = useLocked()
   const focus = useEffectiveFocus()
   const dim = focus !== null && !data.vlans.includes(focus)
@@ -21,7 +24,7 @@ function SwitchNodeImpl({ id, data, selected }: NodeProps<DeviceFlowNode>) {
   useEffect(() => {
     updateInternals(id)
   }, [id, facade, updateInternals])
-  const summary = device.switch ? switchSummary(device.switch) : (template?.name ?? '')
+  const summary = device.switch ? switchSummary(device.switch, m) : (template ? displayName(template, lang) : '')
   const labels = facadeLabels(device.name, summary, facade.width, poeUsage?.budgetW !== undefined ? { usedW: poeUsage.usedW, budgetW: poeUsage.budgetW } : undefined)
   const fullTitle = summary ? `${device.name} · ${summary}` : device.name
   const gradientId = `swg-${id}`
@@ -90,7 +93,7 @@ function SwitchNodeImpl({ id, data, selected }: NodeProps<DeviceFlowNode>) {
       {renaming ? (
         <InlineName
           value={device.name}
-          label="Nom de l’appareil"
+          label={m.canvas.tile.deviceNameLabel}
           className="inline-name--rack"
           onCommit={(name) => projectStore.getState().updateDevice(id, { name })}
           onDone={() => setRenaming(false)}
@@ -99,7 +102,7 @@ function SwitchNodeImpl({ id, data, selected }: NodeProps<DeviceFlowNode>) {
         <div
           className="sw__tape-hit"
           style={{ width: labels.tapeWidth }}
-          title={readOnly ? fullTitle : `${fullTitle} · double-clic pour renommer`}
+          title={readOnly ? fullTitle : m.canvas.tile.renameDevice({ title: fullTitle })}
           onDoubleClick={(e) => {
             if (readOnly) return
             e.stopPropagation()
@@ -117,7 +120,7 @@ function SwitchNodeImpl({ id, data, selected }: NodeProps<DeviceFlowNode>) {
             position={facade.twoRows && p.row === 'top' ? Position.Top : Position.Bottom}
             className={`sw__handle${state ? ` port--${state}` : ''}`}
             style={{ left: p.x, top: p.y, width: p.w, height: p.h, transform: 'none' }}
-            title={`Port ${p.label}`}
+            title={m.canvas.tile.portTitle({ label: p.label })}
           />
         )
       })}

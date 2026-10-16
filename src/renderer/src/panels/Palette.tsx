@@ -1,9 +1,10 @@
 // src/renderer/src/panels/Palette.tsx
 import { useCallback, useMemo, useRef, useState, type ReactNode } from 'react'
-import type { DeviceTemplate } from '../model/types'
+import type { DeviceTemplate, StoredTemplate } from '../model/types'
+import { displayName } from '../catalog/templateText'
 import { TEMPLATES } from '../catalog/templates'
 import { searchTemplates } from '../catalog/search'
-import { CATEGORY_LABELS, CATEGORY_ORDER } from '../catalog/categories'
+import { categoryLabel, CATEGORY_ORDER } from '../catalog/categories'
 import { uiStore, useUiStore } from '../store/uiStore'
 import { DeviceIcon, Icon } from '../icons/Icon'
 import { CATEGORY_ICON } from '../icons/glyphs'
@@ -11,6 +12,7 @@ import { duplicateTemplate } from '../model/customTemplate'
 import { libraryStore } from '../store/libraryStore'
 import { projectStore } from '../store/projectStore'
 import { ipcErrorMessage } from '../app/ipcError'
+import { useT } from '../i18n/useT'
 import { useDismissOnOutside } from './useDismiss'
 import { usePlaceableTemplates } from './usePlaceableTemplates'
 import { TruncTip, useTruncTip } from './TruncTip'
@@ -21,6 +23,8 @@ export const TEMPLATE_MIME = 'application/x-avwan-template'
 const GROUPS = CATEGORY_ORDER.map((category) => ({ category, items: TEMPLATES.filter((t) => t.category === category) }))
 
 export function PaletteItem({ template, pending, actions }: { template: DeviceTemplate; pending: boolean; actions?: ReactNode }) {
+  const { m, lang } = useT()
+  const name = displayName(template, lang)
   const nameRef = useRef<HTMLSpanElement>(null)
   const tip = useTruncTip(nameRef)
   return (
@@ -30,7 +34,7 @@ export function PaletteItem({ template, pending, actions }: { template: DeviceTe
         draggable
         data-testid={`palette-${template.id}`}
         className={`palette__item${pending ? ' is-pending' : ''}`}
-        title={tip.cut ? undefined : 'Glisser sur le canvas, ou cliquer puis cliquer sur le canvas'}
+        title={tip.cut ? undefined : m.palette.itemTitle}
         onPointerEnter={tip.show}
         onPointerLeave={tip.hide}
         onPointerDown={tip.hide}
@@ -43,22 +47,23 @@ export function PaletteItem({ template, pending, actions }: { template: DeviceTe
       >
         <DeviceIcon icon={template.icon} size={18} />
         <span ref={nameRef} className="palette__name">
-          {template.name}
+          {name}
         </span>
         <span className="palette__code">{template.code}</span>
       </button>
-      <TruncTip at={tip.at} text={template.name} />
+      <TruncTip at={tip.at} text={name} />
       {actions}
     </li>
   )
 }
 
-function report(task: Promise<unknown>, failure: string): void {
-  task.catch((e: unknown) => projectStore.getState().showToast(`${failure} : ${ipcErrorMessage(e)}`))
+function report(task: Promise<unknown>, failure: (p: { detail: string }) => string): void {
+  task.catch((e: unknown) => projectStore.getState().showToast(failure({ detail: ipcErrorMessage(e) })))
 }
 
 // Menu ⋯ d'une composante de ma bibliothèque.
-function LibraryItemMenu({ template }: { template: DeviceTemplate }) {
+function LibraryItemMenu({ template }: { template: StoredTemplate }) {
+  const { m, lang } = useT()
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
   const dismiss = useCallback(() => setOpen(false), [])
@@ -69,7 +74,7 @@ function LibraryItemMenu({ template }: { template: DeviceTemplate }) {
   }
   return (
     <div className="palette__menu" ref={ref}>
-      <button type="button" className="palette__act" aria-label={`Actions pour ${template.name}`} aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
+      <button type="button" className="palette__act" aria-label={m.palette.actionsFor({ name: template.name })} aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
         ⋯
       </button>
       {open && (
@@ -81,10 +86,10 @@ function LibraryItemMenu({ template }: { template: DeviceTemplate }) {
           }}
         >
           <button type="button" role="menuitem" onClick={() => act(() => uiStore.getState().openComponentEditor({ mode: 'edit', templateId: template.id }))}>
-            Modifier
+            {m.palette.edit}
           </button>
-          <button type="button" role="menuitem" onClick={() => act(() => report(libraryStore.getState().save(duplicateTemplate(template)), 'Duplication impossible'))}>
-            Dupliquer
+          <button type="button" role="menuitem" onClick={() => act(() => report(libraryStore.getState().save(duplicateTemplate(template, m.componentEditor.copySuffix, lang)), m.palette.duplicateFailed))}>
+            {m.palette.duplicate}
           </button>
           <button
             type="button"
@@ -92,13 +97,13 @@ function LibraryItemMenu({ template }: { template: DeviceTemplate }) {
             className="is-danger"
             onClick={() =>
               act(() => {
-                if (window.confirm(`Supprimer « ${template.name} » de votre bibliothèque ? Les projets qui l’utilisent la gardent.`)) {
-                  report(libraryStore.getState().remove(template.id), 'Suppression impossible')
+                if (window.confirm(m.palette.confirmRemove({ name: template.name }))) {
+                  report(libraryStore.getState().remove(template.id), m.palette.removeFailed)
                 }
               })
             }
           >
-            Supprimer
+            {m.palette.remove}
           </button>
         </div>
       )}
@@ -107,20 +112,21 @@ function LibraryItemMenu({ template }: { template: DeviceTemplate }) {
 }
 
 export function Palette() {
+  const { m, lang } = useT()
   const pending = useUiStore((s) => s.pendingTemplateId)
   const pendingZone = useUiStore((s) => s.pendingZone)
   const [filter, setFilter] = useState('')
   const { library, projectOnly, all } = usePlaceableTemplates()
   const results = useMemo(() => (filter.trim() ? searchTemplates(filter, all) : null), [filter, all])
   return (
-    <nav className="palette" aria-label="Palette d’appareils">
+    <nav className="palette" aria-label={m.palette.navLabel}>
       <div className="palette__search">
         <Icon name="search" size={14} />
         <input
           className="palette__filter"
           type="search"
-          aria-label="Filtrer les appareils"
-          placeholder="Filtrer…"
+          aria-label={m.palette.filterLabel}
+          placeholder={m.palette.filterPlaceholder}
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
           onKeyDown={(e) => {
@@ -132,31 +138,31 @@ export function Palette() {
         type="button"
         className={`palette__tool${pendingZone ? ' is-pending' : ''}`}
         aria-pressed={pendingZone}
-        title="Cliquer puis cliquer sur le canvas · ⌘G : une zone autour de la sélection"
+        title={m.palette.zoneToolTitle}
         onClick={() => uiStore.getState().setPendingZone(!pendingZone)}
       >
         <Icon name="zone" size={16} />
-        Zone
+        {m.palette.zoneTool}
         <kbd className="palette__kbd">⌘G</kbd>
       </button>
       {results ? (
         results.length > 0 ? (
-          <ul aria-label="Résultats du filtre">
+          <ul aria-label={m.palette.resultsLabel}>
             {results.map((t) => (
               <PaletteItem key={t.id} template={t} pending={pending === t.id} />
             ))}
           </ul>
         ) : (
-          <p className="palette__empty">Aucun appareil ne correspond.</p>
+          <p className="palette__empty">{m.palette.noMatch}</p>
         )
       ) : (
         <>
           <section aria-labelledby="palette-mine">
             <div className="palette__head">
               <h2 id="palette-mine" className="palette__cat">
-                Mes composantes
+                {m.palette.mine}
               </h2>
-              <button type="button" className="palette__add" aria-label="Nouvelle composante" title="Nouvelle composante" onClick={() => uiStore.getState().openComponentEditor({ mode: 'new' })}>
+              <button type="button" className="palette__add" aria-label={m.palette.newComponent} title={m.palette.newComponent} onClick={() => uiStore.getState().openComponentEditor({ mode: 'new' })}>
                 <Icon name="plus" size={14} />
               </button>
             </div>
@@ -167,13 +173,13 @@ export function Palette() {
                 ))}
               </ul>
             ) : (
-              <p className="palette__hint">Créez vos propres appareils avec +.</p>
+              <p className="palette__hint">{m.palette.mineHint}</p>
             )}
           </section>
           {projectOnly.length > 0 && (
             <section aria-labelledby="palette-project">
               <h2 id="palette-project" className="palette__cat">
-                Ce projet
+                {m.palette.thisProject}
               </h2>
               <ul>
                 {projectOnly.map((t) => (
@@ -182,7 +188,7 @@ export function Palette() {
                     template={t}
                     pending={pending === t.id}
                     actions={
-                      <button type="button" className="palette__act" aria-label={`Ajouter ${t.name} à ma bibliothèque`} title="Ajouter à ma bibliothèque" onClick={() => report(libraryStore.getState().save(t), 'Ajout impossible')}>
+                      <button type="button" className="palette__act" aria-label={m.palette.addToLibrary({ name: displayName(t, lang) })} title={m.palette.addToLibraryTitle} onClick={() => report(libraryStore.getState().save(t), m.palette.addFailed)}>
                         <Icon name="plus" size={13} />
                       </button>
                     }
@@ -195,7 +201,7 @@ export function Palette() {
             <section key={g.category}>
               <h2 className="palette__cat">
                 <Icon name={CATEGORY_ICON[g.category]} size={14} />
-                {CATEGORY_LABELS[g.category]}
+                {categoryLabel(g.category, m)}
               </h2>
               <ul>
                 {g.items.map((t) => (

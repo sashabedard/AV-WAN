@@ -1,12 +1,13 @@
 import { describe, expect, it } from 'vitest'
+import { messages } from '../../../shared/i18n/messages'
 import { sampleProject } from './__fixtures__/sample'
-import { FAMILY_LABELS, connectorFamily, isRackDevice, canConnectPorts, canReconnect, defaultMedium, isPortFree, nextCableId, nextDeviceName, pickPort } from './rules'
+import { familyLabels, connectorFamily, isRackDevice, canConnectPorts, canReconnect, defaultMedium, isPortFree, nextCableId, nextDeviceName, pickPort } from './rules'
 import { createDevice, createProject } from './project'
 import type { Project } from './types'
 
 function withDevices(p: Project, ...templateIds: string[]): Project {
   let out = p
-  for (const t of templateIds) out = { ...out, devices: [...out.devices, createDevice(out, t, { x: 0, y: 400 }, { id: t })] }
+  for (const t of templateIds) out = { ...out, devices: [...out.devices, createDevice(out, t, { x: 0, y: 400 }, { lang: 'fr', id: t })] }
   return out
 }
 
@@ -84,15 +85,15 @@ describe('canReconnect', () => {
 
 describe('isRackDevice', () => {
   it('reconnaît les façades de rack : switch et panneau de brassage', () => {
-    const p = createProject()
-    expect(isRackDevice(createDevice(p, 'switch', { x: 0, y: 0 }))).toBe(true)
-    expect(isRackDevice(createDevice(p, 'patch-panel-24', { x: 0, y: 0 }))).toBe(true)
-    expect(isRackDevice(createDevice(p, 'ptz-ndi', { x: 0, y: 0 }))).toBe(false)
+    const p = createProject(undefined, 'fr')
+    expect(isRackDevice(createDevice(p, 'switch', { x: 0, y: 0 }, { lang: 'fr' }))).toBe(true)
+    expect(isRackDevice(createDevice(p, 'patch-panel-24', { x: 0, y: 0 }, { lang: 'fr' }))).toBe(true)
+    expect(isRackDevice(createDevice(p, 'ptz-ndi', { x: 0, y: 0 }, { lang: 'fr' }))).toBe(false)
   })
 })
 
 it('range la prise « Alim DC » dans sa propre famille', () => {
   expect(connectorFamily('dc')).toBe('dc')
   expect(defaultMedium('dc')).toBe('dc')
-  expect(FAMILY_LABELS.dc).toBe('alim DC')
+  expect(familyLabels(messages('fr')).dc).toBe('alim DC')
 })

@@ -35,4 +35,11 @@ describe('uiStore · vue épinglée', () => {
     uiStore.getState().setPointerOverPinned(true)
     expect(uiStore.getState().pointerOverPinned).toBe(true)
   })
+
+  it('resetForDocument garde la langue de l’interface', () => {
+    uiStore.getState().setLang('en')
+    uiStore.getState().resetForDocument()
+    expect(uiStore.getState().lang).toBe('en')
+    uiStore.getState().setLang('fr')
+  })
 })

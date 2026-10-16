@@ -9,6 +9,7 @@ import './theme/tokens.css'
 import './theme/base.css'
 import { App } from './App'
 import { applyPreference, loadPreference, safeLocalStorage } from './theme/themePreference'
+import { followLang } from './i18n/followLang'
 import { installE2EHooks } from './dev/e2eHooks'
 
 const root = document.getElementById('root')
@@ -21,6 +22,7 @@ if (new URLSearchParams(window.location.search).has('print')) {
     .catch((e: unknown) => window.avwan.print.failed(e instanceof Error ? e.message : String(e)))
 } else {
   if (window.avwan.isE2E) installE2EHooks()
+  followLang()
   applyPreference(loadPreference(safeLocalStorage()), document.documentElement)
   createRoot(root).render(
     <StrictMode>

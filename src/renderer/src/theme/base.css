@@ -70,6 +70,10 @@ textarea {
 .topbar__spacer { flex: 1; }
 .topbar__btn { padding: 4px 10px; border: 1px solid var(--line); border-radius: 3px; background: var(--surface-2); color: var(--ink-2); font: 500 11px/1 var(--font-mono); letter-spacing: 0.04em; text-transform: uppercase; cursor: pointer; }
 .topbar__btn:hover { border-color: var(--accent); color: var(--accent); }
+.topbar .seg { flex-wrap: nowrap; gap: 2px; align-items: center; }
+.topbar .seg__btn { padding: 4px 10px; font: 500 11px/1 var(--font-mono); letter-spacing: 0.04em; color: var(--ink-2); }
+.topbar .seg__btn:hover { border-color: var(--accent); color: var(--accent); }
+.topbar .seg__btn[aria-pressed='true'] { color: var(--accent); }
 /* Fenêtre sans barre de titre : la barre de l'app sert de poignée et accueille les contrôles natifs.
    Les éléments cliquables (et les boîtes posées par-dessus) sont exclus de la poignée. */
 .topbar { -webkit-app-region: drag; user-select: none; }
@@ -100,6 +104,8 @@ textarea {
 
 .welcome { position: fixed; inset: 0; z-index: 70; display: grid; place-items: center; background: color-mix(in srgb, var(--paper) 82%, transparent); backdrop-filter: blur(3px); }
 .welcome__card { width: 460px; max-width: calc(100vw - 32px); padding: 32px 36px 24px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); box-shadow: 0 24px 64px var(--tile-shadow); color: var(--ink); }
+.welcome__card { position: relative; }
+.welcome__lang { position: absolute; top: 14px; right: 16px; }
 .welcome__word { margin: 14px 0 4px; font: 700 44px/1 var(--font-display); letter-spacing: 0.09em; }
 .welcome__sub { margin: 0; font: 600 12px/1.4 var(--font-mono); color: var(--muted); }
 .welcome__tagline { margin: 14px 0 22px; font: 700 15px/1.3 var(--font-display); letter-spacing: 0.04em; }

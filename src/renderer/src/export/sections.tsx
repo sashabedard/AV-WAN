@@ -2,10 +2,11 @@ import { Fragment } from 'react'
 import type { Project } from '../model/types'
 import type { DataTable } from '../../../shared/tables'
 import { deviceSheets } from '../reports/deviceSheets'
-import { CHANNEL_COLUMNS, channelBlocks } from '../reports/channelSheets'
-import { PATCH_PDF_COLUMNS, patchGroups } from '../reports/patch'
-import { POWER_PDF_COLUMNS, PSU_COLUMNS, powerBudget } from '../reports/powerBudget'
-import { formatFr } from '../model/fields'
+import { channelBlocks, channelColumns } from '../reports/channelSheets'
+import { patchGroups, patchPdfColumns } from '../reports/patch'
+import { powerBudget, powerPdfColumns, psuColumns } from '../reports/powerBudget'
+import { messages } from '../../../shared/i18n/messages'
+import { useLang, useT } from '../i18n/useT'
 import { portMaps } from '../reports/portMaps'
 import { vlanSheets } from '../reports/vlanSheets'
 import { PortMapFacade } from './PortMapFacade'
@@ -13,25 +14,28 @@ import { ReportTable } from './ReportTable'
 
 // Section 2 : un bloc par appareil qui n'est pas un switch, jamais coupé entre deux pages.
 export function DeviceSheetsPage({ project }: { project: Project }) {
-  const sheets = deviceSheets(project)
+  const { m } = useT()
+  const { pdf } = m
+  const sheets = deviceSheets(project, useLang())
+  const field = (k: 'ip' | 'hostname' | 'zone', value: string): string => pdf.field({ label: pdf.fields[k], value })
   return (
     <section className="pg pg--sheet">
-      <h2 className="pg__h">Fiches par appareil</h2>
-      {sheets.length === 0 && <p className="pg__empty">Aucun appareil hors switch dans le projet.</p>}
+      <h2 className="pg__h">{pdf.headings.devices}</h2>
+      {sheets.length === 0 && <p className="pg__empty">{pdf.empty.devices}</p>}
       {sheets.map((s) => (
         <article key={s.deviceId} className="ds">
           <header className="ds__head">
             <span className="ds__name">{s.name}</span>
             <span className="ds__kind">{[s.kind, s.model].filter(Boolean).join(' · ')}</span>
           </header>
-          <p className="ds__meta">{[s.networked && `IP : ${s.ip}`, s.hostname && `Nom d’hôte : ${s.hostname}`, s.zone && `Zone : ${s.zone}`].filter(Boolean).join(' · ')}</p>
+          <p className="ds__meta">{[s.networked && field('ip', s.ip), s.hostname && field('hostname', s.hostname), s.zone && field('zone', s.zone)].filter(Boolean).join(' · ')}</p>
           {s.extras.map((x) => (
             <p key={x} className="ds__meta">
               {x}
             </p>
           ))}
           {s.lines.length === 0 ? (
-            <p className="ds__none">Aucun câble branché.</p>
+            <p className="ds__none">{pdf.empty.noCable}</p>
           ) : (
             <ul className="ds__lines">
               {s.lines.map((l) => (
@@ -48,19 +52,20 @@ export function DeviceSheetsPage({ project }: { project: Project }) {
 
 // Section « Patch DMX » : un tableau par univers, trié par adresse (spec patch-puissance-catalogue § 6.1).
 export function PatchPage({ project }: { project: Project }) {
-  const groups = patchGroups(project)
+  const { lang, m: msg } = useT()
+  const groups = patchGroups(project, lang)
   return (
     <section className="pg pg--sheet">
-      <h2 className="pg__h">Patch DMX</h2>
-      {groups.length === 0 && <p className="pg__empty">Aucun appareil patchable dans le projet.</p>}
+      <h2 className="pg__h">{msg.reports.patch.title}</h2>
+      {groups.length === 0 && <p className="pg__empty">{msg.pdf.empty.patch}</p>}
       {groups.map((g) => (
         <div key={g.title} className="pt">
           <h3 className="pt__h">{g.title}</h3>
           <ReportTable
             table={{
-              id: `patch-${g.universe ?? 'sans'}`,
+              id: `patch-${g.universe ?? 'sans'}` /* i18n-ignore : identifiant de tableau */,
               title: g.title,
-              columns: PATCH_PDF_COLUMNS,
+              columns: patchPdfColumns(messages(lang)),
               rows: g.rows.map((r) => [r.address ?? null, r.end ?? null, r.channels, r.device, r.model, r.mode, r.zone, r.remark])
             }}
           />
@@ -72,17 +77,18 @@ export function PatchPage({ project }: { project: Project }) {
 
 // Section « Canaux DMX » : un bloc par appareil, adresses réelles, sur trois colonnes (spec canaux-dmx § 5).
 export function ChannelsPage({ project }: { project: Project }) {
-  const blocks = channelBlocks(project)
+  const { lang, m } = useT()
+  const blocks = channelBlocks(project, lang)
   return (
     <section className="pg pg--sheet">
-      <h2 className="pg__h">Canaux DMX</h2>
-      {blocks.length === 0 && <p className="pg__empty">Aucun canal nommé. Les canaux se nomment dans l’inspecteur, section Patch DMX.</p>}
+      <h2 className="pg__h">{m.pdf.headings.channels}</h2>
+      {blocks.length === 0 && <p className="pg__empty">{m.pdf.empty.channels}</p>}
       <div className="cs">
         {blocks.map((b) => (
           <article key={b.deviceId} className="cs__block">
             <h3 className="cs__h">{b.title}</h3>
             {b.subtitle && <p className="cs__sub">{b.subtitle}</p>}
-            <ReportTable table={{ id: `canaux-${b.deviceId}`, title: b.title, columns: CHANNEL_COLUMNS, rows: b.rows }} />
+            <ReportTable table={{ id: `canaux-${b.deviceId}` /* i18n-ignore : identifiant de tableau */, title: b.title, columns: channelColumns(messages(lang)), rows: b.rows }} />
           </article>
         ))}
       </div>
@@ -90,30 +96,31 @@ export function ChannelsPage({ project }: { project: Project }) {
   )
 }
 
-const PORT_COLUMNS = ['Port', 'Branché à', 'Câble', 'Mode', 'VLAN natif', 'VLAN étiquetés', 'PoE'].map((label) => ({ label }))
-
 // Section 3 : pour chaque switch, une page avec sa façade puis le tableau port par port.
 export function PortMapsPage({ project }: { project: Project }) {
-  const maps = portMaps(project)
+  const { lang, m } = useT()
+  const { pdf, reports: r } = m
+  const maps = portMaps(project, lang)
+  const columns = [pdf.portMap.port, pdf.portMap.connectedTo, r.cabling.cable, r.cabling.mode, r.cabling.nativeVlan, r.cabling.taggedVlans, r.cabling.poe].map((label) => ({ label }))
   if (maps.length === 0) {
     return (
       <section className="pg pg--sheet">
-        <h2 className="pg__h">Carte des ports</h2>
-        <p className="pg__empty">Aucun switch dans le projet.</p>
+        <h2 className="pg__h">{pdf.headings.portMaps}</h2>
+        <p className="pg__empty">{pdf.empty.switches}</p>
       </section>
     )
   }
   return (
     <>
-      {maps.map((m) => {
-        const device = project.devices.find((d) => d.id === m.deviceId)
-        const table: DataTable = { id: `ports-${m.deviceId}`, title: m.name, columns: PORT_COLUMNS, rows: m.rows.map((r) => [r.port, r.peer, r.cableId, r.mode, r.native, r.tagged, r.poe]) }
+      {maps.map((pm) => {
+        const device = project.devices.find((d) => d.id === pm.deviceId)
+        const table: DataTable = { id: `ports-${pm.deviceId}`, title: pm.name, columns, rows: pm.rows.map((row) => [row.port, row.peer, row.cableId, row.mode, row.native, row.tagged, row.poe]) }
         return (
-          <section key={m.deviceId} className="pg pg--sheet pm">
-            <h2 className="pg__h">Carte des ports · {m.name}</h2>
-            <p className="pm__meta">{[m.model, m.summary, m.poe, `IP : ${m.ip}`].filter(Boolean).join(' · ')}</p>
-            {device && <PortMapFacade device={device} rows={m.rows} />}
-            <p className="pm__key">Couleur = VLAN natif · contour épais = trunk · éclair = PoE actif</p>
+          <section key={pm.deviceId} className="pg pg--sheet pm">
+            <h2 className="pg__h">{pdf.portMap.title({ name: pm.name })}</h2>
+            <p className="pm__meta">{[pm.model, pm.summary, pm.poe, pdf.field({ label: pdf.fields.ip, value: pm.ip })].filter(Boolean).join(' · ')}</p>
+            {device && <PortMapFacade device={device} rows={pm.rows} />}
+            <p className="pm__key">{pdf.portMap.key}</p>
             <ReportTable table={table} />
           </section>
         )
@@ -124,11 +131,12 @@ export function PortMapsPage({ project }: { project: Project }) {
 
 // Section 5 : une fiche par VLAN.
 export function VlanSheetsPage({ project }: { project: Project }) {
-  const sheets = vlanSheets(project)
+  const { lang, m } = useT()
+  const sheets = vlanSheets(project, lang)
   return (
     <section className="pg pg--sheet">
-      <h2 className="pg__h">Fiches VLAN</h2>
-      {sheets.length === 0 && <p className="pg__empty">Aucun VLAN dans le projet.</p>}
+      <h2 className="pg__h">{m.pdf.headings.vlans}</h2>
+      {sheets.length === 0 && <p className="pg__empty">{m.pdf.empty.vlans}</p>}
       {sheets.map((v) => (
         <article key={v.id} className="vs">
           <header className="vs__head">
@@ -154,7 +162,7 @@ export function VlanSheetsPage({ project }: { project: Project }) {
               ))}
             </dl>
           </div>
-          <p className="vs__members">{`Membres (${v.members.length}) : ${v.members.join(', ') || '—'} · ${v.cables} câble${v.cables > 1 ? 's' : ''}`}</p>
+          <p className="vs__members">{m.pdf.vlanMembers({ count: v.members.length, list: v.members.join(', ') || '—', cables: v.cables })}</p>
           {v.note && <p className="vs__note">{v.note}</p>}
         </article>
       ))}
@@ -164,21 +172,22 @@ export function VlanSheetsPage({ project }: { project: Project }) {
 
 // Section « Bilan de puissance » (spec § 6.1).
 export function PowerPage({ project }: { project: Project }) {
-  const b = powerBudget(project)
+  const { lang, m, fmt } = useT()
+  const b = powerBudget(project, lang)
   const shown = b.missing.slice(0, 12)
   return (
     <section className="pg pg--sheet">
-      <h2 className="pg__h">Bilan de puissance</h2>
-      {b.psus.length === 0 && b.zones.length === 0 && <p className="pg__empty">Aucune puissance renseignée dans le projet.</p>}
+      <h2 className="pg__h">{m.reports.power.title}</h2>
+      {b.psus.length === 0 && b.zones.length === 0 && <p className="pg__empty">{m.pdf.empty.power}</p>}
       {b.psus.length > 0 && (
         <div className="pt">
-          <h3 className="pt__h">Alimentations</h3>
+          <h3 className="pt__h">{m.pdf.headings.psus}</h3>
           <ReportTable
             table={{
-              id: 'alimentations',
-              title: 'Alimentations',
-              columns: PSU_COLUMNS,
-              rows: b.psus.map((s) => [s.name, s.volts !== undefined ? `${formatFr(s.volts)} V` : '', s.capacityW ?? null, s.loadW, s.ratio !== undefined ? `${Math.round(s.ratio * 100)} %` : '', s.fed.join(', '), s.remark])
+              id: 'alimentations', // i18n-ignore : identifiant de tableau
+              title: m.pdf.headings.psus,
+              columns: psuColumns(m),
+              rows: b.psus.map((s) => [s.name, s.volts !== undefined ? `${fmt.num(s.volts)} V` : '', s.capacityW ?? null, s.loadW, s.ratio !== undefined ? m.pdf.power.percent({ n: Math.round(s.ratio * 100) }) : '', s.fed.join(', '), s.remark])
             }}
           />
         </div>
@@ -188,21 +197,21 @@ export function PowerPage({ project }: { project: Project }) {
           <h3 className="pt__h">{z.zone}</h3>
           <ReportTable
             table={{
-              id: `puissance-${z.zoneId ?? 'hors-zone'}`,
+              id: `puissance-${z.zoneId ?? 'hors-zone'}` /* i18n-ignore : identifiant de tableau */,
               title: z.zone,
-              columns: POWER_PDF_COLUMNS,
-              rows: [...z.rows.map((r) => [r.device, r.type, r.watts ?? null, r.fedBy, r.mainsW ?? null, r.remark]), ['Sous-total', '', null, '', z.subtotalW, '']]
+              columns: powerPdfColumns(m),
+              rows: [...z.rows.map((r) => [r.device, r.type, r.watts ?? null, r.fedBy, r.mainsW ?? null, r.remark]), [m.reports.power.subtotal, '', null, '', z.subtotalW, '']]
             }}
           />
         </div>
       ))}
-      {b.zones.length > 0 && <p className="pw__total">{`Total : ${formatFr(b.totalW)} W · ${formatFr(b.amps, 1)} A à ${b.voltage} V`}</p>}
+      {b.zones.length > 0 && <p className="pw__total">{m.pdf.power.total({ watts: fmt.num(b.totalW), amps: fmt.num(b.amps, 1), voltage: b.voltage })}</p>}
       {b.missing.length > 0 && (
         <p className="pw__missing">
-          {`${b.missing.length} appareil${b.missing.length > 1 ? 's' : ''} sans puissance renseignée : ${shown.join(', ')}${b.missing.length > shown.length ? ` et ${b.missing.length - shown.length} autres` : ''}`}
+          {m.pdf.power.missing({ n: b.missing.length, list: shown.join(', '), more: Math.max(0, b.missing.length - shown.length) })}
         </p>
       )}
-      <p className="pw__note">Facteur de puissance supposé égal à 1. Alimentations comptées à leur puissance nominale ; appareils PoE comptés dans leur switch.</p>
+      <p className="pw__note">{m.pdf.power.note}</p>
     </section>
   )
 }

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { csvPaths, existingPaths, safeFileName, withExtension } from './exportPaths'
+import { setMainLang } from './lang'
+import { csvPaths, exportFilters, existingPaths, safeFileName, withExtension } from './exportPaths'
 
 describe('chemins d’export', () => {
   it('place les trois CSV à côté du nom choisi', () => {
@@ -38,5 +39,19 @@ describe('chemins d’export', () => {
     const present = new Set(['/x/a-plan-ip.csv'])
     expect(existingPaths(['/x/a-branchement.csv', '/x/a-plan-ip.csv'], (p) => present.has(p))).toEqual(['/x/a-plan-ip.csv'])
     expect(existingPaths(['/x/zzz-inexistant.csv'])).toEqual([])
+  })
+})
+
+describe('filtres d’export', () => {
+  it('se disent dans la langue du main', () => {
+    expect(exportFilters().csv.name).toBe('Fichiers CSV')
+    setMainLang('en')
+    try {
+      expect(exportFilters().csv.name).toBe('CSV files')
+      expect(exportFilters().csv.extensions).toEqual(['csv'])
+      expect(safeFileName('   ')).toBe('project')
+    } finally {
+      setMainLang('fr')
+    }
   })
 })

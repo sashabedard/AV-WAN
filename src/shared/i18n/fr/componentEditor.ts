@@ -1,0 +1,52 @@
+// Éditeur de composante personnalisée.
+export const componentEditor = {
+  titleEdit: 'Modifier la composante',
+  titleNew: 'Nouvelle composante',
+  similarTo: 'Ressemble à…',
+  blank: 'Vide',
+  name: 'Nom',
+  code: 'Code',
+  category: 'Catégorie',
+  vendor: 'Fabricant',
+  model: 'Modèle',
+  patchable: 'Appareil à patcher (DMX)',
+  channels: 'Canaux',
+  power: 'Puissance (W)',
+  icon: 'Icône',
+  builtinIcons: 'Icônes maison',
+  iconNamed: (p: { name: string }) => `Icône ${p.name}`,
+  import: 'Importer…',
+  importHint: 'SVG ou PNG, 256 Ko au plus',
+  iconFile: 'Fichier d’icône',
+  ports: (p: { n: number; max: number }) => `Ports (${p.n} / ${p.max})`,
+  colName: 'Nom',
+  colConnector: 'Connecteur',
+  colPoe: 'PoE',
+  colRemove: 'Retirer',
+  portName: (p: { n: number }) => `Nom du port ${p.n}`,
+  portConnector: (p: { n: number }) => `Connecteur du port ${p.n}`,
+  portPoe: (p: { n: number }) => `PoE du port ${p.n}`,
+  removePort: (p: { n: number }) => `Retirer le port ${p.n}`,
+  batchCount: 'Nombre de ports',
+  batchConnector: 'Connecteur à ajouter',
+  add: 'Ajouter',
+  cancel: 'Annuler',
+  save: 'Enregistrer',
+  saveFailed: (p: { detail: string }) => `Enregistrement de la composante impossible : ${p.detail}`,
+  // Écrit dans les données à la création, dans la langue de l’interface (spec plan 6 § 5.2).
+  copySuffix: ' (copie)',
+  errors: {
+    nameRequired: 'Donnez un nom à la composante.',
+    nameTooLong: (p: { max: number }) => `${p.max} caractères au plus.`,
+    code: 'De 1 à 4 lettres ou chiffres.',
+    tooManyPorts: (p: { max: number }) => `${p.max} ports au plus.`,
+    portNeedsName: 'Chaque port a besoin d’un nom.',
+    channels: 'Canaux : un nombre entier de 1 à 512.',
+    power: 'Puissance : un nombre positif ou nul, en watts.'
+  },
+  iconErrors: {
+    tooBig: 'L’icône dépasse 256 Ko.',
+    notImage: 'Ce fichier n’est ni un SVG ni un PNG.',
+    noShape: 'Ce SVG ne contient aucune forme utilisable.'
+  }
+} as const

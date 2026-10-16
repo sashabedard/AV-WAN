@@ -3,9 +3,9 @@ import { createDevice, createProject } from '../model/project'
 
 // 12 switchs 48 ports + 138 appareils (396 câbles cuivre) + 4 liens SFP+ = 150 appareils, 400 câbles.
 export function makeStressProject(): Project {
-  let p = createProject(new Date('2026-10-13T12:00:00Z'))
+  let p = createProject(new Date('2026-10-13T12:00:00Z'), 'fr')
   const add = (templateId: string, x: number, y: number, switchSpec?: Device['switch']): Device => {
-    const device = createDevice(p, templateId, { x, y }, { id: `d${p.devices.length + 1}`, ...(switchSpec ? { switchSpec } : {}) })
+    const device = createDevice(p, templateId, { x, y }, { id: `d${p.devices.length + 1}`, lang: 'fr', ...(switchSpec ? { switchSpec } : {}) })
     p = { ...p, devices: [...p.devices, device] }
     return device
   }
@@ -34,6 +34,7 @@ export function makeStressProject(): Project {
     for (const port of d.ports) {
       if (port.connector !== 'rj45') continue
       const target = free[next++]
+      // i18n-ignore : erreur de développeur (projet de stress des tests), jamais affichée
       if (!target) throw new Error('Plus de ports libres dans le projet de stress')
       link({ deviceId: d.id, portId: port.id }, target, 'cat6')
     }

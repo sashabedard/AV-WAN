@@ -1,7 +1,7 @@
 // src/renderer/src/app/Welcome.test.tsx
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { cleanup, render, screen, waitFor } from '@testing-library/react'
+import { act, cleanup, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import type { AvwanApi } from '../../../shared/api'
 import { Welcome } from './Welcome'
@@ -14,7 +14,7 @@ import { sampleProject } from '../model/__fixtures__/sample'
 const open = vi.fn()
 beforeEach(() => {
   open.mockResolvedValue({ path: '/x/lumen.avwan', text: serializeProject(sampleProject()) })
-  window.avwan = { recent: { list: vi.fn().mockResolvedValue(['/x/lumen.avwan']), open, remember: vi.fn().mockResolvedValue(undefined) } } as unknown as AvwanApi
+  window.avwan = { initialLang: 'fr', recent: { list: vi.fn().mockResolvedValue(['/x/lumen.avwan']), open, remember: vi.fn().mockResolvedValue(undefined) } } as unknown as AvwanApi
   projectStore.getState().newProject()
   uiStore.getState().setWelcome(true)
 })
@@ -53,5 +53,19 @@ describe('écran d’accueil', () => {
     render(<Welcome />)
     expect(screen.getByText('Planifier. Brancher. Documenter.')).toBeTruthy()
     expect(screen.getByText('Que le réseau soit avec toi.')).toBeTruthy()
+  })
+})
+
+describe('écran d’accueil en anglais', () => {
+  it('s’affiche en anglais quand l’interface est en anglais', () => {
+    act(() => uiStore.getState().setLang('en'))
+    try {
+      render(<Welcome />)
+      const dialog = screen.getByRole('dialog', { name: 'Welcome' })
+      expect(within(dialog).getByRole('button', { name: 'New project' })).toBeTruthy()
+      expect(within(dialog).getByRole('button', { name: /Example project/ })).toBeTruthy()
+    } finally {
+      act(() => uiStore.getState().setLang('fr'))
+    }
   })
 })

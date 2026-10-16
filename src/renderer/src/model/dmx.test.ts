@@ -1,14 +1,15 @@
 import { describe, expect, it } from 'vitest'
 import type { Device, Link, Project } from './types'
 import { createDevice, createProject } from './project'
-import { isUniverseOutput, issueTexts, nextFreeAddress, patchIndex, patchIssues, patchLine, resolveUniverse, sourceLabel } from './dmx'
+import { isUniverseOutput, issueTexts, nextFreeAddress, patchIndex, patchIssues, patchLine, resolveUniverse, sourceLabel, sourceText, type PatchEntry } from './dmx'
+import { messages } from '../../../shared/i18n/messages'
 
 // Petit banc : des appareils créés depuis le catalogue, branchés en DMX.
 function rig() {
-  let p: Project = createProject(new Date(2026, 9, 14))
+  let p: Project = createProject(new Date(2026, 9, 14), 'fr')
   return {
     add(id: string, templateId: string, extra: Partial<Device> = {}): void {
-      const d = createDevice(p, templateId, { x: 0, y: 0 }, { id })
+      const d = createDevice(p, templateId, { x: 0, y: 0 }, { lang: 'fr', id })
       p = { ...p, devices: [...p.devices, { ...d, ...extra }] }
     },
     link(a: [string, string], b: [string, string], medium: Link['medium'] = 'dmx'): void {
@@ -47,7 +48,7 @@ describe('resolveUniverse', () => {
     r.add('f1', 'dmx-fixture', fix(1, 16, 7))
     r.link(['ode', 'DMX-1'], ['f1', 'DMX-IN'])
     expect(resolveUniverse(r.p, 'f1')).toEqual({ universe: 7, source: { kind: 'typed' } })
-    expect(sourceLabel(r.p, { kind: 'typed' })).toBe('tapé')
+    expect(sourceLabel(r.p, { kind: 'typed' })).toBe('typed')
   })
 
   it('garde l’univers 0 (Art-Net)', () => {
@@ -153,12 +154,12 @@ describe('chevauchements, dépassement, adresse suivante libre', () => {
 
   it('repère les plages qui se touchent dans le même univers seulement', () => {
     const index = patchIndex(universe1().p)
-    expect(issueTexts(patchIssues(index, 'f1'))).toEqual(['Chevauche FIX-2 (10–25)'])
-    expect(issueTexts(patchIssues(index, 'f4'))).toEqual([])
+    expect(issueTexts(patchIssues(index, 'f1'), messages('fr'))).toEqual(['Chevauche FIX-2 (10–25)'])
+    expect(issueTexts(patchIssues(index, 'f4'), messages('fr'))).toEqual([])
   })
 
   it('repère une plage qui dépasse 512', () => {
-    expect(issueTexts(patchIssues(patchIndex(universe1().p), 'f3'))).toEqual(['Dépasse 512'])
+    expect(issueTexts(patchIssues(patchIndex(universe1().p), 'f3'), messages('fr'))).toEqual(['Dépasse 512'])
   })
 
   it('trouve la première plage libre assez grande', () => {
@@ -187,7 +188,7 @@ describe('chevauchements, dépassement, adresse suivante libre', () => {
     r.add('f2', 'dmx-fixture', fix(8, 16, 0))
     const index = patchIndex(r.p)
     expect(nextFreeAddress(index, 0, 16)).toBe(24)
-    expect(issueTexts(patchIssues(index, 'f2'))).toEqual(['Chevauche FIX-1 (1–16)'])
+    expect(issueTexts(patchIssues(index, 'f2'), messages('fr'))).toEqual(['Chevauche FIX-1 (1–16)'])
   })
 })
 
@@ -207,15 +208,15 @@ describe('univers tapé contredit par le câble', () => {
 
   it('le signale, même sans adresse, et garde l’univers tapé', () => {
     const index = patchIndex(chain().p)
-    expect(issueTexts(patchIssues(index, 'f1'))).toEqual(['Univers tapé 2 ; le câble donne 3'])
-    expect(issueTexts(patchIssues(index, 'f3'))).toEqual(['Univers tapé 7 ; le câble donne 0'])
+    expect(issueTexts(patchIssues(index, 'f1'), messages('fr'))).toEqual(['Univers tapé 2 ; le câble donne 3'])
+    expect(issueTexts(patchIssues(index, 'f3'), messages('fr'))).toEqual(['Univers tapé 7 ; le câble donne 0'])
     expect(index.entries.get('f1')?.universe).toEqual({ universe: 2, source: { kind: 'typed' } })
   })
 
   it('rien quand les deux concordent, ni sans câble', () => {
     const index = patchIndex(chain().p)
-    expect(issueTexts(patchIssues(index, 'f2'))).toEqual([])
-    expect(issueTexts(patchIssues(index, 'f4'))).toEqual([])
+    expect(issueTexts(patchIssues(index, 'f2'), messages('fr'))).toEqual([])
+    expect(issueTexts(patchIssues(index, 'f4'), messages('fr'))).toEqual([])
   })
 })
 
@@ -227,10 +228,10 @@ describe('patchLine', () => {
     r.add('f3', 'dmx-fixture', fix(undefined, 16, 0))
     r.add('f4', 'dmx-fixture', fix(1, 16, 0))
     const index = patchIndex(r.p)
-    expect(patchLine(index.entries.get('f1'))).toBe('U2 · 33')
-    expect(patchLine(index.entries.get('f2'))).toBe('Adr. 33')
-    expect(patchLine(index.entries.get('f3'))).toBe('')
-    expect(patchLine(index.entries.get('f4'))).toBe('U0 · 1')
+    expect(patchLine(index.entries.get('f1'), messages('fr'))).toBe('U2 · 33')
+    expect(patchLine(index.entries.get('f2'), messages('fr'))).toBe('Adr. 33')
+    expect(patchLine(index.entries.get('f3'), messages('fr'))).toBe('')
+    expect(patchLine(index.entries.get('f4'), messages('fr'))).toBe('U0 · 1')
   })
 })
 
@@ -256,7 +257,7 @@ describe('bandes pixel', () => {
 
   it('un appareil patché dans un univers de la bande la chevauche', () => {
     const index = patchIndex(pixels().p)
-    expect(issueTexts(patchIssues(index, 'f1'))).toEqual(['Chevauche LED-1 (1–512)', 'Dépasse 512'])
+    expect(issueTexts(patchIssues(index, 'f1'), messages('fr'))).toEqual(['Chevauche LED-1 (1–512)', 'Dépasse 512'])
     expect(nextFreeAddress(index, 12, 16)).toBe(177)
   })
 
@@ -264,5 +265,24 @@ describe('bandes pixel', () => {
     const r = pixels()
     const q = { ...r.p, devices: r.p.devices.map((d) => (d.id === 'pix' ? { ...d, portState: {} } : d)) }
     expect(patchIndex(q).strips.size).toBe(0)
+  })
+})
+
+describe('textes d’alerte et de source selon la langue', () => {
+  it('le libellé d’un code de source suit la langue', () => {
+    expect(sourceText('typed', messages('fr'))).toBe('tapé')
+    expect(sourceText('typed', messages('en'))).toBe('typed')
+    expect(sourceText('ODE-1 › DMX 2', messages('en'))).toBe('ODE-1 › DMX 2')
+  })
+  it('alertes et ligne de tuile en anglais', () => {
+    const en = messages('en')
+    expect(issueTexts({ overlaps: [{ name: 'FIX-2', start: 10, end: 25 }], overflow: true, universeConflict: { typed: 9, cable: 2 } }, en)).toEqual([
+      'Typed universe 9; cable gives 2',
+      'Overlaps FIX-2 (10–25)',
+      'Exceeds 512'
+    ])
+    const entry = { device: { dmx: { address: 33, footprint: 1 } } } as PatchEntry
+    expect(patchLine(entry, en)).toBe('Addr. 33')
+    expect(patchLine(entry, messages('fr'))).toBe('Adr. 33')
   })
 })

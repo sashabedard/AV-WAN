@@ -6,6 +6,7 @@ import { vlanPreset } from '../catalog/vlanPresets'
 import { sampleProject } from '../model/__fixtures__/sample'
 import { blankDraft, templateFromDraft } from '../model/customTemplate'
 import { dmxChannelsStore } from './dmxChannelsStore'
+import { uiStore } from './uiStore'
 
 const store = () => createProjectStore(sampleProject())
 
@@ -282,7 +283,7 @@ describe('zones dans le store', () => {
 describe('VLAN dans le store', () => {
   it('ajoute, modifie et annule', () => {
     const s = store()
-    s.getState().addVlan(vlanPreset(30))
+    s.getState().addVlan(vlanPreset(30, 'fr'))
     s.getState().updateVlan(30, { name: 'Dante principal' })
     expect(s.getState().history.present.vlans.map((v) => v.name)).toEqual(['Dante principal', 'NDI'])
     s.getState().undo()
@@ -293,7 +294,7 @@ describe('VLAN dans le store', () => {
     const s = store()
     expect(s.getState().changeVlanId(40, 41)).toBe(true)
     expect(s.getState().history.present.devices[0]!.portState['1']!.nativeVlan).toBe(41)
-    s.getState().addVlan(vlanPreset(10))
+    s.getState().addVlan(vlanPreset(10, 'fr'))
     expect(s.getState().changeVlanId(41, 10)).toBe(false)
     expect(s.getState().toast).toBe('Le VLAN 10 existe déjà.')
     expect(s.getState().changeVlanId(41, 5000)).toBe(false)
@@ -359,7 +360,7 @@ describe('documents restaurés et sans titre', () => {
 describe('placer une composante perso', () => {
   it('l’embarque une seule fois et nomme les appareils avec son code', () => {
     const store = createProjectStore()
-    const lidar = templateFromDraft({ ...blankDraft(), name: 'Capteur LiDAR', code: 'LID', ports: [{ label: 'ETH', connector: 'rj45', poe: 'in-af' }] }, 'custom-lidar00001')
+    const lidar = templateFromDraft({ ...blankDraft(), name: 'Capteur LiDAR', code: 'LID', ports: [{ label: 'ETH', connector: 'rj45', poe: 'in-af' }] }, 'custom-lidar00001', 'fr')
     store.getState().addDevice(lidar.id, { x: 0, y: 0 }, { template: lidar })
     store.getState().addDevice(lidar.id, { x: 200, y: 0 }, { template: lidar })
     const p = store.getState().history.present
@@ -389,7 +390,7 @@ describe('listes de canaux DMX', () => {
   afterEach(() => dmxChannelsStore.setState({ lists: [] }))
 
   it('nommer les canaux est une étape annulable', () => {
-    const store = createProjectStore(createProject(new Date(2026, 9, 15)))
+    const store = createProjectStore(createProject(new Date(2026, 9, 15), 'fr'))
     store.getState().setChannelList(WASH, ['Red', 'Green'])
     expect(store.getState().history.present.dmxChannels).toEqual([{ ...WASH, params: ['Red', 'Green'] }])
     store.getState().undo()
@@ -400,7 +401,7 @@ describe('listes de canaux DMX', () => {
   })
 
   it('lecture seule : rien ne change, le message s’affiche', () => {
-    const store = createProjectStore(createProject(new Date(2026, 9, 15)))
+    const store = createProjectStore(createProject(new Date(2026, 9, 15), 'fr'))
     store.setState({ readOnly: true })
     store.getState().setChannelList(WASH, ['Red'])
     expect(store.getState().history.present.dmxChannels).toBeUndefined()
@@ -409,12 +410,39 @@ describe('listes de canaux DMX', () => {
 
   it('placer un appareil copie la liste des réglages dans le projet ; ⌘Z retire l’appareil et la liste ensemble', () => {
     dmxChannelsStore.setState({ lists: [{ templateId: 'dmx-fixture', params: ['Red', 'Green'] }] })
-    const store = createProjectStore(createProject(new Date(2026, 9, 15)))
+    const store = createProjectStore(createProject(new Date(2026, 9, 15), 'fr'))
     store.getState().addDevice('dmx-fixture', { x: 0, y: 0 })
     expect(store.getState().history.present.dmxChannels).toEqual([{ templateId: 'dmx-fixture', params: ['Red', 'Green'] }])
     expect(store.getState().history.past).toHaveLength(1)
     store.getState().undo()
     expect(store.getState().history.present.devices).toEqual([])
     expect(store.getState().history.present.dmxChannels).toBeUndefined()
+  })
+})
+
+describe('projectStore : toasts en anglais', () => {
+  it('construit le message avec la langue de l’interface au moment de l’affichage', () => {
+    uiStore.getState().setLang('en')
+    try {
+      const s = store()
+      s.getState().zoneAroundSelection()
+      expect(s.getState().toast).toBe('Select at least one device to create a zone around.')
+    } finally {
+      uiStore.getState().setLang('fr')
+    }
+  })
+})
+
+describe('projectStore : création dans la langue de l’interface (plan 6)', () => {
+  it('addDevice écrit les étiquettes de ports du gabarit dans la langue de l’interface', () => {
+    uiStore.getState().setLang('en')
+    try {
+      const s = store()
+      const id = s.getState().addDevice('dante-pcie', { x: 0, y: 0 })!
+      expect(s.getState().history.present.devices.find((d) => d.id === id)!.ports[0]!.label).toBe('Primary')
+      expect(createProjectStore().getState().history.present.meta.title).toBe('New project')
+    } finally {
+      uiStore.getState().setLang('fr')
+    }
   })
 })

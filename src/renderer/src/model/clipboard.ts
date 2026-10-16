@@ -1,6 +1,6 @@
 // src/renderer/src/model/clipboard.ts
 import { z } from 'zod'
-import type { Device, DeviceTemplate, DmxChannelList, Link, Project } from './types'
+import type { Device, StoredTemplate, DmxChannelList, Link, Project } from './types'
 import { DeviceSchema, DeviceTemplateSchema, DmxChannelListSchema, LinkSchema } from './schema'
 import { withTemplate } from './customTemplate'
 import { canConnectPorts, nextCableId } from './rules'
@@ -14,7 +14,7 @@ export interface Fragment {
   devices: Device[]
   links: Link[]
   // Composantes perso des appareils copiés : le collage les embarque dans le projet cible.
-  templates?: DeviceTemplate[]
+  templates?: StoredTemplate[]
   // Listes de canaux DMX des appareils copiés (le projet cible garde les siennes).
   dmxChannels?: DmxChannelList[]
 }

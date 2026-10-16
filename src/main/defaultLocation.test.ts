@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { existsSync, linkSync, mkdtempSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { setMainLang } from './lang'
 import { discardAutoCreated, projectFileName, uniqueProjectPath } from './defaultLocation'
 
 describe('dossier par défaut', () => {
@@ -86,5 +87,17 @@ describe('« Enregistrer sous » depuis un fichier créé automatiquement', () =
     expect(await discardAutoCreated(created, auto, sameOtherCase)).toBe(false)
     expect(existsSync(auto)).toBe(true)
     expect(existsSync(sameOtherCase)).toBe(true)
+  })
+})
+
+describe('nom par défaut en anglais', () => {
+  it('propose « New project » quand le main est en anglais', () => {
+    setMainLang('en')
+    try {
+      expect(projectFileName('  ')).toBe('New project')
+      expect(projectFileName('AUX')).toBe('AUX (project)')
+    } finally {
+      setMainLang('fr')
+    }
   })
 })

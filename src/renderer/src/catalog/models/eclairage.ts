@@ -15,7 +15,7 @@ export const LIGHTING_MODELS: readonly DeviceTemplate[] = [
   {
     id: 'chauvet-rogue-r2x-spot',
     category: 'eclairage',
-    name: 'Lyre spot Chauvet Rogue R2X Spot',
+    name: { fr: 'Lyre spot Chauvet Rogue R2X Spot', en: 'Moving head spot Chauvet Rogue R2X Spot' },
     code: 'MH',
     vendor: 'Chauvet Professional',
     model: 'Chauvet Rogue R2X Spot',
@@ -29,7 +29,7 @@ export const LIGHTING_MODELS: readonly DeviceTemplate[] = [
         { name: '21CH', channels: 21, params: ['Pan', 'Fine Pan', 'Tilt', 'Fine Tilt', 'Pan/Tilt Speed', 'Dimmer', 'Fine Dimmer', 'Shutter', 'Color Wheel 2', 'Color Wheel 1', 'Gobo Wheel 1', 'Gobo Wheel 1 Rotate', 'Gobo Wheel 2', 'Focus', 'Prism', 'Prism Rotate', 'Iris', 'Frost', 'Movement Macros', 'Movement Macro Speed', 'Control'] }
       ]
     },
-    note: 'Puissance maximale relevée à 120 V (480 à 488 W selon la tension). Ordre des modes (18CH d’abord) : choix, le manuel ne désigne pas de mode par défaut.'
+    note: { fr: 'Puissance maximale relevée à 120 V (480 à 488 W selon la tension). Ordre des modes (18CH d’abord) : choix, le manuel ne désigne pas de mode par défaut.', en: 'Maximum power measured at 120 V (480 to 488 W depending on voltage). Mode order (18CH first): a choice, the manual does not designate a default mode.' }
   },
   // Source : https://www.martin.com/en/products/mac-aura-xb (page produit du fabricant)
   // et manuel https://www.martin.com/en/site_elements/martin-mac-aura-xb-user-manual (v. C) et fiche https://www.martin.com/en/site_elements/mac-aura-xb-spec-sheet-english (consultés le 2026-10-14)
@@ -38,7 +38,7 @@ export const LIGHTING_MODELS: readonly DeviceTemplate[] = [
   {
     id: 'martin-mac-aura-xb',
     category: 'eclairage',
-    name: 'Lyre wash Martin MAC Aura XB',
+    name: { fr: 'Lyre wash Martin MAC Aura XB', en: 'Moving head wash Martin MAC Aura XB' },
     code: 'WSH',
     vendor: 'Martin',
     model: 'Martin MAC Aura XB',
@@ -49,6 +49,7 @@ export const LIGHTING_MODELS: readonly DeviceTemplate[] = [
       footprint: 14,
       modes: [
         { name: 'Standard (STD)', channels: 14, params: ['Beam electronic shutter effect', 'Beam dimmer', 'Zoom', 'Pan', 'Pan fine', 'Tilt', 'Tilt fine', 'Fixture control settings', 'Beam color wheel effect', 'Beam red', 'Beam green', 'Beam blue', 'Beam white', 'Beam CTC (Color Temperature Control)'] },
+        // i18n-ignore : clé de liste DMX
         { name: 'Étendu (EXT)', channels: 25, params: ['Beam electronic shutter effect', 'Beam dimmer', 'Zoom', 'Pan', 'Pan fine', 'Tilt', 'Tilt fine', 'Fixture control settings', 'Beam color wheel effect', 'Beam red', 'Beam green', 'Beam blue', 'Beam white', 'Beam CTC (Color Temperature Control)', 'FX1 select', 'FX1 adjust, sync speed adjust', 'FX2 select', 'FX2 adjust', 'Sync (FX synchronization)', 'Aura shutter and strobe effect', 'Aura dimmer', 'Aura color wheel effect', 'Aura red', 'Aura green', 'Aura blue'] }
       ]
     }
@@ -60,7 +61,7 @@ export const LIGHTING_MODELS: readonly DeviceTemplate[] = [
   {
     id: 'claypaky-sharpy',
     category: 'eclairage',
-    name: 'Lyre beam Clay Paky Sharpy',
+    name: { fr: 'Lyre beam Clay Paky Sharpy', en: 'Moving head beam Clay Paky Sharpy' },
     code: 'BM',
     vendor: 'Clay Paky',
     model: 'Clay Paky Sharpy',
@@ -73,7 +74,7 @@ export const LIGHTING_MODELS: readonly DeviceTemplate[] = [
         { name: 'Vector', channels: 20, params: ['Colour wheel', 'Stop / strobe', 'Dimmer', 'Static gobo change', 'Prism insertion', 'Prism rotation', 'Effects movement', 'Frost', 'Focus', 'Pan', 'Pan fine', 'Tilt', 'Tilt fine', 'Function', 'Reset', 'Lamp control (Lamp Dmx option ON)', 'Pan - tilt time', 'Colour time', 'Beam time', 'Gobo time'] }
       ]
     },
-    note: 'Modèle d’origine (C61375, lampe 189 W). Puissance en watts non publiée par le fabricant : 350 VA à 230 V. Art-Net/RDM annoncés ; prise réseau non précisée par le fabricant.'
+    note: { fr: 'Modèle d’origine (C61375, lampe 189 W). Puissance en watts non publiée par le fabricant : 350 VA à 230 V. Art-Net/RDM annoncés ; prise réseau non précisée par le fabricant.', en: 'Original model (C61375, 189 W lamp). Wattage not published by the manufacturer: 350 VA at 230 V. Art-Net/RDM announced; network port not specified by the manufacturer.' }
   },
   // Source : https://www.robe.cz/res/downloads/catalogues/ROBE_MegaPointe_leaflet.pdf (fiche du fabricant : 2 modes, 39 et 34 canaux, 670 W, RJ45 Ethernet, Art-Net/sACN)
   // et table DMX Robe v1.5 « Mode 1 – Standard 16 bits, Mode 2 – Réduit 8 bits », copie hébergée par Storm Lighting :
@@ -82,7 +83,7 @@ export const LIGHTING_MODELS: readonly DeviceTemplate[] = [
   {
     id: 'robe-megapointe',
     category: 'eclairage',
-    name: 'Lyre hybride Robe MegaPointe',
+    name: { fr: 'Lyre hybride Robe MegaPointe', en: 'Hybrid moving head Robe MegaPointe' },
     code: 'MH',
     vendor: 'Robe',
     model: 'Robe MegaPointe',
@@ -93,11 +94,13 @@ export const LIGHTING_MODELS: readonly DeviceTemplate[] = [
     dmx: {
       footprint: 39,
       modes: [
+        // i18n-ignore : clé de liste DMX
         { name: 'Mode 1 – Standard 16 bits', channels: 39, params: ['Pan', 'Pan Fine', 'Tilt', 'Tilt fine', 'Pan/Tilt speed, Pan/Tilt time', 'Power/Special functions', 'Cyan', 'Magenta', 'Yellow', 'Colour wheel', 'Colour wheel - fine positioning', 'Virtual colour wheel', 'Effect Speed', 'CMY & Colour wheel time', 'Zoom & Focus & Frost & Prism time', 'Effect wheel positioning', 'Effect wheel rotation', 'Effect wheel animations', 'Static gobo wheel', 'Rotating gobo wheel', 'Rot. gobo indexing and rotation', 'Rot. gobo indexing/rotation - fine', 'Prism wheel 1', 'Prism wheel 1 indexing/rotation', 'Prism wheel 2', 'Prism wheel 2 indexing/rotation', 'Pattern selection', 'Pattern rotation and indexing', 'Beam shaper selection', 'Beam shaper rotation and indexing', 'Frost', 'Zoom', 'Zoom - fine', 'Focus', 'Focus Fine', 'Hot-Spot control', 'Shutter/ strobe', 'Dimmer intensity', 'Dimmer intensity - fine'] },
+        // i18n-ignore : clé de liste DMX
         { name: 'Mode 2 – Réduit 8 bits', channels: 34, params: ['Pan', 'Pan Fine', 'Tilt', 'Tilt fine', 'Pan/Tilt speed, Pan/Tilt time', 'Power/Special functions', 'Cyan', 'Magenta', 'Yellow', 'Colour wheel', 'Virtual colour wheel', 'Effect Speed', 'CMY & Colour wheel time', 'Zoom & Focus & Frost & Prism time', 'Effect wheel positioning', 'Effect wheel rotation', 'Effect wheel animations', 'Static gobo wheel', 'Rotating gobo wheel', 'Rot. gobo indexing and rotation', 'Prism wheel 1', 'Prism wheel 1 indexing/rotation', 'Prism wheel 2', 'Prism wheel 2 indexing/rotation', 'Pattern selection', 'Pattern rotation and indexing', 'Beam shaper selection', 'Beam shaper rotation and indexing', 'Frost', 'Zoom', 'Focus', 'Hot-Spot control', 'Shutter/ strobe', 'Dimmer intensity'] }
       ]
     },
-    note: 'Entrée Ethernet RJ45 (Art-Net, sACN) ; la fiche ne précise pas la vitesse du port.'
+    note: { fr: 'Entrée Ethernet RJ45 (Art-Net, sACN) ; la fiche ne précise pas la vitesse du port.', en: 'RJ45 Ethernet input (Art-Net, sACN); the datasheet does not state the port speed.' }
   },
   // Source : guide d’installation ETC ColorSource PAR v1.5 https://www.etcconnect.com/workarea/DownloadAsset.aspx?id=10737478060 (fabricant, consulté le 2026-10-14)
   // 4 modes DMX (tableau « DMX control channels ») ; consommation maximale 120 W ; « not Ethernet/data network compatible ».
@@ -105,7 +108,7 @@ export const LIGHTING_MODELS: readonly DeviceTemplate[] = [
   {
     id: 'etc-colorsource-par',
     category: 'eclairage',
-    name: 'PAR LED ETC ColorSource PAR',
+    name: { fr: 'PAR LED ETC ColorSource PAR', en: 'PAR LED ETC ColorSource PAR' },
     code: 'PAR',
     vendor: 'ETC',
     model: 'ETC ColorSource PAR',
@@ -115,13 +118,15 @@ export const LIGHTING_MODELS: readonly DeviceTemplate[] = [
     dmx: {
       footprint: 5,
       modes: [
+        // i18n-ignore : clé de liste DMX
         { name: '5 canaux', channels: 5, params: ['Intensity', 'Red', 'Green', 'Blue', 'Strobe'] },
         { name: 'Direct', channels: 6, params: ['Intensity', 'Red', 'Green', 'Blue/Indigo', 'Lime', 'Strobe'] },
         { name: 'RGB', channels: 3, params: ['Red', 'Green', 'Blue'] },
+        // i18n-ignore : clé de liste DMX
         { name: '1 canal', channels: 1, params: ['Intensity'] }
       ]
     },
-    note: 'Consommation maximale 120 W ; pas de réseau (les versions à RJ45 portent du DMX, pas de l’Ethernet).'
+    note: { fr: 'Consommation maximale 120 W ; pas de réseau (les versions à RJ45 portent du DMX, pas de l’Ethernet).', en: 'Maximum consumption 120 W; no network (the RJ45 versions carry DMX, not Ethernet).' }
   },
   // Source : manuel ETC Source Four LED Series 3 v1.2.0 (tableau « DMX Modes », colonne Lustr X8 ; « Maximum power consumption is 375 W »),
   // copie hébergée par UsedLighting : https://cdn01.usedlighting.com/products/files/f63fff00240f21.pdf
@@ -130,7 +135,7 @@ export const LIGHTING_MODELS: readonly DeviceTemplate[] = [
   {
     id: 'etc-source-four-led-s3-lustr-x8',
     category: 'eclairage',
-    name: 'Découpe LED ETC Source Four LED Series 3 Lustr X8',
+    name: { fr: 'Découpe LED ETC Source Four LED Series 3 Lustr X8', en: 'LED profile ETC Source Four LED Series 3 Lustr X8' },
     code: 'PRF',
     vendor: 'ETC',
     model: 'ETC Source Four LED Series 3 Lustr X8',
@@ -147,7 +152,7 @@ export const LIGHTING_MODELS: readonly DeviceTemplate[] = [
         { name: '1 Channel', channels: 1, params: ['Intensity'] }
       ]
     },
-    note: 'Mode Direct par défaut. Consommation maximale 375 W (≈ 307 W typique à pleine intensité sur 120 V).'
+    note: { fr: 'Mode Direct par défaut. Consommation maximale 375 W (≈ 307 W typique à pleine intensité sur 120 V).', en: 'Direct mode by default. Maximum consumption 375 W (≈ 307 W typical at full intensity on 120 V).' }
   },
   // Source : https://www.martin.com/en/products/atomic-3000-led, manuel https://www.martin.com/en/site_elements/martin-manuals-atomic-3000-led-user-manual (v. C)
   // et fiche https://www.martin.com/en/site_elements/atomic-3000-led-spec-sheet-english (consultés le 2026-10-14)
@@ -156,7 +161,7 @@ export const LIGHTING_MODELS: readonly DeviceTemplate[] = [
   {
     id: 'martin-atomic-3000-led',
     category: 'eclairage',
-    name: 'Stroboscope Martin Atomic 3000 LED',
+    name: { fr: 'Stroboscope Martin Atomic 3000 LED', en: 'Strobe Martin Atomic 3000 LED' },
     code: 'STR',
     vendor: 'Martin',
     model: 'Martin Atomic 3000 LED',
@@ -166,12 +171,15 @@ export const LIGHTING_MODELS: readonly DeviceTemplate[] = [
     dmx: {
       footprint: 4,
       modes: [
+        // i18n-ignore : clé de liste DMX
         { name: '4 canaux', channels: 4, params: ['Beam flash intensity', 'Beam flash duration', 'Beam flash rate', 'Beam special effects'] },
+        // i18n-ignore : nom de canal DMX du fabricant (anglais)
         { name: 'Extended', channels: 14, params: ['Beam flash intensity', 'Beam flash duration', 'Beam flash rate', 'Beam special effects', 'Control / settings', 'FX select', 'FX adjustment', 'FX synchronization', 'Aura strobe/shutter effect', 'Aura dimmer', 'Aura red', 'Aura green', 'Aura blue', 'Aura color presets (‘color wheel’ effect)'] },
+        // i18n-ignore : clé de liste DMX
         { name: '3 canaux', channels: 3, params: ['Beam flash intensity', 'Beam flash duration', 'Beam flash rate'] }
       ]
     },
-    note: 'Le mode 4 canaux est celui de l’Atomic 3000 xénon d’origine ; le fabricant ne désigne pas de mode par défaut.'
+    note: { fr: 'Le mode 4 canaux est celui de l’Atomic 3000 xénon d’origine ; le fabricant ne désigne pas de mode par défaut.', en: 'The 4-channel mode is that of the original xenon Atomic 3000; the manufacturer does not designate a default mode.' }
   },
   // Source (brochure du fabricant, copie hébergée par CCS Light & Sound, pas de page fabricant accessible) : https://www.ccslightsound.com.au/assets/brochures/KIT-358.pdf (consultée le 2026-10-14)
   // DMX 512 sur deux canaux consécutifs (pompe et ventilateur), « Power requirement 1500 Watt » ; pas de réseau.
@@ -179,15 +187,16 @@ export const LIGHTING_MODELS: readonly DeviceTemplate[] = [
   {
     id: 'look-unique-2-1',
     category: 'eclairage',
-    name: 'Machine à brume Look Solutions Unique 2.1',
+    name: { fr: 'Machine à brume Look Solutions Unique 2.1', en: 'Haze machine Look Solutions Unique 2.1' },
     code: 'HZ',
     vendor: 'Look Solutions',
     model: 'Look Solutions Unique 2.1',
     icon: ic('fog'),
     ports: dmxThru(),
     powerW: 1500,
+    // i18n-ignore : clé de liste DMX
     dmx: { footprint: 2, modes: [{ name: 'Pompe et ventilateur', channels: 2, params: ['Pump', 'Fan'] }] },
-    note: 'Deux canaux consécutifs : pompe, puis ventilateur. Une seule configuration DMX annoncée.'
+    note: { fr: 'Deux canaux consécutifs : pompe, puis ventilateur. Une seule configuration DMX annoncée.', en: 'Two consecutive channels: pump, then fan. Only one DMX configuration announced.' }
   },
   // Source : fiche technique MDG theONE https://goknight.com/content/documentation/Product-data-sheet_theONE.pdf (fiche du fabricant MDG, copie hébergée par Knight)
   // et guide de démarrage rapide MDG https://goknight.com/content/documentation/theONE_Quick_Start_Rev_Ba.pdf (copie hébergée par Knight) (consultés le 2026-10-14)
@@ -196,7 +205,7 @@ export const LIGHTING_MODELS: readonly DeviceTemplate[] = [
   {
     id: 'mdg-theone',
     category: 'eclairage',
-    name: 'Machine à brume MDG theONE',
+    name: { fr: 'Machine à brume MDG theONE', en: 'Haze machine MDG theONE' },
     code: 'HZ',
     vendor: 'MDG',
     model: 'MDG theONE',
@@ -205,7 +214,7 @@ export const LIGHTING_MODELS: readonly DeviceTemplate[] = [
     powerW: 1480,
     defaults: { vlanId: 50 },
     dmx: { footprint: 5, modes: [{ name: 'Standard', channels: 5, params: ['Unit off / on', 'Mode haze / fog', 'Fog output', 'Fog off / on', 'External fan'] }] },
-    note: 'Puissance de 1 100 à 1 480 W (valeur maximale retenue) ; la fiche ne précise pas la vitesse du port RJ45.'
+    note: { fr: 'Puissance de 1 100 à 1 480 W (valeur maximale retenue) ; la fiche ne précise pas la vitesse du port RJ45.', en: 'Power from 1,100 to 1,480 W (maximum value used); the datasheet does not state the RJ45 port speed.' }
   },
 
   // Sources d’univers : non patchables (pas de champ dmx).
@@ -214,7 +223,7 @@ export const LIGHTING_MODELS: readonly DeviceTemplate[] = [
   {
     id: 'enttec-ode-mk3',
     category: 'eclairage',
-    name: 'Nœud DMX ENTTEC ODE Mk3',
+    name: { fr: 'Nœud DMX ENTTEC ODE Mk3', en: 'DMX node ENTTEC ODE Mk3' },
     code: 'DMX',
     vendor: 'ENTTEC',
     model: 'ENTTEC ODE Mk3',
@@ -222,14 +231,14 @@ export const LIGHTING_MODELS: readonly DeviceTemplate[] = [
     ports: [rj45('ETH', { speedMbps: 100, poeIn: 'af', poeDrawW: 2.3 }), ...dmxOutputs(2), simple('dc', 'DC-IN', 'DC IN')],
     powerW: 2.3,
     defaults: { vlanId: 50 },
-    note: 'Alimenté par PoE (802.3af) ou par une alimentation 12–24 V DC en option ; chaque sortie DMX est bidirectionnelle.'
+    note: { fr: 'Alimenté par PoE (802.3af) ou par une alimentation 12–24 V DC en option ; chaque sortie DMX est bidirectionnelle.', en: 'Powered by PoE (802.3af) or by an optional 12–24 V DC supply; each DMX output is bidirectional.' }
   },
   // Source : https://luminex.be/products/luminode/luminode-4 (page produit du fabricant, version demi-rack LU 01 00071, consultée le 2026-10-14)
   // 4 DMX XLR 5 broches (entrée ou sortie), 2 EtherCon 10/100/1000, PoE 802.3af classe 0 ou 100–240 V AC, 13 W maximum.
   {
     id: 'luminex-luminode-4',
     category: 'eclairage',
-    name: 'Nœud DMX Luminex LumiNode 4',
+    name: { fr: 'Nœud DMX Luminex LumiNode 4', en: 'DMX node Luminex LumiNode 4' },
     code: 'DMX',
     vendor: 'Luminex',
     model: 'Luminex LumiNode 4',
@@ -237,14 +246,14 @@ export const LIGHTING_MODELS: readonly DeviceTemplate[] = [
     ports: [rj45('ETH-1', { poeIn: 'af', poeDrawW: 13 }), rj45('ETH-2'), ...dmxOutputs(4)],
     powerW: 13,
     defaults: { vlanId: 50 },
-    note: 'Version demi-rack : PoE 802.3af ou secteur 100–240 V ; la fiche ne dit pas lequel des deux ports Ethernet reçoit le PoE (ETH-1 retenu). Existe aussi en DIN et en mural.'
+    note: { fr: 'Version demi-rack : PoE 802.3af ou secteur 100–240 V ; la fiche ne dit pas lequel des deux ports Ethernet reçoit le PoE (ETH-1 retenu). Existe aussi en DIN et en mural.', en: 'Half-rack version: 802.3af PoE or 100–240 V mains; the datasheet does not say which of the two Ethernet ports receives PoE (ETH-1 used). Also available in DIN and wall-mount versions.' }
   },
   // Source : manuel https://dmxking.com/downloads/eDMX4%20PRO%20User%20Manual%20(EN).pdf (fabricant, réf. 0104-700-3.13, consulté le 2026-10-14)
   // 4 DMX en entrée ou sortie (XLR 3 ou 5 broches selon l’option), 1 etherCON 10/100, PoE 802.3af, « maximum power budget 8W ».
   {
     id: 'dmxking-edmx4-pro',
     category: 'eclairage',
-    name: 'Nœud DMX DMXking eDMX4 PRO',
+    name: { fr: 'Nœud DMX DMXking eDMX4 PRO', en: 'DMX node DMXking eDMX4 PRO' },
     code: 'DMX',
     vendor: 'DMXking',
     model: 'DMXking eDMX4 PRO',
@@ -252,14 +261,14 @@ export const LIGHTING_MODELS: readonly DeviceTemplate[] = [
     ports: [rj45('ETH', { speedMbps: 100, poeIn: 'af', poeDrawW: 8 }), ...dmxOutputs(4)],
     powerW: 8,
     defaults: { vlanId: 50 },
-    note: 'Alimenté uniquement par PoE ; 8 W : budget de puissance maximal publié par le fabricant, pas une consommation mesurée. Pas d’entrée DC sur cette version (les versions DIN en ont une).'
+    note: { fr: 'Alimenté uniquement par PoE ; 8 W : budget de puissance maximal publié par le fabricant, pas une consommation mesurée. Pas d’entrée DC sur cette version (les versions DIN en ont une).', en: 'Powered by PoE only; 8 W: maximum power budget published by the manufacturer, not a measured consumption. No DC input on this version (the DIN versions have one).' }
   },
   // Source : fiche technique https://www.ac-et.com/storage/product_images/advatek/a4_s_mk3/pixlite-a4-s-mk3-datasheet_20250225.pdf (Advatek, copie hébergée par AC Entertainment Technologies, consultée le 2026-10-14)
   // 4 sorties pixels alimentées (7 A chacune, 28 A au total), 2 Ethernet 10/100/1000, port auxiliaire RS485 DMX en entrée ou sortie, entrée 5–24 V DC, pas de PoE.
   {
     id: 'advatek-pixlite-a4s-mk3',
     category: 'eclairage',
-    name: 'Contrôleur de pixels Advatek PixLite A4-S Mk3',
+    name: { fr: 'Contrôleur de pixels Advatek PixLite A4-S Mk3', en: 'Pixel controller Advatek PixLite A4-S Mk3' },
     code: 'PIX',
     vendor: 'Advatek',
     model: 'Advatek PixLite A4-S Mk3',
@@ -272,14 +281,14 @@ export const LIGHTING_MODELS: readonly DeviceTemplate[] = [
       simple('dc', 'DC-IN', 'DC IN')
     ],
     defaults: { vlanId: 50 },
-    note: 'Alimentation 5–24 V DC qui alimente aussi les pixels (7 A par sortie). Puissance en watts non publiée : elle dépend des pixels raccordés.'
+    note: { fr: 'Alimentation 5–24 V DC qui alimente aussi les pixels (7 A par sortie). Puissance en watts non publiée : elle dépend des pixels raccordés.', en: '5–24 V DC supply that also powers the pixels (7 A per output). Wattage not published: it depends on the connected pixels.' }
   },
   // Source : fiche technique https://www.ac-et.com/storage/product_images/advatek/t8_s_mk3/pixlite-t8-s-mk3-datasheet_20250225.pdf (Advatek, copie hébergée par AC Entertainment Technologies, consultée le 2026-10-14)
   // 8 sorties de données RJ45 (émetteur longue portée, non alimentées), 2 Ethernet 10/100/1000, port auxiliaire RS485 DMX en entrée ou sortie, secteur 100–240 V AC.
   {
     id: 'advatek-pixlite-t8s-mk3',
     category: 'eclairage',
-    name: 'Contrôleur de pixels Advatek PixLite T8-S Mk3',
+    name: { fr: 'Contrôleur de pixels Advatek PixLite T8-S Mk3', en: 'Pixel controller Advatek PixLite T8-S Mk3' },
     code: 'PIX',
     vendor: 'Advatek',
     model: 'Advatek PixLite T8-S Mk3',
@@ -291,20 +300,20 @@ export const LIGHTING_MODELS: readonly DeviceTemplate[] = [
       simple('dmx', 'DMX-1', 'DMX 1')
     ],
     defaults: { vlanId: 50 },
-    note: 'Émetteur longue portée : chaque sortie RJ45 alimente un récepteur. Secteur 100–240 V AC ; puissance en watts non publiée.'
+    note: { fr: 'Émetteur longue portée : chaque sortie RJ45 alimente un récepteur. Secteur 100–240 V AC ; puissance en watts non publiée.', en: 'Long-range transmitter: each RJ45 output feeds a receiver. 100–240 V AC mains; wattage not published.' }
   },
   // Source : fiche https://enttec.com.cn/wp-content/uploads/2020/09/70304_DMX-USB-PRO_DS.pdf (ENTTEC, site chinois du fabricant ; même fiche que celle copiée par Thomann) (consultée le 2026-10-14)
   // USB 1.1/2.0, entrée DMX et sortie DMX en XLR 5 broches, « Power requirements 300mA supplied by USB ».
   {
     id: 'enttec-dmx-usb-pro',
     category: 'eclairage',
-    name: 'Interface DMX ENTTEC DMX USB Pro',
+    name: { fr: 'Interface DMX ENTTEC DMX USB Pro', en: 'DMX interface ENTTEC DMX USB Pro' },
     code: 'USB',
     vendor: 'ENTTEC',
     model: 'ENTTEC DMX USB Pro',
     icon: ic('dmx-node'),
     ports: [simple('usb', 'USB'), simple('dmx', 'DMX-IN', 'DMX IN'), simple('dmx', 'DMX-1', 'DMX 1')],
     powerW: 1.5,
-    note: '≈ 1,5 W (5 V × 300 mA, calculé d’après la fiche). Alimentée par le port USB de l’ordinateur.'
+    note: { fr: '≈ 1,5 W (5 V × 300 mA, calculé d’après la fiche). Alimentée par le port USB de l’ordinateur.', en: '≈ 1.5 W (5 V × 300 mA, calculated from the datasheet). Powered by the computer’s USB port.' }
   }
 ]

@@ -9,8 +9,8 @@ afterEach(cleanup)
 
 describe('PortMapFacade', () => {
   it('colore chaque port par son VLAN natif, épaissit les trunks et marque le PoE actif', () => {
-    const p = createExampleProject(new Date(2026, 9, 13))
-    const map = portMaps(p).find((m) => m.name === 'SW-2')!
+    const p = createExampleProject(new Date(2026, 9, 13), 'fr')
+    const map = portMaps(p, 'fr').find((m) => m.name === 'SW-2')!
     const device = p.devices.find((d) => d.id === map.deviceId)!
     const { container } = render(<PortMapFacade device={device} rows={map.rows} />)
     expect(screen.getByRole('img', { name: 'Façade de SW-2' })).toBeTruthy()

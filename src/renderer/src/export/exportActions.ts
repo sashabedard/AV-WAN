@@ -1,48 +1,56 @@
 import type { PdfOptions } from '../../../shared/pdfOptions'
+import type { Lang } from '../../../shared/i18n/lang'
 import { projectStore } from '../store/projectStore'
 import { printTextOf } from '../app/fileText'
 import { suggestedName } from '../app/fileActions'
 import { fileNameOf } from '../app/fileName'
 import { ipcErrorMessage } from '../app/ipcError'
+import { currentLang, currentMessages } from '../i18n/useT'
 import { dataTables } from '../reports/dataTables'
+import { loadDocLang } from './docLang'
+
+// Les fichiers sont dans la langue des documents ; les messages (toasts) dans celle de l'interface.
 
 // Le processus principal choisit le fichier, met en page dans une fenêtre cachée, puis écrit le PDF.
 export async function exportPdfAction(options: PdfOptions): Promise<string | null> {
   const s = projectStore.getState()
-  s.showToast('Préparation du PDF…')
+  const t = currentMessages().export.toast
+  s.showToast(t.preparing)
   try {
     const path = await window.avwan.export.pdf(printTextOf(s.history.present), options, suggestedName())
-    if (path) projectStore.getState().showToast(`PDF exporté : ${fileNameOf(path)}`)
+    if (path) projectStore.getState().showToast(t.pdfExported({ name: fileNameOf(path) }))
     else projectStore.getState().clearToast()
     return path
   } catch (e) {
-    projectStore.getState().showToast(`Échec de l’export PDF : ${ipcErrorMessage(e)}`)
+    projectStore.getState().showToast(t.pdfFailed({ reason: ipcErrorMessage(e) }))
     return null
   }
 }
 
-// Les trois listes en CSV pour Excel en français, un fichier par liste (spec § 11.2).
-export async function exportCsvAction(): Promise<string[] | null> {
+// Les listes en CSV pour Excel, un fichier par liste (spec § 11.2) : « ; » et virgule en français, « , » et point en anglais.
+export async function exportCsvAction(lang: Lang = loadDocLang(currentLang())): Promise<string[] | null> {
   const s = projectStore.getState()
+  const t = currentMessages().export.toast
   try {
-    const paths = await window.avwan.export.csv(dataTables(s.history.present), suggestedName())
-    if (paths) projectStore.getState().showToast(`${paths.length} fichiers CSV exportés : ${paths.map(fileNameOf).join(', ')}`)
+    const paths = await window.avwan.export.csv(dataTables(s.history.present, lang), suggestedName(), lang)
+    if (paths) projectStore.getState().showToast(t.csvExported({ n: paths.length, names: paths.map(fileNameOf).join(', ') }))
     return paths
   } catch (e) {
-    projectStore.getState().showToast(`Échec de l’export CSV : ${ipcErrorMessage(e)}`)
+    projectStore.getState().showToast(t.csvFailed({ reason: ipcErrorMessage(e) }))
     return null
   }
 }
 
-// Les trois listes dans un classeur Excel, une feuille par liste.
-export async function exportXlsxAction(): Promise<string | null> {
+// Les listes dans un classeur Excel, une feuille par liste.
+export async function exportXlsxAction(lang: Lang = loadDocLang(currentLang())): Promise<string | null> {
   const s = projectStore.getState()
+  const t = currentMessages().export.toast
   try {
-    const path = await window.avwan.export.xlsx(dataTables(s.history.present), suggestedName())
-    if (path) projectStore.getState().showToast(`Classeur Excel exporté : ${fileNameOf(path)}`)
+    const path = await window.avwan.export.xlsx(dataTables(s.history.present, lang), suggestedName(), lang)
+    if (path) projectStore.getState().showToast(t.xlsxExported({ name: fileNameOf(path) }))
     return path
   } catch (e) {
-    projectStore.getState().showToast(`Échec de l’export Excel : ${ipcErrorMessage(e)}`)
+    projectStore.getState().showToast(t.xlsxFailed({ reason: ipcErrorMessage(e) }))
     return null
   }
 }

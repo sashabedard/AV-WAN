@@ -10,7 +10,7 @@ import { createExampleProject } from '../samples/exampleProject'
 const ALL = ['schema', 'appareils', 'ports', 'branchement', 'vlans', 'ip', 'patch', 'canaux', 'puissance', 'nomenclature']
 
 beforeEach(() => {
-  projectStore.getState().loadProject(createExampleProject(new Date(2026, 9, 13)), null)
+  projectStore.getState().loadProject(createExampleProject(new Date(2026, 9, 13), 'fr'), null)
   uiStore.setState({ exportOpen: true, lastPdfChoice: null })
 })
 afterEach(cleanup)
@@ -24,7 +24,7 @@ describe('ExportDialog', () => {
     expect(screen.getAllByRole('checkbox', { checked: true })).toHaveLength(11)
     expect(screen.getByRole('checkbox', { name: 'Pages de zone agrandies (2)' })).toBeTruthy()
     await user.click(screen.getByRole('button', { name: 'Exporter le PDF…' }))
-    expect(onExport).toHaveBeenCalledWith({ sections: ALL, format: 'na', zonePages: true })
+    expect(onExport).toHaveBeenCalledWith({ sections: ALL, format: 'na', zonePages: true, lang: 'fr' })
     expect(uiStore.getState().exportOpen).toBe(false)
   })
 
@@ -76,5 +76,33 @@ describe('ExportDialog', () => {
     await user.keyboard('{Escape}')
     expect(uiStore.getState().exportOpen).toBe(false)
     expect(onExport).not.toHaveBeenCalled()
+  })
+})
+
+describe('langue des documents', () => {
+  it('choisit la langue des documents, la retient et l’envoie avec le PDF', async () => {
+    const user = userEvent.setup()
+    const onExport = vi.fn()
+    localStorage.clear()
+    render(<ExportDialog onExport={onExport} />)
+    const group = screen.getByRole('group', { name: 'Langue des documents' })
+    expect(within(group).getByRole('button', { name: 'FR', pressed: true })).toBeTruthy()
+    await user.click(group.querySelector('button[aria-pressed="false"]')!)
+    await user.click(screen.getByRole('button', { name: /Exporter le PDF/ }))
+    expect(onExport).toHaveBeenCalledWith(expect.objectContaining({ lang: 'en' }))
+    expect(localStorage.getItem('avwan.docLang')).toBe('en')
+  })
+
+  it('envoie la langue des documents avec le CSV et l’Excel', async () => {
+    const user = userEvent.setup()
+    const onCsv = vi.fn()
+    const onXlsx = vi.fn()
+    localStorage.setItem('avwan.docLang', 'en')
+    render(<ExportDialog onExport={vi.fn()} onCsv={onCsv} onXlsx={onXlsx} />)
+    await user.click(screen.getByRole('button', { name: 'CSV…' }))
+    expect(onCsv).toHaveBeenCalledWith('en')
+    uiStore.getState().setExportOpen(true)
+    await user.click(await screen.findByRole('button', { name: 'Excel…' }))
+    expect(onXlsx).toHaveBeenCalledWith('en')
   })
 })

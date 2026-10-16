@@ -7,19 +7,18 @@ import { uiStore } from '../store/uiStore'
 import { autosave } from './autosave'
 import { fileAutoSave } from './fileAutoSave'
 import { fileNameOf } from './fileName'
+import { currentMessages } from '../i18n/useT'
 import { timeAgo } from './timeAgo'
-
-const DISCARD_QUESTION = 'Des modifications ne sont pas enregistrées. Continuer quand même ?'
 
 // Comme à la fermeture : avec l'enregistrement automatique, la dernière modification est d'abord écrite dans
 // le fichier ; la question ne revient que si cette écriture est impossible.
 function confirmDiscard(): boolean {
-  return !isDirty(projectStore.getState()) || fileAutoSave.flushSync() || window.confirm(DISCARD_QUESTION)
+  return !isDirty(projectStore.getState()) || fileAutoSave.flushSync() || window.confirm(currentMessages().app.file.discardQuestion)
 }
 
 export function suggestedName(): string {
   const title = projectStore.getState().history.present.meta.title.trim()
-  return (title || 'projet').replace(/[\\/:*?"<>|]+/g, '-')
+  return (title || currentMessages().app.defaultFileName).replace(/[\\/:*?"<>|]+/g, '-')
 }
 
 export function newProjectAction(): void {
@@ -28,7 +27,7 @@ export function newProjectAction(): void {
 
 export async function loadFromText(path: string, text: string): Promise<boolean> {
   const s = projectStore.getState()
-  const res = parseProjectFile(text)
+  const res = parseProjectFile(text, currentMessages())
   if (!res.ok) {
     s.showToast(res.error)
     return false
@@ -37,9 +36,9 @@ export async function loadFromText(path: string, text: string): Promise<boolean>
   let backupPath: string | null = null
   if (res.migratedFrom !== undefined || res.warnings.length > 0) backupPath = await window.avwan.file.backup(path)
   s.loadProject(res.project, res.readOnly ? null : path, { readOnly: res.readOnly })
-  if (res.readOnly) s.showToast('Ce fichier vient d’une version plus récente d’AV·WAN : ouvert en lecture seule.')
+  if (res.readOnly) s.showToast(currentMessages().app.file.openedReadOnly)
   else if (res.warnings.length > 0) {
-    const kept = backupPath ? ` Copie de sauvegarde conservée : ${fileNameOf(backupPath)}` : ''
+    const kept = backupPath ? currentMessages().app.file.backupKept({ name: fileNameOf(backupPath) }) : ''
     s.showToast(`${res.warnings.join(' ')}${kept}`)
   }
   // Le fichier est valide : il peut entrer dans les récents (un échec ici n'empêche pas l'ouverture).
@@ -53,9 +52,9 @@ export async function restoreRecoveryAction(key: string): Promise<boolean> {
   const s = projectStore.getState()
   try {
     const restored = await window.avwan.recovery.restore(key)
-    const res = parseProjectFile(restored.text)
+    const res = parseProjectFile(restored.text, currentMessages())
     if (!res.ok) {
-      s.showToast(`Restauration impossible : ${res.error}`)
+      s.showToast(currentMessages().app.file.restoreFailed({ reason: res.error }))
       return false
     }
     s.loadProject(res.project, res.readOnly ? null : restored.path, { readOnly: res.readOnly, restored: true })
@@ -63,21 +62,20 @@ export async function restoreRecoveryAction(key: string): Promise<boolean> {
     uiStore.getState().setWelcome(false)
     const target = restored.path && !res.readOnly ? fileNameOf(restored.path) : null
     // Enregistrement automatique actif : la copie part seule dans son fichier, ou dans Documents › AV·WAN.
-    const where = uiStore.getState().autoSave
-      ? ` : elle sera enregistrée dans ${target ?? 'Documents › AV·WAN'}.`
+    const f = currentMessages().app.file
+    const message = uiStore.getState().autoSave
+      ? f.restoredAuto({ target: target ?? 'Documents › AV·WAN' })
       : target
-        ? `. Enregistrez pour la garder dans ${target}.`
-        : '. Enregistrez-la pour la garder.'
+        ? f.restoredSaveTo({ target })
+        : f.restoredSave
     projectStore
       .getState()
       .showToast(
-        res.readOnly
-          ? 'Version récupérée restaurée en lecture seule : elle vient d’une version plus récente d’AV·WAN. Utilisez « Enregistrer sous… ».'
-          : `Version récupérée restaurée${where}`
+        res.readOnly ? f.restoredReadOnly : message
       )
     return true
   } catch (e) {
-    s.showToast(`Restauration impossible : ${ipcErrorMessage(e)}`)
+    s.showToast(currentMessages().app.file.restoreFailed({ reason: ipcErrorMessage(e) }))
     return false
   }
 }
@@ -95,7 +93,7 @@ async function loadWithRecovery(file: OpenedFile): Promise<boolean> {
     }
   }
   if (newer) {
-    const question = `Une version récupérée de ${fileNameOf(file.path)}, plus récente que le fichier (${timeAgo(newer.savedAt)}), existe. Restaurer cette version ?`
+    const question = currentMessages().app.file.newerRecovery({ name: fileNameOf(file.path), ago: timeAgo(newer.savedAt) })
     if (window.confirm(question)) return restoreRecoveryAction(newer.key)
     // La copie n'est effacée qu'une fois le fichier ouvert : s'il est illisible, il reste la copie.
     const opened = await loadFromText(file.path, file.text)
@@ -111,7 +109,7 @@ export async function openProjectAction(): Promise<void> {
     const file = await window.avwan.file.open()
     if (file) await loadWithRecovery(file)
   } catch (e) {
-    projectStore.getState().showToast(`Ouverture impossible : ${ipcErrorMessage(e)}`)
+    projectStore.getState().showToast(currentMessages().app.file.openFailed({ reason: ipcErrorMessage(e) }))
   }
 }
 
@@ -121,14 +119,14 @@ export async function openRecentAction(path: string): Promise<void> {
     const file = await window.avwan.recent.open(path)
     await loadWithRecovery(file)
   } catch (e) {
-    projectStore.getState().showToast(`Ouverture impossible : ${ipcErrorMessage(e)}`)
+    projectStore.getState().showToast(currentMessages().app.file.openFailed({ reason: ipcErrorMessage(e) }))
   }
 }
 
 // Fichier ouvert par le système (double-clic, Dock, 2e instance) : même chemin que ⌘O.
 export async function openRequestAction(request: OpenRequest): Promise<boolean> {
   if ('error' in request) {
-    projectStore.getState().showToast(`Ouverture impossible : ${request.error}`)
+    projectStore.getState().showToast(currentMessages().app.file.openFailed({ reason: request.error }))
     return false
   }
   if (!confirmDiscard()) return false
@@ -137,7 +135,7 @@ export async function openRequestAction(request: OpenRequest): Promise<boolean> 
     if (opened) uiStore.getState().setWelcome(false)
     return opened
   } catch (e) {
-    projectStore.getState().showToast(`Ouverture impossible : ${ipcErrorMessage(e)}`)
+    projectStore.getState().showToast(currentMessages().app.file.openFailed({ reason: ipcErrorMessage(e) }))
     return false
   }
 }
@@ -164,7 +162,7 @@ export function saveProjectAsAction(): Promise<void> {
       // disque du fichier qu'on vient d'écrire (même nom à la casse près sous macOS et Windows).
       if (previous && previous !== path) void window.avwan.file.discardAutoCreated(previous, path).catch(() => undefined)
     } catch (e) {
-      s.showToast(`Échec de l’enregistrement : ${ipcErrorMessage(e)}`)
+      s.showToast(currentMessages().app.file.saveFailed({ reason: ipcErrorMessage(e) }))
     }
   })
 }
@@ -179,7 +177,7 @@ export async function saveProjectAction(): Promise<void> {
     projectStore.getState().markSaved(path, snapshot)
     autosave.saved()
   } catch (e) {
-    s.showToast(`Échec de l’enregistrement : ${ipcErrorMessage(e)}`)
+    s.showToast(currentMessages().app.file.saveFailed({ reason: ipcErrorMessage(e) }))
   }
 }
 
@@ -188,7 +186,7 @@ export async function saveProjectAction(): Promise<void> {
 export async function revertToOpenedAction(): Promise<boolean> {
   const s = projectStore.getState()
   const path = s.filePath
-  const none = 'Aucune version d’ouverture pour ce fichier.'
+  const none = currentMessages().app.file.noOpenedVersion
   if (!path) {
     s.showToast(none)
     return false
@@ -202,16 +200,16 @@ export async function revertToOpenedAction(): Promise<boolean> {
       s.showToast(none)
       return false
     }
-    const res = parseProjectFile(text)
+    const res = parseProjectFile(text, currentMessages())
     if (!res.ok) {
-      s.showToast(`Retour impossible : ${res.error}`)
+      s.showToast(currentMessages().app.file.revertFailed({ reason: res.error }))
       return false
     }
-    if (!window.confirm(`Revenir à la version d’ouverture de ${fileNameOf(path)} ? Les modifications faites depuis seront remplacées (⌘Z permet d’annuler).`)) return false
+    if (!window.confirm(currentMessages().app.file.revertConfirm({ name: fileNameOf(path) }))) return false
     projectStore.getState().apply(() => res.project)
     return true
   } catch (e) {
-    s.showToast(`Retour impossible : ${ipcErrorMessage(e)}`)
+    s.showToast(currentMessages().app.file.revertFailed({ reason: ipcErrorMessage(e) }))
     return false
   }
 }

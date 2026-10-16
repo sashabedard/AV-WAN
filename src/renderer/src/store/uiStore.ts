@@ -1,6 +1,7 @@
 // src/renderer/src/store/uiStore.ts
 import { createStore } from 'zustand/vanilla'
 import { useStore } from 'zustand'
+import type { Lang } from '../../../shared/i18n/lang'
 import type { PdfSection } from '../../../shared/pdfOptions'
 import type { PinnedRect } from '../canvas/pinnedView'
 
@@ -48,8 +49,13 @@ export interface UiState {
   // Réglage de l'app, pas du document : jamais remis à zéro par resetForDocument.
   autoSave: boolean
   setAutoSave(on: boolean): void
+  // Langue de l'interface (spec plan 6 § 4.2) : vient du main ; jamais remise à zéro par resetForDocument.
+  lang: Lang
+  setLang(lang: Lang): void
   resetForDocument(): void
 }
+
+const initialLang = (): Lang => (typeof window !== 'undefined' && window.avwan?.initialLang) || 'fr'
 
 export const uiStore = createStore<UiState>()((set) => ({
   welcome: true,
@@ -87,6 +93,8 @@ export const uiStore = createStore<UiState>()((set) => ({
   openComponentEditor: (state) => set({ componentEditor: state }),
   autoSave: true,
   setAutoSave: (on) => set({ autoSave: on }),
+  lang: initialLang(),
+  setLang: (lang) => set({ lang }),
   resetForDocument: () =>
     set({
       focusVlan: null,

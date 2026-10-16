@@ -8,9 +8,9 @@ import { dmxChannelsStore } from '../../store/dmxChannelsStore'
 import { createDevice, createProject } from '../../model/project'
 import { channelKey, removeList, resolveChannels, upsertList, type ChannelKey } from '../../model/dmxChannels'
 import { fileTextOf } from '../../app/fileText'
-import type { Device, DeviceTemplate, Project } from '../../model/types'
+import type { Device, StoredTemplate, Project } from '../../model/types'
 
-const LYRE: DeviceTemplate = {
+const LYRE: StoredTemplate = {
   id: 'custom-lyre000001', category: 'eclairage', name: 'Lyre', code: 'MH', icon: { kind: 'builtin', name: 'fixture' },
   ports: [{ id: 'DMX-IN', label: 'DMX IN', connector: 'dmx' }],
   dmx: { footprint: 3, modes: [{ name: '3CH', channels: 3, params: ['Dimmer', 'Pan', 'Tilt'] }, { name: '2CH', channels: 2 }] },
@@ -18,9 +18,9 @@ const LYRE: DeviceTemplate = {
 }
 
 function project(): Project {
-  let p: Project = { ...createProject(new Date(2026, 9, 15)), templates: [LYRE] }
+  let p: Project = { ...createProject(new Date(2026, 9, 15), 'fr'), templates: [LYRE] }
   const add = (id: string, templateId: string, extra: Partial<Device> = {}): void => {
-    p = { ...p, devices: [...p.devices, { ...createDevice(p, templateId, { x: 0, y: 0 }, { id }), ...extra }] }
+    p = { ...p, devices: [...p.devices, { ...createDevice(p, templateId, { x: 0, y: 0 }, { lang: 'fr', id }), ...extra }] }
   }
   add('a', LYRE.id)
   add('b', LYRE.id)
@@ -82,7 +82,7 @@ describe('inspecteur : canaux DMX', () => {
 
   it('appareil placé : ⌘Z après la première modification ramène le nom d’avant', async () => {
     const user = userEvent.setup()
-    projectStore.getState().loadProject({ ...createProject(new Date(2026, 9, 15)), templates: [LYRE] }, null)
+    projectStore.getState().loadProject({ ...createProject(new Date(2026, 9, 15), 'fr'), templates: [LYRE] }, null)
     const id = projectStore.getState().addDevice(LYRE.id, { x: 0, y: 0 })
     select(id)
     render(<Inspector />)

@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { setMainLang } from './lang'
 import { manualCheckMessage, updateErrorMessage } from './updateMessages'
 
 describe('manualCheckMessage', () => {
@@ -25,5 +26,18 @@ describe('updateErrorMessage', () => {
     const long = updateErrorMessage(new Error('x'.repeat(200)))
     expect(long.startsWith('Erreur inattendue du service de mises à jour.')).toBe(true)
     expect(long).toBe(`Erreur inattendue du service de mises à jour. (${'x'.repeat(80)})`)
+  })
+})
+
+describe('en anglais', () => {
+  it('parle anglais quand le main est en anglais', () => {
+    setMainLang('en')
+    try {
+      expect(manualCheckMessage({ kind: 'up-to-date', current: '1.3.0' })).toEqual({ message: 'AV·WAN is up to date (1.3.0).' })
+      expect(manualCheckMessage({ kind: 'store' })).toEqual({ message: 'AV·WAN updates come from the Microsoft Store.', detail: 'Microsoft Store › Library › Get updates.' })
+      expect(updateErrorMessage(new Error('getaddrinfo ENOTFOUND api.github.com'))).toBe('No Internet connection, or GitHub is unreachable.')
+    } finally {
+      setMainLang('fr')
+    }
   })
 })

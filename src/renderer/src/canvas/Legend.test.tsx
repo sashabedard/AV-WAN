@@ -4,6 +4,9 @@ import { cleanup, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { Legend } from './Legend'
 import { projectStore } from '../store/projectStore'
+import { act } from 'react'
+import { mediumKindLabels } from './cordStyle'
+import { messages } from '../../../shared/i18n/messages'
 import { uiStore } from '../store/uiStore'
 import { sampleProject } from '../model/__fixtures__/sample'
 
@@ -36,5 +39,21 @@ describe('Legend', () => {
     expect(ndi.getAttribute('aria-pressed')).toBe('true')
     await user.click(ndi)
     expect(uiStore.getState().focusVlan).toBeNull()
+  })
+
+  it('affiche la légende en anglais', async () => {
+    act(() => uiStore.getState().setLang('en'))
+    try {
+      const user = userEvent.setup()
+      render(<Legend />)
+      expect(screen.getByText('Trunk (rings = VLAN)')).toBeTruthy()
+      expect(screen.getByText('No VLAN')).toBeTruthy()
+      const modes = screen.getByRole('group', { name: 'Color mode' })
+      await user.click(within(modes).getByRole('button', { name: 'Type' }))
+      expect(screen.getByText('Singlemode fiber')).toBeTruthy()
+      expect(mediumKindLabels(messages('en')).copper).toBe('Copper')
+    } finally {
+      act(() => uiStore.getState().setLang('fr'))
+    }
   })
 })

@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import type { SwitchSpec } from '../model/types'
-import { POE_CHOICES, SWITCH_PORT_COUNTS, defaultPoeBudget, switchSummary } from '../catalog/switch'
+import { SWITCH_PORT_COUNTS, defaultPoeBudget, poeChoices, switchSummary } from '../catalog/switch'
 import { Segmented } from './Segmented'
+import { useT } from '../i18n/useT'
 import './panels.css'
 
 export function withBudget(spec: SwitchSpec, touched: boolean): SwitchSpec {
@@ -24,6 +25,7 @@ const PORT_OPTIONS = SWITCH_PORT_COUNTS.map((n) => ({ value: String(n), label: S
 const SFP_OPTIONS = [0, 2, 4].map((n) => ({ value: String(n), label: String(n) }))
 
 export function SwitchConfigurator({ initial, submitLabel, onSubmit, onCancel }: SwitchConfiguratorProps) {
+  const { m } = useT()
   const [touched, setTouched] = useState(
     initial.poeBudgetW !== undefined && initial.poeBudgetW !== defaultPoeBudget(initial.portCount, initial.poe)
   )
@@ -43,7 +45,7 @@ export function SwitchConfigurator({ initial, submitLabel, onSubmit, onCancel }:
       ref={formRef}
       className="cfg"
       role="dialog"
-      aria-label="Configurer le switch"
+      aria-label={m.switchConfigurator.dialog}
       onSubmit={submit}
       onKeyDown={(e) => {
         if (e.key !== 'Escape') return
@@ -51,29 +53,29 @@ export function SwitchConfigurator({ initial, submitLabel, onSubmit, onCancel }:
         onCancel()
       }}
     >
-      <h2 className="cfg__title">Switch</h2>
+      <h2 className="cfg__title">{m.switchConfigurator.title}</h2>
       <div className="field">
-        <span className="field__label">Ports</span>
+        <span className="field__label">{m.switchConfigurator.ports}</span>
         <Segmented
-          ariaLabel="Nombre de ports"
+          ariaLabel={m.switchConfigurator.portCount}
           options={PORT_OPTIONS}
           value={String(spec.portCount)}
           onChange={(v) => update({ portCount: Number(v) as SwitchSpec['portCount'] })}
         />
       </div>
       <div className="field">
-        <span className="field__label">PoE</span>
-        <Segmented ariaLabel="PoE" options={POE_CHOICES} value={spec.poe} onChange={(v) => update({ poe: v })} />
+        <span className="field__label">{m.switchConfigurator.poe}</span>
+        <Segmented ariaLabel={m.switchConfigurator.poe} options={poeChoices(m)} value={spec.poe} onChange={(v) => update({ poe: v })} />
       </div>
       {spec.poe !== 'none' && (
         <label className="field">
-          <span className="field__label">Budget PoE (W)</span>
+          <span className="field__label">{m.switchConfigurator.poeBudget}</span>
           <input
             className="input"
             type="number"
             min={0}
             step={1}
-            aria-label="Budget PoE en watts"
+            aria-label={m.switchConfigurator.poeBudgetLabel}
             value={spec.poeBudgetW ?? ''}
             onChange={(e) => {
               setTouched(true)
@@ -89,21 +91,21 @@ export function SwitchConfigurator({ initial, submitLabel, onSubmit, onCancel }:
       <div className="field">
         <span className="field__label">SFP+</span>
         <Segmented
-          ariaLabel="Cages SFP+"
+          ariaLabel={m.switchConfigurator.sfpCages}
           options={SFP_OPTIONS}
           value={String(spec.sfpPlus)}
           onChange={(v) => update({ sfpPlus: Number(v) as SwitchSpec['sfpPlus'] })}
         />
       </div>
       <label className="field--inline">
-        <input type="checkbox" checked={spec.managed} onChange={(e) => update({ managed: e.target.checked })} /> Géré (VLAN, IGMP)
+        <input type="checkbox" checked={spec.managed} onChange={(e) => update({ managed: e.target.checked })} /> {m.switchConfigurator.managed}
       </label>
       <p className="cfg__summary" data-testid="cfg-summary">
-        {switchSummary(spec)}
+        {switchSummary(spec, m)}
       </p>
       <div className="actions">
         <button type="button" className="btn" onClick={onCancel}>
-          Annuler
+          {m.switchConfigurator.cancel}
         </button>
         <button type="submit" className="btn btn--primary">
           {submitLabel}

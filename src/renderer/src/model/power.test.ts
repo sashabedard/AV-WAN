@@ -12,7 +12,7 @@ const link = (id: string, a: [string, string], b: [string, string], medium: Link
 function bench(): Project {
   const strip = { type: 'cob' as const, volts: 24, wPerM: 14.4, lengthM: 10 }
   return {
-    ...createProject(new Date(2026, 9, 14)),
+    ...createProject(new Date(2026, 9, 14), 'fr'),
     devices: [
       dev('psu', 'PSU-1', { ports: [dc('DC-OUT-1'), dc('DC-OUT-2'), dc('DC-OUT-3'), dc('DC-OUT-4')], psu: { volts: 24, amps: 15 } }),
       dev('led1', 'LED-1', { ports: [dc('DC-IN')], ledStrip: strip }),
@@ -104,10 +104,10 @@ describe('feedingPsu et poeFeeder', () => {
   it('trouve l’alimentation d’une bande, et le switch d’un appareil PoE', () => {
     expect(feedingPsu(bench(), 'led2')?.name).toBe('PSU-1')
     expect(feedingPsu(bench(), 'psu')).toBeUndefined()
-    let p = createProject()
-    const sw = createDevice(p, 'switch', { x: 0, y: 0 }, { id: 'sw' })
+    let p = createProject(undefined, 'fr')
+    const sw = createDevice(p, 'switch', { x: 0, y: 0 }, { lang: 'fr', id: 'sw' })
     p = { ...p, devices: [sw] }
-    const cam = createDevice(p, 'ip-camera', { x: 0, y: 0 }, { id: 'cam' })
+    const cam = createDevice(p, 'ip-camera', { x: 0, y: 0 }, { lang: 'fr', id: 'cam' })
     p = { ...p, devices: [sw, cam], links: [link('e1', ['sw', '1'], ['cam', 'ETH'], 'cat6')] }
     expect(poeFeeder(p, 'cam')?.id).toBe('sw')
     expect(poeFeeder(p, 'sw')).toBeUndefined()
@@ -121,7 +121,7 @@ function pixlite(): Project {
   const strip = { type: 'sk6812-rgbw' as const, volts: 24, wPerM: 18, lengthM: 10, pxPerM: 60 }
   const led = (id: string, name: string): Device => dev(id, name, { templateId: 'led-strip', ports: [px('IN'), dc('DC-IN')], ledStrip: strip })
   return {
-    ...createProject(new Date(2026, 9, 14)),
+    ...createProject(new Date(2026, 9, 14), 'fr'),
     devices: [
       dev('psu', 'PSU-1', { ports: [dc('DC-OUT-1')], psu: { volts: 24, watts: 300 } }),
       dev('psu2', 'PSU-2', { ports: [dc('DC-OUT-1')], psu: { volts: 24, watts: 300 } }),
@@ -169,7 +169,7 @@ describe('bandes alimentées par le contrôleur de pixels', () => {
 
 describe('mainsVoltage', () => {
   it('120 V par défaut', () => {
-    const p = createProject()
+    const p = createProject(undefined, 'fr')
     expect(mainsVoltage(p)).toBe(120)
     expect(mainsVoltage({ ...p, settings: { ...p.settings, mainsVoltage: 230 } })).toBe(230)
   })

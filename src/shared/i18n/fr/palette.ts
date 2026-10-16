@@ -1,0 +1,25 @@
+// Palette d’appareils (panneau de gauche).
+export const palette = {
+  navLabel: 'Palette d’appareils',
+  filterLabel: 'Filtrer les appareils',
+  filterPlaceholder: 'Filtrer…',
+  itemTitle: 'Glisser sur le canvas, ou cliquer puis cliquer sur le canvas',
+  zoneTool: 'Zone',
+  zoneToolTitle: 'Cliquer puis cliquer sur le canvas · ⌘G : une zone autour de la sélection',
+  resultsLabel: 'Résultats du filtre',
+  noMatch: 'Aucun appareil ne correspond.',
+  mine: 'Mes composantes',
+  newComponent: 'Nouvelle composante',
+  mineHint: 'Créez vos propres appareils avec +.',
+  thisProject: 'Ce projet',
+  addToLibrary: (p: { name: string }) => `Ajouter ${p.name} à ma bibliothèque`,
+  addToLibraryTitle: 'Ajouter à ma bibliothèque',
+  actionsFor: (p: { name: string }) => `Actions pour ${p.name}`,
+  edit: 'Modifier',
+  duplicate: 'Dupliquer',
+  remove: 'Supprimer',
+  confirmRemove: (p: { name: string }) => `Supprimer « ${p.name} » de votre bibliothèque ? Les projets qui l’utilisent la gardent.`,
+  duplicateFailed: (p: { detail: string }) => `Duplication impossible : ${p.detail}`,
+  removeFailed: (p: { detail: string }) => `Suppression impossible : ${p.detail}`,
+  addFailed: (p: { detail: string }) => `Ajout impossible : ${p.detail}`
+} as const
