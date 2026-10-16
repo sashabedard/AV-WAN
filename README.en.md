@@ -15,7 +15,7 @@
   <img alt="Status: plan 4 complete" src="https://img.shields.io/badge/status-plan%204%20complete-F2A93B?style=flat-square&labelColor=1D2125">
   <img alt="macOS and Windows, offline" src="https://img.shields.io/badge/macOS%20%C2%B7%20Windows-offline-8E969F?style=flat-square&labelColor=1D2125">
   <img alt="Electron, React, React Flow" src="https://img.shields.io/badge/Electron%20%C2%B7%20React%20%C2%B7%20React%20Flow-3E8EF7?style=flat-square&labelColor=1D2125">
-  <img alt="Interface in French and English" src="https://img.shields.io/badge/interface-fran%C3%A7ais%20%C2%B7%20anglais-3DBE6E?style=flat-square&labelColor=1D2125">
+  <img alt="Interface in French and English" src="https://img.shields.io/badge/interface-French%20%C2%B7%20English-3DBE6E?style=flat-square&labelColor=1D2125">
 </p>
 
 ## Download
@@ -23,10 +23,11 @@
 Latest version: the [Releases](https://github.com/sashabedard/AV-WAN/releases/latest) page, with a one-page installation guide (PDF).
 
 - **macOS 13 and later** (Intel and Apple Silicon): `AV-WAN-<version>-universal.dmg`. Drag AV·WAN into Applications. The app is signed and verified by Apple.
-- **Windows 10 and 11**: `AV-WAN-<version>-setup.exe`, no administrator rights needed.
+- **Windows 10 and 11**: [**Microsoft Store**](https://apps.microsoft.com/detail/9NR2WJRZZ5JG) (recommended). Installed and updated by the Store, with no warning.
+- **Windows 10 and 11, alternative**: `AV-WAN-<version>-setup.exe` from the Releases page, no administrator rights needed.
 
 > [!WARNING]
-> **Windows: on first launch, a blue "Windows protected your PC" window appears.** This is expected, because the installer is not signed. Click **More info**, then **Run anyway**. A Microsoft Store version without this warning is coming soon.
+> **Windows: prefer the Microsoft Store, with no warning.** With the `setup.exe` installer, a blue "Windows protected your PC" window appears on first launch. This is expected, because the installer is not signed: click **More info**, then **Run anyway**.
 
 AV·WAN updates itself: the new version downloads in the background, then a banner offers **Restart now**. Use **Help › Check for Updates…** to check right away.
 
