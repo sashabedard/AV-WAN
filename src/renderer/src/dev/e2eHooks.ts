@@ -2,6 +2,7 @@ import type { FitViewOptions, ReactFlowInstance } from '@xyflow/react'
 import type { Project } from '../model/types'
 import type { CordFlowEdge, FlowNode } from '../canvas/toFlow'
 import { projectStore, type Selection } from '../store/projectStore'
+import { uiStore } from '../store/uiStore'
 import { serializeProject } from '../model/file'
 import { loadFromText } from '../app/fileActions'
 import { handleMenuAction } from '../app/menuActions'
@@ -20,6 +21,7 @@ export function registerFlowInstance(instance: ReactFlowInstance<FlowNode, CordF
 export interface E2EHooks {
   getProject(): Project
   select(selection: Selection): void
+  setView(view: 'schema' | 'racks'): void
   loadStress(): void
   loadRenderFixture(): void
   fitView(padding?: FitViewOptions['padding']): Promise<boolean>
@@ -34,6 +36,7 @@ export function installE2EHooks(): void {
   window.__avwan = {
     getProject: () => projectStore.getState().history.present,
     select: (selection) => projectStore.getState().setSelection(selection),
+    setView: (view) => uiStore.getState().setView(view),
     menu: (action) => handleMenuAction(action),
     loadStress: () => projectStore.getState().loadProject(makeStressProject(), null),
     loadRenderFixture: () => projectStore.getState().loadProject(makeRenderFixture(), null),

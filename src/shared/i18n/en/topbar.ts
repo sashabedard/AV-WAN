@@ -6,6 +6,9 @@ export const topbar: Messages['topbar'] = {
   menuTitle: 'File, Edit, View, Help',
   unsaved: 'Unsaved changes',
   readOnly: 'Read-only',
+  view: 'View',
+  viewSchema: 'Diagram',
+  viewRacks: 'Racks',
   export: 'Export',
   exportTitle: 'Export the PDF, CSV or Excel workbook (⌘E)'
 }

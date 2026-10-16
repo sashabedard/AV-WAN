@@ -222,3 +222,13 @@ describe('presse-papier : listes de canaux DMX', () => {
     expect(pasteFragment(mine, f, { x: 10, y: 10 }).project.dmxChannels).toEqual([{ ...WASH, params: ['Mine'] }])
   })
 })
+
+describe('pasteFragment et baie', () => {
+  it("la copie d'un appareil placé n'a pas de placement", () => {
+    const p = sampleProject()
+    p.devices[1] = { ...p.devices[1]!, rack: { rackId: 'r1', u: 1, heightU: 1 } }
+    const r = pasteFragment(p, copyFragment(p, ['cam1'])!, { x: 10, y: 10 }, ids())
+    expect(r.project.devices.find((d) => d.id === r.deviceIds[0])!.rack).toBeUndefined()
+    expect(r.project.devices.find((d) => d.id === 'cam1')!.rack).toBeDefined()
+  })
+})

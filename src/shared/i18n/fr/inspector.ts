@@ -110,6 +110,32 @@ export const inspector = {
     remove: 'Retirer ce VLAN',
     confirmRemove: (p: { id: number }) => `Retirer le VLAN ${p.id} du projet ? Les ports qui l’utilisent gardent leur réglage.`
   },
+  rack: {
+    title: 'Baie',
+    rack: 'Baie',
+    rackAria: 'Baie de l’appareil',
+    none: '— pas en baie —',
+    bottomU: 'U du bas',
+    bottomUAria: 'U du bas de l’appareil',
+    heightU: 'Hauteur (U)',
+    heightUAria: 'Hauteur de l’appareil en U',
+    remove: 'Retirer de la baie',
+    intToast: (p: { label: string; min: number; max: number }) => `${p.label} : un nombre entier de ${p.min} à ${p.max}.`
+  },
+  rackForm: {
+    title: 'Baie',
+    name: 'Nom',
+    nameAria: 'Nom de la baie',
+    zone: 'Zone',
+    zoneAria: 'Zone de la baie',
+    noZone: '— aucune —',
+    height: 'Hauteur (U)',
+    heightAria: 'Hauteur de la baie en U',
+    members: (p: { n: number }) => `${p.n} appareil${frPlural(p.n, '', 's')} dans cette baie.`,
+    empty: 'Aucun appareil dans cette baie.',
+    delete: 'Supprimer la baie',
+    hint: 'Supprimer la baie remet ses appareils dans la liste « Pas encore en baie ».'
+  },
   zone: {
     title: 'Zone',
     name: 'Nom',

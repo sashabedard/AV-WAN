@@ -13,9 +13,7 @@ import {
   applyNodeChanges,
   useNodesInitialized,
   useReactFlow,
-  type Connection,
   type EdgeChange,
-  type FinalConnectionState,
   type NodeChange,
   type OnNodeDrag,
   type OnSelectionChangeParams,
@@ -28,7 +26,7 @@ import { currentMessages, useT } from '../i18n/useT'
 import { TEMPLATE_MIME } from '../panels/Palette'
 import { analyzeLinks, createFlowCache, toFlowEdges, toFlowNodes, toFlowZones, type CordFlowEdge, type FlowNode } from './toFlow'
 import { GRID, mergeEdges, mergeNodes, nodesMatchDerived, snapPoint, syncSelected } from './canvasHelpers'
-import { clientPoint, connectionRefs, dropOnDevice, makeIsValidConnection, nodeIdAt, reconnectEnd, dropReconnectOnDevice, dropUnplugs, overPaneAt } from './connect'
+import { useCableHandlers } from './useCableHandlers'
 import { useAltKey } from './useAltKey'
 import { FIT_OPTIONS, pinCurrentView, registerViewport } from './viewport'
 import { arrowDelta, nudgeMoves } from './keyboard'
@@ -52,6 +50,7 @@ import { clampPopover } from './popover'
 import { useDismissOnOutside } from '../panels/useDismiss'
 import { Icon } from '../icons/Icon'
 import { registerFlowInstance } from '../dev/e2eHooks'
+import { useMountedRef } from './useMountedRef'
 import './canvas.css'
 
 const nodeTypes = { device: DeviceNode, switch: SwitchNode, zone: ZoneNode }
@@ -99,7 +98,10 @@ function CanvasInner() {
   const cancelSwitch = useCallback(() => uiStore.getState().setPendingSwitch(null), [])
   useDismissOnOutside(popover, pendingSwitch !== null, cancelSwitch)
   const alt = useAltKey()
-  const { screenToFlowPosition, fitView } = useReactFlow()
+  const { screenToFlowPosition, fitView, getViewport } = useReactFlow()
+  // La vue Baies remplace le canvas : il garde son cadrage pour le retrouver au retour (spec § 8.8).
+  const [savedViewport] = useState(() => uiStore.getState().schemaViewport)
+  useEffect(() => () => uiStore.getState().setSchemaViewport(getViewport()), [getViewport])
   const onInit = useCallback((instance: ReactFlowInstance<FlowNode, CordFlowEdge>) => {
     registerFlowInstance(instance)
     registerViewport(instance, wrapper.current)
@@ -109,7 +111,7 @@ function CanvasInner() {
   const docId = useProjectStore((s) => s.docId)
   const nodesReady = useNodesInitialized()
   const nodesForDoc = nodesMatchDerived(nodes, derivedNodes)
-  const fittedDoc = useRef<number | null>(null)
+  const fittedDoc = useRef<number | null>(savedViewport ? docId : null)
   useEffect(() => {
     if (fittedDoc.current === docId) return
     const p = projectStore.getState().history.present
@@ -145,14 +147,17 @@ function CanvasInner() {
     zoneDrag.current = null
     projectStore.getState().moveSelection(selectionMoves(zd, dragged))
   }, [])
+  // Au retour de la vue Baies, le canvas remonte : sa sélection vide du montage ne doit pas effacer celle du projet.
+  const mounted = useMountedRef()
   const onSelectionChange = useCallback(({ nodes: ns, edges: es }: OnSelectionChangeParams<FlowNode, CordFlowEdge>) => {
+    if (!mounted.current) return
     if (ns.length + es.length > 0) uiStore.getState().setInspectVlan(null)
     projectStore.getState().setSelection({
       deviceIds: ns.filter((n) => !isZone(n)).map((n) => n.id),
       linkIds: es.map((e) => e.id),
       zoneIds: ns.filter(isZone).map((n) => n.id)
     })
-  }, [])
+  }, [mounted])
   const onDelete = useCallback(({ nodes: ns, edges: es }: { nodes: FlowNode[]; edges: CordFlowEdge[] }) => {
     projectStore.getState().removeElements(
       ns.filter((n) => !isZone(n)).map((n) => n.id),
@@ -161,53 +166,7 @@ function CanvasInner() {
     )
   }, [])
 
-  const isValidConnection = useMemo(
-    () =>
-      makeIsValidConnection(
-        () => projectStore.getState().history.present,
-        () => uiStore.getState().reconnectingLinkId,
-        () => uiStore.getState().pointerOverPinned
-      ),
-    []
-  )
-  const onReconnectStart = useCallback((_e: ReactMouseEvent, edge: CordFlowEdge) => uiStore.getState().setReconnecting(edge.id), [])
-  const onReconnect = useCallback((oldEdge: CordFlowEdge, c: Connection) => {
-    const s = projectStore.getState()
-    const link = s.history.present.links.find((l) => l.id === oldEdge.id)
-    const move = link ? reconnectEnd(link, c) : null
-    if (move) s.reconnect(oldEdge.id, move.end, move.to)
-  }, [])
-  const onReconnectEnd = useCallback(() => uiStore.getState().setReconnecting(null), [])
-  const onConnect = useCallback((c: Connection) => {
-    const refs = connectionRefs(c)
-    if (refs) projectStore.getState().connect(refs[0], refs[1])
-  }, [])
-  const onConnectEnd = useCallback((event: MouseEvent | TouchEvent, state: FinalConnectionState) => {
-    if (state.isValid || !state.fromNode || !state.fromHandle?.id) return
-    const point = clientPoint(event)
-    if (!point) return
-    const targetId = nodeIdAt(document, point)
-    const s = projectStore.getState()
-    // onConnectEnd part avant onReconnectEnd : l'identifiant du câble est encore là.
-    const reconnecting = uiStore.getState().reconnectingLinkId
-    if (reconnecting && dropUnplugs(reconnecting, targetId, overPaneAt(document, point), uiStore.getState().pointerOverPinned)) {
-      s.removeElements([], [reconnecting])
-      const undo = window.avwan?.platform === 'darwin' ? '⌘Z' : 'Ctrl+Z'
-      s.showToast(currentMessages().app.toast.cableUnplugged({ undo }))
-      return
-    }
-    if (!targetId) return
-    const from = { deviceId: state.fromNode.id, portId: state.fromHandle.id }
-    if (reconnecting) {
-      const r = dropReconnectOnDevice(s.history.present, reconnecting, from, targetId)
-      if (r.ok) s.reconnect(reconnecting, r.end, r.to)
-      else if (r.message) s.showToast(r.message)
-      return
-    }
-    const res = dropOnDevice(s.history.present, from, targetId)
-    if (res.ok) s.connect(from, res.to)
-    else if (res.message) s.showToast(res.message)
-  }, [])
+  const { isValidConnection, onReconnectStart, onReconnect, onReconnectEnd, onConnect, onConnectEnd } = useCableHandlers()
 
   const place = useCallback(
     (templateId: string, client: { x: number; y: number }, alt = false) => {
@@ -314,6 +273,7 @@ function CanvasInner() {
       <ReactFlow<FlowNode, CordFlowEdge>
         nodes={nodes}
         onInit={onInit}
+        {...(savedViewport ? { defaultViewport: savedViewport } : {})}
         multiSelectionKeyCode={MULTI_SELECT_KEYS}
         disableKeyboardA11y
         nodeTypes={nodeTypes}

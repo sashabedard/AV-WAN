@@ -43,3 +43,21 @@ describe('uiStore · vue épinglée', () => {
     uiStore.getState().setLang('fr')
   })
 })
+
+describe('uiStore · vue Schéma | Baies', () => {
+  it('view survit à newProject ; racksViewport est remis à zéro', () => {
+    uiStore.getState().setView('racks')
+    uiStore.getState().setRacksViewport({ x: 1, y: 2, zoom: 1 })
+    projectStore.getState().newProject()
+    expect(uiStore.getState().view).toBe('racks')
+    expect(uiStore.getState().racksViewport).toBeNull()
+    uiStore.getState().setView('schema')
+  })
+
+  it('schemaViewport (cadrage du schéma gardé quand il est démonté) est remis à zéro par newProject', () => {
+    uiStore.getState().setSchemaViewport({ x: 3, y: 4, zoom: 0.5 })
+    expect(uiStore.getState().schemaViewport).toEqual({ x: 3, y: 4, zoom: 0.5 })
+    projectStore.getState().newProject()
+    expect(uiStore.getState().schemaViewport).toBeNull()
+  })
+})

@@ -110,6 +110,32 @@ export const inspector: Messages['inspector'] = {
     remove: 'Remove this VLAN',
     confirmRemove: (p) => `Remove VLAN ${p.id} from the project? Ports that use it keep their setting.`
   },
+  rack: {
+    title: 'Rack',
+    rack: 'Rack',
+    rackAria: 'Device rack',
+    none: '— not in a rack —',
+    bottomU: 'Bottom U',
+    bottomUAria: 'Device bottom U',
+    heightU: 'Height (U)',
+    heightUAria: 'Device height in U',
+    remove: 'Remove from rack',
+    intToast: (p) => `${p.label}: a whole number from ${p.min} to ${p.max}.`
+  },
+  rackForm: {
+    title: 'Rack',
+    name: 'Name',
+    nameAria: 'Rack name',
+    zone: 'Zone',
+    zoneAria: 'Rack zone',
+    noZone: '— none —',
+    height: 'Height (U)',
+    heightAria: 'Rack height in U',
+    members: (p) => `${p.n} device${enPlural(p.n, '', 's')} in this rack.`,
+    empty: 'No device in this rack.',
+    delete: 'Delete rack',
+    hint: 'Deleting the rack puts its devices back in the “Not in a rack yet” list.'
+  },
   zone: {
     title: 'Zone',
     name: 'Name',

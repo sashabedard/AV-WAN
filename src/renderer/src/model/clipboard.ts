@@ -104,7 +104,7 @@ export function pasteFragment(
   for (const d of fragment.devices) {
     const id = makeId()
     idMap.set(d.id, id)
-    const { zoneId: _zone, hostname: _host, ip, ...rest } = structuredClone(d)
+    const { zoneId: _zone, hostname: _host, rack: _rack, ip, ...rest } = structuredClone(d)
     const copy: Device = {
       ...rest,
       id,

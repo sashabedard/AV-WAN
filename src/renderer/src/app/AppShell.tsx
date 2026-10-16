@@ -7,11 +7,14 @@ import { ComponentEditor } from '../panels/ComponentEditor'
 import { Sidebar } from '../panels/Sidebar'
 import { Inspector } from '../panels/Inspector'
 import { Canvas } from '../canvas/Canvas'
+import { RackView } from '../racks/RackView'
+import { useUiStore } from '../store/uiStore'
 import { UpdateBanner } from './UpdateBanner'
 import { SidebarResizer } from './SidebarResizer'
 
 export function AppShell() {
   const { m } = useT()
+  const view = useUiStore((s) => s.view)
   return (
     <div className="shell">
       <TopBar />
@@ -20,7 +23,7 @@ export function AppShell() {
       </aside>
       <SidebarResizer />
       <main className="shell__center">
-        <Canvas />
+        {view === 'racks' ? <RackView /> : <Canvas />}
         <UpdateBanner />
       </main>
       <aside className="shell__right" aria-label={m.app.shell.inspector}>

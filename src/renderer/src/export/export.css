@@ -10,3 +10,4 @@
 .xd__actions { display: flex; justify-content: flex-end; gap: 8px; }
 .xd__data { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding-top: 12px; border-top: 1px solid var(--line); }
 .xd__data .xd__legend { flex-basis: 100%; }
+.xd__note { margin: 6px 0 0; font: 12px/1.4 var(--font-mono); color: var(--muted); }

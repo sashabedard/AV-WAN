@@ -5,6 +5,8 @@ import { PrintDocument } from './PrintDocument'
 import { createExampleProject } from '../samples/exampleProject'
 import { createProject } from '../model/project'
 import { LangOverrideProvider } from '../i18n/useT'
+import { rackSample } from '../racks/__fixtures__/rackSample'
+import type { Device, Link, Project } from '../model/types'
 
 afterEach(() => {
   cleanup()
@@ -62,5 +64,67 @@ describe('PrintDocument', () => {
     expect(screen.getByRole('heading', { name: 'Device sheets' })).toBeTruthy()
     expect(document.querySelector('.print style')!.textContent).toContain('"Rev. ')
     expect(screen.queryByText(/Aucun|Fiches|Statut/)).toBeNull()
+  })
+})
+
+describe('PrintDocument — élévations de baie', () => {
+  const stubFlowGlobals = () => {
+    vi.stubGlobal('ResizeObserver', class { observe(): void {} unobserve(): void {} disconnect(): void {} })
+    vi.stubGlobal('DOMMatrixReadOnly', class { m22 = 1 })
+  }
+  const pages = () => [...document.querySelectorAll('.pg--diagram')]
+
+  it('une page par baie et par variante cochée, baie par baie', () => {
+    stubFlowGlobals()
+    const p = rackSample()
+    const project: Project = { ...p, racks: [...p.racks!, { id: 'r2', name: 'BAIE-2', heightU: 6 }] }
+    render(<PrintDocument project={project} options={{ sections: ['baies', 'baies-cables'], format: 'na', zonePages: false, lang: 'fr' }} onReady={() => undefined} />)
+    expect(pages()).toHaveLength(4)
+    expect(pages().map((el) => el.querySelector('.pg__foot')!.textContent)).toEqual([
+      expect.stringContaining('Élévation · BAIE-1 · Régie · 12U'),
+      expect.stringContaining('Élévation · BAIE-1 · Régie · 12U'),
+      expect.stringContaining('Élévation · BAIE-2 · 6U'),
+      expect.stringContaining('Élévation · BAIE-2 · 6U')
+    ])
+  })
+
+  it('seulement « propre » : une page par baie ; aucune baie : aucune page', () => {
+    stubFlowGlobals()
+    render(<PrintDocument project={rackSample()} options={{ sections: ['baies'], format: 'na', zonePages: false, lang: 'fr' }} onReady={() => undefined} />)
+    expect(pages()).toHaveLength(1)
+    cleanup()
+    render(<PrintDocument project={createProject(undefined, 'fr')} options={{ sections: ['baies', 'baies-cables'], format: 'na', zonePages: false, lang: 'fr' }} onReady={() => undefined} />)
+    expect(pages()).toHaveLength(0)
+  })
+
+  it('en anglais : titre de page en anglais', () => {
+    stubFlowGlobals()
+    render(
+      <LangOverrideProvider lang="en">
+        <PrintDocument project={rackSample()} options={{ sections: ['baies'], format: 'na', zonePages: false, lang: 'en' }} onReady={() => undefined} />
+      </LangOverrideProvider>
+    )
+    expect(pages()[0]!.querySelector('.pg__foot')!.textContent).toContain('Elevation · BAIE-1')
+  })
+
+  it('plus de 40 câbles dans la baie : l’élévation câblée devient propre avec un bandeau', () => {
+    stubFlowGlobals()
+    const base = rackSample()
+    const devices: Device[] = Array.from({ length: 14 }, (_, i) => ({
+      id: `d${i}`,
+      templateId: 'show-mac',
+      name: `D-${i}`,
+      position: { x: 0, y: 0 },
+      portSide: 'auto',
+      ports: Array.from({ length: 6 }, (_k, k) => ({ id: `P${k}`, label: `P${k}`, connector: 'rj45' as const, speedMbps: 1000 })),
+      portState: {},
+      rack: { rackId: 'r1', u: i + 1, heightU: 1 }
+    }))
+    const links: Link[] = []
+    for (let i = 0; i < 14; i += 2) for (let k = 0; k < 6; k++) links.push({ id: `l${i}-${k}`, cableId: `C-${i}-${k}`, a: { deviceId: `d${i}`, portId: `P${k}` }, b: { deviceId: `d${i + 1}`, portId: `P${k}` }, medium: 'cat6' })
+    const project: Project = { ...base, racks: [{ id: 'r1', name: 'BAIE-1', heightU: 24 }], devices, links }
+    render(<PrintDocument project={project} options={{ sections: ['baies-cables'], format: 'na', zonePages: false, lang: 'fr' }} onReady={() => undefined} />)
+    expect(screen.getByText('Trop de câbles pour cette échelle — voir la liste de branchement.')).toBeTruthy()
+    expect(document.querySelectorAll('.react-flow__edge').length).toBe(0)
   })
 })

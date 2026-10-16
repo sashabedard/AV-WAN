@@ -49,6 +49,8 @@ export const app: Messages['app'] = {
     reconnectImpossible: 'Cannot reconnect: port in use or connectors incompatible.',
     cableUnplugged: (p) => `Cable unplugged · ${p.undo} to undo`,
     vlanExists: (p) => `VLAN ${p.id} already exists.`,
-    vlanInvalid: 'Invalid VLAN number: choose a number from 1 to 4094.'
+    vlanInvalid: 'Invalid VLAN number: choose a number from 1 to 4094.',
+    rackNoRoom: 'Not enough free U there.',
+    rackTooShort: 'The rack is too short for its devices.'
   }
 }

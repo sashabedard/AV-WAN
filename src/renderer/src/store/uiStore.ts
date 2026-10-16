@@ -52,6 +52,14 @@ export interface UiState {
   // Langue de l'interface (spec plan 6 § 4.2) : vient du main ; jamais remise à zéro par resetForDocument.
   lang: Lang
   setLang(lang: Lang): void
+  // Vue Schéma | Baies : propre à la fenêtre, jamais remise à zéro par resetForDocument.
+  view: 'schema' | 'racks'
+  setView(v: 'schema' | 'racks'): void
+  racksViewport: { x: number; y: number; zoom: number } | null
+  setRacksViewport(v: { x: number; y: number; zoom: number } | null): void
+  // Cadrage du schéma gardé pendant que la vue Baies le remplace (spec § 8.8) ; null = cadrer au montage.
+  schemaViewport: { x: number; y: number; zoom: number } | null
+  setSchemaViewport(v: { x: number; y: number; zoom: number } | null): void
   resetForDocument(): void
 }
 
@@ -95,6 +103,12 @@ export const uiStore = createStore<UiState>()((set) => ({
   setAutoSave: (on) => set({ autoSave: on }),
   lang: initialLang(),
   setLang: (lang) => set({ lang }),
+  view: 'schema',
+  setView: (v) => set({ view: v }),
+  racksViewport: null,
+  setRacksViewport: (v) => set({ racksViewport: v }),
+  schemaViewport: null,
+  setSchemaViewport: (v) => set({ schemaViewport: v }),
   resetForDocument: () =>
     set({
       focusVlan: null,
@@ -105,7 +119,9 @@ export const uiStore = createStore<UiState>()((set) => ({
       pendingTemplateId: null,
       pendingSwitch: null,
       search: null,
-      pinnedRect: null
+      pinnedRect: null,
+      racksViewport: null,
+      schemaViewport: null
     })
 }))
 

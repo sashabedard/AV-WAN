@@ -5,7 +5,8 @@ import { launchApp } from './helpers'
 // npm run peek — options : AVWAN_PEEK_FILE (projet .avwan à ouvrir), AVWAN_PEEK_THEME (light | dark),
 // AVWAN_PEEK_EXAMPLE=1 (projet exemple, à partir de la tâche 18), AVWAN_PEEK_OUT (chemin du PNG),
 // AVWAN_PEEK_LANG (fr | en, français par défaut : langue de l'interface),
-// AVWAN_PEEK_WELCOME=1 (garde l'accueil ouvert, aucun clic), AVWAN_PEEK_EXPORT=1 (ouvre la boîte d'export).
+// AVWAN_PEEK_WELCOME=1 (garde l'accueil ouvert, aucun clic), AVWAN_PEEK_EXPORT=1 (ouvre la boîte d'export),
+// AVWAN_PEEK_VIEW=racks (bascule sur la vue Baies).
 test('peek', async () => {
   test.skip(!process.env['AVWAN_PEEK'], 'capture à la demande seulement (npm run peek)')
   const lang = process.env['AVWAN_PEEK_LANG'] === 'en' ? 'en' : 'fr'
@@ -19,6 +20,10 @@ test('peek', async () => {
     if (file) await page.evaluate((p) => window.__avwan!.openPath(p), file)
     if (process.env['AVWAN_PEEK_EXPORT'] === '1') {
       await page.getByRole('button', { name: lang === 'en' ? /Export/ : /Exporter/ }).first().click()
+    }
+    if (process.env['AVWAN_PEEK_VIEW'] === 'racks') {
+      await page.evaluate(() => window.__avwan!.setView('racks'))
+      await page.waitForSelector('.racks')
     }
     const theme = process.env['AVWAN_PEEK_THEME']
     if (theme === 'light' || theme === 'dark') {

@@ -5,7 +5,8 @@ import { fileNameOf } from './fileName'
 import { BrandMark } from './BrandMark'
 import { LangToggle } from './LangToggle'
 import { ThemeToggle } from './ThemeToggle'
-import { uiStore } from '../store/uiStore'
+import { uiStore, useUiStore } from '../store/uiStore'
+import { Segmented } from '../panels/Segmented'
 import { Icon } from '../icons/Icon'
 import { useWindowChrome } from './useWindowChrome'
 
@@ -14,6 +15,7 @@ export function TopBar() {
   const dirty = useProjectStore(isDirty)
   const readOnly = useProjectStore((s) => s.readOnly)
   const { m } = useT()
+  const view = useUiStore((s) => s.view)
   const bar = useRef<HTMLElement>(null)
   useWindowChrome(bar)
   // Sans barre de titre, Windows perd sa barre de menus : le bouton ☰ ouvre le même menu.
@@ -46,6 +48,16 @@ export function TopBar() {
         )}
         {fileNameOf(filePath)}
       </span>
+      {/* Schéma | Baies (spec § 4.2) : la zone centrale change, palette, inspecteur et sélection restent. */}
+      <Segmented
+        options={[
+          { value: 'schema', label: m.topbar.viewSchema },
+          { value: 'racks', label: m.topbar.viewRacks }
+        ]}
+        value={view}
+        onChange={(v) => uiStore.getState().setView(v)}
+        ariaLabel={m.topbar.view}
+      />
       {readOnly && <span className="topbar__badge">{m.topbar.readOnly}</span>}
       <span className="topbar__spacer" />
       <button type="button" className="topbar__btn" title={m.topbar.exportTitle} onClick={() => uiStore.getState().setExportOpen(true)}>

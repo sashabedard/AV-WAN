@@ -58,6 +58,12 @@ describe('zones', () => {
     expect(removeZones(p, [])).toBe(p)
   })
 
+  it('supprimer une zone détache les baies qui y étaient rattachées', () => {
+    const p = { ...assignZones(withZones(zone('z1', -24, 148, 224, 134))), racks: [{ id: 'r1', name: 'BAIE-1', heightU: 12, zoneId: 'z1' }, { id: 'r2', name: 'BAIE-2', heightU: 12 }] }
+    const q = removeZones(p, ['z1'])
+    expect(q.racks).toEqual([{ id: 'r1', name: 'BAIE-1', heightU: 12 }, { id: 'r2', name: 'BAIE-2', heightU: 12 }])
+  })
+
   it('redimensionner réévalue l’appartenance de tous les appareils', () => {
     const p = assignZones(withZones(zone('z1', -24, 148, 224, 134)))
     const bigger = resizeZone(p, 'z1', { x: -40, y: -40, w: 400, h: 400 })

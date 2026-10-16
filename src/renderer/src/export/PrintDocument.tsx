@@ -12,6 +12,7 @@ import { ChannelsPage, DeviceSheetsPage, PatchPage, PortMapsPage, PowerPage, Vla
 import { pageCss } from './pageCss'
 import { useReadyGate } from './useReadyGate'
 import { StaticDiagram } from './StaticDiagram'
+import { RackPage } from './RackPage'
 import { TitleBlock } from './TitleBlock'
 import { TablePage } from './ReportTable'
 import './print.css'
@@ -41,7 +42,9 @@ export function PrintDocument({ project, options, onReady }: { project: Project;
   const has = (s: PdfSection): boolean => options.sections.includes(s)
   const zones = has('schema') && options.zonePages ? project.zones.filter((z) => z.ownPdfPage) : []
   const pages = useMemo(() => (has('schema') ? zonePageNumbers(project, options.zonePages) : new Map<string, number>()), [project, options.zonePages, options.sections])
-  const done = useReadyGate((has('schema') ? 1 : 0) + zones.length, onReady)
+  // Une page par baie et par variante cochée, baie par baie (propre, puis câblée) — spec § 8.6.
+  const rackVariants = (project.racks ?? []).flatMap((rack) => ([['baies', false], ['baies-cables', true]] as const).filter(([id]) => has(id)).map(([, cables]) => ({ rack, cables })))
+  const done = useReadyGate((has('schema') ? 1 : 0) + zones.length + rackVariants.length, onReady)
   return (
     <div className="print">
       <style>{pageCss(options.format, project.meta, lang)}</style>
@@ -58,6 +61,9 @@ export function PrintDocument({ project, options, onReady }: { project: Project;
       {has('canaux' /* i18n-ignore : id de section */) && <ChannelsPage project={project} />}
       {has('puissance' /* i18n-ignore : id de section */) && <PowerPage project={project} />}
       {has('nomenclature') && <TablePage table={bom(project, lang)} empty={m.pdf.empty.bom} />}
+      {rackVariants.map(({ rack, cables }) => (
+        <RackPage key={`${rack.id}|${cables}`} project={project} rack={rack} cables={cables} onReady={done} />
+      ))}
     </div>
   )
 }

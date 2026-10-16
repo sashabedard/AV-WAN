@@ -148,7 +148,16 @@ export function removeZones(project: Project, ids: readonly string[]): Project {
       if (!d.zoneId || !gone.has(d.zoneId)) return d
       const { zoneId: _old, ...rest } = d
       return rest
-    })
+    }),
+    ...(project.racks
+      ? {
+          racks: project.racks.map((r) => {
+            if (!r.zoneId || !gone.has(r.zoneId)) return r
+            const { zoneId: _old, ...rest } = r
+            return rest
+          })
+        }
+      : {})
   }
 }
 
