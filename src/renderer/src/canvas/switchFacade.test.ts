@@ -60,6 +60,15 @@ describe('switchFacade', () => {
   })
 })
 
+describe('panneau : écart plus haut entre les rangées', () => {
+  it('A1 à 38, R1 à 64, hauteur inchangée', () => {
+    const f = switchFacade(patchPanelPorts(24), { patchPanel: true })
+    expect(f.ports.find((p) => p.id === 'A1')).toMatchObject({ y: 38 })
+    expect(f.ports.find((p) => p.id === 'R1')).toMatchObject({ y: 64 })
+    expect(f.height).toBe(92)
+  })
+})
+
 describe('facadeExit', () => {
   it('compte la distance jusqu’au bord de la façade par où sort le cordon', () => {
     const one = switchFacade(buildSwitchPorts({ portCount: 8, poe: 'at', sfpPlus: 2, managed: true }))

@@ -36,7 +36,7 @@ function SwitchNodeImpl({ id, data, selected }: NodeProps<DeviceFlowNode>) {
   const gradientId = `swg-${id}`
   const { width, height } = facade
   return (
-    <div className={`sw${selected ? ' sw--selected' : ''}${dim ? ' is-dim' : ''}`} style={{ width, height }} data-testid={`device-${device.name}`}>
+    <div className={`sw${panel ? ' sw--panel' : ''}${selected ? ' sw--selected' : ''}${dim ? ' is-dim' : ''}`} style={{ width, height }} data-testid={`device-${device.name}`}>
       <svg className="sw__svg" width={width} height={height} aria-hidden="true">
         <defs>
           <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
@@ -145,8 +145,8 @@ function SwitchNodeImpl({ id, data, selected }: NodeProps<DeviceFlowNode>) {
             className={`sw__handle${state ? ` port--${state}` : ''}${twin === p.id ? ' port--twin' : ''}`}
             style={{ left: p.x, top: p.y, width: p.w, height: p.h, transform: 'none' }}
             title={m.canvas.tile.portTitle({ label: def ? portDisplayLabel(device, def, m) : p.label })}
-            onMouseEnter={panel ? () => setHovered(p.id) : undefined}
-            onMouseLeave={panel ? () => setHovered(null) : undefined}
+            onMouseEnter={panel && !readOnly ? () => setHovered(p.id) : undefined}
+            onMouseLeave={panel && !readOnly ? () => setHovered(null) : undefined}
           />
         )
       })}

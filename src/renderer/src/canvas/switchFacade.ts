@@ -31,7 +31,7 @@ export interface Facade {
 
 const EAR = 12
 const PAD_LEFT = 28
-// Panneau : marge élargie pour « ARRIÈRE » (7 caractères, police 6,5 px ≈ 3,9 px par caractère) à gauche des prises.
+// Panneau : marge élargie pour « ARRIÈRE » (7 caractères, police 7,5 px ≈ 4,8 px par caractère, ≈ 34 px) à gauche des prises.
 const PANEL_PAD_LEFT = 46
 const ROW_LABEL_X = EAR + 6
 const PITCH = 20
@@ -55,7 +55,7 @@ export function switchFacade(ports: PortDef[], opts: { patchPanel?: boolean } = 
   const rj = ports.filter((p) => p.connector === 'rj45')
   const sfp = ports.filter((p) => p.connector !== 'rj45')
   const twoRows = rj.some((p) => p.row === 'top')
-  const rowY = twoRows ? { top: 40, bottom: 62 } : { top: 34, bottom: 34 }
+  const rowY = twoRows ? (panel ? { top: 38, bottom: 64 } : { top: 40, bottom: 62 }) : { top: 34, bottom: 34 }
   const rowOf = (p: PortDef): Row => (twoRows && p.row === 'top' ? 'top' : 'bottom')
   const columns = (list: PortDef[]): Array<{ p: PortDef; row: Row; col: number }> => {
     const next = { top: 0, bottom: 0 }

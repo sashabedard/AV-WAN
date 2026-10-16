@@ -58,11 +58,13 @@ describe('SwitchNode — panneau de brassage', () => {
     const fr = renderPanel(cabled)
     expect(fr.container.textContent).toContain('AVANT')
     expect(fr.container.textContent).toContain('ARRIÈRE')
+    expect(handle(fr.container, 'A3').title).toBe('Port 3 avant')
     cleanup()
     act(() => uiStore.getState().setLang('en'))
     const en = renderPanel(cabled)
     expect(en.container.textContent).toContain('FRONT')
     expect(en.container.textContent).toContain('BACK')
+    expect(handle(en.container, 'A3').title).toBe('Port 3 front')
   })
 
   it('un seul numéro par position, de 1 à 24', () => {
