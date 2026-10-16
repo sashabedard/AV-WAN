@@ -23,10 +23,11 @@
 Dernière version : page [Releases](https://github.com/sashabedard/AV-WAN/releases/latest), avec un guide d'installation d'une page (PDF).
 
 - **macOS 13 et plus** (Intel et Apple Silicon) : `AV-WAN-<version>-universal.dmg`. Glisser AV·WAN dans Applications. L'app est signée et vérifiée par Apple.
-- **Windows 10 et 11** : `AV-WAN-<version>-setup.exe`, sans droits d'administrateur.
+- **Windows 10 et 11** : [**Microsoft Store**](https://apps.microsoft.com/detail/9NR2WJRZZ5JG) (recommandé). Installé et mis à jour par le Store, sans avertissement.
+- **Windows 10 et 11, alternative** : `AV-WAN-<version>-setup.exe` des Releases, sans droits d'administrateur.
 
 > [!WARNING]
-> **Windows : au premier lancement, la fenêtre bleue « Windows a protégé votre ordinateur » s'affiche.** C'est normal, l'installeur n'est pas signé. Cliquez **Informations complémentaires**, puis **Exécuter quand même**. Une version Microsoft Store, sans cet avertissement, arrive bientôt.
+> **Windows : préférez le Microsoft Store, sans avertissement.** Avec l'installeur `setup.exe`, la fenêtre bleue « Windows a protégé votre ordinateur » s'affiche au premier lancement. C'est normal, l'installeur n'est pas signé : cliquez **Informations complémentaires**, puis **Exécuter quand même**.
 
 AV·WAN se met à jour seul : la nouvelle version se télécharge en arrière-plan, puis un bandeau propose **Redémarrer maintenant**. Menu **Aide › Rechercher les mises à jour…** pour vérifier tout de suite.
 

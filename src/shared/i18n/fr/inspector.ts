@@ -60,6 +60,7 @@ export const inspector = {
     medium: 'Médium',
     length: 'Longueur (m)',
     lengthAria: 'Longueur en mètres',
+    lengthToast: 'Longueur : un nombre plus grand que 0, en mètres.',
     jacket: 'Couleur de gaine',
     ssid: 'SSID',
     band: 'Bande',

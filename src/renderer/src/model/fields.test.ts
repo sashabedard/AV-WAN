@@ -92,6 +92,11 @@ describe('virgule de milliers en anglais', () => {
     expect(parseDecimalField('12,5', false, 'en')).toBe(12.5)
     expect(parseDecimalField('12.5', false, 'en')).toBe(12.5)
   })
+  it('EN : « 0,750 » (zéro de tête) vaut 0,75, pas 750', () => {
+    expect(parseDecimalField('0,750', false, 'en')).toBe(0.75)
+    expect(parseDecimalField('1,200', false, 'en')).toBe(1200)
+  })
+
   it('FR inchangé : « 1,200 » → 1,2', () => {
     expect(parseDecimalField('1,200', false, 'fr')).toBe(1.2)
     expect(parseDecimalField('1,200', false, 'fr')).toBe(1.2)

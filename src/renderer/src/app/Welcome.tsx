@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react'
 import { useT } from '../i18n/useT'
 import { createExampleProject } from '../samples/exampleProject'
-import { projectStore } from '../store/projectStore'
+import { isDirty, projectStore } from '../store/projectStore'
 import { uiStore, useUiStore } from '../store/uiStore'
 import { LangToggle } from './LangToggle'
 import { BrandMark } from './BrandMark'
@@ -25,7 +25,11 @@ export function Welcome() {
       <div
         className="welcome__card"
         onKeyDown={(e) => {
-          if (e.key === 'Escape') close()
+          if (e.key !== 'Escape') return
+          // Document intact (créé au chargement) : on repart d'un projet vierge dans la langue courante.
+          const s = projectStore.getState()
+          if (s.filePath === null && !isDirty(s)) s.newProject()
+          close()
         }}
       >
         <div className="welcome__lang">

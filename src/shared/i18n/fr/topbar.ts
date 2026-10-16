@@ -1,6 +1,6 @@
 // Barre du haut.
 export const topbar = {
-  langGroup: 'Langue de l’interface',
+  langGroup: (p: { name: string }) => `Langue : ${p.name}`,
   menu: 'Menu',
   menuTitle: 'Fichier, Édition, Affichage, Aide',
   unsaved: 'Modifications non enregistrées',

@@ -60,6 +60,7 @@ export const inspector: Messages['inspector'] = {
     medium: 'Medium',
     length: 'Length (m)',
     lengthAria: 'Length in meters',
+    lengthToast: 'Length: a number greater than 0, in meters.',
     jacket: 'Jacket color',
     ssid: 'SSID',
     band: 'Band',
