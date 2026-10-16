@@ -1,6 +1,7 @@
 import type { DmxChannelList, Project } from '../model/types'
 import type { Cell, Column } from '../../../shared/tables'
 import { getTemplate } from '../catalog'
+import { displayName } from '../catalog/templateText'
 import { patchIndex, rangeLabel } from '../model/dmx'
 import { channelKey, resolveChannels } from '../model/dmxChannels'
 import { compareText } from './format'
@@ -38,7 +39,7 @@ export function channelBlocks(project: Project, settings: readonly DmxChannelLis
     const t = getTemplate(project, d.templateId)
     const rows: Cell[][] = []
     for (let ch = 1; ch <= dmx.footprint; ch++) rows.push([address === undefined ? null : address + ch - 1, ch, names[ch - 1] ?? ''])
-    const subtitle = [d.model ?? t?.model ?? t?.name ?? '', dmx.mode ?? ''].filter(Boolean).join(' · ')
+    const subtitle = [d.model ?? t?.model ?? (t ? displayName(t, 'fr') : '') /* plan 6 : langue des documents à la Task 12 */, dmx.mode ?? ''].filter(Boolean).join(' · ')
     found.push({ block: { deviceId: d.id, title: `${d.name} · ${where}`, subtitle, rows }, universe, address, name: d.name })
   }
   const placed = (s: Sortable): boolean => s.universe !== undefined && s.address !== undefined

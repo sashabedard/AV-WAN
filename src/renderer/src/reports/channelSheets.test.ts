@@ -49,4 +49,11 @@ describe('section Canaux DMX', () => {
     const settings = [{ templateId: LYRE.id, model: 'Lyre test', mode: '2CH', params: ['Dim'] }]
     expect(channelBlocks(p, settings).find((b) => b.deviceId === 'nameless')!.rows[0]).toEqual([40, 1, 'Dim'])
   })
+
+  it('gabarit intégré sans modèle : le sous-titre est son nom français', () => {
+    let p: Project = createProject(new Date(2026, 9, 15))
+    p = { ...p, devices: [{ ...createDevice(p, 'moving-spot', { x: 0, y: 0 }, { id: 'ms' }), dmx: { footprint: 2, mode: 'X', address: 1, universe: 1 } }] }
+    p = { ...p, dmxChannels: [{ templateId: 'moving-spot', model: '', mode: 'X', params: ['Pan', 'Tilt'] }] }
+    expect(channelBlocks(p)[0]!.subtitle).toBe('Lyre spot · X')
+  })
 })
