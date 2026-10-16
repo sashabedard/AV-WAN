@@ -39,6 +39,8 @@ export function copyFragment(project: Project, deviceIds: readonly string[]): Fr
   const frozen = devices.map((d) => {
     if (!d.dmx || d.dmx.universe !== undefined) return d
     const u = index.entries.get(d.id)?.universe
+    // Sa source d'univers est aussi copiée : la copie reste automatique dans sa propre chaîne (daisy-chain § 4.5).
+    if (u?.source.kind === 'port' && ids.has(u.source.ref.deviceId)) return d
     return u ? { ...d, dmx: { ...d.dmx, universe: u.universe } } : d
   })
   const keys = new Set(devices.flatMap((d) => {

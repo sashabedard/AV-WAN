@@ -6,6 +6,7 @@ import { blankDraft, templateFromDraft, withTemplate } from './customTemplate'
 import { createDevice, createProject } from './project'
 import type { Device, Project } from './types'
 import { patchIndex } from './dmx'
+import { autoAddress } from './daisyChain'
 
 const ids = (): (() => string) => {
   let n = 0
@@ -143,6 +144,24 @@ describe('patch et presse-papiers', () => {
     const frag = copyFragment(patched(), ['f1'])!
     const r = pasteFragment(createProject(undefined, 'fr'), frag, { x: 0, y: 0 }, freshIds)
     expect(r.project.devices[0]!.dmx).toEqual({ footprint: 16, address: 1, mode: 'Standard', universe: 1 })
+  })
+
+  it('copie un nœud et sa chaîne avec leurs câbles : les copies restent automatiques', () => {
+    let p = patched()
+    p = {
+      ...p,
+      devices: [...p.devices.filter((d) => d.id !== 'f1'), { ...p.devices.find((d) => d.id === 'f1')!, dmx: { footprint: 16 } }, { ...createDevice(p, 'dmx-fixture', { x: 0, y: 0 }, { lang: 'fr', id: 'f2' }), dmx: { footprint: 16 } }],
+      links: [...p.links, { id: 'l2', cableId: 'C-002', a: { deviceId: 'f1', portId: 'DMX-OUT' }, b: { deviceId: 'f2', portId: 'DMX-IN' }, medium: 'dmx' }]
+    }
+    const frag = copyFragment(p, ['ode', 'f1', 'f2'])!
+    expect(frag.devices.filter((d) => d.id !== 'ode').every((d) => d.dmx?.universe === undefined)).toBe(true)
+    const r = pasteFragment(p, frag, { x: 40, y: 40 }, freshIds)
+    const [node, a, b] = r.deviceIds.map((id) => r.project.devices.find((d) => d.id === id)!)
+    expect(node!.name).not.toBe('ODE-1')
+    const q = autoAddress(r.project)
+    const get = (id: string) => q.devices.find((d) => d.id === id)!.dmx!
+    expect(get(a!.id)).toEqual({ footprint: 16, address: 1 })
+    expect(get(b!.id)).toEqual({ footprint: 16, address: 17 })
   })
 
   it('la copie d’un appareil fixé n’est plus fixée', () => {

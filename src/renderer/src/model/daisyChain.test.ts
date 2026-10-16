@@ -116,6 +116,22 @@ describe('autoAddressOnOpen', () => {
   })
 })
 
+describe('autoAddressOnOpen : cas limites', () => {
+  it('garde et fige une adresse enregistrée au-delà du curseur de 512, sans l’effacer', () => {
+    const p = chain([['a', fix(500, 16)], ['b', fix(20, 16)]])
+    const q = autoAddressOnOpen(p)
+    expect(addr(q)).toEqual({ a: 500, b: 20 })
+    expect(q.devices.find((d) => d.id === 'a')!.dmx!.addressPinned).toBe(true)
+  })
+
+  it('laisse intact un appareil déjà fixé', () => {
+    const p = chain([['a', fix(undefined, 16)], ['b', pinned(101, 16)]])
+    const q = autoAddressOnOpen(p)
+    expect(q.devices.find((d) => d.id === 'b')).toBe(p.devices.find((d) => d.id === 'b'))
+    expect(addr(q)).toEqual({ a: 1, b: 101 })
+  })
+})
+
 describe('daisyChains', () => {
   it('se termine sur une boucle de câbles', () => {
     const r = rig()

@@ -99,7 +99,7 @@ export function autoAddress(project: Project): Project {
   return changed ? { ...project, devices } : project
 }
 
-// Spec § 4.6 : à l'ouverture d'un ancien fichier, une adresse enregistrée qui diffère du calcul devient fixée,
+// Spec § 4.5 : à l'ouverture d'un ancien fichier, une adresse enregistrée qui diffère du calcul devient fixée,
 // pour qu'aucune adresse documentée ne bouge ; les automatiques sans adresse reçoivent la leur.
 export function autoAddressOnOpen(project: Project): Project {
   const toPin = new Set<string>()

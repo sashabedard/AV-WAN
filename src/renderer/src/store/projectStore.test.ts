@@ -499,6 +499,7 @@ describe('projectStore : adresses DMX en chaîne (plan 7)', () => {
     expect(before.c).toBe(17)
     s.getState().undo()
     expect(s.getState().history.present.links.some((l) => l.b.deviceId === 'c' && l.a.deviceId === 'a')).toBe(false)
+    expect(addrs(s)).toEqual({ a: 1, b: 17, c: 33 })
     s.getState().redo()
     expect(addrs(s)).toEqual(before)
   })
@@ -506,8 +507,8 @@ describe('projectStore : adresses DMX en chaîne (plan 7)', () => {
   it('changer le mode (16 → 21 canaux) décale la suite, annulé en une étape', () => {
     const s = loaded(base(undefined, 16))
     const past = s.getState().history.past.length
-    s.getState().updateDevice('a', { dmx: { footprint: 21 } })
-    expect(addrs(s)).toEqual({ a: 1, b: 22, c: 38 })
+    s.getState().updateDevice('b', { dmx: { footprint: 21 } })
+    expect(addrs(s)).toEqual({ a: 1, b: 17, c: 38 })
     expect(s.getState().history.past.length).toBe(past + 1)
     s.getState().undo()
     expect(addrs(s)).toEqual({ a: 1, b: 17, c: 33 })
