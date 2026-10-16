@@ -1,16 +1,19 @@
 import { describe, expect, it } from 'vitest'
+import { messages } from '../../../../shared/i18n/messages'
 import { peersOf, portVlanSummary } from './format'
 import { createDevice, createProject } from '../../model/project'
 import type { Project } from '../../model/types'
 
+const words = messages('fr').inspector.device
+
 describe('portVlanSummary', () => {
   it('résume le réglage VLAN d’un port', () => {
-    expect(portVlanSummary(undefined)).toBe('')
-    expect(portVlanSummary({})).toBe('')
-    expect(portVlanSummary({ mode: 'access', nativeVlan: 40 })).toBe('A · 40')
-    expect(portVlanSummary({ nativeVlan: 40 })).toBe('A · 40')
-    expect(portVlanSummary({ mode: 'trunk', nativeVlan: 10, taggedVlans: [30, 40] })).toBe('T · 10 / 30, 40')
-    expect(portVlanSummary({ mode: 'trunk', taggedVlans: 'all' })).toBe('T · — / tous')
+    expect(portVlanSummary(undefined, words)).toBe('')
+    expect(portVlanSummary({}, words)).toBe('')
+    expect(portVlanSummary({ mode: 'access', nativeVlan: 40 }, words)).toBe('A · 40')
+    expect(portVlanSummary({ nativeVlan: 40 }, words)).toBe('A · 40')
+    expect(portVlanSummary({ mode: 'trunk', nativeVlan: 10, taggedVlans: [30, 40] }, words)).toBe('T · 10 / 30, 40')
+    expect(portVlanSummary({ mode: 'trunk', taggedVlans: 'all' }, words)).toBe('T · — / tous')
   })
 })
 

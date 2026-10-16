@@ -6,6 +6,7 @@ import { projectStore } from '../../store/projectStore'
 import { uiStore } from '../../store/uiStore'
 import { FORWARD_UNKNOWN_CHOICES, MDNS_CHOICES, PROAV_PROFILES, UNIFI_LABELS } from '../../catalog/unifi'
 import { CommitInput } from '../CommitInput'
+import { useT } from '../../i18n/useT'
 
 type Unifi = Vlan['unifi']
 
@@ -20,6 +21,8 @@ function Toggle({ label, checked, onChange }: { label: string; checked: boolean;
 
 export function VlanForm({ vlan, project }: { vlan: Vlan; project: Project }) {
   const s = projectStore.getState
+  const { m } = useT()
+  const t = m.inspector.vlan
   const up = (patch: VlanPatch): void => {
     const changed = (Object.keys(patch) as Array<keyof VlanPatch>).some((k) => JSON.stringify(patch[k]) !== JSON.stringify(vlan[k]))
     if (changed) s().updateVlan(vlan.id, patch)
@@ -32,10 +35,10 @@ export function VlanForm({ vlan, project }: { vlan: Vlan; project: Project }) {
     <div>
       <h2 className="insp__title">VLAN {vlan.id}</h2>
       <label className="field">
-        <span className="field__label">Numéro (1 à 4094)</span>
+        <span className="field__label">{t.number}</span>
         <CommitInput
           className="input"
-          aria-label="Numéro du VLAN"
+          aria-label={t.numberAria}
           inputMode="numeric"
           value={String(vlan.id)}
           onCommit={(v) => {
@@ -45,44 +48,44 @@ export function VlanForm({ vlan, project }: { vlan: Vlan; project: Project }) {
         />
       </label>
       <label className="field">
-        <span className="field__label">Nom</span>
-        <CommitInput className="input" aria-label="Nom du VLAN" value={vlan.name} onCommit={(v) => v.trim() && up({ name: v.trim() })} />
+        <span className="field__label">{t.name}</span>
+        <CommitInput className="input" aria-label={t.nameAria} value={vlan.name} onCommit={(v) => v.trim() && up({ name: v.trim() })} />
       </label>
       <label className="field">
-        <span className="field__label">Nom court</span>
-        <CommitInput className="input" aria-label="Nom court" value={vlan.short} onCommit={(v) => v.trim() && up({ short: v.trim().toUpperCase() })} />
+        <span className="field__label">{t.short}</span>
+        <CommitInput className="input" aria-label={t.short} value={vlan.short} onCommit={(v) => v.trim() && up({ short: v.trim().toUpperCase() })} />
       </label>
       <div className="field">
-        <span className="field__label">Couleur du cordon</span>
+        <span className="field__label">{t.cordColor}</span>
         <div className="colors">
           <label className="colors__item">
-            <CommitInput type="color" aria-label="Couleur en thème sombre" value={vlan.color.dark.toLowerCase()} onCommit={(v) => up({ color: { ...vlan.color, dark: v.toUpperCase() } })} />
-            Sombre
+            <CommitInput type="color" aria-label={t.darkAria} value={vlan.color.dark.toLowerCase()} onCommit={(v) => up({ color: { ...vlan.color, dark: v.toUpperCase() } })} />
+            {t.dark}
           </label>
           <label className="colors__item">
-            <CommitInput type="color" aria-label="Couleur en thème clair" value={vlan.color.light.toLowerCase()} onCommit={(v) => up({ color: { ...vlan.color, light: v.toUpperCase() } })} />
-            Clair
+            <CommitInput type="color" aria-label={t.lightAria} value={vlan.color.light.toLowerCase()} onCommit={(v) => up({ color: { ...vlan.color, light: v.toUpperCase() } })} />
+            {t.light}
           </label>
         </div>
       </div>
       <label className="field">
-        <span className="field__label">Sous-réseau</span>
-        <CommitInput className="input" aria-label="Sous-réseau" placeholder="10.40.0.0/24" value={vlan.subnet ?? ''} onCommit={(v) => up({ subnet: v.trim() || undefined })} />
+        <span className="field__label">{t.subnet}</span>
+        <CommitInput className="input" aria-label={t.subnet} placeholder="10.40.0.0/24" value={vlan.subnet ?? ''} onCommit={(v) => up({ subnet: v.trim() || undefined })} />
       </label>
       <label className="field">
-        <span className="field__label">Passerelle</span>
-        <CommitInput className="input" aria-label="Passerelle" placeholder="10.40.0.1" value={vlan.gateway ?? ''} onCommit={(v) => up({ gateway: v.trim() || undefined })} />
+        <span className="field__label">{t.gateway}</span>
+        <CommitInput className="input" aria-label={t.gateway} placeholder="10.40.0.1" value={vlan.gateway ?? ''} onCommit={(v) => up({ gateway: v.trim() || undefined })} />
       </label>
-      <Toggle label="Serveur DHCP" checked={vlan.dhcp?.enabled ?? false} onChange={(enabled) => up({ dhcp: { ...vlan.dhcp, enabled } })} />
+      <Toggle label={t.dhcpServer} checked={vlan.dhcp?.enabled ?? false} onChange={(enabled) => up({ dhcp: { ...vlan.dhcp, enabled } })} />
       {vlan.dhcp?.enabled && (
         <label className="field">
-          <span className="field__label">Plage DHCP</span>
-          <CommitInput className="input" aria-label="Plage DHCP" placeholder="10.40.0.100-10.40.0.199" value={vlan.dhcp.range ?? ''} onCommit={(v) => up({ dhcp: { enabled: true, ...(v.trim() ? { range: v.trim() } : {}) } })} />
+          <span className="field__label">{t.dhcpRange}</span>
+          <CommitInput className="input" aria-label={t.dhcpRange} placeholder="10.40.0.100-10.40.0.199" value={vlan.dhcp.range ?? ''} onCommit={(v) => up({ dhcp: { enabled: true, ...(v.trim() ? { range: v.trim() } : {}) } })} />
         </label>
       )}
-      <Toggle label="Accès Internet" checked={vlan.internet} onChange={(internet) => up({ internet })} />
+      <Toggle label={t.internet} checked={vlan.internet} onChange={(internet) => up({ internet })} />
       <section className="insp__section">
-        <h3 className="insp__title">Réglages UniFi</h3>
+        <h3 className="insp__title">{t.unifiTitle}</h3>
         <Toggle label={UNIFI_LABELS.igmpSnooping} checked={vlan.unifi.igmpSnooping} onChange={(igmpSnooping) => unifi({ igmpSnooping })} />
         {vlan.unifi.igmpSnooping && (
           <div className="insp__nested">
@@ -120,7 +123,7 @@ export function VlanForm({ vlan, project }: { vlan: Vlan; project: Project }) {
         <label className="field">
           <span className="field__label">{UNIFI_LABELS.proAvProfile}</span>
           <select className="input" aria-label="ProAV" value={vlan.unifi.proAvProfile ?? ''} onChange={(e) => unifi({ proAvProfile: e.target.value || undefined })}>
-            <option value="">Aucun</option>
+            <option value="">{t.none}</option>
             {PROAV_PROFILES.map((p) => (
               <option key={p} value={p}>
                 {p}
@@ -131,22 +134,22 @@ export function VlanForm({ vlan, project }: { vlan: Vlan; project: Project }) {
         <Toggle label={UNIFI_LABELS.jumboFrames} checked={vlan.unifi.jumboFrames} onChange={(jumboFrames) => unifi({ jumboFrames })} />
       </section>
       <label className="field">
-        <span className="field__label">Note</span>
-        <CommitInput className="input" aria-label="Note du VLAN" value={vlan.note ?? ''} onCommit={(v) => up({ note: v.trim() || undefined })} />
+        <span className="field__label">{t.note}</span>
+        <CommitInput className="input" aria-label={t.noteAria} value={vlan.note ?? ''} onCommit={(v) => up({ note: v.trim() || undefined })} />
       </label>
       <p className="insp__note">
-        {nd} appareil{nd > 1 ? 's' : ''} · {nl} câble{nl > 1 ? 's' : ''}
+        {t.counts({ devices: nd, cables: nl })}
       </p>
       <button
         type="button"
         className="btn btn--danger"
         onClick={() => {
-          if (!window.confirm(`Retirer le VLAN ${vlan.id} du projet ? Les ports qui l’utilisent gardent leur réglage.`)) return
+          if (!window.confirm(t.confirmRemove({ id: vlan.id }))) return
           s().removeVlan(vlan.id)
           if (!s().history.present.vlans.some((v) => v.id === vlan.id)) uiStore.getState().setInspectVlan(null)
         }}
       >
-        Retirer ce VLAN
+        {t.remove}
       </button>
     </div>
   )

@@ -6,11 +6,11 @@ import { join, relative } from 'node:path'
 // Plan 6 : dossiers et fichiers déjà traduits. Chaque tâche y ajoute les siens ; à la fin, tout `src`.
 const CHECKED: readonly string[] = ['src/shared/i18n', 'src/main', 'src/shared/appInfo.ts', 'src/preload', 'src/renderer/src/i18n', 'src/renderer/src/app', 'src/renderer/src/store', 'src/renderer/src/theme', 'src/renderer/src/canvas', 'src/renderer/src/panels']
 // Parties d'un dossier vérifié pas encore traduites (chaque tâche retire la sienne).
-const PENDING: readonly string[] = ['src/renderer/src/panels/inspector']
+const PENDING: readonly string[] = []
 
 const ROOT = process.cwd()
 const FRENCH_CHARS = /[éèêëàâùûüçîïôœÉÈÊËÀÂÙÛÜÇÎÏÔŒ’«»]/
-const FRENCH_WORDS = /\b(le|la|les|des|du|une|aux|pour|avec|sans|dans|sur|est|sont|aucun|aucune|nouveau|nouvelle|ajouter|supprimer|exporter|annuler|fermer|ouvrir|enregistrer|choisir|glisser|rechercher|appareil|appareils|fichier|fichiers|projet|projets|liste|réglages|panneau|inspecteur|canaux|canal|illisible|illisibles|restaurer|ignorer|valider|modifier|renommer|dupliquer|copier|coller|couper|effacer|masquer|afficher|remplacer|importer|quitter|gauche|droite|couleur|taille|longueur|largeur|hauteur|puissance|adresse|dossier|tous|toutes|tout|rien|oui|sortie|univers|alimentation|bande|lyre|projecteur|recadrer|retirer|minicarte|cordon|cordons|coude|nom|fabricant|nombre|vide|connecteur|ressemble)\b/i
+const FRENCH_WORDS = /\b(le|la|les|des|du|une|aux|pour|avec|sans|dans|sur|est|sont|aucun|aucune|nouveau|nouvelle|ajouter|supprimer|exporter|annuler|fermer|ouvrir|enregistrer|choisir|glisser|rechercher|appareil|appareils|fichier|fichiers|projet|projets|liste|réglages|panneau|inspecteur|canaux|canal|illisible|illisibles|restaurer|ignorer|valider|modifier|renommer|dupliquer|copier|coller|couper|effacer|masquer|afficher|remplacer|importer|quitter|gauche|droite|couleur|taille|longueur|largeur|hauteur|puissance|adresse|dossier|tous|toutes|tout|rien|oui|sortie|univers|alimentation|bande|lyre|projecteur|recadrer|retirer|minicarte|cordon|cordons|coude|nom|fabricant|nombre|vide|connecteur|ressemble|statique|passerelle|sombre|titre|cours|suivante|libre|identifiant|gaine|secteur|courant|branche)\b/i
 
 const isSource = (f: string): boolean => /\.(ts|tsx)$/.test(f) && !/\.(test|spec)\.tsx?$/.test(f) && !f.endsWith('.d.ts')
 // Les dictionnaires eux-mêmes ne sont pas des oublis (l'anglais peut contenir ’, la complétude est vérifiée ailleurs).

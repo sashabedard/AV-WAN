@@ -15,15 +15,18 @@ import { parseDecimalField, parseIntField } from '../../model/fields'
 import { PsuSection } from './PsuSection'
 import { LedStripSection } from './LedStripSection'
 import { PatchSection } from './PatchSection'
+import { useT } from '../../i18n/useT'
 
 function SwitchSection({ device, project }: { device: Device; project: Project }) {
   const [editing, setEditing] = useState(false)
+  const { m } = useT()
+  const t = m.inspector.device
   const spec = device.switch
   if (!spec) return null
   const usage = switchPoeUsage(project, device.id)
   return (
     <section className="insp__section">
-      <h3 className="insp__title">Configuration</h3>
+      <h3 className="insp__title">{t.switchConfig}</h3>
       <p className="insp__note">
         {switchSummary(spec)}
         {usage.budgetW !== undefined ? ` · PoE ${usage.usedW} / ${usage.budgetW} W` : ''}
@@ -31,18 +34,18 @@ function SwitchSection({ device, project }: { device: Device; project: Project }
       {editing ? (
         <SwitchConfigurator
           initial={spec}
-          submitLabel="Appliquer"
+          submitLabel={t.apply}
           onCancel={() => setEditing(false)}
           onSubmit={(next) => {
             const removed = linksOnRemovedPorts(project, device.id, next)
-            if (removed.length > 0 && !window.confirm(`Ces câbles seront retirés : ${removed.map((l) => l.cableId).join(', ')}. Continuer ?`)) return
+            if (removed.length > 0 && !window.confirm(t.confirmRemoved({ cables: removed.map((l) => l.cableId).join(', ') }))) return
             projectStore.getState().updateSwitchSpec(device.id, next)
             setEditing(false)
           }}
         />
       ) : (
         <button type="button" className="btn" onClick={() => setEditing(true)}>
-          Modifier la configuration
+          {t.editConfig}
         </button>
       )}
     </section>
@@ -51,21 +54,23 @@ function SwitchSection({ device, project }: { device: Device; project: Project }
 
 export function DeviceForm({ device, project }: { device: Device; project: Project }) {
   const s = projectStore.getState
+  const { m } = useT()
+  const t = m.inspector.device
   const template = getTemplate(project, device.templateId)
   const ipMode = device.ip?.mode ?? 'dhcp'
   const universePorts = new Set(device.ports.filter((p) => isUniverseOutput(project, device, p)).map((p) => p.id))
   return (
     <div>
-      <h2 className="insp__title">{template?.name ?? 'Appareil'}</h2>
+      <h2 className="insp__title">{template?.name ?? t.fallbackTitle}</h2>
       <label className="field">
-        <span className="field__label">Nom</span>
-        <CommitInput className="input" aria-label="Nom" value={device.name} onCommit={(v) => s().updateDevice(device.id, { name: v.trim() || device.name })} />
+        <span className="field__label">{t.name}</span>
+        <CommitInput className="input" aria-label={t.name} value={device.name} onCommit={(v) => s().updateDevice(device.id, { name: v.trim() || device.name })} />
       </label>
       <label className="field">
-        <span className="field__label">Modèle / rôle</span>
+        <span className="field__label">{t.model}</span>
         <CommitInput
           className="input"
-          aria-label="Modèle"
+          aria-label={t.modelAria}
           value={device.model ?? ''}
           placeholder={template?.name}
           onCommit={(v) => s().updateDevice(device.id, { model: v.trim() || undefined })}
@@ -73,17 +78,17 @@ export function DeviceForm({ device, project }: { device: Device; project: Proje
       </label>
       {!device.ledStrip && !device.psu && (
         <div className="field">
-          <span className="field__label">Puissance</span>
+          <span className="field__label">{t.power}</span>
           <div className="patch__row">
             <CommitInput
               className="input"
-              aria-label="Puissance (W)"
+              aria-label={t.powerAria}
               inputMode="decimal"
               placeholder="—"
               value={device.powerW !== undefined ? String(device.powerW).replace('.', ',') : ''}
               onCommit={(v) => {
                 const n = parseDecimalField(v)
-                if (n === undefined) s().showToast('Puissance : un nombre positif ou nul, en watts.')
+                if (n === undefined) s().showToast(t.powerToast)
                 else s().updateDevice(device.id, { powerW: n ?? undefined })
               }}
             />
@@ -95,18 +100,18 @@ export function DeviceForm({ device, project }: { device: Device; project: Proje
       <LedStripSection device={device} project={project} />
       <PatchSection device={device} project={project} />
       <div className="field">
-        <span className="field__label">Adresse IP</span>
+        <span className="field__label">{t.ipAddress}</span>
         <CommitInput
           className="input"
-          aria-label="Adresse IP"
+          aria-label={t.ipAddress}
           value={device.ip?.address ?? ''}
           placeholder="10.40.0.21"
           onCommit={(v) => s().updateDevice(device.id, { ip: { address: v.trim(), mode: ipMode } })}
         />
         <Segmented
-          ariaLabel="Mode d’adressage"
+          ariaLabel={t.ipMode}
           options={[
-            { value: 'static', label: 'Statique' },
+            { value: 'static', label: t.ipStatic },
             { value: 'dhcp', label: 'DHCP' }
           ]}
           value={ipMode}
@@ -114,37 +119,37 @@ export function DeviceForm({ device, project }: { device: Device; project: Proje
         />
       </div>
       <label className="field">
-        <span className="field__label">Nom d’hôte</span>
-        <CommitInput className="input" aria-label="Nom d’hôte" value={device.hostname ?? ''} onCommit={(v) => s().updateDevice(device.id, { hostname: v.trim() || undefined })} />
+        <span className="field__label">{t.hostname}</span>
+        <CommitInput className="input" aria-label={t.hostname} value={device.hostname ?? ''} onCommit={(v) => s().updateDevice(device.id, { hostname: v.trim() || undefined })} />
       </label>
       <label className="field">
-        <span className="field__label">Note</span>
-        <CommitInput className="input" aria-label="Note" value={device.note ?? ''} onCommit={(v) => s().updateDevice(device.id, { note: v.trim() || undefined })} />
+        <span className="field__label">{t.note}</span>
+        <CommitInput className="input" aria-label={t.note} value={device.note ?? ''} onCommit={(v) => s().updateDevice(device.id, { note: v.trim() || undefined })} />
       </label>
       {!isRackDevice(device) && (
         <label className="field">
-          <span className="field__label">Côté des prises</span>
-          <select className="input" aria-label="Côté des prises" value={device.portSide} onChange={(e) => s().updateDevice(device.id, { portSide: e.target.value as PortSide })}>
-            <option value="auto">Automatique (face aux câbles)</option>
-            <option value="top">Haut</option>
-            <option value="bottom">Bas</option>
-            <option value="left">Gauche</option>
-            <option value="right">Droite</option>
+          <span className="field__label">{t.portSide}</span>
+          <select className="input" aria-label={t.portSide} value={device.portSide} onChange={(e) => s().updateDevice(device.id, { portSide: e.target.value as PortSide })}>
+            <option value="auto">{t.sideAuto}</option>
+            <option value="top">{t.sideTop}</option>
+            <option value="bottom">{t.sideBottom}</option>
+            <option value="left">{t.sideLeft}</option>
+            <option value="right">{t.sideRight}</option>
           </select>
         </label>
       )}
-      <p className="insp__note">Zone : {project.zones.find((z) => z.id === device.zoneId)?.name ?? 'aucune'}</p>
+      <p className="insp__note">{t.zoneLine({ name: project.zones.find((z) => z.id === device.zoneId)?.name })}</p>
       <SwitchSection device={device} project={project} />
       <section className="insp__section">
-        <h3 className="insp__title">Ports</h3>
+        <h3 className="insp__title">{t.ports}</h3>
         <table className="ports">
           <thead>
             <tr>
-              <th>Port</th>
-              <th>Branché à</th>
-              <th>VLAN</th>
-              <th>PoE</th>
-              {universePorts.size > 0 && <th>Univers</th>}
+              <th>{t.port}</th>
+              <th>{t.pluggedTo}</th>
+              <th>{t.vlan}</th>
+              <th>{t.poe}</th>
+              {universePorts.size > 0 && <th>{t.universe}</th>}
             </tr>
           </thead>
           <tbody>
@@ -152,17 +157,17 @@ export function DeviceForm({ device, project }: { device: Device; project: Proje
               <tr key={p.id}>
                 <td>{p.label}</td>
                 <td>{peersOf(project, device, p.id)}</td>
-                <td>{portVlanSummary(device.portState[p.id])}</td>
+                <td>{portVlanSummary(device.portState[p.id], t)}</td>
                 <td>
                   {p.poeOut ? (
                     <input
                       type="checkbox"
-                      aria-label={`PoE port ${p.label}`}
+                      aria-label={t.poePort({ label: p.label })}
                       checked={device.portState[p.id]?.poeEnabled ?? true}
                       onChange={(e) => s().setPortState(device.id, p.id, { poeEnabled: e.target.checked })}
                     />
                   ) : p.poeIn ? (
-                    'reçoit'
+                    t.receives
                   ) : (
                     ''
                   )}
@@ -172,12 +177,12 @@ export function DeviceForm({ device, project }: { device: Device; project: Proje
                     {universePorts.has(p.id) && (
                       <CommitInput
                         className="input input--mini"
-                        aria-label={`Univers ${p.label}`}
+                        aria-label={t.universeAria({ label: p.label })}
                         inputMode="numeric"
                         value={device.portState[p.id]?.universe !== undefined ? String(device.portState[p.id]!.universe) : ''}
                         onCommit={(v) => {
                           const n = parseIntField(v, 0, UNIVERSE_MAX)
-                          if (n === undefined) s().showToast(`Univers : un nombre entier de 0 à ${UNIVERSE_MAX}.`)
+                          if (n === undefined) s().showToast(t.universeToast({ max: UNIVERSE_MAX }))
                           else s().setPortState(device.id, p.id, { universe: n ?? undefined })
                         }}
                       />

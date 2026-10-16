@@ -1,9 +1,10 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { cleanup, render, screen } from '@testing-library/react'
+import { act, cleanup, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { Inspector } from '../Inspector'
 import { projectStore } from '../../store/projectStore'
+import { uiStore } from '../../store/uiStore'
 import { createDevice, createProject } from '../../model/project'
 import type { Device, DeviceTemplate, Project } from '../../model/types'
 
@@ -33,6 +34,7 @@ beforeEach(() => {
   projectStore.getState().loadProject(project(), null)
 })
 afterEach(() => {
+  act(() => uiStore.getState().setLang('fr'))
   cleanup()
   projectStore.getState().clearToast()
   vi.restoreAllMocks()
@@ -129,5 +131,18 @@ describe('colonne Univers des ports', () => {
     select('f1')
     render(<Inspector />)
     expect(screen.queryByRole('columnheader', { name: 'Univers' })).toBeNull()
+  })
+})
+
+describe('bloc Patch DMX en anglais', () => {
+  it('affiche les libellés et les messages en anglais', async () => {
+    const user = userEvent.setup()
+    act(() => uiStore.getState().setLang('en'))
+    select('f1')
+    render(<Inspector />)
+    expect(screen.getByRole('heading', { name: 'DMX patch' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Next free' })).toBeTruthy()
+    await user.type(screen.getByLabelText('DMX address'), '600{Enter}')
+    expect(projectStore.getState().toast).toBe('DMX address: a whole number from 1 to 512.')
   })
 })

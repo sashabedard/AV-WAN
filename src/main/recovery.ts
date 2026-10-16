@@ -25,6 +25,7 @@ export function keyForPath(path: string): string {
 }
 
 export function keyForUntitled(id: string): string {
+  // i18n-ignore : erreur interne, l'id vient du code et jamais d'une saisie
   if (!UNTITLED_ID.test(id)) throw new Error('Identifiant de document invalide.')
   return `u-${id}`
 }

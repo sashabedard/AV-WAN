@@ -15,5 +15,6 @@ import { vlanPanel } from './vlanPanel'
 import { componentEditor } from './componentEditor'
 import { switchConfigurator } from './switchConfigurator'
 import { panels } from './panels'
+import { inspector } from './inspector'
 
-export const fr = { common, menu, dialogs, errors, update, topbar, welcome, app, theme, canvas, palette, quickSearch, vlanPanel, componentEditor, switchConfigurator, panels } as const
+export const fr = { common, menu, dialogs, errors, update, topbar, welcome, app, theme, canvas, palette, quickSearch, vlanPanel, componentEditor, switchConfigurator, panels, inspector } as const

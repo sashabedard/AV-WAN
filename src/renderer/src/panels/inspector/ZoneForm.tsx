@@ -3,20 +3,21 @@ import type { Project, Zone } from '../../model/types'
 import { ZONE_COLORS } from '../../model/zones'
 import { projectStore } from '../../store/projectStore'
 import { CommitInput } from '../CommitInput'
-
-const COLOR_NAMES = ['Bleu', 'Vert', 'Ambre', 'Violet', 'Rose', 'Aqua'] as const
+import { useT } from '../../i18n/useT'
 
 export function ZoneForm({ zone, project }: { zone: Zone; project: Project }) {
   const s = projectStore.getState
+  const { m } = useT()
+  const t = m.inspector.zone
   const members = project.devices.filter((d) => d.zoneId === zone.id).length
   return (
     <div>
-      <h2 className="insp__title">Zone</h2>
+      <h2 className="insp__title">{t.title}</h2>
       <label className="field">
-        <span className="field__label">Nom</span>
+        <span className="field__label">{t.name}</span>
         <CommitInput
           className="input"
-          aria-label="Nom de la zone"
+          aria-label={t.nameAria}
           value={zone.name}
           onCommit={(v) => {
             if (v.trim()) s().updateZone(zone.id, { name: v.trim() })
@@ -24,15 +25,15 @@ export function ZoneForm({ zone, project }: { zone: Zone; project: Project }) {
         />
       </label>
       <div className="field">
-        <span className="field__label">Couleur</span>
-        <div className="swatches" role="radiogroup" aria-label="Couleur de la zone">
+        <span className="field__label">{t.color}</span>
+        <div className="swatches" role="radiogroup" aria-label={t.colorAria}>
           {ZONE_COLORS.map((c, i) => (
             <button
               key={c}
               type="button"
               role="radio"
               aria-checked={zone.color === c}
-              aria-label={COLOR_NAMES[i]}
+              aria-label={t.colors[i]}
               className="swatch"
               style={{ background: c }}
               onClick={() => {
@@ -43,11 +44,10 @@ export function ZoneForm({ zone, project }: { zone: Zone; project: Project }) {
         </div>
       </div>
       <label className="field--inline">
-        <input type="checkbox" checked={zone.ownPdfPage} onChange={(e) => s().updateZone(zone.id, { ownPdfPage: e.target.checked })} /> Page séparée dans le PDF
+        <input type="checkbox" checked={zone.ownPdfPage} onChange={(e) => s().updateZone(zone.id, { ownPdfPage: e.target.checked })} /> {t.ownPage}
       </label>
       <p className="insp__note">
-        {members === 0 ? 'Aucun appareil dans cette zone.' : `${members} appareil${members > 1 ? 's' : ''} dans cette zone.`} Glisser la zone par son titre
-        déplace ses appareils ; la supprimer les garde.
+        {members === 0 ? t.empty : t.members({ n: members })} {t.hint}
       </p>
     </div>
   )
