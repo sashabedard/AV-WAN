@@ -43,3 +43,14 @@ describe('uiStore · vue épinglée', () => {
     uiStore.getState().setLang('fr')
   })
 })
+
+describe('uiStore · vue Schéma | Baies', () => {
+  it('view survit à newProject ; racksViewport est remis à zéro', () => {
+    uiStore.getState().setView('racks')
+    uiStore.getState().setRacksViewport({ x: 1, y: 2, zoom: 1 })
+    projectStore.getState().newProject()
+    expect(uiStore.getState().view).toBe('racks')
+    expect(uiStore.getState().racksViewport).toBeNull()
+    uiStore.getState().setView('schema')
+  })
+})

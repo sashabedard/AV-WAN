@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest'
 import { createDevice, createProject } from '../model/project'
 import type { Device, Project } from '../model/types'
-import { createProjectStore, isDirty, linksOnRemovedPorts } from './projectStore'
+import { createProjectStore, isDirty, linksOnRemovedPorts, sameSelection } from './projectStore'
 import { copyFragment } from '../model/clipboard'
 import { vlanPreset } from '../catalog/vlanPresets'
 import { sampleProject } from '../model/__fixtures__/sample'
@@ -574,5 +574,114 @@ describe('débrancher un câble en le lâchant dans le vide', () => {
     expect(st.getState().history.present.links.some((l) => l.id === id)).toBe(false)
     st.getState().undo()
     expect(st.getState().history.present).toEqual(before)
+  })
+})
+
+describe('projectStore : baies (plan 10)', () => {
+  const withRack = () => {
+    const s = store()
+    const rackId = s.getState().addRack({ heightU: 4 })
+    const [d1, d2] = s.getState().history.present.devices.map((d) => d.id)
+    return { s, rackId, d1, d2 }
+  }
+  const rackOf = (s: ReturnType<typeof store>, id: string) => s.getState().history.present.devices.find((d) => d.id === id)?.rack
+
+  it('addRack : une étape d’annulation ; nom vide ignoré', () => {
+    const s = store()
+    const id = s.getState().addRack({ name: '  ' })
+    const r = s.getState().history.present.racks!.find((x) => x.id === id)!
+    expect(r.name.trim()).not.toBe('')
+    expect(r.heightU).toBe(12)
+    s.getState().undo()
+    expect(s.getState().history.present.racks ?? []).toHaveLength(0)
+  })
+
+  it('placeInRack / unplaceFromRack / setDeviceRackHeight / updateRack / removeRack : chacune annulable d’un coup', () => {
+    const { s, rackId, d1 } = withRack()
+    expect(s.getState().placeInRack(d1, rackId, 1)).toBe(true)
+    expect(rackOf(s, d1)?.u).toBe(1)
+    s.getState().undo()
+    expect(rackOf(s, d1)).toBeUndefined()
+    s.getState().redo()
+    expect(s.getState().setDeviceRackHeight(d1, 2)).toBe(true)
+    expect(rackOf(s, d1)?.heightU).toBe(2)
+    s.getState().undo()
+    expect(rackOf(s, d1)?.heightU).toBe(1)
+    expect(s.getState().updateRack(rackId, { name: 'X', heightU: 6 })).toBe(true)
+    s.getState().undo()
+    expect(s.getState().history.present.racks![0].heightU).toBe(4)
+    s.getState().unplaceFromRack(d1)
+    expect(rackOf(s, d1)).toBeUndefined()
+    s.getState().undo()
+    expect(rackOf(s, d1)).toBeDefined()
+    s.getState().removeRack(rackId)
+    expect(s.getState().history.present.racks).toHaveLength(0)
+    expect(rackOf(s, d1)).toBeUndefined()
+    s.getState().undo()
+    expect(rackOf(s, d1)).toBeDefined()
+  })
+
+  it('placeInRackFirstFree : premier U libre, une étape', () => {
+    const { s, rackId, d1, d2 } = withRack()
+    s.getState().placeInRack(d1, rackId, 1)
+    expect(s.getState().placeInRackFirstFree(d2, rackId)).toBe(true)
+    expect(rackOf(s, d2)?.u).toBe(2)
+    s.getState().undo()
+    expect(rackOf(s, d2)).toBeUndefined()
+  })
+
+  it('placeInRack sur des U occupés : false, même référence, toast rackNoRoom', () => {
+    const { s, rackId, d1, d2 } = withRack()
+    s.getState().placeInRack(d1, rackId, 1)
+    const before = s.getState().history.present
+    expect(s.getState().placeInRack(d2, rackId, 1)).toBe(false)
+    expect(s.getState().history.present).toBe(before)
+    expect(s.getState().toast).toBe('Pas assez de U libres à cet endroit.')
+    s.getState().clearToast()
+    expect(s.getState().placeInRackFirstFree(d2, 'absente')).toBe(false)
+  })
+
+  it('agrandir un appareil jusqu’au chevauchement : refusé, toast rackNoRoom', () => {
+    const { s, rackId, d1, d2 } = withRack()
+    s.getState().placeInRack(d1, rackId, 1)
+    s.getState().placeInRack(d2, rackId, 2)
+    const before = s.getState().history.present
+    expect(s.getState().setDeviceRackHeight(d1, 2)).toBe(false)
+    expect(s.getState().history.present).toBe(before)
+    expect(s.getState().toast).toBe('Pas assez de U libres à cet endroit.')
+  })
+
+  it('updateRack trop court : false, même référence, toast rackTooShort', () => {
+    const { s, rackId, d1 } = withRack()
+    s.getState().placeInRack(d1, rackId, 4)
+    const before = s.getState().history.present
+    expect(s.getState().updateRack(rackId, { heightU: 3 })).toBe(false)
+    expect(s.getState().history.present).toBe(before)
+    expect(s.getState().toast).toBe('La baie est trop courte pour ses appareils.')
+  })
+
+  it('updateRack refuse une hauteur hors 1…52 ou non entière, sans toast', () => {
+    const { s, rackId } = withRack()
+    const before = s.getState().history.present
+    for (const h of [0, 53, 2.5, NaN]) expect(s.getState().updateRack(rackId, { heightU: h })).toBe(false)
+    expect(s.getState().history.present).toBe(before)
+    expect(s.getState().toast).toBeNull()
+  })
+
+  it('supprimer un appareil en baie puis ⌘Z : il revient à son U', () => {
+    const { s, rackId, d1 } = withRack()
+    s.getState().placeInRack(d1, rackId, 3)
+    const placed = rackOf(s, d1)
+    s.getState().removeElements([d1], [])
+    expect(s.getState().history.present.devices.some((d) => d.id === d1)).toBe(false)
+    s.getState().undo()
+    expect(rackOf(s, d1)).toEqual(placed)
+  })
+
+  it('sameSelection distingue deux rackIds différents', () => {
+    const a = { deviceIds: [], linkIds: [], rackIds: ['a'] }
+    expect(sameSelection(a, { deviceIds: [], linkIds: [], rackIds: ['b'] })).toBe(false)
+    expect(sameSelection(a, { deviceIds: [], linkIds: [], rackIds: ['a'] })).toBe(true)
+    expect(sameSelection({ deviceIds: [], linkIds: [] }, { deviceIds: [], linkIds: [], rackIds: [] })).toBe(true)
   })
 })

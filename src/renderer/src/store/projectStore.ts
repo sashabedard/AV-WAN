@@ -11,6 +11,7 @@ import { assignZones, createZone, moveZones, placeDevices, removeZones, resizeZo
 import { withTemplate } from '../model/customTemplate'
 import { autoAddress, autoAddressOnOpen } from '../model/daisyChain'
 import { ownNewKeys, removeProjectList, setProjectList, type ChannelKey } from '../model/dmxChannels'
+import { addRack as addRackModel, updateRack as updateRackModel, removeRack as removeRackModel, placeDevice, firstFreeU, unplaceDevice, setDeviceHeightU, RACK_HEIGHT_MAX } from '../model/racks'
 import { uiStore } from './uiStore'
 import { currentLang, currentMessages } from '../i18n/useT'
 import type { Lang } from '../../../shared/i18n/lang'
@@ -21,11 +22,12 @@ export interface Selection {
   deviceIds: string[]
   linkIds: string[]
   zoneIds?: string[]
+  rackIds?: string[]
 }
 
 export function sameSelection(a: Selection, b: Selection): boolean {
   const eq = (x: readonly string[] = [], y: readonly string[] = []): boolean => x.length === y.length && x.every((v, i) => v === y[i])
-  return eq(a.deviceIds, b.deviceIds) && eq(a.linkIds, b.linkIds) && eq(a.zoneIds, b.zoneIds)
+  return eq(a.deviceIds, b.deviceIds) && eq(a.linkIds, b.linkIds) && eq(a.zoneIds, b.zoneIds) && eq(a.rackIds, b.rackIds)
 }
 export type DevicePatch = Partial<Pick<Device, 'name' | 'model' | 'ip' | 'hostname' | 'note' | 'portSide' | 'powerW' | 'dmx' | 'psu' | 'ledStrip'>>
 export type LinkPatch = Partial<Pick<Link, 'cableId' | 'medium' | 'lengthM' | 'jacketColor' | 'wifi' | 'note' | 'elbow'>>
@@ -58,6 +60,13 @@ export interface ProjectState {
   zoneAroundSelection(): string | null
   updateZone(id: string, patch: ZonePatch): void
   resizeZone(id: string, rect: ZoneRect): void
+  addRack(opts?: { name?: string; heightU?: number; zoneId?: string }): string
+  updateRack(id: string, patch: { name?: string; heightU?: number; zoneId?: string | null }): boolean
+  removeRack(id: string): void
+  placeInRack(deviceId: string, rackId: string, u: number): boolean
+  placeInRackFirstFree(deviceId: string, rackId: string): boolean
+  unplaceFromRack(deviceId: string): void
+  setDeviceRackHeight(deviceId: string, heightU: number): boolean
   pasteFragment(fragment: Fragment, offset: { x: number; y: number }): string[]
   connect(a: PortRef, b: PortRef): string | null
   reconnect(linkId: string, end: 'a' | 'b', to: PortRef): boolean
@@ -221,6 +230,60 @@ export function createProjectStore(initial: Project = createProject(undefined, c
       },
       updateZone: (id, patch) => apply((p) => ({ ...p, zones: p.zones.map((z) => (z.id === id ? { ...z, ...patch } : z)) })),
       resizeZone: (id, rect) => apply((p) => resizeZoneModel(p, id, rect)),
+
+      addRack: (opts = {}) => {
+        const name = opts.name?.trim() ? opts.name : undefined
+        let id = ''
+        apply((p) => {
+          const r = addRackModel(p, currentMessages(), { ...opts, name })
+          id = r.id
+          return r.project
+        })
+        return get().history.present.racks?.some((r) => r.id === id) ? id : ''
+      },
+      updateRack: (id, patch) => {
+        const { heightU } = patch
+        if (heightU !== undefined && (!Number.isInteger(heightU) || heightU < 1 || heightU > RACK_HEIGHT_MAX)) return false
+        const next = updateRackModel(get().history.present, id, patch)
+        if (!next) {
+          set({ toast: currentMessages().app.toast.rackTooShort })
+          return false
+        }
+        apply(() => next)
+        return true
+      },
+      removeRack: (id) => apply((p) => removeRackModel(p, id)),
+      placeInRack: (deviceId, rackId, u) => {
+        const next = placeDevice(get().history.present, deviceId, rackId, u)
+        if (!next) {
+          set({ toast: currentMessages().app.toast.rackNoRoom })
+          return false
+        }
+        apply(() => next)
+        return true
+      },
+      placeInRackFirstFree: (deviceId, rackId) => {
+        const p = get().history.present
+        const h = p.devices.find((d) => d.id === deviceId)?.rack?.heightU ?? 1
+        const u = firstFreeU(p, rackId, h, deviceId)
+        const next = u === undefined ? null : placeDevice(p, deviceId, rackId, u)
+        if (!next) {
+          set({ toast: currentMessages().app.toast.rackNoRoom })
+          return false
+        }
+        apply(() => next)
+        return true
+      },
+      unplaceFromRack: (deviceId) => apply((p) => unplaceDevice(p, deviceId)),
+      setDeviceRackHeight: (deviceId, heightU) => {
+        const next = setDeviceHeightU(get().history.present, deviceId, heightU)
+        if (!next) {
+          set({ toast: currentMessages().app.toast.rackNoRoom })
+          return false
+        }
+        apply(() => next)
+        return true
+      },
 
       connect: (a, b) => {
         const p = get().history.present

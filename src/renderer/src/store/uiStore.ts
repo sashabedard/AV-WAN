@@ -52,6 +52,11 @@ export interface UiState {
   // Langue de l'interface (spec plan 6 § 4.2) : vient du main ; jamais remise à zéro par resetForDocument.
   lang: Lang
   setLang(lang: Lang): void
+  // Vue Schéma | Baies : propre à la fenêtre, jamais remise à zéro par resetForDocument.
+  view: 'schema' | 'racks'
+  setView(v: 'schema' | 'racks'): void
+  racksViewport: { x: number; y: number; zoom: number } | null
+  setRacksViewport(v: { x: number; y: number; zoom: number } | null): void
   resetForDocument(): void
 }
 
@@ -95,6 +100,10 @@ export const uiStore = createStore<UiState>()((set) => ({
   setAutoSave: (on) => set({ autoSave: on }),
   lang: initialLang(),
   setLang: (lang) => set({ lang }),
+  view: 'schema',
+  setView: (v) => set({ view: v }),
+  racksViewport: null,
+  setRacksViewport: (v) => set({ racksViewport: v }),
   resetForDocument: () =>
     set({
       focusVlan: null,
@@ -105,7 +114,8 @@ export const uiStore = createStore<UiState>()((set) => ({
       pendingTemplateId: null,
       pendingSwitch: null,
       search: null,
-      pinnedRect: null
+      pinnedRect: null,
+      racksViewport: null
     })
 }))
 

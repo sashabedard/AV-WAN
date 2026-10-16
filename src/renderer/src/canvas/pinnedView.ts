@@ -60,7 +60,7 @@ export function defaultPlacement(canvas: Size): Box {
 // Clic dans la vignette, comme dans le canvas principal : remplace la sélection ou, avec Shift, ⌘ ou Ctrl,
 // ajoute l'élément ou le retire.
 export function clickSelection(current: Selection, target: PinnedTarget, additive: boolean): Selection {
-  const base: Required<Selection> = additive
+  const base: Required<Omit<Selection, 'rackIds'>> = additive
     ? { deviceIds: current.deviceIds, linkIds: current.linkIds, zoneIds: current.zoneIds ?? [] }
     : { deviceIds: [], linkIds: [], zoneIds: [] }
   const toggle = (ids: string[]): string[] =>

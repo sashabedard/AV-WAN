@@ -48,6 +48,8 @@ export const app = {
     reconnectImpossible: 'Rebranchement impossible : port occupé ou connecteurs incompatibles.',
     cableUnplugged: (p: { undo: string }) => `Câble débranché · ${p.undo} pour annuler`,
     vlanExists: (p: { id: number }) => `Le VLAN ${p.id} existe déjà.`,
-    vlanInvalid: 'Numéro de VLAN invalide : choisissez un nombre de 1 à 4094.'
+    vlanInvalid: 'Numéro de VLAN invalide : choisissez un nombre de 1 à 4094.',
+    rackNoRoom: 'Pas assez de U libres à cet endroit.',
+    rackTooShort: 'La baie est trop courte pour ses appareils.'
   }
 } as const
