@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import type { Category, DeviceTemplate } from '../../model/types'
+import type { Category, DeviceTemplate, StoredTemplate } from '../../model/types'
+import { displayName, templateText } from '../templateText'
 import { DeviceTemplateSchema } from '../../model/schema'
 import { SENSOR_MODELS } from './capteurs'
 import { LIGHTING_MODELS } from './eclairage'
@@ -17,11 +18,19 @@ const FAMILIES: ReadonlyArray<[string, Category, readonly DeviceTemplate[]]> = [
   ['contrôleurs', 'ordinateur', AUDIO_MODELS.filter((t) => t.category === 'ordinateur')]
 ]
 
+// Le schéma décrit un gabarit enregistré (chaînes) : on aplatit le texte bilingue en français pour le valider.
+const stored = ({ note, ...t }: DeviceTemplate): StoredTemplate => ({
+  ...t,
+  name: displayName(t, 'fr'),
+  ...(note !== undefined ? { note: templateText(note, 'fr') } : {}),
+  ports: t.ports.map((p) => ({ ...p, label: templateText(p.label, 'fr') }))
+})
+
 describe.each(FAMILIES)('modèles %s', (_name, category, models) => {
   it('sont valides, de leur catégorie, avec marque, modèle et code', () => {
     expect(models.length).toBeGreaterThan(0)
     for (const t of models) {
-      expect(DeviceTemplateSchema.safeParse(t).success, t.id).toBe(true)
+      expect(DeviceTemplateSchema.safeParse(stored(t)).success, t.id).toBe(true)
       expect(t.category, t.id).toBe(category)
       expect(t.vendor?.trim(), t.id).toBeTruthy()
       expect(t.model?.trim(), t.id).toBeTruthy()

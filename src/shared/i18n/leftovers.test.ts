@@ -6,7 +6,7 @@ import { join, relative } from 'node:path'
 // Plan 6 : dossiers et fichiers déjà traduits. Chaque tâche y ajoute les siens ; à la fin, tout `src`.
 const CHECKED: readonly string[] = ['src/shared/i18n', 'src/main', 'src/shared/appInfo.ts', 'src/preload', 'src/renderer/src/i18n', 'src/renderer/src/app', 'src/renderer/src/store', 'src/renderer/src/theme', 'src/renderer/src/canvas', 'src/renderer/src/panels', 'src/renderer/src/catalog']
 // Parties d'un dossier vérifié pas encore traduites (chaque tâche retire la sienne).
-const PENDING: readonly string[] = ['src/renderer/src/catalog/models']
+const PENDING: readonly string[] = []
 
 const ROOT = process.cwd()
 const FRENCH_CHARS = /[éèêëàâùûüçîïôœÉÈÊËÀÂÙÛÜÇÎÏÔŒ’«»]/

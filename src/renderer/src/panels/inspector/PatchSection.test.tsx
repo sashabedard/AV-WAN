@@ -146,3 +146,18 @@ describe('bloc Patch DMX en anglais', () => {
     expect(projectStore.getState().toast).toBe('DMX address: a whole number from 1 to 512.')
   })
 })
+
+describe('mode DMX d’un modèle du catalogue en anglais', () => {
+  it('affiche « Extended (EXT) » mais garde la clé « Étendu (EXT) »', async () => {
+    const p = projectStore.getState().history.present
+    const aura = { ...createDevice(p, 'martin-mac-aura-xb', { x: 0, y: 0 }, { id: 'aura' }), dmx: { footprint: 25, mode: 'Étendu (EXT)' } }
+    projectStore.getState().loadProject({ ...p, devices: [...p.devices, aura] }, null)
+    select('aura')
+    act(() => uiStore.getState().setLang('en'))
+    render(<Inspector />)
+    const sel = screen.getByRole('combobox', { name: /mode/i }) as HTMLSelectElement
+    expect(sel.value).toBe('Étendu (EXT)')
+    expect(sel.selectedOptions[0]!.textContent).toBe('Extended (EXT) · 25 ch')
+    expect(dev('aura').dmx?.mode).toBe('Étendu (EXT)')
+  })
+})

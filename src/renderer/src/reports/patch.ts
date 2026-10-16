@@ -2,6 +2,7 @@
 import type { Project } from '../model/types'
 import { getTemplate } from '../catalog'
 import { displayName } from '../catalog/templateText'
+import { modeLabel } from '../catalog/modeLabels'
 import { LED_STRIP_TYPES } from '../model/led'
 import { issueTexts, overlapsIn, patchIndex, patchIssues, rangeLabel, sourceLabel, type PatchEntry } from '../model/dmx'
 import type { Cell, Column, DataTable } from '../../../shared/tables'
@@ -56,7 +57,7 @@ export function patchRows(project: Project): PatchRow[] {
       channels: dmx.footprint,
       device: d.name,
       model: d.model ?? t?.model ?? (t ? displayName(t, 'fr') : '') /* plan 6 : langue des documents à la Task 12 */,
-      mode: dmx.mode ?? '',
+      mode: dmx.mode ? modeLabel(dmx.mode, 'fr') /* plan 6 : langue des documents à la Task 12 */ : '',
       source: entry.universe ? sourceLabel(project, entry.universe.source) : '',
       zone: zoneName(project, d.zoneId),
       remark: issueTexts(patchIssues(index, d.id)).join(' · ')
@@ -114,5 +115,5 @@ export function dmxSummary(entry: PatchEntry): string {
   const dmx = entry.device.dmx!
   const universe = entry.universe ? `U${entry.universe.universe}` : 'univers inconnu'
   const range = dmx.address !== undefined ? rangeLabel(dmx.address, dmx.address + dmx.footprint - 1) : 'adresse à définir'
-  return [`DMX : ${universe}`, range, `${dmx.footprint} ch`, ...(dmx.mode ? [dmx.mode] : [])].join(' · ')
+  return [`DMX : ${universe}`, range, `${dmx.footprint} ch`, ...(dmx.mode ? [modeLabel(dmx.mode, 'fr') /* plan 6 : langue des documents à la Task 12 */] : [])].join(' · ')
 }

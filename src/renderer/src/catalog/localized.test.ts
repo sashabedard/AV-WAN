@@ -7,10 +7,8 @@ const filled = (l: { fr: string; en: string }): boolean => l.fr.trim() !== '' &&
 
 describe('catalogue en deux langues', () => {
   it('chaque gabarit a son nom et sa note dans les deux langues', () => {
-    // Les modèles nommés gardent des chaînes simples jusqu'à la Task 10 : on vérifie les gabarits déjà bilingues.
-    const bilingual = TEMPLATES.filter((t) => typeof t.name !== 'string')
-    expect(bilingual.length).toBeGreaterThanOrEqual(50)
-    for (const t of bilingual) {
+    expect(TEMPLATES.length).toBeGreaterThanOrEqual(90)
+    for (const t of TEMPLATES) {
       expect(filled(t.name as Localized), t.id).toBe(true)
       if (t.note) expect(filled(t.note as Localized), t.id).toBe(true)
     }

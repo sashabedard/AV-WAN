@@ -216,3 +216,21 @@ describe('fichier des réglages', () => {
     expect(serializeSettingsLists(lists).endsWith('\n')).toBe(true)
   })
 })
+
+describe('mode DMX français et langue de l’interface', () => {
+  it('« Étendu (EXT) » résout la même liste en français et en anglais', async () => {
+    const { uiStore } = await import('../store/uiStore')
+    let p = createProject(new Date(2026, 9, 15))
+    p = { ...p, devices: [{ ...createDevice(p, 'martin-mac-aura-xb', { x: 0, y: 0 }, { id: 'aura' }), dmx: { footprint: 25, mode: 'Étendu (EXT)' } }] }
+    const k = channelKey(p.devices[0]!)!
+    uiStore.getState().setLang('fr')
+    const fr = resolveChannels(p, [], k)
+    uiStore.getState().setLang('en')
+    const en = resolveChannels(p, [], k)
+    uiStore.getState().setLang('fr')
+    expect(fr?.source).toBe('catalog')
+    expect(fr?.params.length).toBe(25)
+    expect(en).toEqual(fr)
+    expect(k.mode).toBe('Étendu (EXT)')
+  })
+})

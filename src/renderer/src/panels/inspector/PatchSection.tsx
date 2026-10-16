@@ -3,6 +3,7 @@ import type { Device, DmxPatch, Project } from '../../model/types'
 import { DMX_SLOTS, UNIVERSE_MAX, issueTexts, nextFreeAddress, patchIndex, patchIssues, rangeLabel, sourceLabel } from '../../model/dmx'
 import { parseIntField } from '../../model/fields'
 import { getTemplate } from '../../catalog'
+import { modeLabel } from '../../catalog/modeLabels'
 import { projectStore } from '../../store/projectStore'
 import { CommitInput } from '../CommitInput'
 import { useT } from '../../i18n/useT'
@@ -22,7 +23,7 @@ function compactDmx(d: DmxPatch): DmxPatch {
 
 // Bloc « Patch DMX » d'un appareil patchable (spec patch-puissance-catalogue § 4.6).
 export function PatchSection({ device, project }: { device: Device; project: Project }) {
-  const { m } = useT()
+  const { m, lang } = useT()
   const t = m.inspector.patch
   const index = patchIndex(project) // mémorisé par projet
   const dmx = device.dmx
@@ -86,9 +87,9 @@ export function PatchSection({ device, project }: { device: Device; project: Pro
               if (picked) save({ mode: picked.name, footprint: picked.channels })
             }}
           >
-            {!modes.some((md) => md.name === dmx.mode) && <option value={dmx.mode ?? ''}>{dmx.mode || '—'}</option>}
+            {!modes.some((md) => md.name === dmx.mode) && <option value={dmx.mode ?? ''}>{dmx.mode ? modeLabel(dmx.mode, lang) : '—'}</option>}
             {modes.map((md) => (
-              <option key={md.name} value={md.name}>{`${md.name} · ${md.channels} ch`}</option>
+              <option key={md.name} value={md.name}>{`${modeLabel(md.name, lang)} · ${md.channels} ch`}</option>
             ))}
           </select>
         </label>
