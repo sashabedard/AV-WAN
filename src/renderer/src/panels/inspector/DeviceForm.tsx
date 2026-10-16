@@ -12,7 +12,7 @@ import { Segmented } from '../Segmented'
 import { SwitchConfigurator } from '../SwitchConfigurator'
 import { peersOf, portVlanSummary } from './format'
 import { isUniverseOutput, UNIVERSE_MAX } from '../../model/dmx'
-import { parseDecimalField, parseIntField } from '../../model/fields'
+import { decimalText, parseDecimalField, parseIntField } from '../../model/fields'
 import { PsuSection } from './PsuSection'
 import { LedStripSection } from './LedStripSection'
 import { PatchSection } from './PatchSection'
@@ -86,7 +86,7 @@ export function DeviceForm({ device, project }: { device: Device; project: Proje
               aria-label={t.powerAria}
               inputMode="decimal"
               placeholder="—"
-              value={device.powerW !== undefined ? String(device.powerW).replace('.', ',') : ''}
+              value={device.powerW !== undefined ? decimalText(device.powerW, lang) : ''}
               onCommit={(v) => {
                 const n = parseDecimalField(v)
                 if (n === undefined) s().showToast(t.powerToast)

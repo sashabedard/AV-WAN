@@ -5,7 +5,7 @@ import { PrintLegend } from './PrintLegend'
 import { createExampleProject } from '../samples/exampleProject'
 
 afterEach(cleanup)
-const p = createExampleProject(new Date(2026, 9, 13))
+const p = createExampleProject(new Date(2026, 9, 13), 'fr')
 
 describe('PrintLegend', () => {
   it('en mode VLAN, donne chaque VLAN, le trunk et l’absence de VLAN, puis les traits', () => {

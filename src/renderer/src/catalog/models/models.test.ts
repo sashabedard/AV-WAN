@@ -72,9 +72,9 @@ describe('éclairage nommé', () => {
 
 describe('vidéo nommée', () => {
   it('les sorties d’un processeur LED ne sont pas des sorties d’univers', () => {
-    const p = { ...createProject(), devices: [] }
+    const p = { ...createProject(undefined, 'fr'), devices: [] }
     const t = VIDEO_MODELS.find((x) => x.id === 'novastar-mctrl4k')!
-    const d = createDevice({ ...p, templates: [] }, t.id, { x: 0, y: 0 })
+    const d = createDevice({ ...p, templates: [] }, t.id, { x: 0, y: 0 }, { lang: 'fr' })
     expect(d.ports.filter((x) => x.connector === 'pixel').length).toBeGreaterThan(0)
     expect(d.ports.some((x) => isUniverseOutput(p, d, x))).toBe(false)
   })

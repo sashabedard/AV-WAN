@@ -4,9 +4,10 @@ import { getTemplate } from '../catalog'
 import { displayName } from '../catalog/templateText'
 import { modeLabel } from '../catalog/modeLabels'
 import { LED_STRIP_TYPES } from '../model/led'
-import { issueTexts, overlapsIn, patchIndex, patchIssues, rangeLabel, sourceLabel, type PatchEntry } from '../model/dmx'
+import { issueTexts, overlapsIn, patchIndex, patchIssues, rangeLabel, sourceLabel, sourceText, TYPED_SOURCE, type PatchEntry } from '../model/dmx'
 import type { Cell, Column, DataTable } from '../../../shared/tables'
 import { compareText } from './format'
+import { messages } from '../../../shared/i18n/messages'
 
 export const PATCH_COLUMNS: Column[] = [
   { label: 'Univers', width: 9 },
@@ -60,7 +61,7 @@ export function patchRows(project: Project): PatchRow[] {
       mode: dmx.mode ? modeLabel(dmx.mode, 'fr') /* plan 6 : langue des documents à la Task 12 */ : '',
       source: entry.universe ? sourceLabel(project, entry.universe.source) : '',
       zone: zoneName(project, d.zoneId),
-      remark: issueTexts(patchIssues(index, d.id)).join(' · ')
+      remark: issueTexts(patchIssues(index, d.id), messages('fr')).join(' · ') /* plan 6 : langue des documents à la Task 12 */
     })
   }
   for (const sp of index.strips.values()) {
@@ -78,14 +79,14 @@ export function patchRows(project: Project): PatchRow[] {
         mode: `${label} · ${span.pixels} px`,
         source: sourceLabel(project, { kind: 'port', ref: sp.source }),
         zone: zoneName(project, d.zoneId),
-        remark: issueTexts({ overlaps: overlapsIn(index, span.universe, 1, span.channels, d.id), overflow: false }).join(' · ')
+        remark: issueTexts({ overlaps: overlapsIn(index, span.universe, 1, span.channels, d.id), overflow: false }, messages('fr')).join(' · ') /* plan 6 : langue des documents à la Task 12 */
       })
     }
   }
   return rows.sort((a, b) => undefinedLast(a.universe, b.universe) || undefinedLast(a.address, b.address) || compareText(a.device, b.device))
 }
 
-// Un bloc par univers ; l'en-tête nomme la ou les sorties qui le portent (« tapé » n'en est pas une).
+// Un bloc par univers ; l'en-tête nomme la ou les sorties qui le portent (la source « typed », univers tapé, n'en est pas une).
 export function patchGroups(project: Project): PatchGroup[] {
   const groups: PatchGroup[] = []
   for (const row of patchRows(project)) {
@@ -97,7 +98,7 @@ export function patchGroups(project: Project): PatchGroup[] {
     g.rows.push(row)
   }
   for (const g of groups) {
-    const sources = [...new Set(g.rows.map((r) => r.source).filter((s) => s && s !== 'tapé'))]
+    const sources = [...new Set(g.rows.map((r) => r.source).filter((s) => s && s !== TYPED_SOURCE))]
     g.title = g.universe === undefined ? 'Sans univers' : `Univers ${g.universe}${sources.length > 0 ? ` · ${sources.join(', ')}` : ''}`
   }
   return groups
@@ -106,7 +107,7 @@ export function patchGroups(project: Project): PatchGroup[] {
 const num = (n: number | undefined): Cell => (n === undefined ? null : n)
 
 export function patchTable(project: Project): DataTable {
-  const rows = patchRows(project).map((r): Cell[] => [num(r.universe), num(r.address), num(r.end), r.channels, r.device, r.model, r.mode, r.source, r.zone, r.remark])
+  const rows = patchRows(project).map((r): Cell[] => [num(r.universe), num(r.address), num(r.end), r.channels, r.device, r.model, r.mode, sourceText(r.source, messages('fr')) /* plan 6 : langue des documents à la Task 12 */, r.zone, r.remark])
   return { id: 'patch-dmx', title: 'Patch DMX', columns: PATCH_COLUMNS, rows }
 }
 

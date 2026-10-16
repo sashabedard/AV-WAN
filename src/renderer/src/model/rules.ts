@@ -1,19 +1,12 @@
 import type { Connector, Device, Link, Medium, PortDef, PortRef, Project } from './types'
+import type { Messages } from '../../../shared/i18n/messages'
 import { PATCH_PANEL_TEMPLATE_IDS, RACK_TEMPLATE_IDS } from '../catalog/templates'
 
 export type Family = 'ethernet' | 'optical' | 'wifi' | 'usb' | 'dmx' | 'pixel' | 'hdmi' | 'sdi' | 'serial' | 'dc'
 
-export const FAMILY_LABELS: Record<Family, string> = {
-  ethernet: 'RJ45',
-  optical: 'SFP/SFP+',
-  wifi: 'Wi-Fi',
-  usb: 'USB',
-  dmx: 'DMX',
-  pixel: 'pixels',
-  hdmi: 'HDMI',
-  sdi: 'SDI',
-  serial: 'série',
-  dc: 'alim DC'
+// Libellés des familles de ports dans la langue de `m` (les identifiants de famille ne changent pas).
+export function familyLabels(m: Messages): Record<Family, string> {
+  return m.model.family
 }
 
 export function connectorFamily(c: Connector): Family {

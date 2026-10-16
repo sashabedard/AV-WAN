@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import { createExampleProject } from '../samples/exampleProject'
 import { portMaps } from './portMaps'
 
-const p = createExampleProject(new Date(2026, 9, 13))
+const p = createExampleProject(new Date(2026, 9, 13), 'fr')
 const sw2 = (project = p) => portMaps(project).find((m) => m.name === 'SW-2')!
 
 describe('portMaps', () => {

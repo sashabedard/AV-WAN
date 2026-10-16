@@ -12,7 +12,7 @@ import { RecoveryBanner } from './RecoveryBanner'
 
 export function Welcome() {
   const open = useUiStore((s) => s.welcome)
-  const { m } = useT()
+  const { m, lang } = useT()
   const [recent, setRecent] = useState<string[]>([])
   useEffect(() => {
     if (!open) return
@@ -54,7 +54,7 @@ export function Welcome() {
             type="button"
             className="btn"
             onClick={() => {
-              projectStore.getState().loadProject(createExampleProject(), null)
+              projectStore.getState().loadProject(createExampleProject(undefined, lang), null)
               close()
             }}
           >

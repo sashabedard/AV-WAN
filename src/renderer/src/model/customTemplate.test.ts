@@ -36,7 +36,7 @@ const lidar = (): TemplateDraft => ({
 describe('brouillon', () => {
   it('part d’un appareil vide ou d’un gabarit intégré', () => {
     expect(blankDraft()).toEqual({ name: '', code: '', category: 'autre', vendor: '', model: '', icon: { kind: 'builtin', name: 'generic' }, ports: [], patchable: false, footprint: '1', powerW: '' })
-    const avio = draftFrom(TEMPLATES_BY_ID.get('dante-avio')!)
+    const avio = draftFrom(TEMPLATES_BY_ID.get('dante-avio')!, 'fr')
     expect(avio).toMatchObject({ name: 'Adaptateur Dante AVIO', code: 'DNT', category: 'audio', icon: { kind: 'builtin', name: 'dante' } })
     expect(avio.ports).toEqual([{ label: 'ETH', connector: 'rj45', poe: 'in-af' }])
   })
@@ -70,13 +70,13 @@ describe('ports', () => {
 
 describe('validation', () => {
   it('exige un nom, un code de 1 à 4 caractères et des ports nommés', () => {
-    expect(validateDraft(lidar())).toEqual({})
-    expect(validateDraft({ ...lidar(), name: '  ' }).name).toBe('Donnez un nom à la composante.')
-    expect(validateDraft({ ...lidar(), name: 'x'.repeat(61) }).name).toBe('60 caractères au plus.')
-    expect(validateDraft({ ...lidar(), code: '' }).code).toBe('De 1 à 4 lettres ou chiffres.')
-    expect(validateDraft({ ...lidar(), ports: [{ label: ' ', connector: 'rj45', poe: 'none' }] }).ports).toBe('Chaque port a besoin d’un nom.')
+    expect(validateDraft(lidar(), messages('fr').componentEditor.errors)).toEqual({})
+    expect(validateDraft({ ...lidar(), name: '  ' }, messages('fr').componentEditor.errors).name).toBe('Donnez un nom à la composante.')
+    expect(validateDraft({ ...lidar(), name: 'x'.repeat(61) }, messages('fr').componentEditor.errors).name).toBe('60 caractères au plus.')
+    expect(validateDraft({ ...lidar(), code: '' }, messages('fr').componentEditor.errors).code).toBe('De 1 à 4 lettres ou chiffres.')
+    expect(validateDraft({ ...lidar(), ports: [{ label: ' ', connector: 'rj45', poe: 'none' }] }, messages('fr').componentEditor.errors).ports).toBe('Chaque port a besoin d’un nom.')
     const tooMany = [...addPortBatch([], 'rj45', 64), { label: 'X', connector: 'usb' as const, poe: 'none' as const }]
-    expect(validateDraft({ ...lidar(), ports: tooMany }).ports).toBe('64 ports au plus.')
+    expect(validateDraft({ ...lidar(), ports: tooMany }, messages('fr').componentEditor.errors).ports).toBe('64 ports au plus.')
   })
 
   it('met le code en majuscules sans accents ni symboles, 4 caractères au plus', () => {
@@ -104,7 +104,7 @@ describe('templateFromDraft', () => {
     const a = newCustomId()
     expect(a).toMatch(CUSTOM_ID)
     expect(newCustomId()).not.toBe(a)
-    const copy = duplicateTemplate(templateFromDraft(lidar(), a))
+    const copy = duplicateTemplate(templateFromDraft(lidar(), a), messages('fr').componentEditor.copySuffix, 'fr')
     expect(copy.id).toMatch(CUSTOM_ID)
     expect(copy.id).not.toBe(a)
     expect(copy.name).toBe('Capteur LiDAR (copie)')
@@ -136,14 +136,14 @@ describe('composantes d’un projet', () => {
 
 describe('duplicateTemplate', () => {
   it('une copie d’un gabarit intégré est toujours perso', () => {
-    const copy = duplicateTemplate(TEMPLATES_BY_ID.get('dante-avio')!)
+    const copy = duplicateTemplate(TEMPLATES_BY_ID.get('dante-avio')!, messages('fr').componentEditor.copySuffix, 'fr')
     expect(copy.isCustom).toBe(true)
     expect(copy.id).toMatch(CUSTOM_ID)
     expect(copy.name).toBe('Adaptateur Dante AVIO (copie)')
   })
 
   it('le suffixe « (copie) » reste visible, même pour un nom de 60 caractères', () => {
-    const copy = duplicateTemplate({ ...templateFromDraft(lidar(), 'custom-aaaaaaaaaaaa'), name: 'x'.repeat(60) })
+    const copy = duplicateTemplate({ ...templateFromDraft(lidar(), 'custom-aaaaaaaaaaaa'), name: 'x'.repeat(60) }, messages('fr').componentEditor.copySuffix, 'fr')
     expect(copy.name).toHaveLength(60)
     expect(copy.name.endsWith(' (copie)')).toBe(true)
   })
@@ -165,14 +165,14 @@ describe('patch et puissance d’une composante', () => {
   })
 
   it('valide les canaux seulement quand la case est cochée', () => {
-    expect(validateDraft({ ...base(), patchable: true, footprint: '600' }).dmx).toBe('Canaux : un nombre entier de 1 à 512.')
-    expect(validateDraft({ ...base(), patchable: false, footprint: '600' }).dmx).toBeUndefined()
-    expect(validateDraft({ ...base(), powerW: 'beaucoup' }).power).toBe('Puissance : un nombre positif ou nul, en watts.')
+    expect(validateDraft({ ...base(), patchable: true, footprint: '600' }, messages('fr').componentEditor.errors).dmx).toBe('Canaux : un nombre entier de 1 à 512.')
+    expect(validateDraft({ ...base(), patchable: false, footprint: '600' }, messages('fr').componentEditor.errors).dmx).toBeUndefined()
+    expect(validateDraft({ ...base(), powerW: 'beaucoup' }, messages('fr').componentEditor.errors).power).toBe('Puissance : un nombre positif ou nul, en watts.')
   })
 
   it('reprend le patch et la puissance d’un gabarit', () => {
     const fixture = TEMPLATES.find((t) => t.id === 'dmx-fixture')!
-    expect(draftFrom(fixture)).toMatchObject({ patchable: true, footprint: '1', powerW: '' })
-    expect(draftFrom({ ...fixture, powerW: 12.5, dmx: { footprint: 8, modes: [{ name: 'A', channels: 12 }] } })).toMatchObject({ footprint: '12', powerW: '12,5' })
+    expect(draftFrom(fixture, 'fr')).toMatchObject({ patchable: true, footprint: '1', powerW: '' })
+    expect(draftFrom({ ...fixture, powerW: 12.5, dmx: { footprint: 8, modes: [{ name: 'A', channels: 12 }] } }, 'fr')).toMatchObject({ footprint: '12', powerW: '12,5' })
   })
 })

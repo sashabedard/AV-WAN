@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { messages } from '../../../shared/i18n/messages'
 import { makeStressProject } from './stress'
 import { ProjectSchema } from '../model/schema'
 import { sanitizeProject } from '../model/sanitize'
@@ -9,6 +10,6 @@ describe('makeStressProject', () => {
     expect(p.devices).toHaveLength(150)
     expect(p.links).toHaveLength(400)
     expect(ProjectSchema.safeParse(p).success).toBe(true)
-    expect(sanitizeProject(p).warnings).toEqual([])
+    expect(sanitizeProject(p, messages('fr')).warnings).toEqual([])
   })
 })

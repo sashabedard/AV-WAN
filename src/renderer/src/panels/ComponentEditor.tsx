@@ -45,7 +45,7 @@ export function ComponentEditor() {
 function EditorForm({ editing }: { editing: StoredTemplate | null }) {
   const { m, lang } = useT()
   const t = m.componentEditor
-  const [draft, setDraft] = useState<TemplateDraft>(() => (editing ? draftFrom(editing) : blankDraft()))
+  const [draft, setDraft] = useState<TemplateDraft>(() => (editing ? draftFrom(editing, lang) : blankDraft()))
   const [base, setBase] = useState('')
   const [batchCount, setBatchCount] = useState('1')
   const [batchConnector, setBatchConnector] = useState<Connector>('rj45')

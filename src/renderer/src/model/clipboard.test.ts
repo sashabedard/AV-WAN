@@ -68,7 +68,7 @@ describe('composantes perso dans le presse-papiers', () => {
 
   function sourceWithLidar() {
     const p = withTemplate(sampleProject(), lidar)
-    const device = createDevice(p, lidar.id, { x: 0, y: 0 }, { id: 'lid1' })
+    const device = createDevice(p, lidar.id, { x: 0, y: 0 }, { lang: 'fr', id: 'lid1' })
     return { ...p, devices: [...p.devices, device] }
   }
 
@@ -94,9 +94,9 @@ describe('composantes perso dans le presse-papiers', () => {
 })
 
 function patched(): Project {
-  let p = createProject(new Date(2026, 9, 14))
+  let p = createProject(new Date(2026, 9, 14), 'fr')
   const add = (id: string, templateId: string, extra: Partial<Device>): void => {
-    p = { ...p, devices: [...p.devices, { ...createDevice(p, templateId, { x: 0, y: 0 }, { id }), ...extra }] }
+    p = { ...p, devices: [...p.devices, { ...createDevice(p, templateId, { x: 0, y: 0 }, { lang: 'fr', id }), ...extra }] }
   }
   add('ode', 'dmx-node', { name: 'ODE-1', portState: { 'DMX-1': { universe: 1 } } })
   add('f1', 'dmx-fixture', { dmx: { footprint: 16, address: 1, mode: 'Standard' } })
@@ -126,10 +126,10 @@ describe('patch et presse-papiers', () => {
   })
 
   it('colle huit copies d’un coup : 1, 17, 33, … sans toucher l’index du projet cible', () => {
-    const target = createProject(new Date(2026, 9, 14))
+    const target = createProject(new Date(2026, 9, 14), 'fr')
     const before = patchIndex(target)
     const fixtures = Array.from({ length: 8 }, (_, i): Device => ({
-      ...createDevice(target, 'dmx-fixture', { x: 0, y: 0 }, { id: `f${i}` }),
+      ...createDevice(target, 'dmx-fixture', { x: 0, y: 0 }, { lang: 'fr', id: `f${i}` }),
       name: `FIX-${i + 1}`,
       dmx: { footprint: 16, universe: 1, address: 1 }
     }))
@@ -141,7 +141,7 @@ describe('patch et presse-papiers', () => {
 
   it('colle dans un autre projet : garde l’univers et prend la 1re plage libre', () => {
     const frag = copyFragment(patched(), ['f1'])!
-    const r = pasteFragment(createProject(), frag, { x: 0, y: 0 }, freshIds)
+    const r = pasteFragment(createProject(undefined, 'fr'), frag, { x: 0, y: 0 }, freshIds)
     expect(r.project.devices[0]!.dmx).toEqual({ footprint: 16, address: 1, mode: 'Standard', universe: 1 })
   })
 
@@ -161,9 +161,9 @@ describe('patch et presse-papiers', () => {
 describe('presse-papier : listes de canaux DMX', () => {
   const WASH = { templateId: 'dmx-fixture', model: 'Wash', mode: '9CH' }
   function withWash(params: string[]): Project {
-    const p = createProject(new Date(2026, 9, 15))
-    const w = { ...createDevice(p, 'dmx-fixture', { x: 0, y: 0 }, { id: 'w' }), model: 'Wash', dmx: { footprint: 9, mode: '9CH' } }
-    const cam = createDevice({ ...p, devices: [w] }, 'ptz-ndi', { x: 0, y: 0 }, { id: 'cam' })
+    const p = createProject(new Date(2026, 9, 15), 'fr')
+    const w = { ...createDevice(p, 'dmx-fixture', { x: 0, y: 0 }, { lang: 'fr', id: 'w' }), model: 'Wash', dmx: { footprint: 9, mode: '9CH' } }
+    const cam = createDevice({ ...p, devices: [w] }, 'ptz-ndi', { x: 0, y: 0 }, { lang: 'fr', id: 'cam' })
     return { ...p, devices: [w, cam], dmxChannels: [{ ...WASH, params }, { templateId: 'autre', params: ['X'] }] }
   }
 
@@ -176,7 +176,7 @@ describe('presse-papier : listes de canaux DMX', () => {
 
   it('le collage ajoute les listes absentes ; celles du projet cible gagnent', () => {
     const f = copyFragment(withWash(['Theirs']), ['w'])!
-    const empty = createProject(new Date(2026, 9, 15))
+    const empty = createProject(new Date(2026, 9, 15), 'fr')
     expect(pasteFragment(empty, f, { x: 10, y: 10 }).project.dmxChannels).toEqual([{ ...WASH, params: ['Theirs'] }])
     const mine = { ...empty, dmxChannels: [{ ...WASH, params: ['Mine'] }] }
     expect(pasteFragment(mine, f, { x: 10, y: 10 }).project.dmxChannels).toEqual([{ ...WASH, params: ['Mine'] }])

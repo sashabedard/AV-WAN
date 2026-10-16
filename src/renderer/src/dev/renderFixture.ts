@@ -7,10 +7,10 @@ import { vlanPreset } from '../catalog/vlanPresets'
 // sorte (cuivre PoE, fibre trunk à bagues, DAC, Wi-Fi, lien simple). Identifiants fixes : les captures
 // de référence restent comparables d'une exécution à l'autre.
 export function makeRenderFixture(): Project {
-  const base = createProject(new Date(2026, 9, 13))
+  const base = createProject(new Date(2026, 9, 13), 'fr')
   let p: Project = { ...base, meta: { ...base.meta, title: 'Banc de rendu' }, vlans: [10, 20, 30, 40, 60].map((id) => vlanPreset(id, 'fr')) }
   const add = (id: string, templateId: string, x: number, y: number, extra: Partial<Device> = {}, switchSpec?: Device['switch']): void => {
-    const d = createDevice(p, templateId, { x, y }, { id, ...(switchSpec ? { switchSpec } : {}) })
+    const d = createDevice(p, templateId, { x, y }, { id, lang: 'fr', ...(switchSpec ? { switchSpec } : {}) })
     p = { ...p, devices: [...p.devices, { ...d, ...extra }] }
   }
   const link = (id: string, a: [string, string], b: [string, string], medium: Link['medium'], vlan: VlanChoice): void => {

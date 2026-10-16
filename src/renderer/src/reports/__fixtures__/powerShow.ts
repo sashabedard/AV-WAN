@@ -6,7 +6,7 @@ const link = (id: string, a: [string, string], b: [string, string], medium: Link
 
 // Scène : PSU-1 (24 V 15 A) → LED-1, LED-2 (144 W chacune) ; MH-1 470 W. Salle : SW-1 sans puissance, CAM-1 7 W en PoE.
 export function powerShowProject(): Project {
-  const base = createProject(new Date(2026, 9, 14))
+  const base = createProject(new Date(2026, 9, 14), 'fr')
   let p: Project = {
     ...base,
     zones: [
@@ -16,8 +16,8 @@ export function powerShowProject(): Project {
   }
   const raw = (id: string, name: string, zoneId: string, extra: Partial<Device>): Device => ({ id, templateId: 'generic', name, position: { x: 0, y: 0 }, zoneId, portSide: 'auto', ports: [], portState: {}, ...extra })
   const strip = { type: 'cob' as const, volts: 24, wPerM: 14.4, lengthM: 10 }
-  const sw = { ...createDevice(p, 'switch', { x: 0, y: 0 }, { id: 'sw' }), name: 'SW-1', zoneId: 'z2' }
-  const cam = { ...createDevice(p, 'ip-camera', { x: 0, y: 0 }, { id: 'cam' }), name: 'CAM-1', zoneId: 'z2', powerW: 7 }
+  const sw = { ...createDevice(p, 'switch', { x: 0, y: 0 }, { lang: 'fr', id: 'sw' }), name: 'SW-1', zoneId: 'z2' }
+  const cam = { ...createDevice(p, 'ip-camera', { x: 0, y: 0 }, { lang: 'fr', id: 'cam' }), name: 'CAM-1', zoneId: 'z2', powerW: 7 }
   p = {
     ...p,
     devices: [

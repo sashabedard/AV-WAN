@@ -50,7 +50,7 @@ export function mediumKind(m: Medium): MediumKind {
 }
 
 // `lang` : langue de l'interface, pour l'étiquette de certains câbles (« Série » / « Serial »).
-export function cordStyle(project: Project, link: Link, theme: ThemeMode, lang: Lang = 'fr'): CordStyle {
+export function cordStyle(project: Project, link: Link, theme: ThemeMode, lang: Lang): CordStyle {
   const mode = project.settings.colorMode
   let color: string = NEUTRAL[theme]
   let bands: string[] = []

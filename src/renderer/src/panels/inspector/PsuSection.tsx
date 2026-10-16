@@ -1,7 +1,7 @@
 // src/renderer/src/panels/inspector/PsuSection.tsx
 import type { Device, Project, Psu } from '../../model/types'
 import { devicePowerW, loadLevel, psuLoad, resolvePsu } from '../../model/power'
-import { parseDecimalField } from '../../model/fields'
+import { decimalText, parseDecimalField } from '../../model/fields'
 import { useT } from '../../i18n/useT'
 import type { Formatters } from '../../../../shared/i18n/format'
 import { projectStore } from '../../store/projectStore'
@@ -24,7 +24,7 @@ const watts = (d: Device, fmt: Formatters): string => {
 
 // Alimentation (spec § 5.2) : deux valeurs suffisent, la troisième s'affiche en gris ; charge comme un budget PoE.
 export function PsuSection({ device, project }: { device: Device; project: Project }) {
-  const { m, fmt } = useT()
+  const { m, fmt, lang } = useT()
   const t = m.inspector.psu
   const psu = device.psu
   if (!psu) return null
@@ -47,7 +47,7 @@ export function PsuSection({ device, project }: { device: Device; project: Proje
               className="input"
               aria-label={`${label} (${unit})`}
               inputMode="decimal"
-              value={psu[key] !== undefined ? String(psu[key]).replace('.', ',') : ''}
+              value={psu[key] !== undefined ? decimalText(psu[key]!, lang) : ''}
               placeholder={r.computed === key && r[key] !== undefined ? fmt.num(r[key]!) : '—'}
               onCommit={(v) => {
                 const n = parseDecimalField(v, true)

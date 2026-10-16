@@ -11,9 +11,9 @@ const LYRE: StoredTemplate = {
 }
 
 function project(): Project {
-  let p: Project = { ...createProject(new Date(2026, 9, 15)), templates: [LYRE] }
+  let p: Project = { ...createProject(new Date(2026, 9, 15), 'fr'), templates: [LYRE] }
   const add = (id: string, name: string, dmx: Device['dmx'], extra: Partial<Device> = {}): void => {
-    p = { ...p, devices: [...p.devices, { ...createDevice(p, LYRE.id, { x: 0, y: 0 }, { id }), name, dmx, ...extra }] }
+    p = { ...p, devices: [...p.devices, { ...createDevice(p, LYRE.id, { x: 0, y: 0 }, { lang: 'fr', id }), name, dmx, ...extra }] }
   }
   add('late', 'MH-9', { footprint: 3, mode: '3CH', address: 1, universe: 2 })
   add('mid', 'MH-2', { footprint: 3, mode: '3CH', address: 19, universe: 1 })
@@ -51,8 +51,8 @@ describe('section Canaux DMX', () => {
   })
 
   it('gabarit intégré sans modèle : le sous-titre est son nom français', () => {
-    let p: Project = createProject(new Date(2026, 9, 15))
-    p = { ...p, devices: [{ ...createDevice(p, 'moving-spot', { x: 0, y: 0 }, { id: 'ms' }), dmx: { footprint: 2, mode: 'X', address: 1, universe: 1 } }] }
+    let p: Project = createProject(new Date(2026, 9, 15), 'fr')
+    p = { ...p, devices: [{ ...createDevice(p, 'moving-spot', { x: 0, y: 0 }, { lang: 'fr', id: 'ms' }), dmx: { footprint: 2, mode: 'X', address: 1, universe: 1 } }] }
     p = { ...p, dmxChannels: [{ templateId: 'moving-spot', model: '', mode: 'X', params: ['Pan', 'Tilt'] }] }
     expect(channelBlocks(p)[0]!.subtitle).toBe('Lyre spot · X')
   })

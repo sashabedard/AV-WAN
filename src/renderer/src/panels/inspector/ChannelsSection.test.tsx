@@ -18,9 +18,9 @@ const LYRE: StoredTemplate = {
 }
 
 function project(): Project {
-  let p: Project = { ...createProject(new Date(2026, 9, 15)), templates: [LYRE] }
+  let p: Project = { ...createProject(new Date(2026, 9, 15), 'fr'), templates: [LYRE] }
   const add = (id: string, templateId: string, extra: Partial<Device> = {}): void => {
-    p = { ...p, devices: [...p.devices, { ...createDevice(p, templateId, { x: 0, y: 0 }, { id }), ...extra }] }
+    p = { ...p, devices: [...p.devices, { ...createDevice(p, templateId, { x: 0, y: 0 }, { lang: 'fr', id }), ...extra }] }
   }
   add('a', LYRE.id)
   add('b', LYRE.id)
@@ -82,7 +82,7 @@ describe('inspecteur : canaux DMX', () => {
 
   it('appareil placé : ⌘Z après la première modification ramène le nom d’avant', async () => {
     const user = userEvent.setup()
-    projectStore.getState().loadProject({ ...createProject(new Date(2026, 9, 15)), templates: [LYRE] }, null)
+    projectStore.getState().loadProject({ ...createProject(new Date(2026, 9, 15), 'fr'), templates: [LYRE] }, null)
     const id = projectStore.getState().addDevice(LYRE.id, { x: 0, y: 0 })
     select(id)
     render(<Inspector />)

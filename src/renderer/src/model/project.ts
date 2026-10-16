@@ -1,5 +1,6 @@
 import { nanoid } from 'nanoid'
 import type { Lang } from '../../../shared/i18n/lang'
+import { messages } from '../../../shared/i18n/messages'
 import type { Device, DeviceTemplate, StoredTemplate, DmxPatch, Project, SwitchSpec, TemplateDmx } from './types'
 import { DEFAULT_PROJECT_VLAN_IDS, vlanPreset } from '../catalog/vlanPresets'
 import { getTemplate } from '../catalog'
@@ -18,10 +19,10 @@ function localDate(now: Date): string {
 }
 
 // `lang` : langue de l'interface au moment de la création ; les VLAN prédéfinis copiés dans le projet y sont écrits (spec plan 6 § 5.2).
-export function createProject(now: Date = new Date(), lang: Lang = 'fr'): Project {
+export function createProject(now: Date = new Date(), lang: Lang): Project {
   return {
     schemaVersion: 3,
-    meta: { title: 'Nouveau projet', authors: [], date: localDate(now), revision: 'A', status: 'conception' },
+    meta: { title: messages(lang).model.newProjectTitle, authors: [], date: localDate(now), revision: 'A', status: 'conception' },
     settings: { colorMode: 'vlan', pageFormat: 'na', cableIdPrefix: 'C-', snapToGrid: true },
     vlans: DEFAULT_PROJECT_VLAN_IDS.map((id) => vlanPreset(id, lang)),
     devices: [],
@@ -36,8 +37,8 @@ export interface CreateDeviceOptions {
   id?: string
   // Composante perso de la bibliothèque : addDevice l'embarque dans le projet avant de créer l'appareil.
   template?: StoredTemplate
-  // Langue de l'interface : la note et les étiquettes de ports du gabarit sont copiées dans cette langue (par défaut le français).
-  lang?: Lang
+  // Langue de l'interface : la note et les étiquettes de ports du gabarit sont copiées dans cette langue.
+  lang: Lang
 }
 
 // Patch de départ : le 1er mode du gabarit (le plus courant), sans adresse ni univers.
@@ -62,11 +63,11 @@ export function createDevice(
   project: Project,
   templateId: string,
   position: { x: number; y: number },
-  opts: CreateDeviceOptions = {}
+  opts: CreateDeviceOptions
 ): Device {
-  const lang = opts.lang ?? 'fr'
+  const lang = opts.lang
   const template = getTemplate(project, templateId)
-  if (!template) throw new Error(`Gabarit inconnu : ${templateId}`)
+  if (!template) throw new Error(messages(lang).model.unknownTemplate({ id: templateId }))
   const base = {
     id: opts.id ?? newId(),
     templateId,

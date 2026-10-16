@@ -62,16 +62,16 @@ describe('deviceIpLine en anglais', () => {
     expect(deviceIpLine({ address: '', mode: 'dhcp' }, 'en')).toBe('DHCP')
   })
   it('formate les nombres de la deuxième ligne à l’anglaise', () => {
-    const base = createDevice(createProject(), 'generic', { x: 0, y: 0 }, { id: 'x' })
+    const base = createDevice(createProject(undefined, 'fr'), 'generic', { x: 0, y: 0 }, { lang: 'fr', id: 'x' })
     expect(deviceSecondLine({ ...base, ledStrip: { type: 'sk6812-rgbw', volts: 24, wPerM: 14.4, lengthM: 5.5, pxPerM: 60 } }, undefined, 'en')).toBe('79.2 W · 5.5 m')
   })
 })
 
 describe('deviceSecondLine', () => {
   it('l’adresse remplace l’IP d’un appareil patchable ; l’IP reste pour les autres', () => {
-    let p = createProject()
-    const f = { ...createDevice(p, 'dmx-fixture', { x: 0, y: 0 }, { id: 'f' }), dmx: { footprint: 16, address: 33, universe: 0 } }
-    const cam = { ...createDevice(p, 'ip-camera', { x: 0, y: 0 }, { id: 'c' }), ip: { address: '10.70.0.5', mode: 'static' as const } }
+    let p = createProject(undefined, 'fr')
+    const f = { ...createDevice(p, 'dmx-fixture', { x: 0, y: 0 }, { lang: 'fr', id: 'f' }), dmx: { footprint: 16, address: 33, universe: 0 } }
+    const cam = { ...createDevice(p, 'ip-camera', { x: 0, y: 0 }, { lang: 'fr', id: 'c' }), ip: { address: '10.70.0.5', mode: 'static' as const } }
     p = { ...p, devices: [f, cam] }
     const index = patchIndex(p)
     expect(deviceSecondLine(f, index.entries.get('f'), 'fr')).toBe('U0 · 33')
@@ -81,7 +81,7 @@ describe('deviceSecondLine', () => {
 
 describe('deviceSecondLine : puissance', () => {
   it('bande : watts et longueur ; alimentation : tension et puissance', () => {
-    const base = createDevice(createProject(), 'generic', { x: 0, y: 0 }, { id: 'x' })
+    const base = createDevice(createProject(undefined, 'fr'), 'generic', { x: 0, y: 0 }, { lang: 'fr', id: 'x' })
     expect(deviceSecondLine({ ...base, ledStrip: { type: 'sk6812-rgbw', volts: 24, wPerM: 14.4, lengthM: 5, pxPerM: 60 } }, undefined, 'fr')).toBe('72 W · 5 m')
     expect(deviceSecondLine({ ...base, ledStrip: { type: 'ws2812b', volts: 5, wPerM: 18 } }, undefined, 'fr')).toBe('Pixel WS2812B')
     expect(deviceSecondLine({ ...base, psu: { volts: 24, amps: 15 } }, undefined, 'fr')).toBe('24 V · 360 W')

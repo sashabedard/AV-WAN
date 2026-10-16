@@ -1,4 +1,5 @@
 // src/renderer/src/samples/exampleProject.test.ts
+import { messages } from '../../../shared/i18n/messages'
 import { describe, expect, it } from 'vitest'
 import { EXAMPLE_TITLE, createExampleProject } from './exampleProject'
 import { ProjectSchema } from '../model/schema'
@@ -9,14 +10,14 @@ import { patchGroups, patchTable } from '../reports/patch'
 import { psuLoad } from '../model/power'
 import { nodeSize } from '../canvas/nodeGeometry'
 
-const p = createExampleProject(new Date(2026, 9, 13))
+const p = createExampleProject(new Date(2026, 9, 13), 'fr')
 const byName = (name: string) => p.devices.find((d) => d.name === name)!
 
 describe('createExampleProject', () => {
   it('est un projet valide que l’ouverture ne modifie pas', () => {
     expect(ProjectSchema.safeParse(p).success).toBe(true)
-    expect(sanitizeProject(p).warnings).toEqual([])
-    expect(parseProjectFile(serializeProject(p))).toMatchObject({ ok: true, warnings: [] })
+    expect(sanitizeProject(p, messages('fr')).warnings).toEqual([])
+    expect(parseProjectFile(serializeProject(p), messages('fr'))).toMatchObject({ ok: true, warnings: [] })
   })
 
   it('réunit 24 appareils, 23 câbles, 6 VLAN et 3 zones', () => {
@@ -72,5 +73,23 @@ describe('createExampleProject', () => {
 
   it('ne présente pas l’app comme un outil pour étudiants', () => {
     expect(serializeProject(p)).not.toMatch(/étudiant|etudiant|fin de bac|student/i)
+  })
+})
+
+describe('createExampleProject en anglais (plan 6)', () => {
+  const en = createExampleProject(new Date(2026, 9, 13), 'en')
+  it('titre, auteurs et zones en anglais, valide par le schéma', () => {
+    expect(ProjectSchema.safeParse(en).success).toBe(true)
+    expect(en.meta.title).toBe('Interactive installation (example)')
+    expect(en.meta.authors).toEqual(['Technical team'])
+    expect(en.zones.map((z) => z.name)).toEqual(['Control room', 'Hall', 'Stage'])
+  })
+  it('aucune étiquette de port française', () => {
+    const labels = en.devices.flatMap((d) => d.ports.map((x) => x.label))
+    expect(labels).not.toContain('Primaire')
+    expect(labels).toContain('Primary')
+  })
+  it('la version française est inchangée', () => {
+    expect(p.meta.title).toBe('Installation interactive (exemple)')
   })
 })

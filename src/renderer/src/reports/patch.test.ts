@@ -45,7 +45,7 @@ describe('patchTable', () => {
   })
 
   it('vide quand rien n’est patchable', () => {
-    expect(patchTable(createProject()).rows).toEqual([])
+    expect(patchTable(createProject(undefined, 'fr')).rows).toEqual([])
   })
 })
 
@@ -58,9 +58,9 @@ describe('dmxSummary', () => {
 })
 
 it('liste une bande pixel dans chaque univers qu’elle occupe', () => {
-  let p: Project = createProject(new Date(2026, 9, 14))
+  let p: Project = createProject(new Date(2026, 9, 14), 'fr')
   const add = (id: string, templateId: string, extra: Partial<Device>): void => {
-    p = { ...p, devices: [...p.devices, { ...createDevice(p, templateId, { x: 0, y: 0 }, { id }), ...extra }] }
+    p = { ...p, devices: [...p.devices, { ...createDevice(p, templateId, { x: 0, y: 0 }, { lang: 'fr', id }), ...extra }] }
   }
   add('pix', 'pixel-controller', { name: 'PIX-1', portState: { OUT1: { universe: 10 } } })
   add('led', 'led-strip', { name: 'LED-1', model: 'Ruban scène', ledStrip: { type: 'sk6812-rgbw', volts: 24, wPerM: 14.4, lengthM: 5, pxPerM: 60 } })
@@ -72,4 +72,13 @@ it('liste une bande pixel dans chaque univers qu’elle occupe', () => {
     [12, 1, 176, 176, 'LED-1', 'Ruban scène', 'Pixel RGBW (SK6812) · 44 px', 'PIX-1 › OUT1', '', '']
   ])
   expect(patchGroups(p).map((g) => g.title)).toEqual(['Univers 10 · PIX-1 › OUT1', 'Univers 11 · PIX-1 › OUT1', 'Univers 12 · PIX-1 › OUT1'])
+})
+
+describe('source « tapé » (plan 6 : code interne, libellé à l’affichage)', () => {
+  it('le tableau affiche le libellé « tapé » et l’en-tête de groupe ne le nomme pas', () => {
+    const sources = patchTable(show()).rows.map((r) => r[7])
+    expect(sources).toContain('tapé')
+    expect(sources).not.toContain('typed')
+    expect(patchGroups(show()).map((g) => g.title)).toEqual(['Univers 1 · ODE-1 › DMX 1', 'Univers 2', 'Sans univers'])
+  })
 })

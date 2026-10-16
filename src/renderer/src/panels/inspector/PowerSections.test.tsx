@@ -9,9 +9,9 @@ import { createDevice, createProject } from '../../model/project'
 import type { Device, Project } from '../../model/types'
 
 function project(): Project {
-  let p: Project = createProject(new Date(2026, 9, 14))
+  let p: Project = createProject(new Date(2026, 9, 14), 'fr')
   const add = (id: string, templateId: string, extra: Partial<Device> = {}): void => {
-    p = { ...p, devices: [...p.devices, { ...createDevice(p, templateId, { x: 0, y: 0 }, { id }), ...extra }] }
+    p = { ...p, devices: [...p.devices, { ...createDevice(p, templateId, { x: 0, y: 0 }, { lang: 'fr', id }), ...extra }] }
   }
   add('psu', 'psu', { name: 'PSU-1', psu: { volts: 24, amps: 15 } })
   add('led1', 'led-strip', { name: 'LED-1', ledStrip: { type: 'cob', volts: 24, wPerM: 14.4, lengthM: 10 } })
@@ -137,7 +137,7 @@ describe('tension secteur du projet', () => {
 
 it('montre les univers occupés par une bande pixel branchée sur un contrôleur', () => {
   let p = projectStore.getState().history.present
-  const pix = { ...createDevice(p, 'pixel-controller', { x: 0, y: 0 }, { id: 'pix' }), name: 'PIX-1', portState: { OUT1: { universe: 10 } } }
+  const pix = { ...createDevice(p, 'pixel-controller', { x: 0, y: 0 }, { lang: 'fr', id: 'pix' }), name: 'PIX-1', portState: { OUT1: { universe: 10 } } }
   p = { ...p, devices: [...p.devices.map((d) => (d.id === 'led1' ? { ...d, ledStrip: { type: 'sk6812-rgbw' as const, volts: 24, wPerM: 14.4, lengthM: 5, pxPerM: 60 } } : d)), pix] }
   p = { ...p, links: [...p.links, { id: 'lp', cableId: 'C-009', a: { deviceId: 'pix', portId: 'OUT1' }, b: { deviceId: 'led1', portId: 'IN' }, medium: 'pixel' }] }
   projectStore.getState().loadProject(p, null)
@@ -148,7 +148,7 @@ it('montre les univers occupés par une bande pixel branchée sur un contrôleur
 
 it('signale discrètement un appareil patché dans un univers de la bande, comme le bloc Patch DMX', () => {
   let p = projectStore.getState().history.present
-  const pix = { ...createDevice(p, 'pixel-controller', { x: 0, y: 0 }, { id: 'pix' }), name: 'PIX-1', portState: { OUT1: { universe: 10 } } }
+  const pix = { ...createDevice(p, 'pixel-controller', { x: 0, y: 0 }, { lang: 'fr', id: 'pix' }), name: 'PIX-1', portState: { OUT1: { universe: 10 } } }
   p = {
     ...p,
     devices: [

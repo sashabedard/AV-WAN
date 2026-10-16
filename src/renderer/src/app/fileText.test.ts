@@ -8,8 +8,8 @@ import type { Project } from '../model/types'
 const WASH = { templateId: 'dmx-fixture', model: 'Wash', mode: '9CH' }
 
 function project(): Project {
-  const p = createProject(new Date(2026, 9, 15))
-  const d = { ...createDevice(p, 'dmx-fixture', { x: 0, y: 0 }, { id: 'w' }), model: 'Wash', dmx: { footprint: 9, mode: '9CH' } }
+  const p = createProject(new Date(2026, 9, 15), 'fr')
+  const d = { ...createDevice(p, 'dmx-fixture', { x: 0, y: 0 }, { lang: 'fr', id: 'w' }), model: 'Wash', dmx: { footprint: 9, mode: '9CH' } }
   return { ...p, devices: [d], dmxChannels: [{ templateId: 'parti', params: ['X'] }] }
 }
 

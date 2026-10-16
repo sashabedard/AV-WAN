@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { createExampleProject } from '../samples/exampleProject'
 import { pageLabel, zonePageNumbers, zoneSheet } from './zoneSheet'
 
-const project = createExampleProject(new Date('2026-01-01'))
+const project = createExampleProject(new Date('2026-01-01'), 'fr')
 const zone = (name: string) => project.zones.find((z) => z.name === name)!
 const name = (id: string) => project.devices.find((d) => d.id === id)!.name
 

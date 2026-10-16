@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'node:fs'
-import { formatFr, parseDecimalField, parseIntField } from './fields'
+import { decimalText, formatFr, parseDecimalField, parseIntField } from './fields'
+import { formatters } from '../../../shared/i18n/format'
 
 describe('parseIntField', () => {
   it('lit un entier dans ses bornes, vide = effacer, le reste = refusé', () => {
@@ -68,5 +69,18 @@ describe('formatFr', () => {
     expect(formatFr(14.4)).toBe('14,4')
     expect(formatFr(3, 1)).toBe('3,0')
     expect(formatFr(72.04)).toBe('72')
+  })
+})
+
+describe('nombres selon la langue (plan 6)', () => {
+  it('« 12.5 » et « 12,5 » sont acceptés dans les deux langues, l’affichage suit la langue', () => {
+    expect(parseDecimalField('12.5')).toBe(12.5)
+    expect(parseDecimalField('12,5')).toBe(12.5)
+    expect(formatters('en').num(12.5)).toBe('12.5')
+    expect(formatters('fr').num(12.5)).toBe('12,5')
+    expect(decimalText(12.5, 'en')).toBe('12.5')
+    expect(decimalText(12.5, 'fr')).toBe('12,5')
+    expect(decimalText(1200.25, 'en')).toBe('1200.25')
+    expect(formatFr(12.5)).toBe(formatters('fr').num(12.5))
   })
 })

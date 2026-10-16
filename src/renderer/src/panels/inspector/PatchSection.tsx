@@ -51,7 +51,7 @@ export function PatchSection({ device, project }: { device: Device; project: Pro
     else save({ address: next })
   }
   const derived = resolved?.source.kind === 'port' ? `${resolved.universe} · via ${sourceLabel(project, resolved.source)}` : '—'
-  const warnings = issueTexts(patchIssues(index, device.id))
+  const warnings = issueTexts(patchIssues(index, device.id), m)
   return (
     <section className="insp__section">
       <h3 className="insp__title">{t.title}</h3>

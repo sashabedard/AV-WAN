@@ -1,8 +1,7 @@
 // Composantes perso (spec plan 4 § 6) : brouillon de la boîte « Nouvelle composante », ports, validation,
 // et embarquement dans le projet. Fonctions pures.
 import { nanoid } from 'nanoid'
-import { parseDecimalField, parseIntField } from './fields'
-import { currentLang, currentMessages } from '../i18n/useT'
+import { decimalText, parseDecimalField, parseIntField } from './fields'
 import { templateText } from '../catalog/templateText'
 import type { Lang } from '../../../shared/i18n/lang'
 import type { Messages } from '../../../shared/i18n/messages'
@@ -59,7 +58,7 @@ export function blankDraft(): TemplateDraft {
 
 const poeOf = (p: Pick<PortDef, 'poeIn' | 'poeOut'>): PoeChoice => (p.poeIn ? `in-${p.poeIn}` : p.poeOut ? `out-${p.poeOut}` : 'none')
 
-export function draftFrom(t: DeviceTemplate, lang: Lang = 'fr'): TemplateDraft {
+export function draftFrom(t: DeviceTemplate, lang: Lang): TemplateDraft {
   return {
     name: templateText(t.name, lang),
     code: t.code,
@@ -71,7 +70,7 @@ export function draftFrom(t: DeviceTemplate, lang: Lang = 'fr'): TemplateDraft {
     // Pas de formatFr ici : son espace des milliers (« 1 200 ») serait refusé à la relecture du champ.
     patchable: t.dmx !== undefined,
     footprint: String(t.dmx?.modes?.[0]?.channels ?? t.dmx?.footprint ?? 1),
-    powerW: t.powerW !== undefined ? String(t.powerW).replace('.', ',') : ''
+    powerW: t.powerW !== undefined ? decimalText(t.powerW, lang) : ''
   }
 }
 
@@ -105,7 +104,7 @@ export function normalizeCode(code: string): string {
   return stripAccents(code).toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 4)
 }
 
-export function validateDraft(d: TemplateDraft, m: Messages['componentEditor']['errors'] = currentMessages().componentEditor.errors): DraftErrors {
+export function validateDraft(d: TemplateDraft, m: Messages['componentEditor']['errors']): DraftErrors {
   const errors: DraftErrors = {}
   const name = d.name.trim()
   if (!name) errors.name = m.nameRequired
@@ -158,7 +157,7 @@ export function templateFromDraft(d: TemplateDraft, id: string): StoredTemplate 
 
 // Une copie est toujours perso ; le nom est tronqué avant le suffixe pour que « (copie) » reste visible.
 // Un gabarit intégré (textes bilingues) devient une composante perso : ses textes sont figés dans `lang`, la langue de l'interface.
-export function duplicateTemplate(t: DeviceTemplate, copySuffix: string = currentMessages().componentEditor.copySuffix, lang: Lang = currentLang()): StoredTemplate {
+export function duplicateTemplate(t: DeviceTemplate, copySuffix: string, lang: Lang): StoredTemplate {
   const name = templateText(t.name, lang)
   const { note, ...rest } = structuredClone(t)
   return {

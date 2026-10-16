@@ -6,7 +6,7 @@ import { bom } from './bom'
 import { createDevice, createProject } from '../model/project'
 import type { Project } from '../model/types'
 
-const p = createExampleProject(new Date(2026, 9, 13))
+const p = createExampleProject(new Date(2026, 9, 13), 'fr')
 const of = (kind: string, project = p) => bom(project).rows.filter((r) => r[0] === kind)
 
 describe('bom', () => {
@@ -59,13 +59,13 @@ describe('bom', () => {
 
 // Trois bandes COB 24 V 10 W/m (5 m, 10 m, sans longueur) et une alimentation 24 V 15 A.
 function stripsProject(): Project {
-  let q = createProject(new Date(2026, 9, 14))
+  let q = createProject(new Date(2026, 9, 14), 'fr')
   const lengths: (number | undefined)[] = [5, 10, undefined]
   const devices = lengths.map((lengthM, i) => ({
-    ...createDevice(q, 'led-strip', { x: 0, y: 0 }, { id: `s${i}` }),
+    ...createDevice(q, 'led-strip', { x: 0, y: 0 }, { lang: 'fr', id: `s${i}` }),
     ledStrip: { type: 'cob' as const, volts: 24, wPerM: 10, ...(lengthM !== undefined ? { lengthM } : {}) }
   }))
-  devices.push({ ...createDevice(q, 'psu', { x: 0, y: 0 }, { id: 'p' }), psu: { volts: 24, amps: 15 } } as never)
+  devices.push({ ...createDevice(q, 'psu', { x: 0, y: 0 }, { lang: 'fr', id: 'p' }), psu: { volts: 24, amps: 15 } } as never)
   q = { ...q, devices }
   return q
 }

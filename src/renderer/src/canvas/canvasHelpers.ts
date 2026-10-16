@@ -30,7 +30,7 @@ export function deviceSecondLine(device: Device, patch: PatchEntry | undefined, 
     const r = resolvePsu(device.psu)
     return [r.volts !== undefined ? fmt.qty(r.volts, 'V') : '', r.watts !== undefined ? fmt.qty(r.watts, 'W') : ''].filter(Boolean).join(' · ')
   }
-  if (device.dmx) return patchLine(patch)
+  if (device.dmx) return patchLine(patch, messages(lang))
   return deviceIpLine(device.ip, lang)
 }
 

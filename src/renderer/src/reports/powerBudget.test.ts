@@ -14,7 +14,7 @@ function unratedPsu(): Project {
   const strip = { type: 'cob' as const, volts: 24, wPerM: 9.6, lengthM: 10 }
   const leds = [1, 2, 3].map((n) => raw(`led${n}`, `LED-${n}`, { templateId: 'led-strip', ports: [dc('DC-IN')], ledStrip: strip }))
   return {
-    ...createProject(new Date(2026, 9, 14)),
+    ...createProject(new Date(2026, 9, 14), 'fr'),
     devices: [raw('psu', 'PSU-1', { ports: [1, 2, 3].map((n) => dc(`DC-OUT-${n}`)), psu: { volts: 24 } }), ...leds],
     links: [1, 2, 3].map((n) => dcLink(`l${n}`, ['psu', `DC-OUT-${n}`], [`led${n}`, 'DC-IN']))
   }
@@ -66,7 +66,7 @@ describe('powerBudget', () => {
     const px = (id: string): PortDef => ({ id, label: id, connector: 'pixel' })
     const strip = { type: 'sk6812-rgbw' as const, volts: 24, wPerM: 18, lengthM: 10, pxPerM: 60 }
     const p: Project = {
-      ...createProject(new Date(2026, 9, 14)),
+      ...createProject(new Date(2026, 9, 14), 'fr'),
       devices: [
         raw('psu', 'PSU-1', { ports: [dc('DC-OUT-1')], psu: { volts: 24, watts: 300 } }),
         raw('pix', 'PIX-1', { ports: [dc('DC-IN'), px('OUT1'), px('OUT2')] }),
@@ -115,7 +115,7 @@ describe('powerBudget', () => {
 
   it('un panneau de brassage n’est pas un appareil « sans puissance »', () => {
     const p = show()
-    const panel = { ...createDevice(p, 'patch-panel-24', { x: 0, y: 0 }, { id: 'pp' }), name: 'PP-1' }
+    const panel = { ...createDevice(p, 'patch-panel-24', { x: 0, y: 0 }, { lang: 'fr', id: 'pp' }), name: 'PP-1' }
     const b = powerBudget({ ...p, devices: [...p.devices, panel] })
     expect(b.missing).toEqual(['SW-1'])
     expect(b.zones.flatMap((z) => z.rows).some((r) => r.device === 'PP-1')).toBe(false)
@@ -130,7 +130,7 @@ describe('powerBudget', () => {
   })
 
   it('projet vide : zéro partout, jamais NaN', () => {
-    const b = powerBudget(createProject())
+    const b = powerBudget(createProject(undefined, 'fr'))
     expect([b.totalW, b.amps, b.zones.length, b.psus.length, b.missing.length]).toEqual([0, 0, 0, 0, 0])
   })
 })

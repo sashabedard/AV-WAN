@@ -1,6 +1,7 @@
 import { Component, useCallback, useEffect, useState, type ReactNode } from 'react'
 import type { Project } from '../model/types'
 import { parseProjectFile } from '../model/file'
+import { messages } from '../../../shared/i18n/messages'
 import { normalizePdfOptions, type PdfOptions } from '../../../shared/pdfOptions'
 import { PrintDocument } from './PrintDocument'
 
@@ -24,7 +25,7 @@ export function PrintApp() {
   useEffect(() => {
     window.avwan.print.job().then(
       (j) => {
-        const res = parseProjectFile(j.projectText)
+        const res = parseProjectFile(j.projectText, messages('fr')) // plan 6 : langue des documents à la Task 12
         if (!res.ok) window.avwan.print.failed(res.error)
         else setJob({ project: res.project, options: normalizePdfOptions(j.options) })
       },

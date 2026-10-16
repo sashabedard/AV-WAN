@@ -2,7 +2,7 @@ import { createStore, type StoreApi } from 'zustand/vanilla'
 import { useStore } from 'zustand'
 import type { Device, Link, MainsVoltage, PortRef, PortState, Project, SwitchSpec, Vlan, Zone } from '../model/types'
 import { createDevice, createProject, newId, type CreateDeviceOptions } from '../model/project'
-import { FAMILY_LABELS, canConnectPorts, canReconnect, connectorFamily, defaultMedium, findPort, nextCableId, sameRef } from '../model/rules'
+import { familyLabels, canConnectPorts, canReconnect, connectorFamily, defaultMedium, findPort, nextCableId, sameRef } from '../model/rules'
 import { setLinkVlan as deriveSetLinkVlan, type VlanChoice } from '../model/derive'
 import { buildSwitchPorts } from '../catalog/switch'
 import { pasteFragment as pasteFragmentModel, type Fragment } from '../model/clipboard'
@@ -12,6 +12,7 @@ import { withTemplate } from '../model/customTemplate'
 import { ownNewKeys, removeProjectList, setProjectList, type ChannelKey } from '../model/dmxChannels'
 import { uiStore } from './uiStore'
 import { currentLang, currentMessages } from '../i18n/useT'
+import type { Lang } from '../../../shared/i18n/lang'
 import { dmxChannelsStore } from './dmxChannelsStore'
 import { commit, initHistory, redo as historyRedo, undo as historyUndo, type History } from './history'
 
@@ -48,7 +49,7 @@ export interface ProjectState {
   loadProject(project: Project, filePath: string | null, opts?: { readOnly?: boolean; restored?: boolean }): void
   markSaved(filePath: string, saved?: Project): void
   apply(fn: (p: Project) => Project): void
-  addDevice(templateId: string, position: { x: number; y: number }, opts?: CreateDeviceOptions): string
+  addDevice(templateId: string, position: { x: number; y: number }, opts?: Omit<CreateDeviceOptions, 'lang'> & { lang?: Lang }): string
   moveDevices(moves: Array<{ id: string; position: { x: number; y: number } }>): void
   moveSelection(moves: SelectionMoves): void
   removeElements(deviceIds: string[], linkIds: string[], zoneIds?: string[]): void
@@ -225,7 +226,7 @@ export function createProjectStore(initial: Project = createProject(undefined, c
           const pa = findPort(p, a)
           set({
             toast: pa
-              ? currentMessages().app.toast.connectBlocked({ family: FAMILY_LABELS[connectorFamily(pa.port.connector)] })
+              ? currentMessages().app.toast.connectBlocked({ family: familyLabels(currentMessages())[connectorFamily(pa.port.connector)] })
               : currentMessages().app.toast.connectImpossible
           })
           return null

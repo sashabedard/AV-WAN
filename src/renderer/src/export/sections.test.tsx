@@ -8,7 +8,7 @@ import { powerShowProject } from '../reports/__fixtures__/powerShow'
 import { patchShowProject } from '../reports/__fixtures__/patchShow'
 
 afterEach(cleanup)
-const p = createExampleProject(new Date(2026, 9, 13))
+const p = createExampleProject(new Date(2026, 9, 13), 'fr')
 
 describe('sections du PDF', () => {
   it('fiches par appareil : un bloc par appareil, une ligne par branchement', () => {
@@ -23,8 +23,8 @@ describe('sections du PDF', () => {
   })
 
   it('canaux DMX : un bloc par appareil nommé', () => {
-    const lyre = createProject(new Date(2026, 9, 15))
-    const fix = { ...createDevice(lyre, 'dmx-fixture', { x: 0, y: 0 }, { id: 'f' }), name: 'FIX-1', model: 'Wash', dmx: { footprint: 2, mode: '2CH', address: 5, universe: 1 } }
+    const lyre = createProject(new Date(2026, 9, 15), 'fr')
+    const fix = { ...createDevice(lyre, 'dmx-fixture', { x: 0, y: 0 }, { lang: 'fr', id: 'f' }), name: 'FIX-1', model: 'Wash', dmx: { footprint: 2, mode: '2CH', address: 5, universe: 1 } }
     const p = { ...lyre, devices: [fix], dmxChannels: [{ templateId: 'dmx-fixture', model: 'Wash', mode: '2CH', params: ['Red', 'Green'] }] }
     const { container } = render(<ChannelsPage project={p} />)
     expect(container.querySelectorAll('.cs__block')).toHaveLength(1)
@@ -33,7 +33,7 @@ describe('sections du PDF', () => {
   })
 
   it('canaux DMX : dit quand rien n’est nommé', () => {
-    render(<ChannelsPage project={createProject()} />)
+    render(<ChannelsPage project={createProject(undefined, 'fr')} />)
     expect(screen.getByText('Aucun canal nommé. Les canaux se nomment dans l’inspecteur, section Patch DMX.')).toBeTruthy()
   })
 
@@ -45,7 +45,7 @@ describe('sections du PDF', () => {
   })
 
   it('patch DMX : dit quand rien n’est patchable', () => {
-    render(<PatchPage project={createProject()} />)
+    render(<PatchPage project={createProject(undefined, 'fr')} />)
     expect(screen.getByText('Aucun appareil patchable dans le projet.')).toBeTruthy()
   })
 
@@ -57,7 +57,7 @@ describe('sections du PDF', () => {
   })
 
   it('bilan de puissance : dit quand rien n’est renseigné', () => {
-    render(<PowerPage project={createProject()} />)
+    render(<PowerPage project={createProject(undefined, 'fr')} />)
     expect(screen.getByText('Aucune puissance renseignée dans le projet.')).toBeTruthy()
   })
 
@@ -78,7 +78,7 @@ describe('sections du PDF', () => {
   })
 
   it('dit qu’une section est vide au lieu de la retirer (décision 5)', () => {
-    const empty = { ...createProject(), vlans: [] }
+    const empty = { ...createProject(undefined, 'fr'), vlans: [] }
     render(
       <>
         <DeviceSheetsPage project={empty} />

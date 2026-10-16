@@ -6,7 +6,7 @@ import { createDevice } from '../model/project'
 import { ipPlan } from './ipPlan'
 
 describe('ipPlan', () => {
-  const p = createExampleProject(new Date(2026, 9, 13))
+  const p = createExampleProject(new Date(2026, 9, 13), 'fr')
 
   it('trie par VLAN, puis par adresse (spec § 11.1, section 6)', () => {
     const t = ipPlan(p)
@@ -39,7 +39,7 @@ describe('ipPlan', () => {
     const q = sampleProject()
     q.devices[1]!.ip = { address: 'à définir', mode: 'static' }
     q.devices[1]!.portState['ETH'] = { ip: { address: '10.40.0.9', mode: 'static' } }
-    const gen = { ...createDevice(q, 'generic', { x: 0, y: 400 }, { id: 'gen' }), ip: { address: '10.0.0.1', mode: 'static' as const } }
+    const gen = { ...createDevice(q, 'generic', { x: 0, y: 400 }, { lang: 'fr', id: 'gen' }), ip: { address: '10.0.0.1', mode: 'static' as const } }
     q.devices.push(gen)
     expect(ipPlan(q).rows.map((r) => [r[0], r[1], r[2], r[4]])).toEqual([
       ['CAM-1', 'ETH', '10.40.0.9', '40 NDI'],

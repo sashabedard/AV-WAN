@@ -10,7 +10,7 @@ afterEach(cleanup)
 describe('PrintDocument', () => {
   it('imprime la liste de branchement et se déclare prêt sans schéma', async () => {
     const onReady = vi.fn()
-    render(<PrintDocument project={createExampleProject(new Date(2026, 9, 13))} options={{ sections: ['branchement'], format: 'na', zonePages: false }} onReady={onReady} />)
+    render(<PrintDocument project={createExampleProject(new Date(2026, 9, 13), 'fr')} options={{ sections: ['branchement'], format: 'na', zonePages: false }} onReady={onReady} />)
     expect(screen.getByRole('heading', { name: 'Liste de branchement' })).toBeTruthy()
     expect(screen.getAllByRole('row')).toHaveLength(24)
     expect(document.querySelector('.print style')!.textContent).toContain('@page sheet { size: 8.5in 11in; }')
@@ -18,7 +18,7 @@ describe('PrintDocument', () => {
   })
 
   it('dit que la liste est vide pour un projet neuf', () => {
-    render(<PrintDocument project={createProject()} options={{ sections: ['branchement'], format: 'iso', zonePages: false }} onReady={() => undefined} />)
+    render(<PrintDocument project={createProject(undefined, 'fr')} options={{ sections: ['branchement'], format: 'iso', zonePages: false }} onReady={() => undefined} />)
     expect(screen.getByText('Aucun câble dans le projet.')).toBeTruthy()
     expect(document.querySelector('.print style')!.textContent).toContain('@page sheet { size: 210mm 297mm; }')
   })
@@ -26,7 +26,7 @@ describe('PrintDocument', () => {
   it('imprime les sections dans l’ordre de la spec, quel que soit l’ordre demandé', () => {
     render(
       <PrintDocument
-        project={createExampleProject(new Date(2026, 9, 13))}
+        project={createExampleProject(new Date(2026, 9, 13), 'fr')}
         options={{ sections: ['nomenclature', 'appareils', 'ip', 'vlans', 'ports', 'branchement'], format: 'na', zonePages: true }}
         onReady={() => undefined}
       />

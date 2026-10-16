@@ -1,4 +1,6 @@
-// Champs numériques : saisie tolérante (virgule ou point) et affichage à la française.
+// Champs numériques : saisie tolérante (virgule ou point dans les deux langues) ; l'affichage suit la langue.
+import { formatters } from '../../../shared/i18n/format'
+import type { Lang } from '../../../shared/i18n/lang'
 
 const INTEGER = /^\d+$/
 const DECIMAL = /^\d+(\.\d+)?$/
@@ -32,16 +34,11 @@ export function parseDecimalField(text: string, positive = false): number | null
   return positive ? (n > 0 ? n : undefined) : n
 }
 
-const formatters = new Map<number, Intl.NumberFormat>()
-
 // 1200 → « 1 200 », 14.4 → « 14,4 » ; decimals fixe le nombre de décimales (3 → « 3,0 »).
-// Espace ordinaire pour les milliers : les espaces insécables de fr-CA compliquent les tests et les CSV.
-export function formatFr(n: number, decimals?: number): string {
-  const key = decimals ?? -1
-  let f = formatters.get(key)
-  if (!f) {
-    f = new Intl.NumberFormat('fr-CA', decimals === undefined ? { maximumFractionDigits: 1 } : { minimumFractionDigits: decimals, maximumFractionDigits: decimals })
-    formatters.set(key, f)
-  }
-  return f.format(n).replace(/[\u00A0\u202F]/g, ' ')
+// Alias français pour les documents (rapports, PDF) ; un affichage qui suit la langue passe par `fmt.num` (useT) ou `formatters(lang).num`.
+export const formatFr: (n: number, decimals?: number) => string = formatters('fr').num
+
+// Valeur d'un champ de saisie : tous les chiffres, sans espace de milliers (qui serait refusée à la relecture), séparateur décimal de la langue.
+export function decimalText(n: number, lang: Lang): string {
+  return lang === 'fr' ? String(n).replace('.', ',') : String(n)
 }

@@ -7,7 +7,7 @@ import type { Project } from '../model/types'
 
 function withDevice(templateId: string): Project {
   const p = sampleProject()
-  return { ...p, devices: [...p.devices, createDevice(p, templateId, { x: 0, y: 0 }, { id: templateId })] }
+  return { ...p, devices: [...p.devices, createDevice(p, templateId, { x: 0, y: 0 }, { lang: 'fr', id: templateId })] }
 }
 
 describe('connect', () => {

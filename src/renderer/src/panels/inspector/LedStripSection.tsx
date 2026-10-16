@@ -3,12 +3,11 @@ import type { Device, LedStrip, LedStripType, Project } from '../../model/types'
 import { LedStripTypeSchema } from '../../model/schema'
 import { LED_STRIP_TYPES, LED_VOLTAGES, stripPixels, stripPower, stripWithType } from '../../model/led'
 import { issueTexts, overlapsIn, patchIndex, sourceLabel } from '../../model/dmx'
-import { parseDecimalField, parseIntField } from '../../model/fields'
+import { decimalText, parseDecimalField, parseIntField } from '../../model/fields'
 import { useT } from '../../i18n/useT'
 import { projectStore } from '../../store/projectStore'
 import { CommitInput } from '../CommitInput'
 
-const decimal = (n: number | undefined): string => (n === undefined ? '' : String(n).replace('.', ','))
 
 function compactStrip(s: LedStrip): LedStrip {
   return {
@@ -22,7 +21,7 @@ function compactStrip(s: LedStrip): LedStrip {
 
 // Bande LED (spec § 5.3) : le type préremplit, la puissance et les pixels se calculent.
 export function LedStripSection({ device, project }: { device: Device; project: Project }) {
-  const { m, fmt } = useT()
+  const { m, fmt, lang } = useT()
   const t = m.inspector.ledStrip
   const index = patchIndex(project) // mémorisé par projet
   const strip = device.ledStrip
@@ -61,7 +60,7 @@ export function LedStripSection({ device, project }: { device: Device; project: 
             className="input"
             aria-label={t.powerAria}
             inputMode="decimal"
-            value={decimal(strip.wPerM)}
+            value={strip.wPerM !== undefined ? decimalText(strip.wPerM, lang) : ''}
             onCommit={(v) => {
               const n = parseDecimalField(v)
               if (n === undefined) s().showToast(t.powerToast)
@@ -79,7 +78,7 @@ export function LedStripSection({ device, project }: { device: Device; project: 
             aria-label={t.lengthAria}
             inputMode="decimal"
             placeholder="—"
-            value={decimal(strip.lengthM)}
+            value={strip.lengthM !== undefined ? decimalText(strip.lengthM, lang) : ''}
             onCommit={(v) => {
               const n = parseDecimalField(v, true)
               if (n === undefined) s().showToast(t.lengthToast)
@@ -117,7 +116,7 @@ export function LedStripSection({ device, project }: { device: Device; project: 
             const first = sp.spans[0]!.universe
             const last = sp.spans.at(-1)!.universe
             // Appareils patchés dans un univers de la bande : même repère que le bloc Patch DMX.
-            const warnings = [...new Set(sp.spans.flatMap((span) => issueTexts({ overlaps: overlapsIn(index, span.universe, 1, span.channels, device.id), overflow: false })))]
+            const warnings = [...new Set(sp.spans.flatMap((span) => issueTexts({ overlaps: overlapsIn(index, span.universe, 1, span.channels, device.id), overflow: false }, m)))]
             return (
               <>
                 <p className="insp__note">{t.universes({ range: first === last ? String(first) : `${first}–${last}`, via: sourceLabel(project, { kind: 'port', ref: sp.source }) })}</p>

@@ -3,9 +3,9 @@ import { createDevice, createProject } from '../../model/project'
 
 // Petit show DMX partagé par les tests du patch : un nœud, deux lyres chaînées, un chevauchement, un univers tapé et un appareil sans univers.
 export function patchShowProject(): Project {
-  let p: Project = createProject(new Date(2026, 9, 14))
+  let p: Project = createProject(new Date(2026, 9, 14), 'fr')
   const add = (id: string, templateId: string, extra: Partial<Device>): void => {
-    p = { ...p, devices: [...p.devices, { ...createDevice(p, templateId, { x: 0, y: 0 }, { id }), ...extra }] }
+    p = { ...p, devices: [...p.devices, { ...createDevice(p, templateId, { x: 0, y: 0 }, { lang: 'fr', id }), ...extra }] }
   }
   add('ode', 'dmx-node', { name: 'ODE-1', portState: { 'DMX-1': { universe: 1 } } })
   add('mh2', 'dmx-fixture', { name: 'MH-2', model: 'Lyre spot', dmx: { footprint: 16, address: 17, mode: 'Standard 16 ch' } })

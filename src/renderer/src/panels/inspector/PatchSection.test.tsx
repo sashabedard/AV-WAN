@@ -14,9 +14,9 @@ const LYRE: StoredTemplate = {
 }
 
 function project(): Project {
-  let p: Project = { ...createProject(new Date(2026, 9, 14)), templates: [LYRE] }
+  let p: Project = { ...createProject(new Date(2026, 9, 14), 'fr'), templates: [LYRE] }
   const add = (id: string, templateId: string, extra: Partial<Device> = {}): void => {
-    p = { ...p, devices: [...p.devices, { ...createDevice(p, templateId, { x: 0, y: 0 }, { id }), ...extra }] }
+    p = { ...p, devices: [...p.devices, { ...createDevice(p, templateId, { x: 0, y: 0 }, { lang: 'fr', id }), ...extra }] }
   }
   add('ode', 'dmx-node', { name: 'ODE-1', portState: { 'DMX-2': { universe: 2 } } })
   add('f1', 'dmx-fixture', { dmx: { footprint: 16 } })
@@ -150,7 +150,7 @@ describe('bloc Patch DMX en anglais', () => {
 describe('mode DMX d’un modèle du catalogue en anglais', () => {
   it('affiche « Extended (EXT) » mais garde la clé « Étendu (EXT) »', async () => {
     const p = projectStore.getState().history.present
-    const aura = { ...createDevice(p, 'martin-mac-aura-xb', { x: 0, y: 0 }, { id: 'aura' }), dmx: { footprint: 25, mode: 'Étendu (EXT)' } }
+    const aura = { ...createDevice(p, 'martin-mac-aura-xb', { x: 0, y: 0 }, { lang: 'fr', id: 'aura' }), dmx: { footprint: 25, mode: 'Étendu (EXT)' } }
     projectStore.getState().loadProject({ ...p, devices: [...p.devices, aura] }, null)
     select('aura')
     act(() => uiStore.getState().setLang('en'))

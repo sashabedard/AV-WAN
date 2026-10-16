@@ -5,7 +5,7 @@ import type { Device, Link, PortDef, Project } from '../model/types'
 import { cableSchedule } from './cableSchedule'
 import { deviceSheets } from './deviceSheets'
 
-const p = createExampleProject(new Date(2026, 9, 13))
+const p = createExampleProject(new Date(2026, 9, 13), 'fr')
 const sheet = (name: string) => deviceSheets(p).find((s) => s.name === name)!
 
 describe('deviceSheets', () => {
@@ -52,8 +52,8 @@ describe('deviceSheets', () => {
 
 describe('deviceSheets : ligne DMX', () => {
   it('ajoute le résumé du patch aux appareils patchables seulement', () => {
-    let q = createExampleProject(new Date(2026, 9, 13))
-    q = { ...q, devices: [...q.devices, { ...createDevice(q, 'dmx-fixture', { x: 0, y: 0 }, { id: 'wash' }), name: 'WASH-9', dmx: { footprint: 16, address: 33, universe: 2, mode: 'Standard 16 ch' } }] }
+    let q = createExampleProject(new Date(2026, 9, 13), 'fr')
+    q = { ...q, devices: [...q.devices, { ...createDevice(q, 'dmx-fixture', { x: 0, y: 0 }, { lang: 'fr', id: 'wash' }), name: 'WASH-9', dmx: { footprint: 16, address: 33, universe: 2, mode: 'Standard 16 ch' } }] }
     const find = (name: string) => deviceSheets(q).find((s) => s.name === name)!
     expect(find('WASH-9').extras).toEqual(['DMX : U2 · 33–48 · 16 ch · Standard 16 ch'])
     expect(find('CAM-1').extras).toEqual([])
@@ -68,7 +68,7 @@ const link = (id: string, a: [string, string], b: [string, string]): Link => ({ 
 function benchWithLyre(): Project {
   const strip = { type: 'cob' as const, volts: 24, wPerM: 14.4, lengthM: 10 }
   return {
-    ...createProject(new Date(2026, 9, 14)),
+    ...createProject(new Date(2026, 9, 14), 'fr'),
     devices: [
       dev('psu', 'PSU-1', { ports: [dc('DC-OUT-1'), dc('DC-OUT-2'), dc('DC-OUT-3'), dc('DC-OUT-4')], psu: { volts: 24, amps: 15 } }),
       dev('led1', 'LED-1', { ports: [dc('DC-IN')], ledStrip: strip }),

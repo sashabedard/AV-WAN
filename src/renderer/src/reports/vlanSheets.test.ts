@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import { createExampleProject } from '../samples/exampleProject'
 import { vlanSheets } from './vlanSheets'
 
-const p = createExampleProject(new Date(2026, 9, 13))
+const p = createExampleProject(new Date(2026, 9, 13), 'fr')
 
 describe('vlanSheets', () => {
   it('fait une fiche par VLAN, par numéro croissant', () => {

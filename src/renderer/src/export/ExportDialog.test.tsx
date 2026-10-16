@@ -10,7 +10,7 @@ import { createExampleProject } from '../samples/exampleProject'
 const ALL = ['schema', 'appareils', 'ports', 'branchement', 'vlans', 'ip', 'patch', 'canaux', 'puissance', 'nomenclature']
 
 beforeEach(() => {
-  projectStore.getState().loadProject(createExampleProject(new Date(2026, 9, 13)), null)
+  projectStore.getState().loadProject(createExampleProject(new Date(2026, 9, 13), 'fr'), null)
   uiStore.setState({ exportOpen: true, lastPdfChoice: null })
 })
 afterEach(cleanup)

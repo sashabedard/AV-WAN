@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { createExampleProject } from '../samples/exampleProject'
 import { cableSchedule } from './cableSchedule'
 
-const p = createExampleProject(new Date(2026, 9, 13))
+const p = createExampleProject(new Date(2026, 9, 13), 'fr')
 const row = (project: typeof p, id: string) => cableSchedule(project).rows.find((r) => r[0] === id)
 
 describe('cableSchedule', () => {

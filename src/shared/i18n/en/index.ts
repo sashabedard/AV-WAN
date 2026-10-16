@@ -17,5 +17,6 @@ import { switchConfigurator } from './switchConfigurator'
 import { panels } from './panels'
 import { inspector } from './inspector'
 import { catalog } from './catalog'
+import { model } from './model'
 
-export const en: Messages = { common, menu, dialogs, errors, update, topbar, welcome, app, theme, canvas, palette, quickSearch, vlanPanel, componentEditor, switchConfigurator, panels, inspector, catalog }
+export const en: Messages = { common, menu, dialogs, errors, update, topbar, welcome, app, theme, canvas, palette, quickSearch, vlanPanel, componentEditor, switchConfigurator, panels, inspector, catalog, model }

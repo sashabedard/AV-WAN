@@ -3,6 +3,7 @@ import type { Project } from '../types'
 export function sampleProject(): Project {
   return {
     schemaVersion: 3,
+    // i18n-ignore : jeu d'essai, nom de personne
     meta: { title: 'Installation Lumen', authors: ['É. Tremblay'], date: '2026-10-13', revision: 'A', status: 'conception' },
     settings: { colorMode: 'vlan', pageFormat: 'na', cableIdPrefix: 'C-', snapToGrid: true },
     vlans: [

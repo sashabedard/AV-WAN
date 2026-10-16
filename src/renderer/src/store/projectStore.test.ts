@@ -390,7 +390,7 @@ describe('listes de canaux DMX', () => {
   afterEach(() => dmxChannelsStore.setState({ lists: [] }))
 
   it('nommer les canaux est une étape annulable', () => {
-    const store = createProjectStore(createProject(new Date(2026, 9, 15)))
+    const store = createProjectStore(createProject(new Date(2026, 9, 15), 'fr'))
     store.getState().setChannelList(WASH, ['Red', 'Green'])
     expect(store.getState().history.present.dmxChannels).toEqual([{ ...WASH, params: ['Red', 'Green'] }])
     store.getState().undo()
@@ -401,7 +401,7 @@ describe('listes de canaux DMX', () => {
   })
 
   it('lecture seule : rien ne change, le message s’affiche', () => {
-    const store = createProjectStore(createProject(new Date(2026, 9, 15)))
+    const store = createProjectStore(createProject(new Date(2026, 9, 15), 'fr'))
     store.setState({ readOnly: true })
     store.getState().setChannelList(WASH, ['Red'])
     expect(store.getState().history.present.dmxChannels).toBeUndefined()
@@ -410,7 +410,7 @@ describe('listes de canaux DMX', () => {
 
   it('placer un appareil copie la liste des réglages dans le projet ; ⌘Z retire l’appareil et la liste ensemble', () => {
     dmxChannelsStore.setState({ lists: [{ templateId: 'dmx-fixture', params: ['Red', 'Green'] }] })
-    const store = createProjectStore(createProject(new Date(2026, 9, 15)))
+    const store = createProjectStore(createProject(new Date(2026, 9, 15), 'fr'))
     store.getState().addDevice('dmx-fixture', { x: 0, y: 0 })
     expect(store.getState().history.present.dmxChannels).toEqual([{ templateId: 'dmx-fixture', params: ['Red', 'Green'] }])
     expect(store.getState().history.past).toHaveLength(1)
@@ -427,6 +427,20 @@ describe('projectStore : toasts en anglais', () => {
       const s = store()
       s.getState().zoneAroundSelection()
       expect(s.getState().toast).toBe('Select at least one device to create a zone around.')
+    } finally {
+      uiStore.getState().setLang('fr')
+    }
+  })
+})
+
+describe('projectStore : création dans la langue de l’interface (plan 6)', () => {
+  it('addDevice écrit les étiquettes de ports du gabarit dans la langue de l’interface', () => {
+    uiStore.getState().setLang('en')
+    try {
+      const s = store()
+      const id = s.getState().addDevice('dante-pcie', { x: 0, y: 0 })!
+      expect(s.getState().history.present.devices.find((d) => d.id === id)!.ports[0]!.label).toBe('Primary')
+      expect(createProjectStore().getState().history.present.meta.title).toBe('New project')
     } finally {
       uiStore.getState().setLang('fr')
     }

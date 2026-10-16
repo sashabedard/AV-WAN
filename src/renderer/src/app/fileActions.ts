@@ -27,7 +27,7 @@ export function newProjectAction(): void {
 
 export async function loadFromText(path: string, text: string): Promise<boolean> {
   const s = projectStore.getState()
-  const res = parseProjectFile(text)
+  const res = parseProjectFile(text, currentMessages())
   if (!res.ok) {
     s.showToast(res.error)
     return false
@@ -52,7 +52,7 @@ export async function restoreRecoveryAction(key: string): Promise<boolean> {
   const s = projectStore.getState()
   try {
     const restored = await window.avwan.recovery.restore(key)
-    const res = parseProjectFile(restored.text)
+    const res = parseProjectFile(restored.text, currentMessages())
     if (!res.ok) {
       s.showToast(currentMessages().app.file.restoreFailed({ reason: res.error }))
       return false
@@ -200,7 +200,7 @@ export async function revertToOpenedAction(): Promise<boolean> {
       s.showToast(none)
       return false
     }
-    const res = parseProjectFile(text)
+    const res = parseProjectFile(text, currentMessages())
     if (!res.ok) {
       s.showToast(currentMessages().app.file.revertFailed({ reason: res.error }))
       return false

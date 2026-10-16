@@ -4,8 +4,10 @@ import { createDevice, createProject } from '../model/project'
 import { setLinkVlan, type VlanChoice } from '../model/derive'
 import { assignZones } from '../model/zones'
 import { vlanPreset } from '../catalog/vlanPresets'
+import type { Lang } from '../../../shared/i18n/lang'
+import { messages } from '../../../shared/i18n/messages'
 
-export const EXAMPLE_TITLE = 'Installation interactive (exemple)'
+export const EXAMPLE_TITLE = messages('fr').model.example.title // titre français (les tests et l'e2e FR l'attendent)
 
 type Extra = Partial<Pick<Device, 'model' | 'ip' | 'hostname' | 'note' | 'dmx' | 'powerW' | 'psu' | 'ledStrip' | 'portState'>>
 const fixe = (address: string): NonNullable<Device['ip']> => ({ address, mode: 'static' })
@@ -16,17 +18,19 @@ const TRUNK_ALL: VlanChoice = { kind: 'trunk', native: 10, tagged: 'all' }
 
 // Projet exemple de l'écran d'accueil : une régie, une salle et une scène, câblées et réglées.
 // Identifiants stables (ex-…) : les captures du README et les tests restent reproductibles.
-export function createExampleProject(now: Date = new Date()): Project {
-  const base = createProject(now)
-  let p: Project = { ...base, meta: { ...base.meta, title: EXAMPLE_TITLE, authors: ['Équipe technique'] }, vlans: [10, 20, 30, 40, 50, 60].map((id) => vlanPreset(id, 'fr')) /* plan 6 : projet exemple bilingue à la Task 13 */, settings: { ...base.settings, mainsVoltage: 120 } }
+// `lang` : langue de l'interface au moment de l'ouverture ; titre, zones, noms de modèles, VLAN et étiquettes de ports y sont écrits.
+export function createExampleProject(now: Date = new Date(), lang: Lang): Project {
+  const ex = messages(lang).model.example
+  const base = createProject(now, lang)
+  let p: Project = { ...base, meta: { ...base.meta, title: ex.title, authors: [ex.authors] }, vlans: [10, 20, 30, 40, 50, 60].map((id) => vlanPreset(id, lang)), settings: { ...base.settings, mainsVoltage: 120 } }
   const ids = new Map<string, string>()
   const id = (key: string): string => {
     const v = ids.get(key)
-    if (!v) throw new Error(`Appareil exemple inconnu : ${key}`)
+    if (!v) throw new Error(ex.unknownDevice({ key }))
     return v
   }
   const add = (key: string, templateId: string, x: number, y: number, extra: Extra = {}, switchSpec?: Device['switch']): void => {
-    const d = createDevice(p, templateId, { x, y }, { id: `ex-${key}`, ...(switchSpec ? { switchSpec } : {}) })
+    const d = createDevice(p, templateId, { x, y }, { id: `ex-${key}`, lang, ...(switchSpec ? { switchSpec } : {}) })
     p = { ...p, devices: [...p.devices, { ...d, ...extra }] }
     ids.set(key, d.id)
   }
@@ -38,31 +42,31 @@ export function createExampleProject(now: Date = new Date()): Project {
 
   // Régie
   add('gw', 'gateway', 88, 48, { ip: fixe('10.10.10.1') })
-  add('sw1', 'switch', 64, 176, { ip: fixe('10.10.10.2'), model: 'Switch de régie 24 PoE+' }, { portCount: 24, poe: 'at', poeBudgetW: 400, sfpPlus: 2, managed: true })
+  add('sw1', 'switch', 64, 176, { ip: fixe('10.10.10.2'), model: ex.models.controlSwitch }, { portCount: 24, poe: 'at', poeBudgetW: 400, sfpPlus: 2, managed: true })
   add('mac', 'show-mac', 40, 360, { ip: fixe('10.20.0.10'), hostname: 'regie-qlab' })
   add('pc', 'media-pc', 240, 360, { ip: fixe('10.40.0.10'), model: 'TouchDesigner', hostname: 'media-1' })
   add('dnt', 'dante-console', 440, 360, { ip: fixe('10.30.0.10') })
   add('lx', 'lighting-console', 640, 360, { ip: fixe('10.50.0.10') })
   add('mqt', 'mqtt-broker', 40, 460, { ip: fixe('10.60.0.2'), hostname: 'mqtt' })
   // Salle
-  add('sw2', 'switch', 960, 176, { ip: fixe('10.10.10.3'), model: 'Switch de salle 8 PoE+' }, { portCount: 8, poe: 'at', poeBudgetW: 150, sfpPlus: 2, managed: true })
+  add('sw2', 'switch', 960, 176, { ip: fixe('10.10.10.3'), model: ex.models.hallSwitch }, { portCount: 8, poe: 'at', poeBudgetW: 150, sfpPlus: 2, managed: true })
   add('cam1', 'ptz-ndi', 920, 300, { ip: fixe('10.40.0.21') })
   add('cam2', 'ptz-ndi', 1110, 300, { ip: fixe('10.40.0.22') })
   add('ap', 'ap', 1300, 300, { ip: fixe('10.10.10.4') })
   add('spk1', 'dante-speaker', 920, 420, { ip: DHCP })
   add('spk2', 'dante-speaker', 1110, 420, { ip: DHCP })
-  add('iot1', 'esp32-poe', 1300, 420, { ip: fixe('10.60.0.31'), model: 'Capteur de présence' })
-  add('iot2', 'esp32-devkit', 1480, 420, { ip: DHCP, model: 'Bouton sans fil' })
+  add('iot1', 'esp32-poe', 1300, 420, { ip: fixe('10.60.0.31'), model: ex.models.presenceSensor })
+  add('iot2', 'esp32-devkit', 1480, 420, { ip: DHCP, model: ex.models.wirelessButton })
   // Scène
   add('pix', 'pixel-controller', 80, 700, { ip: fixe('10.50.0.20'), portState: { OUT1: { universe: 10 } } })
-  add('led', 'led-strip', 80, 820, { model: 'Bande pixels 5 m', ledStrip: { type: 'ws2815', volts: 12, wPerM: 14.4, lengthM: 5, pxPerM: 60 } })
+  add('led', 'led-strip', 80, 820, { model: ex.models.pixelStrip, ledStrip: { type: 'ws2815', volts: 12, wPerM: 14.4, lengthM: 5, pxPerM: 60 } })
   add('dmx', 'dmx-node', 360, 700, { ip: fixe('10.50.0.21'), portState: { 'DMX-1': { universe: 1 }, 'DMX-2': { universe: 2 } } })
-  add('fix', 'dmx-fixture', 360, 820, { model: 'Projecteur asservi', dmx: { footprint: 16, address: 1, mode: 'Standard 16 ch' } })
+  add('fix', 'dmx-fixture', 360, 820, { model: ex.models.movingFixture, dmx: { footprint: 16, address: 1, mode: 'Standard 16 ch' } })
   add('mh1', 'moving-spot', 640, 700, { powerW: 400, dmx: { footprint: 16, address: 1 } })
   add('mh2', 'moving-spot', 900, 700, { powerW: 400, dmx: { footprint: 16, address: 17 } })
   add('mh3', 'moving-spot', 1160, 700, { powerW: 400, dmx: { footprint: 16, address: 33 } })
   add('psu', 'psu', 80, 940, { psu: { volts: 12, amps: 30 } }) // sous LED-1 : son câble DC ne traverse pas la rangée
-  add('rgb', 'led-strip', 900, 820, { model: 'Ruban de scène', ledStrip: { type: 'smd-rgb', volts: 12, wPerM: 14.4, lengthM: 10 } })
+  add('rgb', 'led-strip', 900, 820, { model: ex.models.stageStrip, ledStrip: { type: 'smd-rgb', volts: 12, wPerM: 14.4, lengthM: 10 } })
 
   link(['gw', 'LAN1'], ['sw1', '1'], 'cat6', TRUNK_ALL, { lengthM: 1 })
   link(['sw1', 'SFP+1'], ['sw2', 'SFP+1'], 'om4', TRUNK_ALL, { lengthM: 30 })
@@ -91,9 +95,9 @@ export function createExampleProject(now: Date = new Date()): Project {
   p = {
     ...p,
     zones: [
-      { id: 'ex-z-regie', name: 'Régie', color: '#F2A93B', rect: { x: 0, y: 0, w: 860, h: 560 }, ownPdfPage: true },
-      { id: 'ex-z-salle', name: 'Salle', color: '#3E8EF7', rect: { x: 900, y: 0, w: 760, h: 560 }, ownPdfPage: true },
-      { id: 'ex-z-scene', name: 'Scène', color: '#3DBE6E', rect: { x: 0, y: 600, w: 1660, h: 440 }, ownPdfPage: false }
+      { id: 'ex-z-regie', name: ex.zones.control, color: '#F2A93B', rect: { x: 0, y: 0, w: 860, h: 560 }, ownPdfPage: true },
+      { id: 'ex-z-salle', name: ex.zones.hall, color: '#3E8EF7', rect: { x: 900, y: 0, w: 760, h: 560 }, ownPdfPage: true },
+      { id: 'ex-z-scene', name: ex.zones.stage, color: '#3DBE6E', rect: { x: 0, y: 600, w: 1660, h: 440 }, ownPdfPage: false }
     ]
   }
   return assignZones(p)

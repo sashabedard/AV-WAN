@@ -19,12 +19,12 @@ describe('portVlanSummary', () => {
 
 describe('peersOf', () => {
   it('liste tous les clients d’une radio Wi-Fi de point d’accès', () => {
-    let p: Project = createProject()
-    const ap = createDevice(p, 'ap', { x: 0, y: 0 })
+    let p: Project = createProject(undefined, 'fr')
+    const ap = createDevice(p, 'ap', { x: 0, y: 0 }, { lang: 'fr' })
     p = { ...p, devices: [ap] }
-    const a = createDevice(p, 'esp32-devkit', { x: 0, y: 200 })
+    const a = createDevice(p, 'esp32-devkit', { x: 0, y: 200 }, { lang: 'fr' })
     p = { ...p, devices: [...p.devices, a] }
-    const b = createDevice(p, 'esp32-devkit', { x: 200, y: 200 })
+    const b = createDevice(p, 'esp32-devkit', { x: 200, y: 200 }, { lang: 'fr' })
     p = { ...p, devices: [...p.devices, b] }
     p.links.push(
       { id: 'w1', cableId: 'C-001', a: { deviceId: a.id, portId: 'WIFI' }, b: { deviceId: ap.id, portId: 'WIFI' }, medium: 'wifi' },

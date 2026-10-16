@@ -15,9 +15,9 @@ const LYRE: StoredTemplate = {
 }
 
 function project(): Project {
-  let p: Project = { ...createProject(new Date(2026, 9, 15)), templates: [LYRE] }
+  let p: Project = { ...createProject(new Date(2026, 9, 15), 'fr'), templates: [LYRE] }
   const add = (id: string, templateId: string, extra: Partial<Device> = {}): void => {
-    p = { ...p, devices: [...p.devices, { ...createDevice(p, templateId, { x: 0, y: 0 }, { id }), ...extra }] }
+    p = { ...p, devices: [...p.devices, { ...createDevice(p, templateId, { x: 0, y: 0 }, { lang: 'fr', id }), ...extra }] }
   }
   add('a', LYRE.id) // 1er mode : 3CH
   add('b', LYRE.id)
@@ -101,10 +101,10 @@ describe('entrées du projet et des réglages', () => {
 describe('le projet garde une copie de chaque liste qu’il affiche', () => {
   const SPOT = { templateId: 'dmx-fixture', model: 'Spot', mode: '9CH' }
   const settings: DmxChannelList[] = [{ ...SPOT, params: ['Pan', 'Tilt'] }]
-  const empty = (): Project => ({ ...createProject(new Date(2026, 9, 15)), templates: [LYRE] })
+  const empty = (): Project => ({ ...createProject(new Date(2026, 9, 15), 'fr'), templates: [LYRE] })
   const add = (p: Project, id: string, templateId: string, extra: Partial<Device> = {}): Project => ({
     ...p,
-    devices: [...p.devices, { ...createDevice(p, templateId, { x: 0, y: 0 }, { id }), ...extra }]
+    devices: [...p.devices, { ...createDevice(p, templateId, { x: 0, y: 0 }, { lang: 'fr', id }), ...extra }]
   })
 
   it('nouvel appareil : la liste des réglages, sinon celle du catalogue, est copiée', () => {
@@ -220,8 +220,8 @@ describe('fichier des réglages', () => {
 describe('mode DMX français et langue de l’interface', () => {
   it('« Étendu (EXT) » résout la même liste en français et en anglais', async () => {
     const { uiStore } = await import('../store/uiStore')
-    let p = createProject(new Date(2026, 9, 15))
-    p = { ...p, devices: [{ ...createDevice(p, 'martin-mac-aura-xb', { x: 0, y: 0 }, { id: 'aura' }), dmx: { footprint: 25, mode: 'Étendu (EXT)' } }] }
+    let p = createProject(new Date(2026, 9, 15), 'fr')
+    p = { ...p, devices: [{ ...createDevice(p, 'martin-mac-aura-xb', { x: 0, y: 0 }, { lang: 'fr', id: 'aura' }), dmx: { footprint: 25, mode: 'Étendu (EXT)' } }] }
     const k = channelKey(p.devices[0]!)!
     uiStore.getState().setLang('fr')
     const fr = resolveChannels(p, [], k)

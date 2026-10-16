@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { messages } from '../../../shared/i18n/messages'
 import { makeRenderFixture } from './renderFixture'
 import { ProjectSchema } from '../model/schema'
 import { sanitizeProject } from '../model/sanitize'
@@ -9,7 +10,7 @@ describe('makeRenderFixture', () => {
 
   it('est un projet valide que l’ouverture ne modifie pas', () => {
     expect(ProjectSchema.safeParse(p).success).toBe(true)
-    expect(sanitizeProject(p).warnings).toEqual([])
+    expect(sanitizeProject(p, messages('fr')).warnings).toEqual([])
   })
 
   it('montre les trois façades, une tuile et un cordon de chaque sorte', () => {
