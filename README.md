@@ -14,7 +14,7 @@
 <p align="center">
   <a href="https://github.com/sashabedard/AV-WAN/releases/latest"><img alt="Dernière version" src="https://img.shields.io/github/v/release/sashabedard/AV-WAN?style=flat-square&labelColor=1D2125&color=F2A93B&label=version"></a>
   <a href="https://apps.microsoft.com/detail/9NR2WJRZZ5JG"><img alt="Disponible sur le Microsoft Store" src="https://img.shields.io/badge/Microsoft%20Store-disponible-0078D4?style=flat-square&labelColor=1D2125"></a>
-  <img alt="macOS et Windows, gratuit" src="https://img.shields.io/badge/macOS%20%C2%B7%20Windows-gratuit-8E969F?style=flat-square&labelColor=1D2125">
+  <img alt="macOS, Windows et Linux, gratuit" src="https://img.shields.io/badge/macOS%20%C2%B7%20Windows%20%C2%B7%20Linux-gratuit-8E969F?style=flat-square&labelColor=1D2125">
   <img alt="Electron, React, React Flow" src="https://img.shields.io/badge/Electron%20%C2%B7%20React%20%C2%B7%20React%20Flow-3E8EF7?style=flat-square&labelColor=1D2125">
   <img alt="Interface en français et en anglais" src="https://img.shields.io/badge/interface-fran%C3%A7ais%20%C2%B7%20anglais-3DBE6E?style=flat-square&labelColor=1D2125">
 </p>
@@ -26,6 +26,7 @@ Dernière version : page [Releases](https://github.com/sashabedard/AV-WAN/releas
 - **macOS 13 et plus** (Intel et Apple Silicon) : `AV-WAN-<version>-universal.dmg`. Glisser AV·WAN dans Applications. L'app est signée et vérifiée par Apple.
 - **Windows 10 et 11** : [**Microsoft Store**](https://apps.microsoft.com/detail/9NR2WJRZZ5JG) (recommandé). Installé et mis à jour par le Store, sans avertissement.
 - **Windows 10 et 11, alternative** : `AV-WAN-<version>-setup.exe` des Releases, sans droits d'administrateur.
+- **Linux (x64)** : `AV-WAN-<version>-amd64.deb` (Ubuntu, Debian) : `sudo apt install ./AV-WAN-<version>-amd64.deb`. Il associe aussi les fichiers `.avwan`. Sinon `AV-WAN-<version>-x86_64.AppImage` : `chmod +x` puis lancer. Sur Ubuntu 24.04, l'AppImage demande `sudo apt install libfuse2t64`.
 
 > [!WARNING]
 > **Windows : préférez le Microsoft Store, sans avertissement.** Avec l'installeur `setup.exe`, la fenêtre bleue « Windows a protégé votre ordinateur » s'affiche au premier lancement. C'est normal, l'installeur n'est pas signé : cliquez **Informations complémentaires**, puis **Exécuter quand même**.
@@ -42,7 +43,7 @@ Un projet d'installation interactive met en réseau des choses très différente
 - **Les outils AV professionnels** qui génèrent ces listes coûtent de 15 à 170 $ US par mois ou ne tournent que sous Windows.
 - **Les simulateurs réseau** (Packet Tracer, GNS3) ne connaissent ni Dante, ni NDI, ni l'éclairage.
 
-AV·WAN est gratuit, fonctionne hors ligne sur macOS et Windows, et est en français et en anglais. Chaque câble est attaché à **un port précis**. La documentation est générée à partir du schéma, donc les deux ne se contredisent jamais.
+AV·WAN est gratuit, fonctionne hors ligne sur macOS, Windows et Linux, et est en français et en anglais. Chaque câble est attaché à **un port précis**. La documentation est générée à partir du schéma, donc les deux ne se contredisent jamais.
 
 ## Aperçu
 
@@ -151,7 +152,7 @@ npm run build        # build de production dans out/
    - `APPLE_ID` : l'identifiant Apple du compte développeur ;
    - `APPLE_APP_SPECIFIC_PASSWORD` : un mot de passe d'app créé sur appleid.apple.com (Connexion et sécurité › Mots de passe pour app).
 2. `npm version 1.0.0` pour la première version publique, puis `npm version minor` (ou `patch`) pour les suivantes ; ensuite `git push --follow-tags`.
-3. La CI construit le DMG notarisé et l'installeur Windows, vérifie l'association `.avwan`, et crée un **brouillon** de release avec le guide PDF.
+3. La CI construit le DMG notarisé, l'installeur Windows et les paquets Linux (AppImage, `.deb`), vérifie l'association `.avwan`, et crée un **brouillon** de release avec le guide PDF.
 4. Tester les fichiers du brouillon, puis **Publish**. Les apps installées proposent alors la mise à jour.
 5. Microsoft Store : télécharger l'artefact `microsoft-store` du run (`AV-WAN-<version>-store.appx`, non signé) et le téléverser dans une nouvelle soumission sur Partner Center. Le Store le signe et le distribue après certification.
 
