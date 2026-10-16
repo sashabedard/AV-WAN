@@ -17,6 +17,13 @@ function selectRack(id: string, e: MouseEvent): void {
   s.setSelection({ ...s.selection, rackIds: current.includes(id) ? current.filter((r) => r !== id) : [...current, id] })
 }
 
+// Diagonales à 45° tous les 8 px, couvrant le rectangle (le clip fait le reste).
+function hatchPath(x: number, y: number, w: number, h: number): string {
+  const segments: string[] = []
+  for (let k = -h; k < w; k += 8) segments.push(`M${x + k} ${y + h}L${x + k + h} ${y}`)
+  return segments.join('')
+}
+
 function RackNodeImpl({ id, data, selected, width, height }: NodeProps<Node<RackNodeData, 'rack'>>) {
   const { m } = useT()
   const { rack, zoneName, free } = data
@@ -24,7 +31,6 @@ function RackNodeImpl({ id, data, selected, width, height }: NodeProps<Node<Rack
   const h = height ?? 0
   const bodyH = h - RACK_TITLE_H
   const meta = [zoneName, m.racks.units({ n: rack.heightU })].filter(Boolean).join(' · ')
-  const hatch = `rack-hatch-${id}`
   const units = Array.from({ length: rack.heightU }, (_, i) => rack.heightU - i)
   return (
     <div className={`rack${selected ? ' rack--selected' : ''}`} style={{ width: w, height: h }} data-testid={`rack-${rack.name}`}>
@@ -34,14 +40,18 @@ function RackNodeImpl({ id, data, selected, width, height }: NodeProps<Node<Rack
       </div>
       <svg className="rack__body" width={w} height={bodyH} style={{ top: RACK_TITLE_H }} aria-hidden="true">
         <defs>
-          <pattern id={hatch} width={8} height={8} patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
-            <line className="rack__hatch-line" x1={0} y1={0} x2={0} y2={8} />
-          </pattern>
+          {/* Hachures dessinées en traits sous un clip : un <pattern> SVG serait rastérisé dans le PDF. */}
+          {free.map((f) => (
+            <clipPath key={f.y} id={`rack-free-${id}-${f.y}`}>
+              <rect x={RACK_RAIL_W + 2} y={f.y - RACK_TITLE_H + 2} width={w - 2 * RACK_RAIL_W - 4} height={f.h - 4} />
+            </clipPath>
+          ))}
         </defs>
         <rect className="rack__inside" x={RACK_RAIL_W} y={0} width={w - 2 * RACK_RAIL_W} height={bodyH} />
         {free.map((f) => (
           <g key={f.y}>
-            <rect className="rack__free" x={RACK_RAIL_W + 2} y={f.y - RACK_TITLE_H + 2} width={w - 2 * RACK_RAIL_W - 4} height={f.h - 4} fill={`url(#${hatch})`} />
+            <rect className="rack__free" x={RACK_RAIL_W + 2} y={f.y - RACK_TITLE_H + 2} width={w - 2 * RACK_RAIL_W - 4} height={f.h - 4} fill="none" />
+            <path className="rack__hatch-line" clipPath={`url(#rack-free-${id}-${f.y})`} d={hatchPath(RACK_RAIL_W + 2, f.y - RACK_TITLE_H + 2, w - 2 * RACK_RAIL_W - 4, f.h - 4)} />
             <text className="rack__free-text" x={w / 2} y={f.y - RACK_TITLE_H + f.h / 2} textAnchor="middle" dominantBaseline="central">
               {m.racks.free({ n: f.n })}
             </text>

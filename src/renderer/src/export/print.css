@@ -22,7 +22,8 @@ html[data-print] #root { height: auto; background: #ffffff; }
 /* Le canvas est mis à l'échelle (fitView) : sans cela, le texte est dimensionné avec des métriques arrondies et déborde du ruban. */
 .print .react-flow__viewport { text-rendering: geometricPrecision; }
 .print .dn { box-shadow: none; background: var(--tile-top); }
-.print .sw { filter: none; }
+.print .sw, .print .rdev { filter: none; }
+.print .rdev { background: var(--panel-top); }
 .print .sw__panel { fill: var(--panel-top); }
 .print .cord__shadow { display: none; }
 .print .cord-tag { box-shadow: none; }
