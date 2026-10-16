@@ -107,7 +107,7 @@ jobs:
         run: rm -f "$RUNNER_TEMP/cert.p12"
 
   windows:
-    name: Windows — installeur NSIS
+    name: Windows — installeur NSIS et paquet Store
     needs: tests
     runs-on: windows-latest
     timeout-minutes: 45
@@ -138,6 +138,17 @@ jobs:
             release/*.blockmap
             release/latest.yml
 
+      # Paquet du Microsoft Store : non signé, à téléverser à la main dans Partner Center.
+      # Artefact à part, jamais joint à la release GitHub (un .appx non signé ne s'installe pas).
+      - name: Paquet Microsoft Store
+        run: npx electron-builder --win appx --publish never
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: microsoft-store
+          if-no-files-found: error
+          path: release/*.appx
+
   publish:
     name: Brouillon de release
     needs: [mac, windows]
@@ -146,10 +157,15 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v7
+      # Par nom : l'artefact microsoft-store reste hors de la release GitHub.
       - uses: actions/download-artifact@v8
         with:
+          name: mac
           path: dist-artifacts
-          merge-multiple: true
+      - uses: actions/download-artifact@v8
+        with:
+          name: windows
+          path: dist-artifacts
       - name: Créer le brouillon
         env:
           GH_TOKEN: ${{ github.token }}

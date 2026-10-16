@@ -1,6 +1,7 @@
 // Messages de la vérification manuelle des mises à jour (menu Aide). Sans Electron : testable.
 export type ManualCheck =
   | { kind: 'not-packaged' }
+  | { kind: 'store' }
   | { kind: 'up-to-date'; current: string }
   | { kind: 'downloading'; version: string }
   | { kind: 'ready'; version: string }
@@ -10,6 +11,8 @@ export function manualCheckMessage(r: ManualCheck): { message: string; detail?: 
   switch (r.kind) {
     case 'not-packaged':
       return { message: 'Les mises à jour ne sont vérifiées que dans l’app installée.' }
+    case 'store':
+      return { message: 'Les mises à jour d’AV·WAN passent par le Microsoft Store.', detail: 'Microsoft Store › Bibliothèque › Obtenir les mises à jour.' }
     case 'up-to-date':
       return { message: `AV·WAN est à jour (${r.current}).` }
     case 'downloading':

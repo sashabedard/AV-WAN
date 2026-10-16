@@ -45,6 +45,19 @@ nsis:
   shortcutName: AV·WAN
   artifactName: AV-WAN-${version}-setup.${ext}
 
+# Paquet du Microsoft Store (npm run dist:store, sur Windows seulement). Non signé : le Store le signe
+# à la soumission, d'où aucun avertissement SmartScreen. Les tuiles viennent de build/appx (npm run brand).
+appx:
+  # Identité réservée dans Partner Center (Gestion des produits › Identité du produit).
+  identityName: run-ssh.systems.AVWAN
+  publisher: CN=C91FC53B-B21C-4C1E-B347-0959A838DC07
+  publisherDisplayName: run-ssh.systems
+  applicationId: AVWAN
+  displayName: AV·WAN
+  backgroundColor: '#1D2125'
+  languages: [fr-CA]
+  artifactName: AV-WAN-${version}-store.${ext}
+
 # Mises à jour automatiques : app-update.yml dans l'app, latest*.yml à côté des installeurs.
 publish:
   provider: github

@@ -7,6 +7,7 @@ describe('manualCheckMessage', () => {
     expect(manualCheckMessage({ kind: 'downloading', version: '1.1.0' })).toEqual({ message: 'La version 1.1.0 se télécharge.', detail: 'Un bandeau proposera de redémarrer quand elle sera prête.' })
     expect(manualCheckMessage({ kind: 'ready', version: '1.1.0' })).toEqual({ message: 'La version 1.1.0 est prête.', detail: 'Redémarrez AV·WAN pour l’installer.' })
     expect(manualCheckMessage({ kind: 'not-packaged' })).toEqual({ message: 'Les mises à jour ne sont vérifiées que dans l’app installée.' })
+    expect(manualCheckMessage({ kind: 'store' })).toEqual({ message: 'Les mises à jour d’AV·WAN passent par le Microsoft Store.', detail: 'Microsoft Store › Bibliothèque › Obtenir les mises à jour.' })
     expect(manualCheckMessage({ kind: 'error', message: 'Pas de connexion.' })).toEqual({ message: 'Impossible de vérifier les mises à jour.', detail: 'Pas de connexion.' })
   })
 })
