@@ -121,14 +121,6 @@ Ils s'ajoutent en un clic. Tout reste modifiable : numéros, couleurs, sous-rés
 
 Pourquoi séparer Dante, NDI et l'éclairage ? Leurs flux multicast tombent tous dans la plage `239.255.x.x`. Sur un même VLAN, ils se marchent dessus.
 
-## Feuille de route
-
-- [x] **Plan 1 — Fondations** : canvas, palette, façade de switch, cordons, branchement, inspecteur, fichier `.avwan`, annuler/rétablir, test de bout en bout et mesure de fluidité (150 appareils, 400 câbles).
-- [x] **Plan 2 — Canvas complet et identité** : **logo et icône d'app**, jeu d'icônes maison, zones (régie, salle, scène), panneau VLAN, modes de couleur *Type* et *Port*, recherche `⌘K`, projet exemple, **captures d'écran de ce README**.
-- [x] **Plan 3 — Rapports et exports** : PDF vectoriel (schéma, pages de zone, fiches, cartes des ports, branchement, VLAN, plan IP, nomenclature), CSV et Excel, VLAN à travers le panneau de brassage.
-- [x] **Plan 4 — Livraison** : DMG universel notarisé et installeur Windows publiés par la CI, guide d'installation PDF, mises à jour automatiques, ouverture par double-clic, autosauvegarde et récupération, composantes perso avec import d'icône.
-- [x] **Plan 5 — Production** : patch DMX et patch list, alimentations et bandes LED, bilan de puissance, catalogue de modèles nommés (capteurs, éclairage, vidéo / LED wall, audio).
-
 ## Démarrer (développement)
 
 Il faut Node.js 24 ou plus récent (testé avec Node 26) et npm 11.
