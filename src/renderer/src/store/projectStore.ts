@@ -11,6 +11,7 @@ import { assignZones, createZone, moveZones, placeDevices, removeZones, resizeZo
 import { withTemplate } from '../model/customTemplate'
 import { ownNewKeys, removeProjectList, setProjectList, type ChannelKey } from '../model/dmxChannels'
 import { uiStore } from './uiStore'
+import { currentMessages } from '../i18n/useT'
 import { dmxChannelsStore } from './dmxChannelsStore'
 import { commit, initHistory, redo as historyRedo, undo as historyUndo, type History } from './history'
 
@@ -82,7 +83,6 @@ export interface ProjectState {
 }
 
 const EMPTY_SELECTION: Selection = { deviceIds: [], linkIds: [] }
-const READ_ONLY_MESSAGE = 'Ce fichier vient d’une version plus récente d’AV·WAN : il est en lecture seule. Utilisez « Enregistrer sous… ».'
 
 export function isDirty(s: Pick<ProjectState, 'history' | 'savedRef'>): boolean {
   return s.history.present !== s.savedRef
@@ -108,7 +108,7 @@ export function createProjectStore(initial: Project = createProject()): StoreApi
     const apply = (fn: (p: Project) => Project): void => {
       const { history, readOnly } = get()
       if (readOnly) {
-        set({ toast: READ_ONLY_MESSAGE })
+        set({ toast: currentMessages().app.toast.readOnly })
         return
       }
       // Une clé de canaux qui apparaît reçoit sa liste dans la même étape (spec canaux-dmx § 3.7).
@@ -211,7 +211,7 @@ export function createProjectStore(initial: Project = createProject()): StoreApi
       zoneAroundSelection: () => {
         const rect = zoneAround(get().history.present, get().selection.deviceIds)
         if (!rect) {
-          set({ toast: 'Sélectionnez au moins un appareil pour créer une zone autour.' })
+          set({ toast: currentMessages().app.toast.zoneNeedsSelection })
           return null
         }
         return get().addZone(rect) || null
@@ -225,8 +225,8 @@ export function createProjectStore(initial: Project = createProject()): StoreApi
           const pa = findPort(p, a)
           set({
             toast: pa
-              ? `Branchement impossible : port occupé ou connecteurs ${FAMILY_LABELS[connectorFamily(pa.port.connector)]} incompatibles.`
-              : 'Branchement impossible.'
+              ? currentMessages().app.toast.connectBlocked({ family: FAMILY_LABELS[connectorFamily(pa.port.connector)] })
+              : currentMessages().app.toast.connectImpossible
           })
           return null
         }
@@ -242,7 +242,7 @@ export function createProjectStore(initial: Project = createProject()): StoreApi
         const link = p.links.find((l) => l.id === linkId)
         if (!link || sameRef(link[end], to)) return false
         if (!canReconnect(p, linkId, end, to)) {
-          set({ toast: 'Rebranchement impossible : port occupé ou connecteurs incompatibles.' })
+          set({ toast: currentMessages().app.toast.reconnectImpossible })
           return false
         }
         apply((q) => ({
@@ -274,8 +274,8 @@ export function createProjectStore(initial: Project = createProject()): StoreApi
         if (!next) {
           set({
             toast: p.vlans.some((v) => v.id === to)
-              ? `Le VLAN ${to} existe déjà.`
-              : 'Numéro de VLAN invalide : choisissez un nombre de 1 à 4094.'
+              ? currentMessages().app.toast.vlanExists({ id: to })
+              : currentMessages().app.toast.vlanInvalid
           })
           return false
         }

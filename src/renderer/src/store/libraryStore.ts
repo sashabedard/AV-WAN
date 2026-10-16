@@ -2,6 +2,7 @@ import { createStore, type StoreApi } from 'zustand/vanilla'
 import { useStore } from 'zustand'
 import type { AvwanApi, LibraryFile } from '../../../shared/api'
 import { DeviceTemplateSchema } from '../model/schema'
+import { currentFormatters } from '../i18n/useT'
 import { CUSTOM_ID } from '../model/customTemplate'
 import type { DeviceTemplate } from '../model/types'
 
@@ -15,7 +16,7 @@ export interface LibraryState {
   remove(id: string): Promise<void>
 }
 
-const byName = (list: readonly DeviceTemplate[]): DeviceTemplate[] => [...list].sort((a, b) => a.name.localeCompare(b.name, 'fr'))
+const byName = (list: readonly DeviceTemplate[]): DeviceTemplate[] => [...list].sort((a, b) => currentFormatters().compare(a.name, b.name))
 const toText = (t: DeviceTemplate): string => `${JSON.stringify(t, null, 2)}\n`
 
 // Un fichier illisible, mal formé, au mauvais nom, ou un switch, est ignoré.

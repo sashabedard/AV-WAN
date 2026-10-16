@@ -21,7 +21,7 @@ export function Welcome() {
   if (!open) return null
   const close = (): void => uiStore.getState().setWelcome(false)
   return (
-    <div className="welcome" role="dialog" aria-modal="true" aria-label="Accueil">
+    <div className="welcome" role="dialog" aria-modal="true" aria-label={m.welcome.title}>
       <div
         className="welcome__card"
         onKeyDown={(e) => {
@@ -36,7 +36,7 @@ export function Welcome() {
           AV<span className="wordmark__dot">·</span>WAN
         </h1>
         <p className="welcome__sub">{m.common.appSubtitle}</p>
-        <p className="welcome__tagline">Planifier. Brancher. Documenter.</p>
+        <p className="welcome__tagline">{m.welcome.tagline}</p>
         <RecoveryBanner />
         <div className="welcome__actions">
           <button
@@ -48,7 +48,7 @@ export function Welcome() {
               close()
             }}
           >
-            Nouveau projet
+            {m.welcome.newProject}
           </button>
           <button
             type="button"
@@ -58,7 +58,7 @@ export function Welcome() {
               close()
             }}
           >
-            Projet exemple : installation interactive
+            {m.welcome.exampleProject}
           </button>
           <button
             type="button"
@@ -68,12 +68,12 @@ export function Welcome() {
               void openProjectAction()
             }}
           >
-            Ouvrir…
+            {m.welcome.open}
           </button>
         </div>
         {recent.length > 0 && (
           <section className="welcome__recent">
-            <h2 className="welcome__h">Fichiers récents</h2>
+            <h2 className="welcome__h">{m.welcome.recent}</h2>
             <ul>
               {recent.map((path) => (
                 <li key={path}>
@@ -93,7 +93,7 @@ export function Welcome() {
             </ul>
           </section>
         )}
-        <p className="welcome__pun">Que le réseau soit avec toi.</p>
+        <p className="welcome__pun">{m.welcome.pun}</p>
       </div>
     </div>
   )

@@ -118,3 +118,19 @@ describe('Toast', () => {
     expect(uiStore.getState().exportOpen).toBe(true)
   })
 })
+
+describe('TopBar en anglais', () => {
+  it('affiche Export, Read-only et le thème en anglais', () => {
+    act(() => uiStore.getState().setLang('en'))
+    try {
+      act(() => projectStore.getState().loadProject(sampleProject(), null, { readOnly: true }))
+      render(<TopBar />)
+      expect(screen.getByRole('button', { name: 'Export' })).toBeTruthy()
+      expect(screen.getByText('Read-only')).toBeTruthy()
+      expect(screen.getByRole('button', { name: 'Theme: system' })).toBeTruthy()
+      expect(screen.getByTestId('file-name').textContent).toBe('Untitled')
+    } finally {
+      act(() => uiStore.getState().setLang('fr'))
+    }
+  })
+})

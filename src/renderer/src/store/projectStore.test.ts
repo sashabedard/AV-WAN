@@ -6,6 +6,7 @@ import { vlanPreset } from '../catalog/vlanPresets'
 import { sampleProject } from '../model/__fixtures__/sample'
 import { blankDraft, templateFromDraft } from '../model/customTemplate'
 import { dmxChannelsStore } from './dmxChannelsStore'
+import { uiStore } from './uiStore'
 
 const store = () => createProjectStore(sampleProject())
 
@@ -416,5 +417,18 @@ describe('listes de canaux DMX', () => {
     store.getState().undo()
     expect(store.getState().history.present.devices).toEqual([])
     expect(store.getState().history.present.dmxChannels).toBeUndefined()
+  })
+})
+
+describe('projectStore : toasts en anglais', () => {
+  it('construit le message avec la langue de l’interface au moment de l’affichage', () => {
+    uiStore.getState().setLang('en')
+    try {
+      const s = store()
+      s.getState().zoneAroundSelection()
+      expect(s.getState().toast).toBe('Select at least one device to create a zone around.')
+    } finally {
+      uiStore.getState().setLang('fr')
+    }
   })
 })

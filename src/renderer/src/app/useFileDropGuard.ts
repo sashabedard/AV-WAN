@@ -1,7 +1,6 @@
 import { useEffect } from 'react'
+import { currentMessages } from '../i18n/useT'
 import { projectStore } from '../store/projectStore'
-
-export const FILE_DROP_MESSAGE = 'Pour ouvrir un projet, utilisez Fichier › Ouvrir…'
 
 // Un fichier glissé depuis le système (le glisser de la palette porte son propre type MIME).
 export function isFileDrag(types: readonly string[] | undefined): boolean {
@@ -17,7 +16,7 @@ export function useFileDropGuard(): void {
     const onDrop = (e: DragEvent): void => {
       if (!isFileDrag(e.dataTransfer?.types)) return
       e.preventDefault()
-      projectStore.getState().showToast(FILE_DROP_MESSAGE)
+      projectStore.getState().showToast(currentMessages().app.file.dropHint)
     }
     window.addEventListener('dragover', onDragOver)
     window.addEventListener('drop', onDrop)
