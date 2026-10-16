@@ -1,7 +1,9 @@
 // src/renderer/src/canvas/cordStyle.ts
 import type { Link, Medium, Project } from '../model/types'
 import { linkVlanView } from '../model/derive'
-import { MEDIUM_LABELS } from '../catalog/labels'
+import { mediumLabel } from '../catalog/labels'
+import { messages } from '../../../shared/i18n/messages'
+import type { Lang } from '../../../shared/i18n/lang'
 import type { Messages } from '../../../shared/i18n/messages'
 
 export type ThemeMode = 'dark' | 'light'
@@ -47,7 +49,8 @@ export function mediumKind(m: Medium): MediumKind {
   return 'simple'
 }
 
-export function cordStyle(project: Project, link: Link, theme: ThemeMode): CordStyle {
+// `lang` : langue de l'interface, pour l'étiquette de certains câbles (« Série » / « Serial »).
+export function cordStyle(project: Project, link: Link, theme: ThemeMode, lang: Lang = 'fr'): CordStyle {
   const mode = project.settings.colorMode
   let color: string = NEUTRAL[theme]
   let bands: string[] = []
@@ -73,5 +76,5 @@ export function cordStyle(project: Project, link: Link, theme: ThemeMode): CordS
   if (FIBER.has(m)) return { color, width: 3.2, innerDash: true, bands, extraBands, straight: false, plugs: true, alwaysTag }
   if (m === 'dac') return { color, width: 3.2, innerDash: false, bands, extraBands, straight: false, plugs: true, alwaysTag }
   if (m === 'wifi') return { color, width: 2, dash: '1.5 5', innerDash: false, bands: [], extraBands: 0, straight: true, plugs: false, alwaysTag }
-  return { color, width: 2, dash: '8 5', innerDash: false, bands: [], extraBands: 0, straight: false, plugs: false, badge: m === 'dc' ? 'DC' : MEDIUM_LABELS[m].toUpperCase(), alwaysTag }
+  return { color, width: 2, dash: '8 5', innerDash: false, bands: [], extraBands: 0, straight: false, plugs: false, badge: m === 'dc' ? 'DC' : mediumLabel(m, messages(lang)).toUpperCase(), alwaysTag }
 }

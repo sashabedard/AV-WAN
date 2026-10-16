@@ -2,12 +2,13 @@
 import { useMemo, useState } from 'react'
 import { vlanMembers } from '../model/derive'
 import { availablePresets, blankVlan } from '../model/vlans'
-import { vlanPreset } from '../catalog/vlanPresets'
+import { vlanFromPreset } from '../catalog/vlanPresets'
 import { projectStore, useProject } from '../store/projectStore'
 import { uiStore, useUiStore } from '../store/uiStore'
 import { useThemeMode } from '../theme/useThemeMode'
 import { Icon } from '../icons/Icon'
 import { useT } from '../i18n/useT'
+import { loc } from '../../../shared/i18n/localized'
 
 function inspect(id: number): void {
   projectStore.getState().setSelection({ deviceIds: [], linkIds: [] })
@@ -16,7 +17,7 @@ function inspect(id: number): void {
 
 export function VlanPanel() {
   const project = useProject()
-  const { m } = useT()
+  const { m, lang } = useT()
   const theme = useThemeMode()
   const inspected = useUiStore((s) => s.inspectVlanId)
   const [adding, setAdding] = useState(false)
@@ -58,12 +59,12 @@ export function VlanPanel() {
                 type="button"
                 className="vlans__preset"
                 onClick={() => {
-                  projectStore.getState().addVlan(vlanPreset(p.id))
+                  projectStore.getState().addVlan(vlanFromPreset(p, lang))
                   setAdding(false)
                   if (projectStore.getState().history.present.vlans.some((v) => v.id === p.id)) inspect(p.id)
                 }}
               >
-                {p.id} · {p.name}
+                {p.id} · {loc(p.name, lang)}
               </button>
             </li>
           ))}

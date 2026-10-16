@@ -283,7 +283,7 @@ describe('zones dans le store', () => {
 describe('VLAN dans le store', () => {
   it('ajoute, modifie et annule', () => {
     const s = store()
-    s.getState().addVlan(vlanPreset(30))
+    s.getState().addVlan(vlanPreset(30, 'fr'))
     s.getState().updateVlan(30, { name: 'Dante principal' })
     expect(s.getState().history.present.vlans.map((v) => v.name)).toEqual(['Dante principal', 'NDI'])
     s.getState().undo()
@@ -294,7 +294,7 @@ describe('VLAN dans le store', () => {
     const s = store()
     expect(s.getState().changeVlanId(40, 41)).toBe(true)
     expect(s.getState().history.present.devices[0]!.portState['1']!.nativeVlan).toBe(41)
-    s.getState().addVlan(vlanPreset(10))
+    s.getState().addVlan(vlanPreset(10, 'fr'))
     expect(s.getState().changeVlanId(41, 10)).toBe(false)
     expect(s.getState().toast).toBe('Le VLAN 10 existe déjà.')
     expect(s.getState().changeVlanId(41, 5000)).toBe(false)

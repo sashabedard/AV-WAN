@@ -11,7 +11,7 @@ import { assignZones, createZone, moveZones, placeDevices, removeZones, resizeZo
 import { withTemplate } from '../model/customTemplate'
 import { ownNewKeys, removeProjectList, setProjectList, type ChannelKey } from '../model/dmxChannels'
 import { uiStore } from './uiStore'
-import { currentMessages } from '../i18n/useT'
+import { currentLang, currentMessages } from '../i18n/useT'
 import { dmxChannelsStore } from './dmxChannelsStore'
 import { commit, initHistory, redo as historyRedo, undo as historyUndo, type History } from './history'
 
@@ -103,7 +103,7 @@ export function keepViewSettings(before: History<Project>, after: History<Projec
   return { ...after, present: { ...after.present, settings: { ...s, colorMode, pageFormat } } }
 }
 
-export function createProjectStore(initial: Project = createProject()): StoreApi<ProjectState> {
+export function createProjectStore(initial: Project = createProject(undefined, currentLang())): StoreApi<ProjectState> {
   return createStore<ProjectState>()((set, get) => {
     const apply = (fn: (p: Project) => Project): void => {
       const { history, readOnly } = get()
@@ -127,7 +127,7 @@ export function createProjectStore(initial: Project = createProject()): StoreApi
       toast: null,
 
       newProject: () => {
-        const p = createProject()
+        const p = createProject(undefined, currentLang())
         set({ history: initHistory(p), filePath: null, savedRef: p, readOnly: false, selection: EMPTY_SELECTION, docId: get().docId + 1, untitledId: newId() })
         uiStore.getState().resetForDocument()
       },
@@ -151,7 +151,7 @@ export function createProjectStore(initial: Project = createProject()): StoreApi
         let id = ''
         apply((p) => {
           const base = opts?.template ? withTemplate(p, opts.template) : p
-          const device = createDevice(base, templateId, position, opts)
+          const device = createDevice(base, templateId, position, { ...opts, lang: opts?.lang ?? currentLang() })
           id = device.id
           return assignZones({ ...base, devices: [...base.devices, device] }, [device.id])
         })

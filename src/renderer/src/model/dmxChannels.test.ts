@@ -1,13 +1,13 @@
 // src/renderer/src/model/dmxChannels.test.ts
 import { describe, expect, it } from 'vitest'
 import { createDevice, createProject } from './project'
-import type { Device, DeviceTemplate, DmxChannelList, Project } from './types'
+import type { Device, StoredTemplate, DmxChannelList, Project } from './types'
 import {
   catalogParams, channelKey, embedUsedLists, fillParams, keyId, mergeProjectLists, normalizeParams, ownNewKeys, parseSettingsLists, pastedNames,
   pruneChannelLists, removeList, removeProjectList, resolveChannels, sameParams, serializeSettingsLists, setProjectList, sharedCount, upsertList
 } from './dmxChannels'
 
-const LYRE: DeviceTemplate = {
+const LYRE: StoredTemplate = {
   id: 'custom-lyre000001', category: 'eclairage', name: 'Lyre', code: 'MH', icon: { kind: 'builtin', name: 'fixture' },
   ports: [{ id: 'DMX-IN', label: 'DMX IN', connector: 'dmx' }],
   dmx: { footprint: 3, modes: [{ name: '3CH', channels: 3, params: ['Dimmer', 'Pan', 'Tilt'] }, { name: '2CH', channels: 2 }] },

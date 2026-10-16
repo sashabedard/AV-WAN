@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { createDevice, createProject } from './project'
 import { ProjectSchema } from './schema'
-import type { DeviceTemplate } from './types'
+import type { StoredTemplate } from './types'
 
 describe('createProject', () => {
   it('crée un projet valide avec les 5 VLAN par défaut', () => {
@@ -43,7 +43,7 @@ describe('createDevice', () => {
 })
 
 it('copie puissance, patch (1er mode), note, alimentation et bande du gabarit', () => {
-  const t: DeviceTemplate = {
+  const t: StoredTemplate = {
     id: 'custom-lyre000001', category: 'eclairage', name: 'Lyre', code: 'MH', icon: { kind: 'builtin', name: 'fixture' }, ports: [],
     powerW: 470, note: 'Lire la fiche.', dmx: { footprint: 16, modes: [{ name: 'Standard', channels: 31 }, { name: 'Basic', channels: 16 }] },
     isCustom: true
@@ -57,7 +57,7 @@ it('l’« Appareil DMX » intégré est patchable avec 1 canal, sans adresse', 
 })
 
 it('ne partage pas l’objet du gabarit (alimentation, bande)', () => {
-  const t: DeviceTemplate = { id: 'custom-alim000001', category: 'autre', name: 'Alim', code: 'PSU', icon: { kind: 'builtin', name: 'generic' }, ports: [], psu: { volts: 24 }, isCustom: true }
+  const t: StoredTemplate = { id: 'custom-alim000001', category: 'autre', name: 'Alim', code: 'PSU', icon: { kind: 'builtin', name: 'generic' }, ports: [], psu: { volts: 24 }, isCustom: true }
   const p = { ...createProject(), templates: [t] }
   const d = createDevice(p, t.id, { x: 0, y: 0 })
   expect(d.psu).toEqual({ volts: 24 })

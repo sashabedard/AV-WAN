@@ -16,9 +16,9 @@ describe('vlans', () => {
   })
 
   it('ajoute un VLAN en gardant l’ordre des numéros, sans doublon', () => {
-    const p = addVlan(sampleProject(), vlanPreset(10))
+    const p = addVlan(sampleProject(), vlanPreset(10, 'fr'))
     expect(p.vlans.map((v) => v.id)).toEqual([10, 40])
-    expect(addVlan(p, vlanPreset(10))).toBe(p)
+    expect(addVlan(p, vlanPreset(10, 'fr'))).toBe(p)
   })
 
   it('modifie un VLAN', () => {
@@ -37,14 +37,14 @@ describe('vlans', () => {
 
   it('ne laisse pas deux fois le même VLAN étiqueté après une renumérotation', () => {
     const p = sampleProject()
-    p.vlans = [vlanPreset(40)]
+    p.vlans = [vlanPreset(40, 'fr')]
     p.devices[0]!.portState['2'] = { mode: 'trunk', taggedVlans: [10, 40] }
     const q = changeVlanId(p, 40, 10)!
     expect(q.devices[0]!.portState['2']).toEqual({ mode: 'trunk', taggedVlans: [10] })
   })
 
   it('refuse un numéro pris, hors de 1 à 4094, ou un VLAN inconnu', () => {
-    const p = addVlan(sampleProject(), vlanPreset(10))
+    const p = addVlan(sampleProject(), vlanPreset(10, 'fr'))
     expect(changeVlanId(p, 40, 10)).toBeNull()
     expect(changeVlanId(p, 40, 0)).toBeNull()
     expect(changeVlanId(p, 40, 4095)).toBeNull()

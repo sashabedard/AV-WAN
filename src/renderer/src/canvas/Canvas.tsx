@@ -46,6 +46,7 @@ import { canvasPointer, centreOf } from './pointer'
 import { SwitchConfigurator } from '../panels/SwitchConfigurator'
 import { DEFAULT_SWITCH_SPEC } from '../catalog/switch'
 import { getTemplate } from '../catalog'
+import { isStored } from '../catalog/templateText'
 import { libraryTemplate } from '../store/libraryStore'
 import { clampPopover } from './popover'
 import { useDismissOnOutside } from '../panels/useDismiss'
@@ -75,7 +76,7 @@ function CanvasInner() {
   const theme = useThemeMode()
   const { m, lang } = useT()
   const cache = useRef(createFlowCache())
-  const analysis = useMemo(() => analyzeLinks(project, theme), [project, theme])
+  const analysis = useMemo(() => analyzeLinks(project, theme, lang), [project, theme, lang])
   const derivedNodes = useMemo<FlowNode[]>(() => [...toFlowZones(project, cache.current), ...toFlowNodes(project, analysis, cache.current, lang)], [project, analysis, lang])
   const [nodes, setNodes] = useState(derivedNodes)
   useEffect(() => setNodes((prev) => mergeNodes(derivedNodes, prev)), [derivedNodes])
@@ -215,7 +216,7 @@ function CanvasInner() {
         s.showToast(currentMessages().canvas.view.templateGone)
         return
       }
-      s.addDevice(templateId, position, template.isCustom ? { template } : undefined)
+      s.addDevice(templateId, position, isStored(template) ? { template } : undefined)
     },
     [screenToFlowPosition, project.settings.snapToGrid]
   )

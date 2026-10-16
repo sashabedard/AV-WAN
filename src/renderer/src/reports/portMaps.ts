@@ -3,6 +3,7 @@ import type { Device, PortDef, PortState, Project, SwitchSpec } from '../model/t
 import { linksOnPort, sameRef } from '../model/rules'
 import { POE_LABELS, linkPoe, switchPoeUsage, type LinkPoe } from '../model/derive'
 import { switchSummary } from '../catalog/switch'
+import { messages } from '../../../shared/i18n/messages'
 import { DASH, compareText, formatNumber, ipLabel, poeLabel, portRefLabel, taggedLabel, vlanName } from './format'
 
 export interface PortMapRow {
@@ -69,7 +70,7 @@ export function portMaps(project: Project): PortMap[] {
       return {
         deviceId: device.id,
         name: device.name,
-        summary: switchSummary(device.switch),
+        summary: switchSummary(device.switch, messages('fr')), // plan 6 : langue des documents à la Task 12
         ...(device.model ? { model: device.model } : {}),
         ip: ipLabel(device.ip),
         ...(device.switch.poe !== 'none' ? { poe: `PoE ${formatNumber(usage.usedW)}${budget} W` } : {}),

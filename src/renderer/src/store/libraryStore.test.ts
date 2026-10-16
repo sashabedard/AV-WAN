@@ -1,10 +1,10 @@
 import { describe, expect, it, vi } from 'vitest'
 import type { AvwanApi, LibraryFile } from '../../../shared/api'
-import type { DeviceTemplate } from '../model/types'
+import type { StoredTemplate } from '../model/types'
 import { blankDraft, templateFromDraft } from '../model/customTemplate'
 import { createLibraryStore, parseLibrary } from './libraryStore'
 
-const tpl = (id: string, name: string): DeviceTemplate => templateFromDraft({ ...blankDraft(), name, code: 'X' }, id)
+const tpl = (id: string, name: string): StoredTemplate => templateFromDraft({ ...blankDraft(), name, code: 'X' }, id)
 const fileOf = (t: { id: string }): LibraryFile => ({ id: t.id, text: JSON.stringify(t) })
 const fakeLibrary = (files: LibraryFile[] = []): AvwanApi['library'] => ({
   list: vi.fn(async () => files),

@@ -8,6 +8,7 @@ import { DeviceIcon } from '../icons/Icon'
 import type { DeviceFlowNode } from './toFlow'
 import { useEffectiveFocus } from './useEffectiveFocus'
 import { useT } from '../i18n/useT'
+import { displayName } from '../catalog/templateText'
 import { usePortCompatibility } from './useConnectingFrom'
 import { InlineName } from './InlineName'
 import { DEVICE_NODE_HEIGHT, TAPE_TOP_MAX_WIDTH, deviceNodeWidth, devicePortOffset } from './nodeGeometry'
@@ -16,7 +17,7 @@ const POSITION: Record<Side, Position> = { top: Position.Top, bottom: Position.B
 
 function DeviceNodeImpl({ id, data, selected }: NodeProps<DeviceFlowNode>) {
   const { device, template, side, ports } = data
-  const { m } = useT()
+  const { m, lang } = useT()
   const readOnly = useLocked()
   const focus = useEffectiveFocus()
   const dim = focus !== null && !data.vlans.includes(focus)
@@ -28,7 +29,7 @@ function DeviceNodeImpl({ id, data, selected }: NodeProps<DeviceFlowNode>) {
   const compat = usePortCompatibility(id)
   const width = deviceNodeWidth(device.ports.length)
   const horizontal = side === 'top' || side === 'bottom'
-  const line1 = device.model ?? template?.name ?? m.canvas.tile.device
+  const line1 = device.model ?? (template ? displayName(template, lang) : undefined) ?? m.canvas.tile.device
   const line2 = data.line2
   return (
     <div className={`dn${selected ? ' dn--selected' : ''}${dim ? ' is-dim' : ''}`} style={{ width, height: DEVICE_NODE_HEIGHT }} data-testid={`device-${device.name}`}>

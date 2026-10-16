@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { ConnectorSchema, DeviceTemplateSchema } from './schema'
 import { TEMPLATES, TEMPLATES_BY_ID } from '../catalog/templates'
-import { CONNECTOR_LABELS, POE_CHOICE_LABELS } from '../catalog/labels'
+import { POE_CHOICE_IDS, connectorLabel } from '../catalog/labels'
+import { messages } from '../../../shared/i18n/messages'
 import { sampleProject } from './__fixtures__/sample'
 import {
   CUSTOM_ID,
@@ -62,8 +63,8 @@ describe('ports', () => {
   })
 
   it('chaque connecteur et chaque choix PoE a un libellé', () => {
-    for (const c of ConnectorSchema.options) expect(CONNECTOR_LABELS[c]).toBeTruthy()
-    expect(Object.keys(POE_CHOICE_LABELS)).toEqual(['none', 'in-af', 'in-at', 'in-bt', 'out-af', 'out-at', 'out-bt'])
+    for (const c of ConnectorSchema.options) expect(connectorLabel(c, messages('fr'))).toBeTruthy()
+    expect([...POE_CHOICE_IDS]).toEqual(['none', 'in-af', 'in-at', 'in-bt', 'out-af', 'out-at', 'out-bt'])
   })
 })
 

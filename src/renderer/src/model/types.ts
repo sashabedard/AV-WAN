@@ -1,5 +1,6 @@
 import type { z } from 'zod'
 import type * as S from './schema'
+import type { Localized } from '../../../shared/i18n/localized'
 
 export type VlanId = number
 export type PoeClass = z.infer<typeof S.PoeClassSchema>
@@ -12,7 +13,13 @@ export type IpConfig = z.infer<typeof S.IpSchema>
 export type PortDef = z.infer<typeof S.PortDefSchema>
 export type SwitchSpec = z.infer<typeof S.SwitchSpecSchema>
 export type IconRef = z.infer<typeof S.IconRefSchema>
-export type DeviceTemplate = z.infer<typeof S.DeviceTemplateSchema>
+// Gabarit tel qu'il est enregistré dans le projet et la bibliothèque : composante perso, textes saisis dans la langue de la personne.
+export type StoredTemplate = z.infer<typeof S.DeviceTemplateSchema>
+// Texte d'un gabarit : bilingue pour le catalogue intégré, simple chaîne pour une composante perso.
+export type TemplateText = string | Localized
+export type TemplatePort = Omit<PortDef, 'label'> & { label: TemplateText }
+// Gabarit affichable : intégré (textes Localized) ou perso (chaînes). StoredTemplate lui est assignable.
+export type DeviceTemplate = Omit<StoredTemplate, 'name' | 'note' | 'ports'> & { name: TemplateText; note?: TemplateText; ports: TemplatePort[] }
 export type PortState = z.infer<typeof S.PortStateSchema>
 export type Device = z.infer<typeof S.DeviceSchema>
 export type Link = z.infer<typeof S.LinkSchema>

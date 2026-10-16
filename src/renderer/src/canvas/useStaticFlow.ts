@@ -17,7 +17,7 @@ export interface StaticFlow {
 export function useStaticFlow(project: Project, theme: ThemeMode): StaticFlow {
   const lang = useLang()
   const [cache] = useState(createFlowCache)
-  const analysis = useMemo(() => analyzeLinks(project, theme), [project, theme])
+  const analysis = useMemo(() => analyzeLinks(project, theme, lang), [project, theme, lang])
   const derivedNodes = useMemo<FlowNode[]>(() => [...toFlowZones(project, cache), ...toFlowNodes(project, analysis, cache, lang)], [project, analysis, cache, lang])
   // React Flow 12 renvoie les dimensions mesurées par onNodesChange : sans les appliquer aux nœuds,
   // useNodesInitialized() resterait faux et le PDF attendrait jusqu'au délai maximal (comme Canvas).

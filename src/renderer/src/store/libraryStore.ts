@@ -4,24 +4,24 @@ import type { AvwanApi, LibraryFile } from '../../../shared/api'
 import { DeviceTemplateSchema } from '../model/schema'
 import { currentFormatters } from '../i18n/useT'
 import { CUSTOM_ID } from '../model/customTemplate'
-import type { DeviceTemplate } from '../model/types'
+import type { StoredTemplate } from '../model/types'
 
 type LibraryApi = AvwanApi['library']
 
 export interface LibraryState {
-  templates: DeviceTemplate[]
+  templates: StoredTemplate[]
   load(): Promise<void>
-  save(template: DeviceTemplate): Promise<void>
-  replace(oldId: string, template: DeviceTemplate): Promise<void>
+  save(template: StoredTemplate): Promise<void>
+  replace(oldId: string, template: StoredTemplate): Promise<void>
   remove(id: string): Promise<void>
 }
 
-const byName = (list: readonly DeviceTemplate[]): DeviceTemplate[] => [...list].sort((a, b) => currentFormatters().compare(a.name, b.name))
-const toText = (t: DeviceTemplate): string => `${JSON.stringify(t, null, 2)}\n`
+const byName = (list: readonly StoredTemplate[]): StoredTemplate[] => [...list].sort((a, b) => currentFormatters().compare(a.name, b.name))
+const toText = (t: StoredTemplate): string => `${JSON.stringify(t, null, 2)}\n`
 
 // Un fichier illisible, mal formé, au mauvais nom, ou un switch, est ignoré.
-export function parseLibrary(files: readonly LibraryFile[]): DeviceTemplate[] {
-  const out: DeviceTemplate[] = []
+export function parseLibrary(files: readonly LibraryFile[]): StoredTemplate[] {
+  const out: StoredTemplate[] = []
   for (const f of files) {
     try {
       const r = DeviceTemplateSchema.safeParse(JSON.parse(f.text))
@@ -64,6 +64,6 @@ export function useLibraryStore<T>(selector: (s: LibraryState) => T): T {
   return useStore(libraryStore, selector)
 }
 
-export function libraryTemplate(id: string): DeviceTemplate | undefined {
+export function libraryTemplate(id: string): StoredTemplate | undefined {
   return libraryStore.getState().templates.find((t) => t.id === id)
 }

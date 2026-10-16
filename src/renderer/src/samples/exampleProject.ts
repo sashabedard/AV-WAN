@@ -18,7 +18,7 @@ const TRUNK_ALL: VlanChoice = { kind: 'trunk', native: 10, tagged: 'all' }
 // Identifiants stables (ex-…) : les captures du README et les tests restent reproductibles.
 export function createExampleProject(now: Date = new Date()): Project {
   const base = createProject(now)
-  let p: Project = { ...base, meta: { ...base.meta, title: EXAMPLE_TITLE, authors: ['Équipe technique'] }, vlans: [10, 20, 30, 40, 50, 60].map(vlanPreset), settings: { ...base.settings, mainsVoltage: 120 } }
+  let p: Project = { ...base, meta: { ...base.meta, title: EXAMPLE_TITLE, authors: ['Équipe technique'] }, vlans: [10, 20, 30, 40, 50, 60].map((id) => vlanPreset(id, 'fr')) /* plan 6 : projet exemple bilingue à la Task 13 */, settings: { ...base.settings, mainsVoltage: 120 } }
   const ids = new Map<string, string>()
   const id = (key: string): string => {
     const v = ids.get(key)

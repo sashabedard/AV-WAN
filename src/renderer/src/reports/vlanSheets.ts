@@ -1,7 +1,8 @@
 // src/renderer/src/reports/vlanSheets.ts
 import type { Project, Vlan } from '../model/types'
 import { vlanMembers } from '../model/derive'
-import { FORWARD_UNKNOWN_CHOICES, MDNS_CHOICES, UNIFI_LABELS } from '../catalog/unifi'
+import { messages } from '../../../shared/i18n/messages'
+import { FORWARD_UNKNOWN_CHOICES, MDNS_CHOICES, unifiLabels } from '../catalog/unifi'
 import { DASH, compareText } from './format'
 
 export interface VlanSheet {
@@ -20,20 +21,21 @@ const onOff = (b: boolean): string => (b ? 'Activé' : 'Désactivé')
 
 // Réglages UniFi sous leurs noms exacts. Les sous-réglages de l'IGMP n'apparaissent que s'il est activé.
 export function unifiRows(u: Vlan['unifi']): Array<[string, string]> {
-  const rows: Array<[string, string]> = [[UNIFI_LABELS.igmpSnooping, onOff(u.igmpSnooping)]]
+  const labels = unifiLabels(messages('fr')) // plan 6 : langue des documents à la Task 12
+  const rows: Array<[string, string]> = [[labels.igmpSnooping, onOff(u.igmpSnooping)]]
   if (u.igmpSnooping) {
     rows.push(
-      [UNIFI_LABELS.querier, onOff(u.querier)],
-      [UNIFI_LABELS.forwardUnknownMulticast, FORWARD_UNKNOWN_CHOICES.find((c) => c.value === u.forwardUnknownMulticast)?.label ?? u.forwardUnknownMulticast],
-      [UNIFI_LABELS.floodKnownProtocols, onOff(u.floodKnownProtocols)],
-      [UNIFI_LABELS.fastLeave, onOff(u.fastLeave)]
+      [labels.querier, onOff(u.querier)],
+      [labels.forwardUnknownMulticast, FORWARD_UNKNOWN_CHOICES.find((c) => c.value === u.forwardUnknownMulticast)?.label ?? u.forwardUnknownMulticast],
+      [labels.floodKnownProtocols, onOff(u.floodKnownProtocols)],
+      [labels.fastLeave, onOff(u.fastLeave)]
     )
   }
   rows.push(
-    [UNIFI_LABELS.mdnsProxy, MDNS_CHOICES.find((c) => c.value === u.mdnsProxy)?.label ?? u.mdnsProxy],
-    [UNIFI_LABELS.networkIsolation, onOff(u.networkIsolation)],
-    [UNIFI_LABELS.proAvProfile, u.proAvProfile ?? 'Aucun'],
-    [UNIFI_LABELS.jumboFrames, onOff(u.jumboFrames)]
+    [labels.mdnsProxy, MDNS_CHOICES.find((c) => c.value === u.mdnsProxy)?.label ?? u.mdnsProxy],
+    [labels.networkIsolation, onOff(u.networkIsolation)],
+    [labels.proAvProfile, u.proAvProfile ?? 'Aucun'],
+    [labels.jumboFrames, onOff(u.jumboFrames)]
   )
   return rows
 }

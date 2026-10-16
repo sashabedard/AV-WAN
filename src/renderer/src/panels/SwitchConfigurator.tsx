@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import type { SwitchSpec } from '../model/types'
-import { POE_CHOICES, SWITCH_PORT_COUNTS, defaultPoeBudget, switchSummary } from '../catalog/switch'
+import { SWITCH_PORT_COUNTS, defaultPoeBudget, poeChoices, switchSummary } from '../catalog/switch'
 import { Segmented } from './Segmented'
 import { useT } from '../i18n/useT'
 import './panels.css'
@@ -65,7 +65,7 @@ export function SwitchConfigurator({ initial, submitLabel, onSubmit, onCancel }:
       </div>
       <div className="field">
         <span className="field__label">{m.switchConfigurator.poe}</span>
-        <Segmented ariaLabel={m.switchConfigurator.poe} options={POE_CHOICES} value={spec.poe} onChange={(v) => update({ poe: v })} />
+        <Segmented ariaLabel={m.switchConfigurator.poe} options={poeChoices(m)} value={spec.poe} onChange={(v) => update({ poe: v })} />
       </div>
       {spec.poe !== 'none' && (
         <label className="field">
@@ -101,7 +101,7 @@ export function SwitchConfigurator({ initial, submitLabel, onSubmit, onCancel }:
         <input type="checkbox" checked={spec.managed} onChange={(e) => update({ managed: e.target.checked })} /> {m.switchConfigurator.managed}
       </label>
       <p className="cfg__summary" data-testid="cfg-summary">
-        {switchSummary(spec)}
+        {switchSummary(spec, m)}
       </p>
       <div className="actions">
         <button type="button" className="btn" onClick={onCancel}>

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { MEDIUM_KIND_ORDER, NEUTRAL, TRUNK, TYPE_COLORS, cordStyle, mediumKind } from './cordStyle'
 import { contrastRatio, PAPER } from '../theme/contrast'
 import { sampleProject } from '../model/__fixtures__/sample'
-import { VLAN_PRESETS } from '../catalog/vlanPresets'
+import { VLAN_PRESETS, vlanFromPreset } from '../catalog/vlanPresets'
 
 describe('cordStyle', () => {
   it("prend la couleur du VLAN d'accès selon le thème", () => {
@@ -12,7 +12,7 @@ describe('cordStyle', () => {
   })
 
   it('dessine un trunk en cordon neutre avec des bagues (6 au maximum)', () => {
-    const p = { ...sampleProject(), vlans: [...VLAN_PRESETS] }
+    const p = { ...sampleProject(), vlans: VLAN_PRESETS.map((v) => vlanFromPreset(v, 'fr')) }
     p.devices[0]!.portState['1'] = { mode: 'trunk', taggedVlans: [40] }
     expect(cordStyle(p, p.links[0]!, 'dark')).toMatchObject({ color: TRUNK.dark, bands: ['#3E8EF7'], extraBands: 0 })
     p.devices[0]!.portState['1'] = { mode: 'trunk', taggedVlans: 'all' }
@@ -36,7 +36,7 @@ describe('cordStyle', () => {
   })
 
   it('mode Type : la couleur suit le médium, sans bagues', () => {
-    const p = { ...sampleProject(), vlans: [...VLAN_PRESETS] }
+    const p = { ...sampleProject(), vlans: VLAN_PRESETS.map((v) => vlanFromPreset(v, 'fr')) }
     p.settings = { ...p.settings, colorMode: 'type' }
     p.devices[0]!.portState['1'] = { mode: 'trunk', taggedVlans: 'all' }
     const l = p.links[0]!

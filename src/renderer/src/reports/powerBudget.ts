@@ -3,6 +3,7 @@
 // Règle anti-double-compte : un appareil nourri par une alimentation compte via elle, un appareil PoE via son switch.
 import type { Device, MainsVoltage, Project } from '../model/types'
 import { getTemplate } from '../catalog'
+import { displayName } from '../catalog/templateText'
 import { PATCH_PANEL_TEMPLATE_IDS } from '../catalog/templates'
 import { devicePowerW, feedingPsu, loadLevel, mainsVoltage, poeFeeder, psuLoad, resolvePsu, round1 } from '../model/power'
 import { formatFr } from '../model/fields'
@@ -83,7 +84,7 @@ export function powerBudget(project: Project): PowerBudget {
     const remark = d.psu ? psuRemark(project, d) : poe ? `via PoE · ${poe.name}` : psu && watts === undefined ? 'puissance non renseignée' : ''
     const row: PowerRow = {
       device: d.name,
-      type: d.model ?? (d.ledStrip ? `Bande LED ${LED_STRIP_TYPES[d.ledStrip.type].label}` : (t?.model ?? t?.name ?? '')),
+      type: d.model ?? (d.ledStrip ? `Bande LED ${LED_STRIP_TYPES[d.ledStrip.type].label}` : (t?.model ?? (t ? displayName(t, 'fr') : '') /* plan 6 : langue des documents à la Task 12 */)),
       ...(watts !== undefined ? { watts } : {}),
       fedBy: psu?.name ?? poe?.name ?? '',
       ...(mainsW !== undefined ? { mainsW } : {}),

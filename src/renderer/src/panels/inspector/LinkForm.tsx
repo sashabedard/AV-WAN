@@ -3,7 +3,7 @@ import type { Link, Medium, Project } from '../../model/types'
 import { projectStore } from '../../store/projectStore'
 import { connectorFamily, findPort, sameRef } from '../../model/rules'
 import { POE_LABELS, isNetworkMedium, linkPoe, linkVlanView, vlanEnds, type LinkVlanView } from '../../model/derive'
-import { MEDIUM_LABELS, mediaForFamily } from '../../catalog/labels'
+import { mediumLabel, mediaForFamily } from '../../catalog/labels'
 import { CommitInput } from '../CommitInput'
 import { useT } from '../../i18n/useT'
 
@@ -111,9 +111,9 @@ export function LinkForm({ link, project }: { link: Link; project: Project }) {
       <label className="field">
         <span className="field__label">{t.medium}</span>
         <select className="input" aria-label={t.medium} value={link.medium} onChange={(e) => s().updateLink(link.id, { medium: e.target.value as Medium })}>
-          {mediaForFamily(family).map((m) => (
-            <option key={m} value={m}>
-              {MEDIUM_LABELS[m]}
+          {mediaForFamily(family).map((med) => (
+            <option key={med} value={med}>
+              {mediumLabel(med, m)}
             </option>
           ))}
         </select>

@@ -3,6 +3,7 @@ import { Handle, Position, useUpdateNodeInternals, type NodeProps } from '@xyflo
 import type { DeviceFlowNode } from './toFlow'
 import { TAPE_X, facadeLabels, switchFacade } from './switchFacade'
 import { switchSummary } from '../catalog/switch'
+import { displayName } from '../catalog/templateText'
 import { useEffectiveFocus } from './useEffectiveFocus'
 import { usePortCompatibility } from './useConnectingFrom'
 import { projectStore } from '../store/projectStore'
@@ -12,7 +13,7 @@ import { InlineName } from './InlineName'
 
 function SwitchNodeImpl({ id, data, selected }: NodeProps<DeviceFlowNode>) {
   const { device, template, ports, poeUsage } = data
-  const { m } = useT()
+  const { m, lang } = useT()
   const readOnly = useLocked()
   const focus = useEffectiveFocus()
   const dim = focus !== null && !data.vlans.includes(focus)
@@ -23,7 +24,7 @@ function SwitchNodeImpl({ id, data, selected }: NodeProps<DeviceFlowNode>) {
   useEffect(() => {
     updateInternals(id)
   }, [id, facade, updateInternals])
-  const summary = device.switch ? switchSummary(device.switch) : (template?.name ?? '')
+  const summary = device.switch ? switchSummary(device.switch, m) : (template ? displayName(template, lang) : '')
   const labels = facadeLabels(device.name, summary, facade.width, poeUsage?.budgetW !== undefined ? { usedW: poeUsage.usedW, budgetW: poeUsage.budgetW } : undefined)
   const fullTitle = summary ? `${device.name} · ${summary}` : device.name
   const gradientId = `swg-${id}`

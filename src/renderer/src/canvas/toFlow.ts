@@ -54,7 +54,7 @@ export function createFlowCache(): FlowCache {
   return { nodes: new Map(), edges: new Map(), zones: new Map() }
 }
 
-export function analyzeLinks(project: Project, theme: ThemeMode): LinkAnalysis {
+export function analyzeLinks(project: Project, theme: ThemeMode, lang: Lang = 'fr'): LinkAnalysis {
   const ports = new Map<string, Record<string, PortInfo>>()
   const poeUsed = new Map<string, number>()
   const styles = new Map<string, CordStyle>()
@@ -62,7 +62,7 @@ export function analyzeLinks(project: Project, theme: ThemeMode): LinkAnalysis {
   const poeAt = new Map<string, 'source' | 'target'>()
   const deviceSets = new Map<string, Set<number>>()
   for (const link of project.links) {
-    const style = cordStyle(project, link, theme)
+    const style = cordStyle(project, link, theme, lang)
     styles.set(link.id, style)
     const vlans = linkVlanIds(project, link)
     linkVlans.set(link.id, vlans)

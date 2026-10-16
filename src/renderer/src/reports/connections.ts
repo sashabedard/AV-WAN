@@ -1,7 +1,8 @@
 import type { Link, PortRef, Project } from '../model/types'
 import { sameRef } from '../model/rules'
 import { linkPoe, linkVlanView, type LinkPoe, type LinkVlanView } from '../model/derive'
-import { MEDIUM_LABELS } from '../catalog/labels'
+import { mediumLabel } from '../catalog/labels'
+import { messages } from '../../../shared/i18n/messages'
 import { DASH, compareText, lengthLabel, poeLabel, portRefLabel, taggedLabel, vlanName } from './format'
 
 // Un câble vu depuis un de ses bouts. La liste de branchement et les fiches par appareil passent toutes
@@ -36,7 +37,7 @@ export function connection(project: Project, link: Link, from: PortRef = link.a)
     to,
     fromLabel: portRefLabel(project, from),
     toLabel: portRefLabel(project, to),
-    medium: MEDIUM_LABELS[link.medium],
+    medium: mediumLabel(link.medium, messages('fr')), // plan 6 : langue des documents à la Task 12
     ...(link.lengthM !== undefined ? { lengthM: link.lengthM } : {}),
     lengthLabel: lengthLabel(link.lengthM),
     poe,

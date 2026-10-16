@@ -6,9 +6,9 @@ import { Inspector } from '../Inspector'
 import { projectStore } from '../../store/projectStore'
 import { uiStore } from '../../store/uiStore'
 import { createDevice, createProject } from '../../model/project'
-import type { Device, DeviceTemplate, Project } from '../../model/types'
+import type { Device, StoredTemplate, Project } from '../../model/types'
 
-const LYRE: DeviceTemplate = {
+const LYRE: StoredTemplate = {
   id: 'custom-lyre000001', category: 'eclairage', name: 'Lyre', code: 'MH', icon: { kind: 'builtin', name: 'fixture' },
   ports: [{ id: 'DMX-IN', label: 'DMX IN', connector: 'dmx' }], dmx: { footprint: 31, modes: [{ name: 'Standard', channels: 31 }, { name: 'Basic', channels: 16 }] }, isCustom: true
 }

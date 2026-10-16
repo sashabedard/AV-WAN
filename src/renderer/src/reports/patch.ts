@@ -1,6 +1,7 @@
 // src/renderer/src/reports/patch.ts
 import type { Project } from '../model/types'
 import { getTemplate } from '../catalog'
+import { displayName } from '../catalog/templateText'
 import { LED_STRIP_TYPES } from '../model/led'
 import { issueTexts, overlapsIn, patchIndex, patchIssues, rangeLabel, sourceLabel, type PatchEntry } from '../model/dmx'
 import type { Cell, Column, DataTable } from '../../../shared/tables'
@@ -54,7 +55,7 @@ export function patchRows(project: Project): PatchRow[] {
       ...(dmx.address !== undefined ? { address: dmx.address, end: dmx.address + dmx.footprint - 1 } : {}),
       channels: dmx.footprint,
       device: d.name,
-      model: d.model ?? t?.model ?? t?.name ?? '',
+      model: d.model ?? t?.model ?? (t ? displayName(t, 'fr') : '') /* plan 6 : langue des documents à la Task 12 */,
       mode: dmx.mode ?? '',
       source: entry.universe ? sourceLabel(project, entry.universe.source) : '',
       zone: zoneName(project, d.zoneId),
@@ -72,7 +73,7 @@ export function patchRows(project: Project): PatchRow[] {
         end: span.channels,
         channels: span.channels,
         device: d.name,
-        model: d.model ?? t?.model ?? t?.name ?? '',
+        model: d.model ?? t?.model ?? (t ? displayName(t, 'fr') : '') /* plan 6 : langue des documents à la Task 12 */,
         mode: `${label} · ${span.pixels} px`,
         source: sourceLabel(project, { kind: 'port', ref: sp.source }),
         zone: zoneName(project, d.zoneId),

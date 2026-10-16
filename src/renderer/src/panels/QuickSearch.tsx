@@ -3,13 +3,14 @@ import { useMemo, useState } from 'react'
 import { searchTemplates } from '../catalog/search'
 import { usePlaceableTemplates } from './usePlaceableTemplates'
 import { DeviceIcon, Icon } from '../icons/Icon'
+import { displayName } from '../catalog/templateText'
 import { useT } from '../i18n/useT'
 import './panels.css'
 
 const MAX_RESULTS = 12
 
 export function QuickSearch({ onPick, onClose }: { onPick: (templateId: string) => void; onClose: () => void }) {
-  const { m } = useT()
+  const { m, lang } = useT()
   const [query, setQuery] = useState('')
   const [active, setActive] = useState(0)
   const { all } = usePlaceableTemplates()
@@ -71,7 +72,7 @@ export function QuickSearch({ onPick, onClose }: { onPick: (templateId: string) 
               }}
             >
               <DeviceIcon icon={t.icon} size={18} />
-              <span className="qs__name">{t.name}</span>
+              <span className="qs__name">{displayName(t, lang)}</span>
               <span className="qs__code">{t.code}</span>
             </li>
           ))}

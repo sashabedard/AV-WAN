@@ -6,7 +6,9 @@ import { formatFr } from '../model/fields'
 import { MediumSchema } from '../model/schema'
 import { findPort } from '../model/rules'
 import { getTemplate } from '../catalog'
-import { MEDIUM_LABELS } from '../catalog/labels'
+import { mediumLabel } from '../catalog/labels'
+import { displayName } from '../catalog/templateText'
+import { messages } from '../../../shared/i18n/messages'
 import { switchSummary } from '../catalog/switch'
 import type { Cell, Column, DataTable } from '../../../shared/tables'
 import { DASH, compareText } from './format'
@@ -42,7 +44,7 @@ export function bom(project: Project): DataTable {
   const strips = new Map<string, { strip: LedStrip; n: number; meters: number; known: boolean; unknown: boolean }>()
   for (const d of project.devices) {
     const t = getTemplate(project, d.templateId)
-    const name = t?.name ?? d.templateId
+    const name = t ? displayName(t, 'fr') /* plan 6 : langue des documents à la Task 12 */ : d.templateId
     if (d.ledStrip) {
       const s = d.ledStrip
       const key = `${s.type}\u0000${s.volts}\u0000${s.wPerM}`
@@ -58,7 +60,7 @@ export function bom(project: Project): DataTable {
     }
     const detail = d.psu
       ? [d.model, psuDetail(d.psu)].filter(Boolean).join(' · ')
-      : d.switch ? [d.model, switchSummary(d.switch)].filter(Boolean).join(' · ') : (d.model ?? t?.model ?? '')
+      : d.switch ? [d.model, switchSummary(d.switch, messages('fr')) /* plan 6 : langue des documents à la Task 12 */].filter(Boolean).join(' · ') : (d.model ?? t?.model ?? '')
     tally(devices, `${name}\u0000${detail}`, [name, detail])
   }
   const cables = new Map<string, { key: [Medium, number | undefined]; n: number }>()
@@ -91,7 +93,7 @@ export function bom(project: Project): DataTable {
       ]),
     ...[...cables.values()]
       .sort((a, b) => MEDIUM_ORDER.indexOf(a.key[0]) - MEDIUM_ORDER.indexOf(b.key[0]) || byLength(a.key[1], b.key[1]))
-      .map(({ key, n }) => ['Câble', MEDIUM_LABELS[key[0]], key[1] === undefined ? 'longueur à définir' : `${key[1]} m`, n]),
+      .map(({ key, n }) => ['Câble', mediumLabel(key[0], messages('fr')) /* plan 6 : langue des documents à la Task 12 */, key[1] === undefined ? 'longueur à définir' : `${key[1]} m`, n]),
     ...[...modules.values()]
       .sort((a, b) => compareText(a.key, b.key))
       .map(({ key, n }) => ['Module', key, key.endsWith('multimode') ? 'pour fibre OM3 / OM4' : 'pour fibre OS2', n])

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { sampleProject } from './__fixtures__/sample'
 import { linkPoe, linkVlanIds, linkVlanView, setLinkVlan, switchPoeUsage, vlanEnds, vlanMembers } from './derive'
-import { VLAN_PRESETS } from '../catalog/vlanPresets'
+import { VLAN_PRESETS, vlanFromPreset } from '../catalog/vlanPresets'
 import { createDevice } from './project'
 import type { Project } from './types'
 import { passThroughPeer } from './rules'
@@ -66,7 +66,7 @@ describe('linkPoe / switchPoeUsage', () => {
 
 describe('linkVlanIds et vlanMembers', () => {
   it('donne les VLAN d’un câble : accès, trunk explicite, trunk « tous », aucun', () => {
-    const p = { ...sampleProject(), vlans: [...VLAN_PRESETS] }
+    const p = { ...sampleProject(), vlans: VLAN_PRESETS.map((v) => vlanFromPreset(v, 'fr')) }
     const l = p.links[0]!
     expect(linkVlanIds(p, l)).toEqual([40])
     p.devices[0]!.portState['1'] = { mode: 'trunk', nativeVlan: 10, taggedVlans: [40, 30, 40] }

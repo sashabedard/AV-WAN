@@ -1,8 +1,9 @@
 import { useRef, useState, type KeyboardEvent } from 'react'
 import { TEMPLATES } from '../catalog/templates'
-import { CATEGORY_LABELS, CATEGORY_ORDER } from '../catalog/categories'
+import { categoryLabel, CATEGORY_ORDER } from '../catalog/categories'
 import { BUILTIN_ICON_NAMES } from '../catalog/iconNames'
-import { CONNECTOR_LABELS, POE_CHOICE_LABELS } from '../catalog/labels'
+import { POE_CHOICE_IDS, connectorLabel, poeChoiceLabel } from '../catalog/labels'
+import { displayName } from '../catalog/templateText'
 import { ConnectorSchema } from '../model/schema'
 import {
   MAX_PORTS,
@@ -19,7 +20,7 @@ import {
   type PortDraft,
   type TemplateDraft
 } from '../model/customTemplate'
-import type { Category, Connector, DeviceTemplate } from '../model/types'
+import type { Category, Connector, StoredTemplate } from '../model/types'
 import { importIconFile } from '../icons/importIcon'
 import { DeviceIcon } from '../icons/Icon'
 import { libraryStore, libraryTemplate } from '../store/libraryStore'
@@ -30,7 +31,7 @@ import { useT } from '../i18n/useT'
 import './componentEditor.css'
 
 const CONNECTORS = ConnectorSchema.options
-const POE_CHOICES = Object.keys(POE_CHOICE_LABELS) as PoeChoice[]
+const POE_CHOICES = POE_CHOICE_IDS
 // Pas de switch perso : les switchs passent par le configurateur.
 const BASES = TEMPLATES.filter((t) => !t.switch)
 
@@ -41,8 +42,8 @@ export function ComponentEditor() {
   return <EditorForm key={state.mode === 'edit' ? state.templateId : 'new'} editing={editing} />
 }
 
-function EditorForm({ editing }: { editing: DeviceTemplate | null }) {
-  const { m } = useT()
+function EditorForm({ editing }: { editing: StoredTemplate | null }) {
+  const { m, lang } = useT()
   const t = m.componentEditor
   const [draft, setDraft] = useState<TemplateDraft>(() => (editing ? draftFrom(editing) : blankDraft()))
   const [base, setBase] = useState('')
@@ -69,7 +70,7 @@ function EditorForm({ editing }: { editing: DeviceTemplate | null }) {
     setBase(id)
     const t = BASES.find((x) => x.id === id)
     setDraft((d) => {
-      const from = t ? draftFrom(t) : blankDraft()
+      const from = t ? draftFrom(t, lang) : blankDraft()
       return { ...from, name: d.name, code: d.code || from.code }
     })
   }
@@ -134,7 +135,7 @@ function EditorForm({ editing }: { editing: DeviceTemplate | null }) {
               <option value="">{t.blank}</option>
               {BASES.map((t) => (
                 <option key={t.id} value={t.id}>
-                  {t.name}
+                  {displayName(t, lang)}
                 </option>
               ))}
             </select>
@@ -160,7 +161,7 @@ function EditorForm({ editing }: { editing: DeviceTemplate | null }) {
             <select id="ce-category" value={draft.category} onChange={(e) => patch({ category: e.target.value as Category })}>
               {CATEGORY_ORDER.map((c) => (
                 <option key={c} value={c}>
-                  {CATEGORY_LABELS[c]}
+                  {categoryLabel(c, m)}
                 </option>
               ))}
             </select>
@@ -260,7 +261,7 @@ function EditorForm({ editing }: { editing: DeviceTemplate | null }) {
                       <select aria-label={t.portConnector({ n: i + 1 })} value={p.connector} onChange={(e) => setPort(i, { connector: e.target.value as Connector })}>
                         {CONNECTORS.map((c) => (
                           <option key={c} value={c}>
-                            {CONNECTOR_LABELS[c]}
+                            {connectorLabel(c, m)}
                           </option>
                         ))}
                       </select>
@@ -269,7 +270,7 @@ function EditorForm({ editing }: { editing: DeviceTemplate | null }) {
                       <select aria-label={t.portPoe({ n: i + 1 })} value={p.poe} disabled={!poeAllowed(p.connector)} onChange={(e) => setPort(i, { poe: e.target.value as PoeChoice })}>
                         {POE_CHOICES.map((c) => (
                           <option key={c} value={c}>
-                            {POE_CHOICE_LABELS[c]}
+                            {poeChoiceLabel(c, m)}
                           </option>
                         ))}
                       </select>
@@ -290,7 +291,7 @@ function EditorForm({ editing }: { editing: DeviceTemplate | null }) {
             <select aria-label={t.batchConnector} value={batchConnector} onChange={(e) => setBatchConnector(e.target.value as Connector)}>
               {CONNECTORS.map((c) => (
                 <option key={c} value={c}>
-                  {CONNECTOR_LABELS[c]}
+                  {connectorLabel(c, m)}
                 </option>
               ))}
             </select>

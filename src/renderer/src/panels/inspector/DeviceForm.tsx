@@ -6,6 +6,7 @@ import { isRackDevice } from '../../model/rules'
 import { switchPoeUsage } from '../../model/derive'
 import { getTemplate } from '../../catalog'
 import { switchSummary } from '../../catalog/switch'
+import { displayName } from '../../catalog/templateText'
 import { CommitInput } from '../CommitInput'
 import { Segmented } from '../Segmented'
 import { SwitchConfigurator } from '../SwitchConfigurator'
@@ -28,7 +29,7 @@ function SwitchSection({ device, project }: { device: Device; project: Project }
     <section className="insp__section">
       <h3 className="insp__title">{t.switchConfig}</h3>
       <p className="insp__note">
-        {switchSummary(spec)}
+        {switchSummary(spec, m)}
         {usage.budgetW !== undefined ? ` · PoE ${usage.usedW} / ${usage.budgetW} W` : ''}
       </p>
       {editing ? (
@@ -54,14 +55,14 @@ function SwitchSection({ device, project }: { device: Device; project: Project }
 
 export function DeviceForm({ device, project }: { device: Device; project: Project }) {
   const s = projectStore.getState
-  const { m } = useT()
+  const { m, lang } = useT()
   const t = m.inspector.device
   const template = getTemplate(project, device.templateId)
   const ipMode = device.ip?.mode ?? 'dhcp'
   const universePorts = new Set(device.ports.filter((p) => isUniverseOutput(project, device, p)).map((p) => p.id))
   return (
     <div>
-      <h2 className="insp__title">{template?.name ?? t.fallbackTitle}</h2>
+      <h2 className="insp__title">{template ? displayName(template, lang) : t.fallbackTitle}</h2>
       <label className="field">
         <span className="field__label">{t.name}</span>
         <CommitInput className="input" aria-label={t.name} value={device.name} onCommit={(v) => s().updateDevice(device.id, { name: v.trim() || device.name })} />
@@ -72,7 +73,7 @@ export function DeviceForm({ device, project }: { device: Device; project: Proje
           className="input"
           aria-label={t.modelAria}
           value={device.model ?? ''}
-          placeholder={template?.name}
+          placeholder={template ? displayName(template, lang) : undefined}
           onCommit={(v) => s().updateDevice(device.id, { model: v.trim() || undefined })}
         />
       </label>

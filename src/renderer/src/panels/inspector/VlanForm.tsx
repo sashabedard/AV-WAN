@@ -4,7 +4,7 @@ import type { VlanPatch } from '../../model/vlans'
 import { vlanMembers } from '../../model/derive'
 import { projectStore } from '../../store/projectStore'
 import { uiStore } from '../../store/uiStore'
-import { FORWARD_UNKNOWN_CHOICES, MDNS_CHOICES, PROAV_PROFILES, UNIFI_LABELS } from '../../catalog/unifi'
+import { FORWARD_UNKNOWN_CHOICES, MDNS_CHOICES, PROAV_PROFILES, unifiLabels } from '../../catalog/unifi'
 import { CommitInput } from '../CommitInput'
 import { useT } from '../../i18n/useT'
 
@@ -23,6 +23,7 @@ export function VlanForm({ vlan, project }: { vlan: Vlan; project: Project }) {
   const s = projectStore.getState
   const { m } = useT()
   const t = m.inspector.vlan
+  const labels = unifiLabels(m)
   const up = (patch: VlanPatch): void => {
     const changed = (Object.keys(patch) as Array<keyof VlanPatch>).some((k) => JSON.stringify(patch[k]) !== JSON.stringify(vlan[k]))
     if (changed) s().updateVlan(vlan.id, patch)
@@ -86,12 +87,12 @@ export function VlanForm({ vlan, project }: { vlan: Vlan; project: Project }) {
       <Toggle label={t.internet} checked={vlan.internet} onChange={(internet) => up({ internet })} />
       <section className="insp__section">
         <h3 className="insp__title">{t.unifiTitle}</h3>
-        <Toggle label={UNIFI_LABELS.igmpSnooping} checked={vlan.unifi.igmpSnooping} onChange={(igmpSnooping) => unifi({ igmpSnooping })} />
+        <Toggle label={labels.igmpSnooping} checked={vlan.unifi.igmpSnooping} onChange={(igmpSnooping) => unifi({ igmpSnooping })} />
         {vlan.unifi.igmpSnooping && (
           <div className="insp__nested">
-            <Toggle label={UNIFI_LABELS.querier} checked={vlan.unifi.querier} onChange={(querier) => unifi({ querier })} />
+            <Toggle label={labels.querier} checked={vlan.unifi.querier} onChange={(querier) => unifi({ querier })} />
             <label className="field">
-              <span className="field__label">{UNIFI_LABELS.forwardUnknownMulticast}</span>
+              <span className="field__label">{labels.forwardUnknownMulticast}</span>
               <select
                 className="input"
                 aria-label="Forward Unknown Multicast Traffic"
@@ -105,12 +106,12 @@ export function VlanForm({ vlan, project }: { vlan: Vlan; project: Project }) {
                 ))}
               </select>
             </label>
-            <Toggle label={UNIFI_LABELS.floodKnownProtocols} checked={vlan.unifi.floodKnownProtocols} onChange={(floodKnownProtocols) => unifi({ floodKnownProtocols })} />
-            <Toggle label={UNIFI_LABELS.fastLeave} checked={vlan.unifi.fastLeave} onChange={(fastLeave) => unifi({ fastLeave })} />
+            <Toggle label={labels.floodKnownProtocols} checked={vlan.unifi.floodKnownProtocols} onChange={(floodKnownProtocols) => unifi({ floodKnownProtocols })} />
+            <Toggle label={labels.fastLeave} checked={vlan.unifi.fastLeave} onChange={(fastLeave) => unifi({ fastLeave })} />
           </div>
         )}
         <label className="field">
-          <span className="field__label">{UNIFI_LABELS.mdnsProxy}</span>
+          <span className="field__label">{labels.mdnsProxy}</span>
           <select className="input" aria-label="mDNS Proxy" value={vlan.unifi.mdnsProxy} onChange={(e) => unifi({ mdnsProxy: e.target.value as Unifi['mdnsProxy'] })}>
             {MDNS_CHOICES.map((o) => (
               <option key={o.value} value={o.value}>
@@ -119,9 +120,9 @@ export function VlanForm({ vlan, project }: { vlan: Vlan; project: Project }) {
             ))}
           </select>
         </label>
-        <Toggle label={UNIFI_LABELS.networkIsolation} checked={vlan.unifi.networkIsolation} onChange={(networkIsolation) => unifi({ networkIsolation })} />
+        <Toggle label={labels.networkIsolation} checked={vlan.unifi.networkIsolation} onChange={(networkIsolation) => unifi({ networkIsolation })} />
         <label className="field">
-          <span className="field__label">{UNIFI_LABELS.proAvProfile}</span>
+          <span className="field__label">{labels.proAvProfile}</span>
           <select className="input" aria-label="ProAV" value={vlan.unifi.proAvProfile ?? ''} onChange={(e) => unifi({ proAvProfile: e.target.value || undefined })}>
             <option value="">{t.none}</option>
             {PROAV_PROFILES.map((p) => (
@@ -131,7 +132,7 @@ export function VlanForm({ vlan, project }: { vlan: Vlan; project: Project }) {
             ))}
           </select>
         </label>
-        <Toggle label={UNIFI_LABELS.jumboFrames} checked={vlan.unifi.jumboFrames} onChange={(jumboFrames) => unifi({ jumboFrames })} />
+        <Toggle label={labels.jumboFrames} checked={vlan.unifi.jumboFrames} onChange={(jumboFrames) => unifi({ jumboFrames })} />
       </section>
       <label className="field">
         <span className="field__label">{t.note}</span>

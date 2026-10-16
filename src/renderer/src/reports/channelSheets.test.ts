@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import { channelBlocks } from './channelSheets'
 import { createDevice, createProject } from '../model/project'
-import type { Device, DeviceTemplate, Project } from '../model/types'
+import type { Device, StoredTemplate, Project } from '../model/types'
 
-const LYRE: DeviceTemplate = {
+const LYRE: StoredTemplate = {
   id: 'custom-lyre000001', category: 'eclairage', name: 'Lyre', code: 'MH', model: 'Lyre test', icon: { kind: 'builtin', name: 'fixture' },
   ports: [{ id: 'DMX-IN', label: 'DMX IN', connector: 'dmx' }],
   dmx: { footprint: 3, modes: [{ name: '3CH', channels: 3, params: ['Dimmer', 'Pan', 'Tilt'] }, { name: '2CH', channels: 2 }] },

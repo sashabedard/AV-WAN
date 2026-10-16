@@ -119,7 +119,7 @@ describe('VLAN des nœuds et des arêtes', () => {
 
 describe('radio Wi-Fi à plusieurs clients', () => {
   function apWithClients(vlans: [number, number]): { p: Project; apId: string } {
-    let p: Project = { ...createProject(), vlans: [vlanPreset(20), vlanPreset(60)] }
+    let p: Project = { ...createProject(), vlans: [vlanPreset(20, 'fr'), vlanPreset(60, 'fr')] }
     const ap = createDevice(p, 'ap', { x: 0, y: 0 })
     p = { ...p, devices: [ap] }
     vlans.forEach((vlan, i) => {

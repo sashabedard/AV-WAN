@@ -1,9 +1,10 @@
 // src/renderer/src/panels/Palette.tsx
 import { useCallback, useMemo, useRef, useState, type ReactNode } from 'react'
-import type { DeviceTemplate } from '../model/types'
+import type { DeviceTemplate, StoredTemplate } from '../model/types'
+import { displayName } from '../catalog/templateText'
 import { TEMPLATES } from '../catalog/templates'
 import { searchTemplates } from '../catalog/search'
-import { CATEGORY_LABELS, CATEGORY_ORDER } from '../catalog/categories'
+import { categoryLabel, CATEGORY_ORDER } from '../catalog/categories'
 import { uiStore, useUiStore } from '../store/uiStore'
 import { DeviceIcon, Icon } from '../icons/Icon'
 import { CATEGORY_ICON } from '../icons/glyphs'
@@ -22,7 +23,8 @@ export const TEMPLATE_MIME = 'application/x-avwan-template'
 const GROUPS = CATEGORY_ORDER.map((category) => ({ category, items: TEMPLATES.filter((t) => t.category === category) }))
 
 export function PaletteItem({ template, pending, actions }: { template: DeviceTemplate; pending: boolean; actions?: ReactNode }) {
-  const { m } = useT()
+  const { m, lang } = useT()
+  const name = displayName(template, lang)
   const nameRef = useRef<HTMLSpanElement>(null)
   const tip = useTruncTip(nameRef)
   return (
@@ -45,11 +47,11 @@ export function PaletteItem({ template, pending, actions }: { template: DeviceTe
       >
         <DeviceIcon icon={template.icon} size={18} />
         <span ref={nameRef} className="palette__name">
-          {template.name}
+          {name}
         </span>
         <span className="palette__code">{template.code}</span>
       </button>
-      <TruncTip at={tip.at} text={template.name} />
+      <TruncTip at={tip.at} text={name} />
       {actions}
     </li>
   )
@@ -60,8 +62,8 @@ function report(task: Promise<unknown>, failure: (p: { detail: string }) => stri
 }
 
 // Menu ⋯ d'une composante de ma bibliothèque.
-function LibraryItemMenu({ template }: { template: DeviceTemplate }) {
-  const { m } = useT()
+function LibraryItemMenu({ template }: { template: StoredTemplate }) {
+  const { m, lang } = useT()
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
   const dismiss = useCallback(() => setOpen(false), [])
@@ -86,7 +88,7 @@ function LibraryItemMenu({ template }: { template: DeviceTemplate }) {
           <button type="button" role="menuitem" onClick={() => act(() => uiStore.getState().openComponentEditor({ mode: 'edit', templateId: template.id }))}>
             {m.palette.edit}
           </button>
-          <button type="button" role="menuitem" onClick={() => act(() => report(libraryStore.getState().save(duplicateTemplate(template, m.componentEditor.copySuffix)), m.palette.duplicateFailed))}>
+          <button type="button" role="menuitem" onClick={() => act(() => report(libraryStore.getState().save(duplicateTemplate(template, m.componentEditor.copySuffix, lang)), m.palette.duplicateFailed))}>
             {m.palette.duplicate}
           </button>
           <button
@@ -110,7 +112,7 @@ function LibraryItemMenu({ template }: { template: DeviceTemplate }) {
 }
 
 export function Palette() {
-  const { m } = useT()
+  const { m, lang } = useT()
   const pending = useUiStore((s) => s.pendingTemplateId)
   const pendingZone = useUiStore((s) => s.pendingZone)
   const [filter, setFilter] = useState('')
@@ -186,7 +188,7 @@ export function Palette() {
                     template={t}
                     pending={pending === t.id}
                     actions={
-                      <button type="button" className="palette__act" aria-label={m.palette.addToLibrary({ name: t.name })} title={m.palette.addToLibraryTitle} onClick={() => report(libraryStore.getState().save(t), m.palette.addFailed)}>
+                      <button type="button" className="palette__act" aria-label={m.palette.addToLibrary({ name: displayName(t, lang) })} title={m.palette.addToLibraryTitle} onClick={() => report(libraryStore.getState().save(t), m.palette.addFailed)}>
                         <Icon name="plus" size={13} />
                       </button>
                     }
@@ -199,7 +201,7 @@ export function Palette() {
             <section key={g.category}>
               <h2 className="palette__cat">
                 <Icon name={CATEGORY_ICON[g.category]} size={14} />
-                {CATEGORY_LABELS[g.category]}
+                {categoryLabel(g.category, m)}
               </h2>
               <ul>
                 {g.items.map((t) => (

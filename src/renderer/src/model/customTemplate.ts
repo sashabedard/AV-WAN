@@ -2,9 +2,11 @@
 // et embarquement dans le projet. Fonctions pures.
 import { nanoid } from 'nanoid'
 import { parseDecimalField, parseIntField } from './fields'
-import { currentMessages } from '../i18n/useT'
+import { currentLang, currentMessages } from '../i18n/useT'
+import { templateText } from '../catalog/templateText'
+import type { Lang } from '../../../shared/i18n/lang'
 import type { Messages } from '../../../shared/i18n/messages'
-import type { Category, Connector, DeviceTemplate, IconRef, PoeClass, PortDef, Project } from './types'
+import type { Category, Connector, DeviceTemplate, StoredTemplate, IconRef, PoeClass, PortDef, Project } from './types'
 
 export const CUSTOM_ID = /^custom-[A-Za-z0-9_-]{6,40}$/
 export const MAX_PORTS = 64
@@ -55,17 +57,17 @@ export function blankDraft(): TemplateDraft {
   return { name: '', code: '', category: 'autre', vendor: '', model: '', icon: { kind: 'builtin', name: 'generic' }, ports: [], patchable: false, footprint: '1', powerW: '' }
 }
 
-const poeOf = (p: PortDef): PoeChoice => (p.poeIn ? `in-${p.poeIn}` : p.poeOut ? `out-${p.poeOut}` : 'none')
+const poeOf = (p: Pick<PortDef, 'poeIn' | 'poeOut'>): PoeChoice => (p.poeIn ? `in-${p.poeIn}` : p.poeOut ? `out-${p.poeOut}` : 'none')
 
-export function draftFrom(t: DeviceTemplate): TemplateDraft {
+export function draftFrom(t: DeviceTemplate, lang: Lang = 'fr'): TemplateDraft {
   return {
-    name: t.name,
+    name: templateText(t.name, lang),
     code: t.code,
     category: t.category,
     vendor: t.vendor ?? '',
     model: t.model ?? '',
     icon: structuredClone(t.icon),
-    ports: t.ports.map((p) => ({ label: p.label || p.id, connector: p.connector, poe: poeOf(p) })),
+    ports: t.ports.map((p) => ({ label: templateText(p.label, lang) || p.id, connector: p.connector, poe: poeOf(p) })),
     // Pas de formatFr ici : son espace des milliers (« 1 200 ») serait refusé à la relecture du champ.
     patchable: t.dmx !== undefined,
     footprint: String(t.dmx?.modes?.[0]?.channels ?? t.dmx?.footprint ?? 1),
@@ -120,7 +122,7 @@ export function hasErrors(errors: DraftErrors): boolean {
   return Object.keys(errors).length > 0
 }
 
-export function templateFromDraft(d: TemplateDraft, id: string): DeviceTemplate {
+export function templateFromDraft(d: TemplateDraft, id: string): StoredTemplate {
   const taken = new Set<string>()
   const ports = d.ports.map((p): PortDef => {
     const portId = portIdFromLabel(p.label, taken)
@@ -155,17 +157,22 @@ export function templateFromDraft(d: TemplateDraft, id: string): DeviceTemplate 
 }
 
 // Une copie est toujours perso ; le nom est tronqué avant le suffixe pour que « (copie) » reste visible.
-export function duplicateTemplate(t: DeviceTemplate, copySuffix: string = currentMessages().componentEditor.copySuffix): DeviceTemplate {
+// Un gabarit intégré (textes bilingues) devient une composante perso : ses textes sont figés dans `lang`, la langue de l'interface.
+export function duplicateTemplate(t: DeviceTemplate, copySuffix: string = currentMessages().componentEditor.copySuffix, lang: Lang = currentLang()): StoredTemplate {
+  const name = templateText(t.name, lang)
+  const { note, ...rest } = structuredClone(t)
   return {
-    ...structuredClone(t),
+    ...rest,
     id: newCustomId(),
-    name: `${t.name.slice(0, MAX_NAME - copySuffix.length)}${copySuffix}`,
+    name: `${name.slice(0, MAX_NAME - copySuffix.length)}${copySuffix}`,
+    ports: t.ports.map((p) => ({ ...structuredClone(p), label: templateText(p.label, lang) })),
+    ...(note !== undefined ? { note: templateText(note, lang) } : {}),
     isCustom: true
   }
 }
 
 // Placement : le projet embarque la composante, pour s'ouvrir complet chez quelqu'un qui ne l'a pas.
-export function withTemplate(project: Project, template: DeviceTemplate): Project {
+export function withTemplate(project: Project, template: StoredTemplate): Project {
   return project.templates.some((t) => t.id === template.id) ? project : { ...project, templates: [...project.templates, template] }
 }
 
@@ -176,6 +183,6 @@ export function pruneTemplates(project: Project): Project {
   return kept.length === project.templates.length ? project : { ...project, templates: kept }
 }
 
-export function projectOnlyTemplates(project: Pick<Project, 'templates'>, libraryIds: ReadonlySet<string>): DeviceTemplate[] {
+export function projectOnlyTemplates(project: Pick<Project, 'templates'>, libraryIds: ReadonlySet<string>): StoredTemplate[] {
   return project.templates.filter((t) => !libraryIds.has(t.id))
 }

@@ -3,6 +3,7 @@ import { LED_STRIP_TYPES, stripPixels, stripPower } from '../model/led'
 import { psuLoad, resolvePsu } from '../model/power'
 import { formatFr } from '../model/fields'
 import { linksOnPort } from '../model/rules'
+import { displayName } from '../catalog/templateText'
 import { getTemplate } from '../catalog'
 import { connection, type Connection } from './connections'
 import { patchIndex } from '../model/dmx'
@@ -91,7 +92,7 @@ export function deviceSheets(project: Project): DeviceSheet[] {
       return {
         deviceId: device.id,
         name: device.name,
-        kind: template?.name ?? device.templateId,
+        kind: template ? displayName(template, 'fr') : device.templateId, // plan 6 : langue des documents à la Task 12
         ...(device.model ? { model: device.model } : {}),
         ip: ipLabel(device.ip),
         networked: device.ports.some((p) => NETWORK_CONNECTORS.has(p.connector)),
