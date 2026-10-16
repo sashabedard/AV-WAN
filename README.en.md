@@ -14,7 +14,7 @@
 <p align="center">
   <a href="https://github.com/sashabedard/AV-WAN/releases/latest"><img alt="Latest version" src="https://img.shields.io/github/v/release/sashabedard/AV-WAN?style=flat-square&labelColor=1D2125&color=F2A93B&label=version"></a>
   <a href="https://apps.microsoft.com/detail/9NR2WJRZZ5JG"><img alt="Available on the Microsoft Store" src="https://img.shields.io/badge/Microsoft%20Store-available-0078D4?style=flat-square&labelColor=1D2125"></a>
-  <img alt="macOS and Windows, offline" src="https://img.shields.io/badge/macOS%20%C2%B7%20Windows-offline-8E969F?style=flat-square&labelColor=1D2125">
+  <img alt="macOS and Windows, free" src="https://img.shields.io/badge/macOS%20%C2%B7%20Windows-free-8E969F?style=flat-square&labelColor=1D2125">
   <img alt="Electron, React, React Flow" src="https://img.shields.io/badge/Electron%20%C2%B7%20React%20%C2%B7%20React%20Flow-3E8EF7?style=flat-square&labelColor=1D2125">
   <img alt="Interface in French and English" src="https://img.shields.io/badge/interface-French%20%C2%B7%20English-3DBE6E?style=flat-square&labelColor=1D2125">
 </p>
