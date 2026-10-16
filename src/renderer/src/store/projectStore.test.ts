@@ -678,6 +678,29 @@ describe('projectStore : baies (plan 10)', () => {
     expect(rackOf(s, d1)).toEqual(placed)
   })
 
+  it('lecture seule : les actions booléennes renvoient false avec le toast de lecture seule, rien ne bouge', () => {
+    const { s, rackId, d1 } = withRack()
+    s.getState().placeInRack(d1, rackId, 1)
+    s.getState().loadProject(s.getState().history.present, null, { readOnly: true })
+    const before = s.getState().history.present
+    const calls = [
+      () => s.getState().updateRack(rackId, { name: 'Z' }),
+      () => s.getState().placeInRack(d1, rackId, 2),
+      () => s.getState().placeInRackFirstFree(d1, rackId),
+      () => s.getState().setDeviceRackHeight(d1, 2)
+    ]
+    for (const call of calls) {
+      s.getState().clearToast()
+      expect(call()).toBe(false)
+      expect(s.getState().history.present).toBe(before)
+      expect(s.getState().toast).toContain('en lecture seule')
+    }
+    s.getState().removeRack(rackId)
+    s.getState().unplaceFromRack(d1)
+    expect(s.getState().addRack()).toBe('')
+    expect(s.getState().history.present).toBe(before)
+  })
+
   it('sameSelection distingue deux rackIds différents', () => {
     const a = { deviceIds: [], linkIds: [], rackIds: ['a'] }
     expect(sameSelection(a, { deviceIds: [], linkIds: [], rackIds: ['b'] })).toBe(false)

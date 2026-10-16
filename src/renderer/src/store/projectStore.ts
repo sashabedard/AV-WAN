@@ -127,6 +127,13 @@ export function createProjectStore(initial: Project = createProject(undefined, c
       if (next !== history.present) set({ history: commit(history, next) })
     }
 
+    // Lecture seule : même toast que apply ; true = refusé (les actions booléennes renvoient alors false).
+    const refuseReadOnly = (): boolean => {
+      if (!get().readOnly) return false
+      set({ toast: currentMessages().app.toast.readOnly })
+      return true
+    }
+
     return {
       history: initHistory(initial),
       filePath: null,
@@ -242,6 +249,7 @@ export function createProjectStore(initial: Project = createProject(undefined, c
         return get().history.present.racks?.some((r) => r.id === id) ? id : ''
       },
       updateRack: (id, patch) => {
+        if (refuseReadOnly()) return false
         const { heightU } = patch
         if (heightU !== undefined && (!Number.isInteger(heightU) || heightU < 1 || heightU > RACK_HEIGHT_MAX)) return false
         const next = updateRackModel(get().history.present, id, patch)
@@ -254,6 +262,7 @@ export function createProjectStore(initial: Project = createProject(undefined, c
       },
       removeRack: (id) => apply((p) => removeRackModel(p, id)),
       placeInRack: (deviceId, rackId, u) => {
+        if (refuseReadOnly()) return false
         const next = placeDevice(get().history.present, deviceId, rackId, u)
         if (!next) {
           set({ toast: currentMessages().app.toast.rackNoRoom })
@@ -263,6 +272,7 @@ export function createProjectStore(initial: Project = createProject(undefined, c
         return true
       },
       placeInRackFirstFree: (deviceId, rackId) => {
+        if (refuseReadOnly()) return false
         const p = get().history.present
         const h = p.devices.find((d) => d.id === deviceId)?.rack?.heightU ?? 1
         const u = firstFreeU(p, rackId, h, deviceId)
@@ -276,6 +286,7 @@ export function createProjectStore(initial: Project = createProject(undefined, c
       },
       unplaceFromRack: (deviceId) => apply((p) => unplaceDevice(p, deviceId)),
       setDeviceRackHeight: (deviceId, heightU) => {
+        if (refuseReadOnly()) return false
         const next = setDeviceHeightU(get().history.present, deviceId, heightU)
         if (!next) {
           set({ toast: currentMessages().app.toast.rackNoRoom })
