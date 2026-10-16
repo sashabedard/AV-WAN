@@ -6,9 +6,9 @@ const p = sampleProject()
 
 describe('format des rapports', () => {
   it('nomme un port de façade « port n », les autres par leur étiquette, « ? » si le port a disparu', () => {
-    expect(portRefLabel(p, { deviceId: 'sw1', portId: '1' })).toBe('SW-1 · port 1')
-    expect(portRefLabel(p, { deviceId: 'cam1', portId: 'ETH' })).toBe('CAM-1 · ETH')
-    expect(portRefLabel(p, { deviceId: 'parti', portId: 'ETH' })).toBe('? · ETH')
+    expect(portRefLabel(p, { deviceId: 'sw1', portId: '1' }, 'fr')).toBe('SW-1 · port 1')
+    expect(portRefLabel(p, { deviceId: 'cam1', portId: 'ETH' }, 'fr')).toBe('CAM-1 · ETH')
+    expect(portRefLabel(p, { deviceId: 'parti', portId: 'ETH' }, 'fr')).toBe('? · ETH')
   })
 
   it('nomme un VLAN, ou donne son numéro seul s’il a été retiré du projet', () => {

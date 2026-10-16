@@ -9,6 +9,12 @@ export const model = {
     overlap: (p: { name: string; range: string }) => `Chevauche ${p.name} (${p.range})`,
     overflow: 'Dépasse 512'
   },
+  // Panneau de brassage : les prises A<n> / R<n> se lisent « 3 avant » / « 3 arrière » (identifiants inchangés).
+  patchPanel: {
+    frontRow: 'AVANT',
+    backRow: 'ARRIÈRE',
+    port: (p: { n: number; side: 'front' | 'back' }) => `${p.n} ${p.side === 'front' ? 'avant' : 'arrière'}`
+  },
   family: {
     ethernet: 'RJ45',
     optical: 'SFP/SFP+',

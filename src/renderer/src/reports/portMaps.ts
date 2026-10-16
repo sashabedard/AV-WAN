@@ -58,7 +58,7 @@ export function portMaps(project: Project, lang: Lang): PortMap[] {
         return {
           portId: port.id,
           port: port.label,
-          peer: link ? portRefLabel(project, sameRef(link.a, ref) ? link.b : link.a) : DASH,
+          peer: link ? portRefLabel(project, sameRef(link.a, ref) ? link.b : link.a, lang) : DASH,
           cableId: link?.cableId ?? DASH,
           mode: trunk ? m.reports.common.trunk : st.nativeVlan !== undefined ? m.reports.common.access : DASH,
           native: st.nativeVlan !== undefined ? vlanName(project, st.nativeVlan) : DASH,

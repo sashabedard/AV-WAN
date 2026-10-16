@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import { createExampleProject } from '../samples/exampleProject'
 import { cableSchedule } from './cableSchedule'
+import { deviceSheets } from './deviceSheets'
+import { createDevice } from '../model/project'
+import { toCsv } from '../../../shared/tables'
 
 const p = createExampleProject(new Date(2026, 9, 13), 'fr')
 const row = (project: typeof p, id: string) => cableSchedule(project, 'fr').rows.find((r) => r[0] === id)
@@ -40,5 +43,30 @@ describe('cableSchedule en anglais', () => {
     expect(row(p, 'C-010')).toBeDefined()
     expect(t.rows.find((r) => r[0] === 'C-010')).toEqual(['C-010', 'CAM-1 · ETH', 'SW-2 · port 1', 'Cat6', 12, 'PoE+ active (25 W)', 'Access', '40 NDI', '—', ''])
     expect(t.rows.find((r) => r[0] === 'C-001')?.[8]).toBe('All')
+  })
+})
+
+describe('cableSchedule avec un panneau de brassage', () => {
+  const base = createExampleProject(new Date(2026, 9, 13), 'fr')
+  const q = {
+    ...base,
+    devices: [...base.devices, { ...createDevice(base, 'patch-panel-24', { x: 0, y: 0 }, { lang: 'fr', id: 'pp1' }), name: 'PP-1' }],
+    links: [
+      ...base.links,
+      { id: 'lpp', cableId: 'C-900', a: { deviceId: base.devices.find((d) => d.name === 'SW-1')!.id, portId: '5' }, b: { deviceId: 'pp1', portId: 'A3' }, medium: 'cat6' as const }
+    ]
+  }
+  const cell = (lang: 'fr' | 'en') => cableSchedule(q, lang).rows.find((r) => r[0] === 'C-900')!
+
+  it('nomme la prise selon la langue du document, jamais A3', () => {
+    expect(cell('fr')[2]).toBe('PP-1 · 3 avant')
+    expect(cell('en')[2]).toBe('PP-1 · 3 front')
+    expect(toCsv(cableSchedule(q, 'en'), 'en')).toContain('PP-1 · 3 front')
+  })
+
+  it('la fiche du panneau dit « 3 avant », pas A3', () => {
+    const s = deviceSheets(q, 'fr').find((x) => x.name === 'PP-1')!
+    expect(s.lines.map((l) => l.text)[0]).toBe('3 avant › SW-1 · port 5 · C-900 Cat6')
+    expect(s.lines.every((l) => !/\b[AR]\d+\b/.test(l.port))).toBe(true)
   })
 })

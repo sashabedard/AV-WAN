@@ -4,7 +4,7 @@ import { psuLoad, resolvePsu } from '../model/power'
 import { formatters } from '../../../shared/i18n/format'
 import { messages } from '../../../shared/i18n/messages'
 import type { Lang } from '../../../shared/i18n/lang'
-import { linksOnPort } from '../model/rules'
+import { linksOnPort, portDisplayLabel } from '../model/rules'
 import { displayName } from '../catalog/templateText'
 import { getTemplate } from '../catalog'
 import { connection, type Connection } from './connections'
@@ -87,7 +87,8 @@ export function deviceSheets(project: Project, lang: Lang): DeviceSheet[] {
           .sort((x, y) => compareText(x.cableId, y.cableId, lang))
           .map((l) => {
             const c = connection(project, l, lang, ref)
-            return { port: port.label, connection: c, text: sheetLineText(port.label, c, lang) }
+            const label = portDisplayLabel(device, port, messages(lang))
+            return { port: label, connection: c, text: sheetLineText(label, c, lang) }
           })
       })
       const patch = index.entries.get(device.id)

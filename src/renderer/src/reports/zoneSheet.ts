@@ -1,6 +1,7 @@
 // src/renderer/src/reports/zoneSheet.ts
 import type { Project, Zone } from '../model/types'
 import { portRefLabel } from './format'
+import type { Lang } from '../../../shared/i18n/lang'
 
 // Câble qui sort d'une page de zone : deviceId et portId désignent le bout intérieur.
 export interface Renvoi {
@@ -27,7 +28,8 @@ export function pageLabel(zone: Zone | undefined, pages: Map<string, number>): s
 export function zoneSheet(
   project: Project,
   zone: Zone,
-  pages: Map<string, number>
+  pages: Map<string, number>,
+  lang: Lang
 ): { deviceIds: Set<string>; linkIds: Set<string>; renvois: Renvoi[] } {
   const deviceIds = new Set(project.devices.filter((d) => d.zoneId === zone.id).map((d) => d.id))
   const linkIds = new Set<string>()
@@ -46,7 +48,7 @@ export function zoneSheet(
       linkId: link.id,
       deviceId: inner.deviceId,
       portId: inner.portId,
-      label: `${link.cableId} › ${portRefLabel(project, outer)} · ${pageLabel(outerZone, pages)}`
+      label: `${link.cableId} › ${portRefLabel(project, outer, lang)} · ${pageLabel(outerZone, pages)}`
     })
   }
   return { deviceIds, linkIds, renvois }
