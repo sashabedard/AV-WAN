@@ -24,7 +24,9 @@ export const DmxPatchSchema = z.object({
   footprint: DmxSlotSchema,
   address: DmxSlotSchema.optional(),
   universe: DmxUniverseSchema.optional(),
-  mode: z.string().optional()
+  mode: z.string().optional(),
+  // Spec daisy-chain § 4.2 : adresse fixée à la main, la chaîne la respecte et repart après elle.
+  addressPinned: z.literal(true).optional()
 })
 // Noms des canaux DMX (spec canaux-dmx § 3.2) : params[i] nomme le canal i + 1 ; un trou est ''.
 export const DMX_PARAM_MAX = 60
@@ -65,7 +67,7 @@ export const SwitchSpecSchema = z.object({
   portCount: z.union([z.literal(4), z.literal(5), z.literal(8), z.literal(12), z.literal(16), z.literal(24), z.literal(48)]),
   poe: z.enum(['none', 'af', 'at', 'bt']),
   poeBudgetW: z.number().nonnegative().optional(),
-  sfpPlus: z.union([z.literal(0), z.literal(2), z.literal(4)]),
+  sfpPlus: z.number().int().min(0).max(4),
   managed: z.boolean()
 })
 

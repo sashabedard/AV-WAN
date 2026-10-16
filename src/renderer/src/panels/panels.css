@@ -33,6 +33,9 @@
 .insp__warn { margin: 4px 0 0; color: var(--accent); font-size: 12.5px; }
 .patch__row { display: flex; align-items: center; gap: 6px; }
 .patch__row .input { flex: 1 1 auto; min-width: 0; }
+.patch__pin { display: inline-flex; align-items: center; gap: 3px; padding: 2px 6px; border: 1px solid var(--line); border-radius: 4px; background: transparent; color: var(--muted); font: 600 11px/1 var(--font-mono); white-space: nowrap; cursor: pointer; }
+.patch__pin[aria-pressed='true'] { color: var(--ink); }
+.patch__pin:disabled { opacity: 0.5; cursor: default; }
 .patch__range { font: 600 12px/1 var(--font-mono); color: var(--muted); white-space: nowrap; }
 .input--mini { width: 64px; }
 .ports { width: 100%; border-collapse: collapse; font: 12px var(--font-mono); }

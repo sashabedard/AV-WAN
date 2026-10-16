@@ -6,7 +6,7 @@ import { withTemplate } from './customTemplate'
 import { canConnectPorts, nextCableId } from './rules'
 import { channelKey, keyId, listKey, mergeProjectLists } from './dmxChannels'
 import { newId } from './project'
-import { nextFreeAddress, patchIndex, type PatchIndex, type PatchRange } from './dmx'
+import { nextFreeAddress, patchIndex, resolveUniverse, type PatchIndex, type PatchRange } from './dmx'
 
 export const FRAGMENT_MIME = 'application/x-avwan-fragment'
 
@@ -39,6 +39,12 @@ export function copyFragment(project: Project, deviceIds: readonly string[]): Fr
   const frozen = devices.map((d) => {
     if (!d.dmx || d.dmx.universe !== undefined) return d
     const u = index.entries.get(d.id)?.universe
+    // Sa source d'univers est aussi copiée, et le câblage copié y mène encore : la copie reste automatique dans sa propre chaîne (daisy-chain § 4.5).
+    if (u?.source.kind === 'port' && ids.has(u.source.ref.deviceId)) {
+      const own = resolveUniverse({ ...project, devices, links }, d.id)
+      const src = u.source.ref
+      if (own?.source.kind === 'port' && own.source.ref.deviceId === src.deviceId && own.source.ref.portId === src.portId) return d
+    }
     return u ? { ...d, dmx: { ...d.dmx, universe: u.universe } } : d
   })
   const keys = new Set(devices.flatMap((d) => {
@@ -65,7 +71,7 @@ export function parseFragment(text: string): Fragment | null {
 // § 4.5 : une copie patchée prend l'adresse suivante libre de son univers ; sans univers, pas d'adresse.
 function withNextAddress(index: PatchIndex, device: Device): Device {
   if (!device.dmx) return device
-  const { address: _previous, ...dmx } = device.dmx
+  const { address: _previous, addressPinned: _pinned, ...dmx } = device.dmx
   if (dmx.universe === undefined) return { ...device, dmx }
   const address = nextFreeAddress(index, dmx.universe, dmx.footprint)
   return { ...device, dmx: address !== undefined ? { ...dmx, address } : dmx }

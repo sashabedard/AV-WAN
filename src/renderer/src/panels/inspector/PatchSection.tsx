@@ -2,6 +2,7 @@
 import type { Device, DmxPatch, Project } from '../../model/types'
 import { DMX_SLOTS, UNIVERSE_MAX, issueTexts, nextFreeAddress, patchIndex, patchIssues, rangeLabel, sourceLabel } from '../../model/dmx'
 import { parseIntField } from '../../model/fields'
+import { chainOf } from '../../model/daisyChain'
 import { getTemplate } from '../../catalog'
 import { modeLabel } from '../../catalog/modeLabels'
 import { projectStore } from '../../store/projectStore'
@@ -16,9 +17,19 @@ function compactDmx(d: DmxPatch): DmxPatch {
   return {
     footprint: d.footprint,
     ...(d.address !== undefined ? { address: d.address } : {}),
+    ...(d.addressPinned === true ? { addressPinned: true as const } : {}),
     ...(d.universe !== undefined ? { universe: d.universe } : {}),
     ...(d.mode ? { mode: d.mode } : {})
   }
+}
+
+function LockIcon() {
+  return (
+    <svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true" fill="currentColor">
+      <rect x="1.5" y="4.5" width="7" height="4.5" rx="1" />
+      <path d="M3 4.5V3a2 2 0 0 1 4 0v1.5" fill="none" stroke="currentColor" strokeWidth="1.2" />
+    </svg>
+  )
 }
 
 // Bloc « Patch DMX » d'un appareil patchable (spec patch-puissance-catalogue § 4.6).
@@ -39,10 +50,11 @@ export function PatchSection({ device, project }: { device: Device; project: Pro
       return
     }
     if (n === null) {
-      if (key !== 'footprint') save({ [key]: undefined }) // les canaux ne s'effacent pas
+      if (key === 'address') save({ address: undefined, addressPinned: undefined }) // plus d'adresse tapée : la chaîne reprend la main
+      else if (key !== 'footprint') save({ [key]: undefined }) // les canaux ne s'effacent pas
       return
     }
-    save({ [key]: n })
+    save(key === 'address' ? { address: n, addressPinned: true } : { [key]: n }) // une adresse tapée est fixée
   }
   const fillNext = (): void => {
     if (!resolved) return
@@ -50,8 +62,15 @@ export function PatchSection({ device, project }: { device: Device; project: Pro
     if (next === undefined) s().showToast(t.universeFull({ universe: resolved.universe, footprint: dmx.footprint }))
     else save({ address: next })
   }
+  const chained = chainOf(project, device.id) !== undefined
+  const pinned = dmx.addressPinned === true
+  const togglePin = (): void => {
+    if (pinned) save({ addressPinned: undefined })
+    else if (dmx.address !== undefined) save({ addressPinned: true }) // fixer l'adresse actuelle
+  }
   const derived = resolved?.source.kind === 'port' ? `${resolved.universe} · via ${sourceLabel(project, resolved.source)}` : '—'
   const warnings = issueTexts(patchIssues(index, device.id), m)
+  if (chained && !pinned && dmx.address === undefined && resolved) warnings.push(t.chainFull({ universe: resolved.universe }))
   return (
     <section className="insp__section">
       <h3 className="insp__title">{t.title}</h3>
@@ -59,9 +78,14 @@ export function PatchSection({ device, project }: { device: Device; project: Pro
         <span className="field__label">{t.address}</span>
         <div className="patch__row">
           <CommitInput className="input" aria-label={t.addressAria} inputMode="numeric" placeholder="—" value={dmx.address !== undefined ? String(dmx.address) : ''} onCommit={commitInt(t.addressAria, 'address', 1, DMX_SLOTS)} />
-          <button type="button" className="btn" disabled={!resolved} title={resolved ? t.nextFreeTitle({ universe: resolved.universe }) : t.unknownUniverse} onClick={fillNext}>
+          {chained && (
+            <button type="button" className="patch__pin" aria-pressed={pinned} disabled={!pinned && dmx.address === undefined} title={pinned ? t.unpinTitle : t.pinTitle} onClick={togglePin}>
+              {pinned ? <><LockIcon />{t.pinned}</> : t.auto}
+            </button>
+          )}
+          {(!chained || pinned) && <button type="button" className="btn" disabled={!resolved} title={resolved ? t.nextFreeTitle({ universe: resolved.universe }) : t.unknownUniverse} onClick={fillNext}>
             {t.nextFree}
-          </button>
+          </button>}
         </div>
       </div>
       <div className="field">

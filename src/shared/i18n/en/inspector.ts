@@ -166,6 +166,11 @@ export const inspector: Messages['inspector'] = {
     universeAria: 'DMX universe',
     mode: 'Mode',
     modeAria: 'DMX mode',
+    auto: 'auto',
+    pinned: 'pinned',
+    pinTitle: 'Pin this address: the chain continues from here',
+    unpinTitle: 'Unpin: the address follows the chain',
+    chainFull: (p) => `The chain exceeds 512 channels in universe ${p.universe}`,
     intToast: (p) => `${p.label}: a whole number from ${p.min} to ${p.max}.`,
     universeFull: (p) => `Universe ${p.universe} is full: no free range of ${p.footprint} channels.`
   },
