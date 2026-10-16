@@ -126,3 +126,4 @@
 .suggest::-webkit-scrollbar-thumb { border: 3px solid transparent; border-radius: 5px; background: color-mix(in srgb, var(--muted) 65%, transparent) padding-box; }
 .suggest__item { padding: 5px 12px; cursor: pointer; color: var(--ink); font-size: 13px; white-space: nowrap; }
 .suggest__item.is-active { background: var(--accent-bg); box-shadow: inset 3px 0 0 var(--accent); }
+.btn[aria-pressed='true'] { border-color: var(--accent); color: var(--accent); }

@@ -16,6 +16,7 @@ import { decimalText, parseDecimalField, parseIntField } from '../../model/field
 import { PsuSection } from './PsuSection'
 import { LedStripSection } from './LedStripSection'
 import { PatchSection } from './PatchSection'
+import { RackSection } from './RackSection'
 import { useT } from '../../i18n/useT'
 
 function SwitchSection({ device, project }: { device: Device; project: Project }) {
@@ -140,6 +141,7 @@ export function DeviceForm({ device, project }: { device: Device; project: Proje
         </label>
       )}
       <p className="insp__note">{t.zoneLine({ name: project.zones.find((z) => z.id === device.zoneId)?.name })}</p>
+      <RackSection device={device} project={project} />
       <SwitchSection device={device} project={project} />
       <section className="insp__section">
         <h3 className="insp__title">{t.ports}</h3>
