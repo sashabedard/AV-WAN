@@ -19,7 +19,9 @@ export async function launchApp(opts: LaunchOptions = {}): Promise<{ app: Electr
   // AVWAN_EXECUTABLE : l'app empaquetée (CI, ou release/mac-universal en local) au lieu du dossier du projet.
   const executablePath = process.env['AVWAN_EXECUTABLE']
   const scale = opts.scale ? [`--force-device-scale-factor=${opts.scale}`] : []
-  const args = executablePath ? scale : ['.', ...scale]
+  // AVWAN_NO_SANDBOX : CI Linux, où chrome-sandbox de l'AppImage extraite n'est pas setuid.
+  const noSandbox = process.env['AVWAN_NO_SANDBOX'] ? ['--no-sandbox'] : []
+  const args = executablePath ? [...noSandbox, ...scale] : ['.', ...noSandbox, ...scale]
   const app = await electron.launch({ ...(executablePath ? { executablePath } : {}), args, env })
   try {
     const page = await app.firstWindow()

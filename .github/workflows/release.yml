@@ -150,9 +150,41 @@ jobs:
           if-no-files-found: error
           path: release/*.appx
 
+  linux:
+    name: Linux — AppImage et .deb
+    needs: tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run dist:linux
+
+      - name: Lancer l’app empaquetée une fois
+        shell: bash
+        run: |
+          chmod +x release/AV-WAN-*.AppImage
+          app="$(ls release/AV-WAN-*.AppImage | head -1)"
+          # AppImage sans FUSE : on l'extrait, puis on lance le binaire sous écran virtuel.
+          "$app" --appimage-extract >/dev/null
+          AVWAN_NO_SANDBOX=1 AVWAN_EXECUTABLE="$PWD/squashfs-root/avwan" xvfb-run -a npx playwright test e2e/launch.spec.ts
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: linux
+          if-no-files-found: error
+          path: |
+            release/*.AppImage
+            release/*.deb
+            release/latest-linux.yml
+
   publish:
     name: Brouillon de release
-    needs: [mac, windows]
+    needs: [mac, windows, linux]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -166,6 +198,10 @@ jobs:
       - uses: actions/download-artifact@v8
         with:
           name: windows
+          path: dist-artifacts
+      - uses: actions/download-artifact@v8
+        with:
+          name: linux
           path: dist-artifacts
       - name: Créer le brouillon
         env:

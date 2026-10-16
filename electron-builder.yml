@@ -37,6 +37,18 @@ win:
     - target: nsis
       arch: x64
 
+# Linux : AppImage (auto-update) et .deb. L'association .avwan vient de fileAssociations (type MIME + .desktop).
+linux:
+  target:
+    - target: AppImage
+      arch: x64
+    - target: deb
+      arch: x64
+  category: Office
+  maintainer: Sasha Bédard <85566308+sashabedard@users.noreply.github.com>
+  synopsis: Schémas de câblage et réseau pour installations AV
+  artifactName: AV-WAN-${version}-${arch}.${ext}
+
 nsis:
   oneClick: true
   perMachine: false
