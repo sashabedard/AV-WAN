@@ -67,6 +67,11 @@ export function nodeIdAt(doc: Pick<Document, 'elementFromPoint'>, point: { x: nu
   return el?.closest('.react-flow__node')?.getAttribute('data-id') ?? null
 }
 
+// Lâcher un bout de câble dans le vide (aucun appareil dessous) : le câble est débranché.
+export function dropUnplugs(reconnectingLinkId: string | null, targetId: string | null): boolean {
+  return reconnectingLinkId !== null && targetId === null
+}
+
 // Même chose pour un rebranchement : le câble déplacé est mis de côté, `fixed` est le bout qui reste.
 export function dropReconnectOnDevice(
   project: Project,

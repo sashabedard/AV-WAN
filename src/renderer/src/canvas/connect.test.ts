@@ -1,6 +1,6 @@
 // src/renderer/src/canvas/connect.test.ts
 import { describe, expect, it } from 'vitest'
-import { clientPoint, connectionRefs, dropOnDevice, makeIsValidConnection, nodeIdAt, reconnectEnd, dropReconnectOnDevice } from './connect'
+import { clientPoint, connectionRefs, dropOnDevice, makeIsValidConnection, nodeIdAt, reconnectEnd, dropReconnectOnDevice, dropUnplugs } from './connect'
 import { sampleProject } from '../model/__fixtures__/sample'
 import { createDevice } from '../model/project'
 import type { Project } from '../model/types'
@@ -86,5 +86,14 @@ describe('dropReconnectOnDevice', () => {
   it('refuse le même appareil sans message, et un câble inconnu', () => {
     expect(dropReconnectOnDevice(sampleProject(), 'l1', fixed, 'cam1')).toEqual({ ok: false, message: '' })
     expect(dropReconnectOnDevice(sampleProject(), 'inconnu', fixed, 'sw1')).toEqual({ ok: false, message: '' })
+  })
+})
+
+describe('dropUnplugs', () => {
+  it('débranche seulement si un rebranchement est en cours et que rien n’est sous le point', () => {
+    expect(dropUnplugs('l1', null)).toBe(true)
+    expect(dropUnplugs('l1', 'sw1')).toBe(false)
+    expect(dropUnplugs(null, null)).toBe(false)
+    expect(dropUnplugs(null, 'sw1')).toBe(false)
   })
 })

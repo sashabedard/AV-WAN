@@ -47,6 +47,7 @@ export const app: Messages['app'] = {
     connectBlocked: (p) => `Cannot connect: port in use or ${p.family} connectors incompatible.`,
     connectImpossible: 'Cannot connect.',
     reconnectImpossible: 'Cannot reconnect: port in use or connectors incompatible.',
+    cableUnplugged: (p) => `Cable unplugged · ${p.undo} to undo`,
     vlanExists: (p) => `VLAN ${p.id} already exists.`,
     vlanInvalid: 'Invalid VLAN number: choose a number from 1 to 4094.'
   }

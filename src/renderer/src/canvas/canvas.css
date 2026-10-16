@@ -104,7 +104,11 @@ button.legend__item:hover { background: var(--surface-2); }
 .react-flow__minimap-node.mm-device { fill: var(--muted); }
 
 .elbow-grip { position: absolute; z-index: 11; width: 12px; height: 12px; border: 2px solid var(--accent); border-radius: 50%; background: var(--surface); cursor: move; pointer-events: all; }
-.react-flow__edgeupdater { cursor: crosshair; }
+/* Bouts de câble : une prise visible au survol ou à la sélection, à attraper pour rebrancher ou débrancher. */
+.react-flow__edgeupdater { cursor: grab; fill: transparent; stroke: transparent; }
+.react-flow__edgeupdater:active { cursor: grabbing; }
+.react-flow__edge:hover .react-flow__edgeupdater,
+.react-flow__edge.selected .react-flow__edgeupdater { fill: color-mix(in srgb, var(--surface) 70%, var(--accent) 18%); stroke: var(--accent); stroke-width: 2; }
 
 /* Zones : sous les cordons, le corps laisse passer les clics ; seuls le titre et les poignées réagissent. */
 .react-flow__node-zone .zone__title,

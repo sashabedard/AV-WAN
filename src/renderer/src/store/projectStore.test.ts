@@ -562,3 +562,17 @@ describe('projectStore : adresses DMX en chaîne (plan 7)', () => {
     expect(isDirty(s.getState())).toBe(false)
   })
 })
+
+describe('débrancher un câble en le lâchant dans le vide', () => {
+  it('removeElements([], [lien]) puis undo() rétablit le câble en une étape', () => {
+    const st = store()
+    const s = st.getState()
+    const before = s.history.present
+    const id = before.links[0]?.id
+    expect(id).toBeDefined()
+    s.removeElements([], [id as string])
+    expect(st.getState().history.present.links.some((l) => l.id === id)).toBe(false)
+    st.getState().undo()
+    expect(st.getState().history.present).toEqual(before)
+  })
+})
