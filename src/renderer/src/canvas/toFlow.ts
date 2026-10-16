@@ -1,8 +1,9 @@
+import type { Messages } from '../../../shared/i18n/messages'
 import type { Edge, Node } from '@xyflow/react'
 import type { Device, DeviceTemplate, Link, PortRef, Project, Side, Zone } from '../model/types'
 import { getTemplate } from '../catalog'
 import { resolvePortSide } from '../model/layout'
-import { findPort, isRackDevice, sameRef } from '../model/rules'
+import { findPort, isRackDevice, portDisplayLabel, sameRef } from '../model/rules'
 import { POE_LABELS, linkPoe, linkVlanIds } from '../model/derive'
 import { NEUTRAL, cordStyle, type CordStyle, type ThemeMode } from './cordStyle'
 import { patchIndex } from '../model/dmx'
@@ -133,10 +134,10 @@ export function toFlowNodes(project: Project, analysis: LinkAnalysis, cache: Flo
   return out
 }
 
-export function cordTag(project: Project, link: Link): string {
+export function cordTag(project: Project, link: Link, m: Messages): string {
   const end = (r: PortRef): string => {
     const f = findPort(project, r)
-    return f ? `${f.device.name}:${f.port.label}` : '?'
+    return f ? `${f.device.name}:${portDisplayLabel(f.device, f.port, m)}` : '?'
   }
   const poe = linkPoe(project, link)
   return `${link.cableId} · ${end(link.a)} ⇄ ${end(link.b)}${poe.active && poe.cls ? ` · ${POE_LABELS[poe.cls]}` : ''}`
@@ -152,15 +153,18 @@ export function cordExit(project: Project, ref: PortRef): number {
   return port ? facadeExit(facade, port) : 0
 }
 
-export function toFlowEdges(project: Project, analysis: LinkAnalysis, cache: FlowCache): CordFlowEdge[] {
+export function toFlowEdges(project: Project, analysis: LinkAnalysis, cache: FlowCache, m: Messages): CordFlowEdge[] {
   const out: CordFlowEdge[] = []
   const alive = new Set<string>()
   for (const link of project.links) {
     const style = analysis.styles.get(link.id)
     if (!style) continue
     alive.add(link.id)
-    const tag = cordTag(project, link)
-    const label = (r: PortRef): string => findPort(project, r)?.port.label ?? r.portId
+    const tag = cordTag(project, link, m)
+    const label = (r: PortRef): string => {
+      const f = findPort(project, r)
+      return f ? portDisplayLabel(f.device, f.port, m) : r.portId
+    }
     const portLabels: [string, string] = [label(link.a), label(link.b)]
     const vlans = analysis.linkVlans.get(link.id) ?? NO_VLANS
     const poeAt = analysis.poeAt.get(link.id) ?? null

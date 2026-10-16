@@ -68,7 +68,7 @@ export function PatchSection({ device, project }: { device: Device; project: Pro
     if (pinned) save({ addressPinned: undefined })
     else if (dmx.address !== undefined) save({ addressPinned: true }) // fixer l'adresse actuelle
   }
-  const derived = resolved?.source.kind === 'port' ? `${resolved.universe} · via ${sourceLabel(project, resolved.source)}` : '—'
+  const derived = resolved?.source.kind === 'port' ? `${resolved.universe} · via ${sourceLabel(project, resolved.source, m)}` : '—'
   const warnings = issueTexts(patchIssues(index, device.id), m)
   if (chained && !pinned && dmx.address === undefined && resolved) warnings.push(t.chainFull({ universe: resolved.universe }))
   return (

@@ -2,7 +2,7 @@
 import { useState } from 'react'
 import type { Device, PortSide, Project } from '../../model/types'
 import { linksOnRemovedPorts, projectStore } from '../../store/projectStore'
-import { isRackDevice } from '../../model/rules'
+import { isRackDevice, portDisplayLabel } from '../../model/rules'
 import { switchPoeUsage } from '../../model/derive'
 import { getTemplate } from '../../catalog'
 import { switchSummary } from '../../catalog/switch'
@@ -156,14 +156,14 @@ export function DeviceForm({ device, project }: { device: Device; project: Proje
           <tbody>
             {device.ports.map((p) => (
               <tr key={p.id}>
-                <td>{p.label}</td>
-                <td>{peersOf(project, device, p.id)}</td>
+                <td>{portDisplayLabel(device, p, m)}</td>
+                <td>{peersOf(project, device, p.id, m)}</td>
                 <td>{portVlanSummary(device.portState[p.id], t)}</td>
                 <td>
                   {p.poeOut ? (
                     <input
                       type="checkbox"
-                      aria-label={t.poePort({ label: p.label })}
+                      aria-label={t.poePort({ label: portDisplayLabel(device, p, m) })}
                       checked={device.portState[p.id]?.poeEnabled ?? true}
                       onChange={(e) => s().setPortState(device.id, p.id, { poeEnabled: e.target.checked })}
                     />
@@ -178,7 +178,7 @@ export function DeviceForm({ device, project }: { device: Device; project: Proje
                     {universePorts.has(p.id) && (
                       <CommitInput
                         className="input input--mini"
-                        aria-label={t.universeAria({ label: p.label })}
+                        aria-label={t.universeAria({ label: portDisplayLabel(device, p, m) })}
                         inputMode="numeric"
                         value={device.portState[p.id]?.universe !== undefined ? String(device.portState[p.id]!.universe) : ''}
                         onCommit={(v) => {

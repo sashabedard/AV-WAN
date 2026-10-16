@@ -8,6 +8,7 @@ import { useEffectiveFocus } from './useEffectiveFocus'
 import { usePortCompatibility } from './useConnectingFrom'
 import { projectStore } from '../store/projectStore'
 import { useLocked } from './staticView'
+import { portDisplayLabel } from '../model/rules'
 import { useT } from '../i18n/useT'
 import { InlineName } from './InlineName'
 
@@ -120,7 +121,7 @@ function SwitchNodeImpl({ id, data, selected }: NodeProps<DeviceFlowNode>) {
             position={facade.twoRows && p.row === 'top' ? Position.Top : Position.Bottom}
             className={`sw__handle${state ? ` port--${state}` : ''}`}
             style={{ left: p.x, top: p.y, width: p.w, height: p.h, transform: 'none' }}
-            title={m.canvas.tile.portTitle({ label: p.label })}
+            title={m.canvas.tile.portTitle({ label: portDisplayLabel(device, device.ports.find((q) => q.id === p.id) ?? { id: p.id, label: p.label, connector: 'rj45' }, m) })}
           />
         )
       })}

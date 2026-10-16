@@ -1,7 +1,7 @@
 // src/renderer/src/panels/inspector/LinkForm.tsx
 import type { Link, Medium, Project } from '../../model/types'
 import { projectStore } from '../../store/projectStore'
-import { connectorFamily, findPort, sameRef } from '../../model/rules'
+import { connectorFamily, findPort, portDisplayLabel, sameRef } from '../../model/rules'
 import { POE_LABELS, isNetworkMedium, linkPoe, linkVlanView, vlanEnds, type LinkVlanView } from '../../model/derive'
 import { mediumLabel, mediaForFamily } from '../../catalog/labels'
 import { CommitInput } from '../CommitInput'
@@ -96,7 +96,7 @@ export function LinkForm({ link, project }: { link: Link; project: Project }) {
     <div>
       <h2 className="insp__title">{t.title}</h2>
       <p className="insp__note" data-testid="link-ends">
-        {a ? `${a.device.name} · ${a.port.label}` : '?'} ⇄ {b ? `${b.device.name} · ${b.port.label}` : '?'}
+        {a ? `${a.device.name} · ${portDisplayLabel(a.device, a.port, m)}` : '?'} ⇄ {b ? `${b.device.name} · ${portDisplayLabel(b.device, b.port, m)}` : '?'}
       </p>
       <label className="field">
         <span className="field__label">{t.id}</span>
@@ -169,7 +169,7 @@ export function LinkForm({ link, project }: { link: Link; project: Project }) {
           <>
             {viaPort && (
               <p className="insp__note" data-testid="link-vlan-via">
-                {t.via({ device: viaPort.device.name, port: viaPort.port.label })}
+                {t.via({ device: viaPort.device.name, port: portDisplayLabel(viaPort.device, viaPort.port, m) })}
               </p>
             )}
             <label className="field">

@@ -1,3 +1,4 @@
+import { messages } from '../../../shared/i18n/messages'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { applyNodeChanges, type NodeChange } from '@xyflow/react'
 import type { Project } from '../model/types'
@@ -24,6 +25,6 @@ export function useStaticFlow(project: Project, theme: ThemeMode): StaticFlow {
   const [nodes, setNodes] = useState(derivedNodes)
   useEffect(() => setNodes((prev) => mergeNodes(derivedNodes, prev)), [derivedNodes])
   const onNodesChange = useCallback((changes: NodeChange<FlowNode>[]) => setNodes((ns) => applyNodeChanges(changes, ns)), [])
-  const edges = useMemo<CordFlowEdge[]>(() => toFlowEdges(project, analysis, cache), [project, analysis, cache])
+  const edges = useMemo<CordFlowEdge[]>(() => toFlowEdges(project, analysis, cache, messages(lang)), [project, analysis, cache, lang])
   return { nodes, edges, onNodesChange }
 }

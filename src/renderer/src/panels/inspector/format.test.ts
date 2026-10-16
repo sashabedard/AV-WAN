@@ -30,7 +30,7 @@ describe('peersOf', () => {
       { id: 'w1', cableId: 'C-001', a: { deviceId: a.id, portId: 'WIFI' }, b: { deviceId: ap.id, portId: 'WIFI' }, medium: 'wifi' },
       { id: 'w2', cableId: 'C-002', a: { deviceId: b.id, portId: 'WIFI' }, b: { deviceId: ap.id, portId: 'WIFI' }, medium: 'wifi' }
     )
-    expect(peersOf(p, ap, 'WIFI')).toBe('IOT-1 · Wi-Fi, IOT-2 · Wi-Fi')
-    expect(peersOf(p, ap, 'ETH')).toBe('—')
+    expect(peersOf(p, ap, 'WIFI', messages('fr'))).toBe('IOT-1 · Wi-Fi, IOT-2 · Wi-Fi')
+    expect(peersOf(p, ap, 'ETH', messages('fr'))).toBe('—')
   })
 })
