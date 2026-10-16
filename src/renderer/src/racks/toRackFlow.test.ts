@@ -34,7 +34,7 @@ describe('toRackFlow : nœuds', () => {
     const s = layoutRacks(p).slots.find((x) => x.deviceId === 'sw1')!
     const facade = switchFacade(p.devices[0]!.ports)
     expect(sw.position).toEqual({ x: s.x, y: s.y + (RACK_U_PX - facade.height) / 2 })
-    expect(sw.draggable).toBe(false)
+    expect(sw.draggable).toBe(true)
     expect(sw.data).toMatchObject({ device: p.devices[0], vlans: [40], ports: { '1': { linkId: 'l1' }, '2': { linkId: 'l2' } } })
     expect('poeUsage' in sw.data && sw.data.poeUsage).toEqual({ usedW: 25, budgetW: 60 })
   })
@@ -47,7 +47,7 @@ describe('toRackFlow : nœuds', () => {
     expect(mac.position).toEqual({ x: s.x, y: s.y })
     expect(mac.width).toBe(s.w)
     expect(mac.height).toBe(2 * RACK_U_PX)
-    expect(mac.draggable).toBe(false)
+    expect(mac.draggable).toBe(true)
     expect(mac.data).toMatchObject({ heightU: 2, ports: { ETH: { linkId: 'l2' } } })
   })
 

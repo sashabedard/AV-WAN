@@ -42,3 +42,13 @@
 
 /* Le coude d'un câble est une mise en page du schéma : la vue de baie ne l'affiche ni ne le modifie. */
 .racks .elbow-grip { display: none; }
+
+/* Liste « Pas encore en baie » à gauche, la vue à droite. */
+.racks { display: flex; }
+.racks__flow { position: relative; flex: 1; min-width: 0; }
+.racks__list { display: flex; flex-direction: column; gap: 8px; width: 200px; flex: none; padding: 12px; overflow-y: auto; border-right: 1px solid var(--line); background: var(--surface); }
+.racks__list-title { margin: 0; font: 600 10px var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.racks__list-empty { margin: 0; font: 12px/1.4 var(--font-mono); color: var(--muted); }
+.racks__items { display: flex; flex-direction: column; gap: 4px; margin: 0; padding: 0; list-style: none; }
+.racks__item { padding: 6px 8px; border: 1px solid var(--line); border-radius: 3px; background: var(--paper); font: 12px var(--font-mono); color: var(--ink); cursor: grab; }
+.racks__item:active { cursor: grabbing; }

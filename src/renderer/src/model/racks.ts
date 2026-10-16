@@ -105,3 +105,15 @@ export function setDeviceHeightU(project: Project, deviceId: string, heightU: nu
 export function rackDevices(project: Project, rackId: string): Device[] {
   return project.devices.filter((d) => d.rack?.rackId === rackId).sort((a, b) => a.rack!.u - b.rack!.u)
 }
+
+// Suppr dans la vue Baies (spec § 8.4) : retire de la baie, supprime les câbles, supprime les baies — en un seul projet.
+export function removeInRackView(project: Project, plan: { unplace: readonly string[]; removeLinks: readonly string[]; removeRacks: readonly string[] }): Project {
+  let p = project
+  for (const id of plan.unplace) p = unplaceDevice(p, id)
+  for (const id of plan.removeRacks) p = removeRack(p, id)
+  if (plan.removeLinks.length > 0) {
+    const ls = new Set(plan.removeLinks)
+    p = { ...p, links: p.links.filter((l) => !ls.has(l.id)) }
+  }
+  return p
+}

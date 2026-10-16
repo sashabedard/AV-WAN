@@ -108,7 +108,7 @@ function build(project: Project, theme: ThemeMode, m: Messages, cables: boolean)
     if (node.type === 'switch') {
       const facade = switchFacade(device.ports, { patchPanel: isPatchPanel(device) })
       const y = slot.y + Math.max(0, (slot.h - facade.height) / 2)
-      nodes.push({ ...node, position: { x: slot.x, y }, draggable: false })
+      nodes.push({ ...node, position: { x: slot.x, y }, draggable: true })
       for (const p of facade.ports) portY.set(portKey({ deviceId: device.id, portId: p.id }), y + p.y + p.h / 2)
       continue
     }
@@ -118,7 +118,7 @@ function build(project: Project, theme: ThemeMode, m: Messages, cables: boolean)
       position: { x: slot.x, y: slot.y },
       width: slot.w,
       height: slot.h,
-      draggable: false,
+      draggable: true,
       data: { device, template: node.data.template, ports: node.data.ports, vlans: node.data.vlans, heightU: device.rack!.heightU }
     })
     device.ports.forEach((p, i) => portY.set(portKey({ deviceId: device.id, portId: p.id }), slot.y + rackDevicePortY(i, device.ports.length, slot.h)))

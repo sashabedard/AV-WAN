@@ -13,9 +13,7 @@ import {
   applyNodeChanges,
   useNodesInitialized,
   useReactFlow,
-  type Connection,
   type EdgeChange,
-  type FinalConnectionState,
   type NodeChange,
   type OnNodeDrag,
   type OnSelectionChangeParams,
@@ -28,7 +26,7 @@ import { currentMessages, useT } from '../i18n/useT'
 import { TEMPLATE_MIME } from '../panels/Palette'
 import { analyzeLinks, createFlowCache, toFlowEdges, toFlowNodes, toFlowZones, type CordFlowEdge, type FlowNode } from './toFlow'
 import { GRID, mergeEdges, mergeNodes, nodesMatchDerived, snapPoint, syncSelected } from './canvasHelpers'
-import { clientPoint, connectionRefs, dropOnDevice, makeIsValidConnection, nodeIdAt, reconnectEnd, dropReconnectOnDevice, dropUnplugs, overPaneAt } from './connect'
+import { useCableHandlers } from './useCableHandlers'
 import { useAltKey } from './useAltKey'
 import { FIT_OPTIONS, pinCurrentView, registerViewport } from './viewport'
 import { arrowDelta, nudgeMoves } from './keyboard'
@@ -168,53 +166,7 @@ function CanvasInner() {
     )
   }, [])
 
-  const isValidConnection = useMemo(
-    () =>
-      makeIsValidConnection(
-        () => projectStore.getState().history.present,
-        () => uiStore.getState().reconnectingLinkId,
-        () => uiStore.getState().pointerOverPinned
-      ),
-    []
-  )
-  const onReconnectStart = useCallback((_e: ReactMouseEvent, edge: CordFlowEdge) => uiStore.getState().setReconnecting(edge.id), [])
-  const onReconnect = useCallback((oldEdge: CordFlowEdge, c: Connection) => {
-    const s = projectStore.getState()
-    const link = s.history.present.links.find((l) => l.id === oldEdge.id)
-    const move = link ? reconnectEnd(link, c) : null
-    if (move) s.reconnect(oldEdge.id, move.end, move.to)
-  }, [])
-  const onReconnectEnd = useCallback(() => uiStore.getState().setReconnecting(null), [])
-  const onConnect = useCallback((c: Connection) => {
-    const refs = connectionRefs(c)
-    if (refs) projectStore.getState().connect(refs[0], refs[1])
-  }, [])
-  const onConnectEnd = useCallback((event: MouseEvent | TouchEvent, state: FinalConnectionState) => {
-    if (state.isValid || !state.fromNode || !state.fromHandle?.id) return
-    const point = clientPoint(event)
-    if (!point) return
-    const targetId = nodeIdAt(document, point)
-    const s = projectStore.getState()
-    // onConnectEnd part avant onReconnectEnd : l'identifiant du câble est encore là.
-    const reconnecting = uiStore.getState().reconnectingLinkId
-    if (reconnecting && dropUnplugs(reconnecting, targetId, overPaneAt(document, point), uiStore.getState().pointerOverPinned)) {
-      s.removeElements([], [reconnecting])
-      const undo = window.avwan?.platform === 'darwin' ? '⌘Z' : 'Ctrl+Z'
-      s.showToast(currentMessages().app.toast.cableUnplugged({ undo }))
-      return
-    }
-    if (!targetId) return
-    const from = { deviceId: state.fromNode.id, portId: state.fromHandle.id }
-    if (reconnecting) {
-      const r = dropReconnectOnDevice(s.history.present, reconnecting, from, targetId)
-      if (r.ok) s.reconnect(reconnecting, r.end, r.to)
-      else if (r.message) s.showToast(r.message)
-      return
-    }
-    const res = dropOnDevice(s.history.present, from, targetId)
-    if (res.ok) s.connect(from, res.to)
-    else if (res.message) s.showToast(res.message)
-  }, [])
+  const { isValidConnection, onReconnectStart, onReconnect, onReconnectEnd, onConnect, onConnectEnd } = useCableHandlers()
 
   const place = useCallback(
     (templateId: string, client: { x: number; y: number }, alt = false) => {

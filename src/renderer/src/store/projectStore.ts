@@ -11,7 +11,7 @@ import { assignZones, createZone, moveZones, placeDevices, removeZones, resizeZo
 import { withTemplate } from '../model/customTemplate'
 import { autoAddress, autoAddressOnOpen } from '../model/daisyChain'
 import { ownNewKeys, removeProjectList, setProjectList, type ChannelKey } from '../model/dmxChannels'
-import { addRack as addRackModel, updateRack as updateRackModel, removeRack as removeRackModel, placeDevice, firstFreeU, unplaceDevice, setDeviceHeightU, RACK_HEIGHT_MAX } from '../model/racks'
+import { addRack as addRackModel, updateRack as updateRackModel, removeRack as removeRackModel, placeDevice, firstFreeU, unplaceDevice, setDeviceHeightU, removeInRackView, RACK_HEIGHT_MAX } from '../model/racks'
 import { uiStore } from './uiStore'
 import { currentLang, currentMessages } from '../i18n/useT'
 import type { Lang } from '../../../shared/i18n/lang'
@@ -66,6 +66,7 @@ export interface ProjectState {
   placeInRack(deviceId: string, rackId: string, u: number): boolean
   placeInRackFirstFree(deviceId: string, rackId: string): boolean
   unplaceFromRack(deviceId: string): void
+  removeInRackView(plan: { unplace: readonly string[]; removeLinks: readonly string[]; removeRacks: readonly string[] }): void
   setDeviceRackHeight(deviceId: string, heightU: number): boolean
   pasteFragment(fragment: Fragment, offset: { x: number; y: number }): string[]
   connect(a: PortRef, b: PortRef): string | null
@@ -285,6 +286,10 @@ export function createProjectStore(initial: Project = createProject(undefined, c
         return true
       },
       unplaceFromRack: (deviceId) => apply((p) => unplaceDevice(p, deviceId)),
+      removeInRackView: (plan) => {
+        apply((p) => removeInRackView(p, plan))
+        set({ selection: EMPTY_SELECTION })
+      },
       setDeviceRackHeight: (deviceId, heightU) => {
         if (refuseReadOnly()) return false
         const next = setDeviceHeightU(get().history.present, deviceId, heightU)

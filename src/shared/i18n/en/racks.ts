@@ -7,6 +7,9 @@ export const racks: Messages['racks'] = {
   addTitle: (p) => `Add a ${p.n}U rack`,
   units: (p) => `${p.n}U`,
   free: (p) => `${p.n}U free`,
+  unplacedTitle: 'Not in a rack yet',
+  unplacedFilter: 'Filter…',
+  unplacedEmpty: 'Every device is in a rack.',
   selectRack: (p) => `Select rack ${p.name}`,
   stub: (p) => `→ ${p.device} · ${p.port}`
 }

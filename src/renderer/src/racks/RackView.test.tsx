@@ -9,6 +9,8 @@ import { rackSample } from './__fixtures__/rackSample'
 import { sampleProject } from '../model/__fixtures__/sample'
 import type { AvwanApi } from '../../../shared/api'
 import { registerFlowInstance } from '../dev/e2eHooks'
+import { DEVICE_MIME } from './rackDelete'
+import { RACK_TITLE_H, RACK_U_PX } from './rackLayout'
 
 vi.mock('../dev/e2eHooks', async (orig) => ({ ...(await orig<typeof import('../dev/e2eHooks')>()), registerFlowInstance: vi.fn() }))
 
@@ -157,5 +159,46 @@ describe('Review Focus 4 : basculer Schéma ↔ Baies garde la sélection et l�
     expect(screen.getByTestId('rack-device-MAC-1')).toBeTruthy()
     await new Promise((r) => setTimeout(r, 20))
     expect(vi.mocked(registerFlowInstance)).not.toHaveBeenCalled()
+  })
+  it('la liste « Pas encore en baie » montre CAM-1, pas les appareils déjà en baie', () => {
+    render(<RackView />)
+    expect(screen.getByTestId('unplaced-CAM-1')).toBeTruthy()
+    expect(screen.queryByTestId('unplaced-MAC-1')).toBeNull()
+  })
+
+  const dropAt = (u: number, id: string) => {
+    const flow = document.querySelector('.react-flow') as HTMLElement
+    // jsdom n'a pas DragEvent : un événement nu porte les coordonnées et le dataTransfer.
+    const ev = Object.assign(new Event('drop', { bubbles: true, cancelable: true }), { clientX: 40, clientY: RACK_TITLE_H + (12 - u) * RACK_U_PX + RACK_U_PX / 2, dataTransfer: { types: [DEVICE_MIME], getData: () => id } })
+    act(() => {
+      flow.dispatchEvent(ev)
+    })
+  }
+
+  it('déposer CAM-1 au centre de l’U5 le place en U5', () => {
+    render(<RackView />)
+    const cam = projectStore.getState().history.present.devices.find((d) => d.name === 'CAM-1')!
+    dropAt(5, cam.id)
+    expect(projectStore.getState().history.present.devices.find((d) => d.id === cam.id)!.rack).toEqual({ rackId: 'r1', u: 5, heightU: 1 })
+  })
+
+  it('déposer sur une fente occupée (U3, MAC-1) : rien ne bouge, toast « pas assez de U »', () => {
+    render(<RackView />)
+    const cam = projectStore.getState().history.present.devices.find((d) => d.name === 'CAM-1')!
+    const before = projectStore.getState().history.present
+    dropAt(3, cam.id)
+    expect(projectStore.getState().history.present).toBe(before)
+    expect(projectStore.getState().toast).toMatch(/U libres/)
+  })
+
+  it('Suppr sur MAC-1 : il quitte la baie, reste dans le projet avec ses câbles, et ⌘Z le remet', async () => {
+    render(<RackView />)
+    act(() => projectStore.getState().setSelection({ deviceIds: ['mac'], linkIds: [] }))
+    fireEvent.keyDown(document.body, { key: 'Delete' })
+    await vi.waitFor(() => expect(projectStore.getState().history.present.devices.find((d) => d.id === 'mac')!.rack).toBeUndefined())
+    const p = projectStore.getState().history.present
+    expect(p.links.some((l) => l.id === 'l2')).toBe(true)
+    act(() => projectStore.getState().undo())
+    expect(projectStore.getState().history.present.devices.find((d) => d.id === 'mac')!.rack).toEqual({ rackId: 'r1', u: 3, heightU: 2 })
   })
 })

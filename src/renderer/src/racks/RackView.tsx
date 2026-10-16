@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type MouseEvent as ReactMouseEvent } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type DragEvent, type MouseEvent as ReactMouseEvent } from 'react'
 import {
   ConnectionMode,
   Controls,
@@ -11,6 +11,7 @@ import {
   useReactFlow,
   type EdgeChange,
   type NodeChange,
+  type OnNodeDrag,
   type OnSelectionChangeParams,
   type ReactFlowInstance,
   type Viewport
@@ -20,6 +21,7 @@ import { uiStore } from '../store/uiStore'
 import { useThemeMode } from '../theme/useThemeMode'
 import { useT } from '../i18n/useT'
 import { DEFAULT_RACK_HEIGHT } from '../model/racks'
+import { useCableHandlers } from '../canvas/useCableHandlers'
 import type { CordFlowEdge } from '../canvas/toFlow'
 import { mergeEdges, mergeNodes, nodesMatchDerived, syncSelected } from '../canvas/canvasHelpers'
 import { FIT_OPTIONS, registerViewport } from '../canvas/viewport'
@@ -31,6 +33,9 @@ import { RackNode } from './RackNode'
 import { RackDeviceNode } from './RackDeviceNode'
 import { StubNode } from './StubNode'
 import { toRackFlow, type RackFlowNode } from './toRackFlow'
+import { RACK_U_PX, rackAt } from './rackLayout'
+import { DEVICE_MIME, rackViewDelete } from './rackDelete'
+import { UnplacedList } from './UnplacedList'
 import '../canvas/canvas.css'
 import './racks.css'
 
@@ -38,6 +43,8 @@ const nodeTypes = { rack: RackNode, switch: SwitchNode, rackDevice: RackDeviceNo
 const edgeTypes = { cord: CordEdge }
 const PRO_OPTIONS = { hideAttribution: true }
 const MULTI_SELECT_KEYS = ['Shift', 'Meta', 'Control']
+const DELETE_KEYS = ['Backspace', 'Delete']
+const RECONNECT_RADIUS = 20
 const EMPTY: Selection = { deviceIds: [], linkIds: [] }
 
 const isDevice = (n: RackFlowNode): boolean => n.type === 'switch' || n.type === 'rackDevice'
@@ -92,6 +99,50 @@ function RackFlow() {
   }, [])
   const onNodeMouseLeave = useCallback(() => uiStore.getState().setHoverDevice(null), [])
 
+  const cable = useCableHandlers()
+  const { screenToFlowPosition } = useReactFlow()
+  // Un dépôt refusé ou hors baie : le nœud revient à sa place (les positions viennent du projet).
+  const [dropTick, setDropTick] = useState(0)
+  useEffect(() => {
+    if (dropTick > 0) setNodes((prev) => mergeNodes(derived.nodes, prev))
+  }, [dropTick, derived.nodes])
+  const onNodeDragStop: OnNodeDrag<RackFlowNode> = useCallback((_e, node) => {
+    const s = projectStore.getState()
+    const device = s.history.present.devices.find((d) => d.id === node.id)
+    if (device) {
+      const heightU = device.rack?.heightU ?? 1
+      const h = heightU * RACK_U_PX
+      const hit = rackAt(s.history.present, { x: node.position.x + 20, y: node.position.y + h - RACK_U_PX / 2 }, heightU)
+      if (hit && (hit.rackId !== device.rack?.rackId || hit.u !== device.rack?.u)) s.placeInRack(device.id, hit.rackId, hit.u)
+    }
+    setDropTick((t) => t + 1)
+  }, [])
+  const onDragOver = useCallback((e: DragEvent) => {
+    if (!e.dataTransfer.types.includes(DEVICE_MIME)) return
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'move'
+  }, [])
+  const onDrop = useCallback(
+    (e: DragEvent) => {
+      const id = e.dataTransfer.getData(DEVICE_MIME)
+      if (!id) return
+      e.preventDefault()
+      const s = projectStore.getState()
+      const device = s.history.present.devices.find((d) => d.id === id)
+      if (!device) return
+      const hit = rackAt(s.history.present, screenToFlowPosition({ x: e.clientX, y: e.clientY }), device.rack?.heightU ?? 1)
+      if (hit) s.placeInRack(id, hit.rackId, hit.u)
+    },
+    [screenToFlowPosition]
+  )
+  // Suppr : un appareil quitte sa baie, un câble est supprimé, une baie est supprimée — une seule étape d'annulation.
+  const onBeforeDelete = useCallback(async () => {
+    const s = projectStore.getState()
+    const plan = rackViewDelete(s.selection)
+    if (plan.unplace.length + plan.removeLinks.length + plan.removeRacks.length > 0) s.removeInRackView(plan)
+    return false
+  }, [])
+
   // Cadrage propre à la vue (spec § 8.8) : rétabli au montage, gardé à la fin de chaque déplacement,
   // cadré sur les baies au premier affichage d'un document. Les commandes Zoom du menu suivent cette vue ;
   // les crochets e2e restent ceux du schéma (pas de registerFlowInstance ici).
@@ -111,6 +162,8 @@ function RackFlow() {
 
   return (
     <div className={`racks${project.settings.colorMode === 'port' ? ' canvas--port' : ''}`} role="region" aria-label={m.racks.viewLabel}>
+      <UnplacedList disabled={readOnly} />
+      <div className="racks__flow">
       <ReactFlow<RackFlowNode, CordFlowEdge>
         id="racks"
         nodes={nodes}
@@ -127,11 +180,21 @@ function RackFlow() {
         onMoveEnd={onMoveEnd}
         {...(initialViewport ? { defaultViewport: initialViewport } : {})}
         connectionMode={ConnectionMode.Loose}
-        // Placer, déplacer, brancher et supprimer arrivent avec la Task 4 : rien ne bouge encore ici.
-        nodesDraggable={false}
-        nodesConnectable={false}
-        edgesReconnectable={false}
-        deleteKeyCode={null}
+        onNodeDragStop={onNodeDragStop}
+        onDragOver={onDragOver}
+        onDrop={onDrop}
+        onConnect={cable.onConnect}
+        onConnectEnd={cable.onConnectEnd}
+        isValidConnection={cable.isValidConnection}
+        onReconnectStart={cable.onReconnectStart}
+        onReconnect={cable.onReconnect}
+        onReconnectEnd={cable.onReconnectEnd}
+        onBeforeDelete={onBeforeDelete}
+        nodesDraggable={!readOnly}
+        nodesConnectable={!readOnly}
+        edgesReconnectable={!readOnly}
+        reconnectRadius={RECONNECT_RADIUS}
+        deleteKeyCode={readOnly ? null : DELETE_KEYS}
         elevateNodesOnSelect={false}
         multiSelectionKeyCode={MULTI_SELECT_KEYS}
         disableKeyboardA11y
@@ -147,6 +210,7 @@ function RackFlow() {
         </Panel>
       </ReactFlow>
       <Legend />
+      </div>
     </div>
   )
 }
