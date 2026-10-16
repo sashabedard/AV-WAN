@@ -55,7 +55,7 @@ appx:
   applicationId: AVWAN
   displayName: AV·WAN
   backgroundColor: '#1D2125'
-  languages: [fr-CA]
+  languages: [fr-CA, en-US]
   artifactName: AV-WAN-${version}-store.${ext}
 
 # Mises à jour automatiques : app-update.yml dans l'app, latest*.yml à côté des installeurs.
