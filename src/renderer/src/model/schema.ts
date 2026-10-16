@@ -107,6 +107,15 @@ export const PortStateSchema = z.object({
   note: z.string().optional()
 })
 
+export const RackSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  heightU: z.number().int().min(1).max(52),
+  zoneId: z.string().optional()
+})
+
+export const RackPlacementSchema = z.object({ rackId: z.string(), u: z.number().int().min(1), heightU: z.number().int().min(1).max(52) })
+
 export const DeviceSchema = z.object({
   id: z.string(),
   templateId: z.string(),
@@ -125,7 +134,8 @@ export const DeviceSchema = z.object({
   powerW: z.number().nonnegative().optional(),
   dmx: DmxPatchSchema.optional(),
   psu: PsuSchema.optional(),
-  ledStrip: LedStripSchema.optional()
+  ledStrip: LedStripSchema.optional(),
+  rack: RackPlacementSchema.optional()
 })
 
 const PortRefSchema = z.object({ deviceId: z.string(), portId: z.string() })
@@ -197,6 +207,7 @@ export const ProjectSchema = z.object({
   devices: z.array(DeviceSchema),
   links: z.array(LinkSchema),
   zones: z.array(ZoneSchema),
+  racks: z.array(RackSchema).optional(),
   templates: z.array(DeviceTemplateSchema),
   dmxChannels: z.array(DmxChannelListSchema).optional(),
   viewport: z.object({ x: z.number(), y: z.number(), zoom: z.number() }).optional()

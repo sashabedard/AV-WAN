@@ -39,7 +39,12 @@ export const model = {
     duplicateDevice: (p: { name: string }) => `Appareil en double ignoré : ${p.name}.`,
     duplicateCable: (p: { label: string }) => `Câble en double ignoré : ${p.label}.`,
     cableMissingEnd: (p: { label: string }) => `Câble ${p.label} ignoré : il référence un appareil ou un port absent.`,
-    cableBlocked: (p: { label: string }) => `Câble ${p.label} ignoré : port déjà occupé ou connecteurs incompatibles.`
+    cableBlocked: (p: { label: string }) => `Câble ${p.label} ignoré : port déjà occupé ou connecteurs incompatibles.`,
+    rackPlacementDropped: (p: { name: string }) => `${p.name} retiré de sa baie : baie absente ou place déjà prise.`,
+    duplicateRack: (p: { name: string }) => `Baie en double ignorée : ${p.name}.`
+  },
+  rack: {
+    defaultName: (p: { n: number }) => `BAIE-${p.n}`
   },
   example: {
     title: 'Installation interactive (exemple)',

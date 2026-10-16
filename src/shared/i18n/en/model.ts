@@ -38,7 +38,12 @@ export const model: Messages['model'] = {
     duplicateDevice: (p) => `Duplicate device ignored: ${p.name}.`,
     duplicateCable: (p) => `Duplicate cable ignored: ${p.label}.`,
     cableMissingEnd: (p) => `Cable ${p.label} ignored: it refers to a missing device or port.`,
-    cableBlocked: (p) => `Cable ${p.label} ignored: port already in use or incompatible connectors.`
+    cableBlocked: (p) => `Cable ${p.label} ignored: port already in use or incompatible connectors.`,
+    rackPlacementDropped: (p) => `${p.name} removed from its rack: missing rack or slot already taken.`,
+    duplicateRack: (p) => `Duplicate rack ignored: ${p.name}.`
+  },
+  rack: {
+    defaultName: (p) => `RACK-${p.n}`
   },
   example: {
     title: 'Interactive installation (example)',
