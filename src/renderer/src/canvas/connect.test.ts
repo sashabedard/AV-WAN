@@ -1,6 +1,6 @@
 // src/renderer/src/canvas/connect.test.ts
 import { describe, expect, it } from 'vitest'
-import { clientPoint, connectionRefs, dropOnDevice, makeIsValidConnection, nodeIdAt, reconnectEnd, dropReconnectOnDevice, dropUnplugs } from './connect'
+import { clientPoint, connectionRefs, dropOnDevice, makeIsValidConnection, nodeIdAt, reconnectEnd, dropReconnectOnDevice, dropUnplugs, overPaneAt } from './connect'
 import { sampleProject } from '../model/__fixtures__/sample'
 import { createDevice } from '../model/project'
 import type { Project } from '../model/types'
@@ -90,10 +90,18 @@ describe('dropReconnectOnDevice', () => {
 })
 
 describe('dropUnplugs', () => {
-  it('débranche seulement si un rebranchement est en cours et que rien n’est sous le point', () => {
-    expect(dropUnplugs('l1', null)).toBe(true)
-    expect(dropUnplugs('l1', 'sw1')).toBe(false)
-    expect(dropUnplugs(null, null)).toBe(false)
-    expect(dropUnplugs(null, 'sw1')).toBe(false)
+  it('débranche dans le vide du canvas avec un rebranchement en cours', () => {
+    expect(dropUnplugs('l1', null, true, false)).toBe(true)
+  })
+  it('ne fait rien sur un appareil, la vignette épinglée, un panneau ou sans rebranchement', () => {
+    expect(dropUnplugs('l1', 'sw1', true, false)).toBe(false)
+    expect(dropUnplugs('l1', null, true, true)).toBe(false)
+    expect(dropUnplugs('l1', null, false, false)).toBe(false)
+    expect(dropUnplugs(null, null, true, false)).toBe(false)
+  })
+  it('overPaneAt reconnaît le fond du canvas mais pas un panneau', () => {
+    const doc = (hit: boolean) => ({ elementFromPoint: () => ({ closest: () => (hit ? {} : null) }) }) as unknown as Pick<Document, 'elementFromPoint'>
+    expect(overPaneAt(doc(true), { x: 1, y: 1 })).toBe(true)
+    expect(overPaneAt(doc(false), { x: 1, y: 1 })).toBe(false)
   })
 })

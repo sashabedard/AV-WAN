@@ -28,7 +28,7 @@ import { currentMessages, useT } from '../i18n/useT'
 import { TEMPLATE_MIME } from '../panels/Palette'
 import { analyzeLinks, createFlowCache, toFlowEdges, toFlowNodes, toFlowZones, type CordFlowEdge, type FlowNode } from './toFlow'
 import { GRID, mergeEdges, mergeNodes, nodesMatchDerived, snapPoint, syncSelected } from './canvasHelpers'
-import { clientPoint, connectionRefs, dropOnDevice, makeIsValidConnection, nodeIdAt, reconnectEnd, dropReconnectOnDevice, dropUnplugs } from './connect'
+import { clientPoint, connectionRefs, dropOnDevice, makeIsValidConnection, nodeIdAt, reconnectEnd, dropReconnectOnDevice, dropUnplugs, overPaneAt } from './connect'
 import { useAltKey } from './useAltKey'
 import { FIT_OPTIONS, pinCurrentView, registerViewport } from './viewport'
 import { arrowDelta, nudgeMoves } from './keyboard'
@@ -189,16 +189,15 @@ function CanvasInner() {
     const targetId = nodeIdAt(document, point)
     const s = projectStore.getState()
     // onConnectEnd part avant onReconnectEnd : l'identifiant du câble est encore là.
-    const unplugging = uiStore.getState().reconnectingLinkId
-    if (unplugging && dropUnplugs(unplugging, targetId)) {
-      s.removeElements([], [unplugging])
+    const reconnecting = uiStore.getState().reconnectingLinkId
+    if (reconnecting && dropUnplugs(reconnecting, targetId, overPaneAt(document, point), uiStore.getState().pointerOverPinned)) {
+      s.removeElements([], [reconnecting])
       const undo = window.avwan?.platform === 'darwin' ? '⌘Z' : 'Ctrl+Z'
       s.showToast(currentMessages().app.toast.cableUnplugged({ undo }))
       return
     }
     if (!targetId) return
     const from = { deviceId: state.fromNode.id, portId: state.fromHandle.id }
-    const reconnecting = uiStore.getState().reconnectingLinkId
     if (reconnecting) {
       const r = dropReconnectOnDevice(s.history.present, reconnecting, from, targetId)
       if (r.ok) s.reconnect(reconnecting, r.end, r.to)

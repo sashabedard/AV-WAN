@@ -68,8 +68,13 @@ export function nodeIdAt(doc: Pick<Document, 'elementFromPoint'>, point: { x: nu
 }
 
 // Lâcher un bout de câble dans le vide (aucun appareil dessous) : le câble est débranché.
-export function dropUnplugs(reconnectingLinkId: string | null, targetId: string | null): boolean {
-  return reconnectingLinkId !== null && targetId === null
+// Seulement dans le vide du canvas : ni sur la vignette épinglée, ni sur un panneau, la mini-carte ou les contrôles.
+export function dropUnplugs(reconnectingLinkId: string | null, targetId: string | null, overPane: boolean, overPinned: boolean): boolean {
+  return reconnectingLinkId !== null && targetId === null && overPane && !overPinned
+}
+
+export function overPaneAt(doc: Pick<Document, 'elementFromPoint'>, point: { x: number; y: number }): boolean {
+  return doc.elementFromPoint(point.x, point.y)?.closest('.react-flow__pane, .react-flow__edge') != null
 }
 
 // Même chose pour un rebranchement : le câble déplacé est mis de côté, `fixed` est le bout qui reste.

@@ -52,3 +52,11 @@ describe('dictionnaires', () => {
     expect(out).toEqual([])
   })
 })
+
+describe('toast câble débranché', () => {
+  it('dit le raccourci d’annulation en français et en anglais', () => {
+    expect(fr.app.toast.cableUnplugged({ undo: '⌘Z' })).toBe('Câble débranché · ⌘Z pour annuler')
+    expect(en.app.toast.cableUnplugged({ undo: '⌘Z' })).toBe('Cable unplugged · ⌘Z to undo')
+    expect(en.app.toast.cableUnplugged({ undo: 'Ctrl+Z' })).toBe('Cable unplugged · Ctrl+Z to undo')
+  })
+})
