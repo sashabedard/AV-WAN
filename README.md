@@ -199,3 +199,4 @@ C'est l'acronyme d'**A**udio-**V**idéo · **W**iring, **A**ddressing, **N**etwo
 - **L'application** est gratuite pour tout usage, y compris professionnel, téléchargée depuis la page [Releases](https://github.com/sashabedard/AV-WAN/releases).
 - **Le code source** est publié pour consultation seulement : le copier, le modifier ou le redistribuer demande une permission écrite.
 - **Mention obligatoire** pour toute présentation ou publication : « AV·WAN — © 2026 Sasha Bédard — https://github.com/sashabedard/AV-WAN ».
+- **Confidentialité** : AV·WAN ne collecte aucune donnée. Voir [PRIVACY.md](PRIVACY.md).
