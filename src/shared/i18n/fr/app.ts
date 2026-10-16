@@ -46,6 +46,7 @@ export const app = {
     connectBlocked: (p: { family: string }) => `Branchement impossible : port occupé ou connecteurs ${p.family} incompatibles.`,
     connectImpossible: 'Branchement impossible.',
     reconnectImpossible: 'Rebranchement impossible : port occupé ou connecteurs incompatibles.',
+    cableUnplugged: (p: { undo: string }) => `Câble débranché · ${p.undo} pour annuler`,
     vlanExists: (p: { id: number }) => `Le VLAN ${p.id} existe déjà.`,
     vlanInvalid: 'Numéro de VLAN invalide : choisissez un nombre de 1 à 4094.'
   }

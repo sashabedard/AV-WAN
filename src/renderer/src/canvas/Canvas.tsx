@@ -28,7 +28,7 @@ import { currentMessages, useT } from '../i18n/useT'
 import { TEMPLATE_MIME } from '../panels/Palette'
 import { analyzeLinks, createFlowCache, toFlowEdges, toFlowNodes, toFlowZones, type CordFlowEdge, type FlowNode } from './toFlow'
 import { GRID, mergeEdges, mergeNodes, nodesMatchDerived, snapPoint, syncSelected } from './canvasHelpers'
-import { clientPoint, connectionRefs, dropOnDevice, makeIsValidConnection, nodeIdAt, reconnectEnd, dropReconnectOnDevice } from './connect'
+import { clientPoint, connectionRefs, dropOnDevice, makeIsValidConnection, nodeIdAt, reconnectEnd, dropReconnectOnDevice, dropUnplugs, overPaneAt } from './connect'
 import { useAltKey } from './useAltKey'
 import { FIT_OPTIONS, pinCurrentView, registerViewport } from './viewport'
 import { arrowDelta, nudgeMoves } from './keyboard'
@@ -62,7 +62,7 @@ const CONNECTION_LINE_STYLE = { stroke: 'var(--accent)', strokeWidth: 3 }
 const PRO_OPTIONS = { hideAttribution: true }
 const MULTI_SELECT_KEYS = ['Shift', 'Meta', 'Control']
 const MINIMAP_STYLE = { left: 46 }
-const RECONNECT_RADIUS = 12
+const RECONNECT_RADIUS = 20
 const POPOVER_SIZE = { w: 336, h: 420 }
 const isZone = (n: { type?: string }): boolean => n.type === 'zone'
 function minimapNodeClass(node: FlowNode): string {
@@ -187,10 +187,17 @@ function CanvasInner() {
     const point = clientPoint(event)
     if (!point) return
     const targetId = nodeIdAt(document, point)
-    if (!targetId) return
     const s = projectStore.getState()
-    const from = { deviceId: state.fromNode.id, portId: state.fromHandle.id }
+    // onConnectEnd part avant onReconnectEnd : l'identifiant du câble est encore là.
     const reconnecting = uiStore.getState().reconnectingLinkId
+    if (reconnecting && dropUnplugs(reconnecting, targetId, overPaneAt(document, point), uiStore.getState().pointerOverPinned)) {
+      s.removeElements([], [reconnecting])
+      const undo = window.avwan?.platform === 'darwin' ? '⌘Z' : 'Ctrl+Z'
+      s.showToast(currentMessages().app.toast.cableUnplugged({ undo }))
+      return
+    }
+    if (!targetId) return
+    const from = { deviceId: state.fromNode.id, portId: state.fromHandle.id }
     if (reconnecting) {
       const r = dropReconnectOnDevice(s.history.present, reconnecting, from, targetId)
       if (r.ok) s.reconnect(reconnecting, r.end, r.to)

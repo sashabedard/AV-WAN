@@ -121,6 +121,7 @@ function CordEdgeImpl({ sourceX, sourceY, targetX, targetY, sourcePosition, targ
             const r = bootRect(x, y, side)
             return <rect key={`boot-${i}`} x={r.x} y={r.y} width={r.w} height={r.h} rx={1.5} fill={style.color} />
           })}
+        {!locked && ends.map(([x, y], i) => <circle key={`plug-${i}`} className="cord__plug" cx={x} cy={y} r={5} />)}
         {style.bands.length > 0 &&
           marks.flatMap(([x, y, side], i) =>
             bandRects(x, y, side, style.bands, style.width).map((b, j) => (
