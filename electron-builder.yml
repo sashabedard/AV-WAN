@@ -16,6 +16,7 @@ fileAssociations:
     name: Projet AV·WAN
     description: Projet AV·WAN
     role: Editor
+    mimeType: application/x-avwan
     icon: icon
 
 mac:
