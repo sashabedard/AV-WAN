@@ -1,5 +1,5 @@
 import type { Device, PortDef, Project, Side } from './types'
-import { isRackDevice } from './rules'
+import { isPatchPanel, isRackDevice } from './rules'
 
 export interface NodeSize {
   w: number
@@ -17,8 +17,8 @@ export function estimateNodeSize(device: Device): NodeSize {
   // Colonnes = la rangée la plus longue (copie de canvas/switchFacade.ts, sans dépendre du canvas).
   const perRow = (list: PortDef[]): number =>
     twoRows ? Math.max(list.filter((p) => p.row === 'top').length, list.filter((p) => p.row !== 'top').length) : list.length
-  // oreille 12 + marge 28 + pas 20 par colonne RJ45 (+ 14 + 22 par colonne SFP+) + marge 22 + oreille 12
-  return { w: 12 + 28 + perRow(rj) * 20 + (sfp.length > 0 ? 14 + perRow(sfp) * 22 : 0) + 22 + 12, h: twoRows ? 92 : 66 }
+  // oreille 12 + marge 28 (46 pour un panneau, qui loge « ARRIÈRE ») + pas 20 par colonne RJ45 (+ 14 + 22 par colonne SFP+) + marge 22 + oreille 12
+  return { w: 12 + (isPatchPanel(device) ? 46 : 28) + perRow(rj) * 20 + (sfp.length > 0 ? 14 + perRow(sfp) * 22 : 0) + 22 + 12, h: twoRows ? 92 : 66 }
 }
 
 function centre(device: Device, sizeOf: SizeOf): { x: number; y: number } {

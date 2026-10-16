@@ -252,11 +252,11 @@ export function nextFreeAddress(index: PatchIndex, universe: number, footprint: 
 // Code de la source « univers tapé » (anglais, jamais affiché tel quel) ; une source par câble donne « Appareil › port », un nom propre.
 export const TYPED_SOURCE = 'typed'
 
-export function sourceLabel(project: Project, source: UniverseSource, m?: Messages): string {
+export function sourceLabel(project: Project, source: UniverseSource, m: Messages): string {
   if (source.kind === 'typed') return TYPED_SOURCE
   const device = project.devices.find((d) => d.id === source.ref.deviceId)
   const port = device?.ports.find((p) => p.id === source.ref.portId)
-  return `${device?.name ?? '?'} › ${port ? (m && device ? portDisplayLabel(device, port, m) : port.label) : source.ref.portId}`
+  return `${device?.name ?? '?'} › ${port ? (device ? portDisplayLabel(device, port, m) : port.label) : source.ref.portId}`
 }
 
 // Libellé affiché d'un résultat de sourceLabel : le code devient un texte de la langue, un chemin d'appareil reste tel quel.

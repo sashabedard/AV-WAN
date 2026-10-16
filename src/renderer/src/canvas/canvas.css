@@ -42,9 +42,15 @@
 .sw__led { fill: var(--led-off); }
 .sw__led--link { fill: var(--led-link); }
 .sw__led--poe { fill: var(--led-poe); }
+.sw__row { fill: var(--port-num); font: 500 6.5px var(--font-mono); letter-spacing: 0.04em; }
+.sw__tie { stroke-width: 1.4; stroke-linecap: round; }
+.sw__tie--complete { stroke: var(--led-link); }
+.sw__tie--partial { stroke: var(--accent); stroke-dasharray: 2 1.6; }
+.sw__tie--empty { stroke: var(--port-stroke); }
 .sw__num { fill: var(--port-num); font: 500 7.5px var(--font-mono); }
 .react-flow__handle.sw__handle { min-width: 0; min-height: 0; border: none; border-radius: 2px; background: transparent; }
-.react-flow__handle.sw__handle:hover { box-shadow: 0 0 0 1.5px var(--accent); }
+.react-flow__handle.sw__handle:hover,
+.react-flow__handle.sw__handle.port--twin { box-shadow: 0 0 0 1.5px var(--accent); }
 .react-flow__handle.sw__handle.port--compatible { box-shadow: 0 0 0 2px var(--accent); }
 .react-flow__handle.sw__handle.port--dim { background: var(--port-dim); }
 

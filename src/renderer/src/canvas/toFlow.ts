@@ -3,7 +3,7 @@ import type { Edge, Node } from '@xyflow/react'
 import type { Device, DeviceTemplate, Link, PortRef, Project, Side, Zone } from '../model/types'
 import { getTemplate } from '../catalog'
 import { resolvePortSide } from '../model/layout'
-import { findPort, isRackDevice, portDisplayLabel, sameRef } from '../model/rules'
+import { findPort, isPatchPanel, isRackDevice, portDisplayLabel, sameRef } from '../model/rules'
 import { POE_LABELS, linkPoe, linkVlanIds } from '../model/derive'
 import { NEUTRAL, cordStyle, type CordStyle, type ThemeMode } from './cordStyle'
 import { patchIndex } from '../model/dmx'
@@ -148,7 +148,7 @@ export function cordTag(project: Project, link: Link, m: Messages): string {
 export function cordExit(project: Project, ref: PortRef): number {
   const found = findPort(project, ref)
   if (!found || !isRackDevice(found.device)) return 0
-  const facade = switchFacade(found.device.ports)
+  const facade = switchFacade(found.device.ports, { patchPanel: isPatchPanel(found.device) })
   const port = facade.ports.find((p) => p.id === ref.portId)
   return port ? facadeExit(facade, port) : 0
 }

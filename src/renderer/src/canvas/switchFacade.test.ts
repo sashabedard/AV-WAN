@@ -93,3 +93,32 @@ describe('facadeLabels', () => {
     }
   })
 })
+
+describe('switchFacade — panneau de brassage', () => {
+  const ports = patchPanelPorts(24)
+  const f = switchFacade(ports, { patchPanel: true })
+  const at = (id: string) => f.ports.find((p) => p.id === id)!
+
+  it('24 traits ; la position 3 relie le bas de A3 au haut de R3, au centre de la colonne', () => {
+    expect(f.ties).toHaveLength(24)
+    const tie = f.ties!.find((t) => t.position === 3)!
+    expect(tie).toMatchObject({ front: 'A3', back: 'R3', x: at('A3').x + at('A3').w / 2, y1: at('A3').y + at('A3').h, y2: at('R3').y })
+    expect(at('A3').x).toBe(at('R3').x)
+  })
+
+  it('un numéro par position : sur la prise avant seulement', () => {
+    expect(at('A3').number).toBe('3')
+    expect(at('R3').number).toBeUndefined()
+  })
+
+  it('marge gauche élargie et étiquettes de rangée', () => {
+    expect(f.width).toBeGreaterThan(switchFacade(ports).width)
+    expect(f.rowLabelX).toBeDefined()
+  })
+
+  it('sans l’option : ni traits, ni changement de numéro', () => {
+    const sw = switchFacade(buildSwitchPorts({ portCount: 24, poe: 'none', sfpPlus: 0, managed: true }))
+    expect(sw.ties).toBeUndefined()
+    expect(sw.ports.find((p) => p.id === '1')!.number).toBe('1')
+  })
+})
