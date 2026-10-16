@@ -64,7 +64,7 @@ describe('parseFragment', () => {
 })
 
 describe('composantes perso dans le presse-papiers', () => {
-  const lidar = templateFromDraft({ ...blankDraft(), name: 'Capteur LiDAR', code: 'LID', ports: [{ label: 'ETH', connector: 'rj45', poe: 'none' }] }, 'custom-lidar00001')
+  const lidar = templateFromDraft({ ...blankDraft(), name: 'Capteur LiDAR', code: 'LID', ports: [{ label: 'ETH', connector: 'rj45', poe: 'none' }] }, 'custom-lidar00001', 'fr')
 
   function sourceWithLidar() {
     const p = withTemplate(sampleProject(), lidar)

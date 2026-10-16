@@ -90,8 +90,8 @@ describe('Palette', () => {
   })
 })
 
-const balise = templateFromDraft({ ...blankDraft(), name: 'Balise Wi-Fi', code: 'BAL' }, 'custom-balise0001')
-const capteur = templateFromDraft({ ...blankDraft(), name: 'Capteur LiDAR', code: 'LID' }, 'custom-capteur001')
+const balise = templateFromDraft({ ...blankDraft(), name: 'Balise Wi-Fi', code: 'BAL' }, 'custom-balise0001', 'fr')
+const capteur = templateFromDraft({ ...blankDraft(), name: 'Capteur LiDAR', code: 'LID' }, 'custom-capteur001', 'fr')
 
 function projectUsing(t: typeof capteur) {
   const base = sampleProject()

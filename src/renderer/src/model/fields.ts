@@ -28,7 +28,7 @@ export function parseIntField(text: string, min: number, max: number): number | 
 // En anglais, « 1,200 » ou « 12,345.5 » (virgules de milliers, décimales au point) se lit comme l'affichage anglais ; tout le reste : virgule ou point décimal.
 const EN_GROUPED = /^\d{1,3}(,\d{3})+(\.\d+)?$/
 
-export function parseDecimalField(text: string, positive = false, lang: Lang = 'fr'): number | null | undefined {
+export function parseDecimalField(text: string, positive: boolean, lang: Lang): number | null | undefined {
   const trimmed = text.trim()
   if (trimmed === '') return null
   const t = lang === 'en' && EN_GROUPED.test(trimmed) ? trimmed.replace(/,/g, '') : withoutThousands(trimmed)?.replace(',', '.')

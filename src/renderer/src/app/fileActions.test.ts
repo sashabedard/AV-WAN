@@ -335,7 +335,7 @@ describe('enregistrer un projet avec des composantes', () => {
   it('n’écrit que les composantes utilisées, sans toucher au projet ouvert', async () => {
     const api = fakeApi()
     vi.stubGlobal('window', { avwan: api, confirm: () => true })
-    const unused = templateFromDraft({ ...blankDraft(), name: 'Inutile', code: 'INU' }, 'custom-inutile001')
+    const unused = templateFromDraft({ ...blankDraft(), name: 'Inutile', code: 'INU' }, 'custom-inutile001', 'fr')
     projectStore.getState().apply((p) => ({ ...p, templates: [unused] }))
     await saveProjectAction()
     const written = JSON.parse(vi.mocked(api.file.save).mock.calls[0]![1]) as { templates: unknown[] }

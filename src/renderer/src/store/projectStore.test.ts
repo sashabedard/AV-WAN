@@ -360,7 +360,7 @@ describe('documents restaurés et sans titre', () => {
 describe('placer une composante perso', () => {
   it('l’embarque une seule fois et nomme les appareils avec son code', () => {
     const store = createProjectStore()
-    const lidar = templateFromDraft({ ...blankDraft(), name: 'Capteur LiDAR', code: 'LID', ports: [{ label: 'ETH', connector: 'rj45', poe: 'in-af' }] }, 'custom-lidar00001')
+    const lidar = templateFromDraft({ ...blankDraft(), name: 'Capteur LiDAR', code: 'LID', ports: [{ label: 'ETH', connector: 'rj45', poe: 'in-af' }] }, 'custom-lidar00001', 'fr')
     store.getState().addDevice(lidar.id, { x: 0, y: 0 }, { template: lidar })
     store.getState().addDevice(lidar.id, { x: 200, y: 0 }, { template: lidar })
     const p = store.getState().history.present

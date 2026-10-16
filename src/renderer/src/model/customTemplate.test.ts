@@ -70,13 +70,13 @@ describe('ports', () => {
 
 describe('validation', () => {
   it('exige un nom, un code de 1 à 4 caractères et des ports nommés', () => {
-    expect(validateDraft(lidar(), messages('fr').componentEditor.errors)).toEqual({})
-    expect(validateDraft({ ...lidar(), name: '  ' }, messages('fr').componentEditor.errors).name).toBe('Donnez un nom à la composante.')
-    expect(validateDraft({ ...lidar(), name: 'x'.repeat(61) }, messages('fr').componentEditor.errors).name).toBe('60 caractères au plus.')
-    expect(validateDraft({ ...lidar(), code: '' }, messages('fr').componentEditor.errors).code).toBe('De 1 à 4 lettres ou chiffres.')
-    expect(validateDraft({ ...lidar(), ports: [{ label: ' ', connector: 'rj45', poe: 'none' }] }, messages('fr').componentEditor.errors).ports).toBe('Chaque port a besoin d’un nom.')
+    expect(validateDraft(lidar(), messages('fr').componentEditor.errors, 'fr')).toEqual({})
+    expect(validateDraft({ ...lidar(), name: '  ' }, messages('fr').componentEditor.errors, 'fr').name).toBe('Donnez un nom à la composante.')
+    expect(validateDraft({ ...lidar(), name: 'x'.repeat(61) }, messages('fr').componentEditor.errors, 'fr').name).toBe('60 caractères au plus.')
+    expect(validateDraft({ ...lidar(), code: '' }, messages('fr').componentEditor.errors, 'fr').code).toBe('De 1 à 4 lettres ou chiffres.')
+    expect(validateDraft({ ...lidar(), ports: [{ label: ' ', connector: 'rj45', poe: 'none' }] }, messages('fr').componentEditor.errors, 'fr').ports).toBe('Chaque port a besoin d’un nom.')
     const tooMany = [...addPortBatch([], 'rj45', 64), { label: 'X', connector: 'usb' as const, poe: 'none' as const }]
-    expect(validateDraft({ ...lidar(), ports: tooMany }, messages('fr').componentEditor.errors).ports).toBe('64 ports au plus.')
+    expect(validateDraft({ ...lidar(), ports: tooMany }, messages('fr').componentEditor.errors, 'fr').ports).toBe('64 ports au plus.')
   })
 
   it('met le code en majuscules sans accents ni symboles, 4 caractères au plus', () => {
@@ -89,7 +89,7 @@ describe('templateFromDraft', () => {
   it('produit un gabarit perso valide, avec le PoE seulement sur RJ45', () => {
     const id = newCustomId()
     const draft = { ...lidar(), vendor: ' ', model: ' VLP-16 ', ports: [...lidar().ports, { label: 'HDMI', connector: 'hdmi' as const, poe: 'out-at' as const }] }
-    const t = templateFromDraft(draft, id)
+    const t = templateFromDraft(draft, id, 'fr')
     expect(DeviceTemplateSchema.parse(t)).toEqual(t)
     expect(t).toMatchObject({ id, name: 'Capteur LiDAR', code: 'LID', category: 'capteur', model: 'VLP-16', isCustom: true })
     expect(t.vendor).toBeUndefined()
@@ -104,7 +104,7 @@ describe('templateFromDraft', () => {
     const a = newCustomId()
     expect(a).toMatch(CUSTOM_ID)
     expect(newCustomId()).not.toBe(a)
-    const copy = duplicateTemplate(templateFromDraft(lidar(), a), messages('fr').componentEditor.copySuffix, 'fr')
+    const copy = duplicateTemplate(templateFromDraft(lidar(), a, 'fr'), messages('fr').componentEditor.copySuffix, 'fr')
     expect(copy.id).toMatch(CUSTOM_ID)
     expect(copy.id).not.toBe(a)
     expect(copy.name).toBe('Capteur LiDAR (copie)')
@@ -112,8 +112,8 @@ describe('templateFromDraft', () => {
 })
 
 describe('composantes d’un projet', () => {
-  const t1 = templateFromDraft(lidar(), 'custom-aaaaaaaaaaaa')
-  const t2 = templateFromDraft({ ...lidar(), name: 'Autre' }, 'custom-bbbbbbbbbbbb')
+  const t1 = templateFromDraft(lidar(), 'custom-aaaaaaaaaaaa', 'fr')
+  const t2 = templateFromDraft({ ...lidar(), name: 'Autre' }, 'custom-bbbbbbbbbbbb', 'fr')
 
   it('withTemplate embarque une seule fois', () => {
     const p = withTemplate(sampleProject(), t1)
@@ -143,7 +143,7 @@ describe('duplicateTemplate', () => {
   })
 
   it('le suffixe « (copie) » reste visible, même pour un nom de 60 caractères', () => {
-    const copy = duplicateTemplate({ ...templateFromDraft(lidar(), 'custom-aaaaaaaaaaaa'), name: 'x'.repeat(60) }, messages('fr').componentEditor.copySuffix, 'fr')
+    const copy = duplicateTemplate({ ...templateFromDraft(lidar(), 'custom-aaaaaaaaaaaa', 'fr'), name: 'x'.repeat(60) }, messages('fr').componentEditor.copySuffix, 'fr')
     expect(copy.name).toHaveLength(60)
     expect(copy.name.endsWith(' (copie)')).toBe(true)
   })
@@ -153,26 +153,35 @@ describe('patch et puissance d’une composante', () => {
   const base = (): TemplateDraft => ({ ...blankDraft(), name: 'Lyre', code: 'MH' })
 
   it('écrit les canaux et la puissance', () => {
-    const t = templateFromDraft({ ...base(), patchable: true, footprint: '16', powerW: '470,5' }, 'custom-abcdef123456')
+    const t = templateFromDraft({ ...base(), patchable: true, footprint: '16', powerW: '470,5' }, 'custom-abcdef123456', 'fr')
     expect(t.dmx).toEqual({ footprint: 16 })
     expect(t.powerW).toBe(470.5)
   })
 
   it('sans case cochée ni puissance, rien n’est écrit', () => {
-    const t = templateFromDraft({ ...base(), patchable: false, footprint: '16', powerW: '' }, 'custom-abcdef123456')
+    const t = templateFromDraft({ ...base(), patchable: false, footprint: '16', powerW: '' }, 'custom-abcdef123456', 'fr')
     expect(t.dmx).toBeUndefined()
     expect(t.powerW).toBeUndefined()
   })
 
   it('valide les canaux seulement quand la case est cochée', () => {
-    expect(validateDraft({ ...base(), patchable: true, footprint: '600' }, messages('fr').componentEditor.errors).dmx).toBe('Canaux : un nombre entier de 1 à 512.')
-    expect(validateDraft({ ...base(), patchable: false, footprint: '600' }, messages('fr').componentEditor.errors).dmx).toBeUndefined()
-    expect(validateDraft({ ...base(), powerW: 'beaucoup' }, messages('fr').componentEditor.errors).power).toBe('Puissance : un nombre positif ou nul, en watts.')
+    expect(validateDraft({ ...base(), patchable: true, footprint: '600' }, messages('fr').componentEditor.errors, 'fr').dmx).toBe('Canaux : un nombre entier de 1 à 512.')
+    expect(validateDraft({ ...base(), patchable: false, footprint: '600' }, messages('fr').componentEditor.errors, 'fr').dmx).toBeUndefined()
+    expect(validateDraft({ ...base(), powerW: 'beaucoup' }, messages('fr').componentEditor.errors, 'fr').power).toBe('Puissance : un nombre positif ou nul, en watts.')
   })
 
   it('reprend le patch et la puissance d’un gabarit', () => {
     const fixture = TEMPLATES.find((t) => t.id === 'dmx-fixture')!
     expect(draftFrom(fixture, 'fr')).toMatchObject({ patchable: true, footprint: '1', powerW: '' })
     expect(draftFrom({ ...fixture, powerW: 12.5, dmx: { footprint: 8, modes: [{ name: 'A', channels: 12 }] } }, 'fr')).toMatchObject({ footprint: '12', powerW: '12,5' })
+  })
+})
+
+describe('puissance saisie selon la langue', () => {
+  it('EN : « 1,200 » vaut 1200 W ; FR inchangé (1,2)', () => {
+    const d = { ...blankDraft(), name: 'Lidar', code: 'LDR', powerW: '1,200' }
+    expect(validateDraft(d, messages('en').componentEditor.errors, 'en').power).toBeUndefined()
+    expect(templateFromDraft(d, 'custom-aaaaaaaaaaaa', 'en').powerW).toBe(1200)
+    expect(templateFromDraft(d, 'custom-aaaaaaaaaaaa', 'fr').powerW).toBe(1.2)
   })
 })

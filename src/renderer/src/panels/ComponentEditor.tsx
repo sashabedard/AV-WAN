@@ -52,7 +52,7 @@ function EditorForm({ editing }: { editing: StoredTemplate | null }) {
   const [iconError, setIconError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
   const fileInput = useRef<HTMLInputElement>(null)
-  const errors = validateDraft(draft, t.errors)
+  const errors = validateDraft(draft, t.errors, lang)
   const title = editing ? t.titleEdit : t.titleNew
 
   const close = (): void => uiStore.getState().openComponentEditor(null)
@@ -95,7 +95,7 @@ function EditorForm({ editing }: { editing: StoredTemplate | null }) {
     if (hasErrors(errors) || saving) return
     setSaving(true)
     // Toujours un nouvel identifiant : les projets qui utilisent l'ancienne version la gardent.
-    const template = templateFromDraft(draft, newCustomId())
+    const template = templateFromDraft(draft, newCustomId(), lang)
     try {
       if (editing) await libraryStore.getState().replace(editing.id, template)
       else await libraryStore.getState().save(template)

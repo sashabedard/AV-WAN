@@ -104,7 +104,7 @@ export function normalizeCode(code: string): string {
   return stripAccents(code).toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 4)
 }
 
-export function validateDraft(d: TemplateDraft, m: Messages['componentEditor']['errors']): DraftErrors {
+export function validateDraft(d: TemplateDraft, m: Messages['componentEditor']['errors'], lang: Lang): DraftErrors {
   const errors: DraftErrors = {}
   const name = d.name.trim()
   if (!name) errors.name = m.nameRequired
@@ -113,7 +113,7 @@ export function validateDraft(d: TemplateDraft, m: Messages['componentEditor']['
   if (d.ports.length > MAX_PORTS) errors.ports = m.tooManyPorts({ max: MAX_PORTS })
   else if (d.ports.some((p) => !p.label.trim())) errors.ports = m.portNeedsName
   if (d.patchable && typeof parseIntField(d.footprint, 1, 512) !== 'number') errors.dmx = m.channels
-  if (parseDecimalField(d.powerW) === undefined) errors.power = m.power
+  if (parseDecimalField(d.powerW, false, lang) === undefined) errors.power = m.power
   return errors
 }
 
@@ -121,7 +121,7 @@ export function hasErrors(errors: DraftErrors): boolean {
   return Object.keys(errors).length > 0
 }
 
-export function templateFromDraft(d: TemplateDraft, id: string): StoredTemplate {
+export function templateFromDraft(d: TemplateDraft, id: string, lang: Lang): StoredTemplate {
   const taken = new Set<string>()
   const ports = d.ports.map((p): PortDef => {
     const portId = portIdFromLabel(p.label, taken)
@@ -137,7 +137,7 @@ export function templateFromDraft(d: TemplateDraft, id: string): StoredTemplate 
     return def
   })
   const footprint = parseIntField(d.footprint, 1, 512)
-  const powerW = parseDecimalField(d.powerW)
+  const powerW = parseDecimalField(d.powerW, false, lang)
   const vendor = d.vendor.trim()
   const model = d.model.trim()
   return {

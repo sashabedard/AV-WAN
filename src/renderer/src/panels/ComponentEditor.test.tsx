@@ -98,7 +98,7 @@ describe('ComponentEditor', () => {
 
   it('Modifier enregistre une nouvelle version et retire l’ancienne', async () => {
     const user = userEvent.setup()
-    const old = templateFromDraft({ ...blankDraft(), name: 'Balise', code: 'BAL' }, 'custom-ancienne00')
+    const old = templateFromDraft({ ...blankDraft(), name: 'Balise', code: 'BAL' }, 'custom-ancienne00', 'fr')
     libraryStore.setState({ templates: [old] })
     uiStore.getState().openComponentEditor({ mode: 'edit', templateId: old.id })
     render(<ComponentEditor />)
