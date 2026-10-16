@@ -166,6 +166,11 @@ export const inspector = {
     universeAria: 'Univers DMX',
     mode: 'Mode',
     modeAria: 'Mode DMX',
+    auto: 'auto',
+    pinned: 'fixée',
+    pinTitle: 'Fixer cette adresse : la chaîne repart d’ici',
+    unpinTitle: 'Libérer : l’adresse suit la chaîne',
+    chainFull: (p: { universe: number }) => `La chaîne dépasse 512 canaux dans l’univers ${p.universe}`,
     intToast: (p: { label: string; min: number; max: number }) => `${p.label} : un nombre entier de ${p.min} à ${p.max}.`,
     universeFull: (p: { universe: number; footprint: number }) => `Univers ${p.universe} plein : aucune plage libre de ${p.footprint} canaux.`
   },
