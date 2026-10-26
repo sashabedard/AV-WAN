@@ -149,8 +149,9 @@ npm run build        # build de production dans out/
 1. Une seule fois, ajouter les secrets du dépôt (Settings › Secrets and variables › Actions) :
    - `MAC_CERT_P12_BASE64` : le certificat « Developer ID Application » exporté en `.p12`, encodé en base64 (`base64 -i certificat.p12 | pbcopy`) ;
    - `MAC_CERT_PASSWORD` : le mot de passe du `.p12` ;
-   - `APPLE_ID` : l'identifiant Apple du compte développeur ;
-   - `APPLE_APP_SPECIFIC_PASSWORD` : un mot de passe d'app créé sur appleid.apple.com (Connexion et sécurité › Mots de passe pour app).
+   - `APPLE_API_KEY` : le contenu du fichier `AuthKey_XXXXXXXXXX.p8` d'une clé API App Store Connect (appstoreconnect.apple.com › Utilisateurs et accès › Intégrations › Clés de l'équipe, accès « Développeur ») ; le fichier ne se télécharge qu'une fois (`pbcopy < AuthKey_XXXXXXXXXX.p8`) ;
+   - `APPLE_API_KEY_ID` : l'identifiant de cette clé (10 caractères) ;
+   - `APPLE_API_ISSUER` : l'identifiant de l'émetteur (UUID affiché au-dessus de la liste des clés).
 2. `npm version 1.0.0` pour la première version publique, puis `npm version minor` (ou `patch`) pour les suivantes ; ensuite `git push --follow-tags`.
 3. La CI construit le DMG notarisé, l'installeur Windows et les paquets Linux (AppImage, `.deb`), vérifie l'association `.avwan`, et crée un **brouillon** de release avec le guide PDF.
 4. Tester les fichiers du brouillon, puis **Publish**. Les apps installées proposent alors la mise à jour.
