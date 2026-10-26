@@ -2,7 +2,7 @@ import type { Messages } from '../../../shared/i18n/messages'
 import type { Edge, Node } from '@xyflow/react'
 import type { Device, DeviceTemplate, Link, PortRef, Project, Side, Zone } from '../model/types'
 import { getTemplate } from '../catalog'
-import { resolvePortSide } from '../model/layout'
+import { resolvePortSides } from '../model/sides'
 import { findPort, isPatchPanel, isRackDevice, portDisplayLabel, sameRef } from '../model/rules'
 import { POE_LABELS, linkPoe, linkVlanIds } from '../model/derive'
 import { NEUTRAL, cordStyle, type CordStyle, type ThemeMode } from './cordStyle'
@@ -24,7 +24,7 @@ export interface PoeUsage {
 export type DeviceNodeData = {
   device: Device
   template: DeviceTemplate | undefined
-  side: Side
+  sides: Record<string, Side> // côté de chaque prise (spec cartes-ip-vms § 4.4)
   ports: Record<string, PortInfo>
   poeUsage?: PoeUsage
   vlans: number[]
@@ -105,7 +105,7 @@ export function toFlowNodes(project: Project, analysis: LinkAnalysis, cache: Flo
   const index = project.devices.some((d) => d.dmx) ? patchIndex(project) : undefined
   for (const device of project.devices) {
     alive.add(device.id)
-    const side = resolvePortSide(project, device, nodeSize)
+    const sides = resolvePortSides(project, device, nodeSize)
     const ports = analysis.ports.get(device.id) ?? NO_PORTS
     const vlans = analysis.deviceVlans.get(device.id) ?? NO_VLANS
     const poeUsage: PoeUsage | undefined = device.switch
@@ -115,7 +115,7 @@ export function toFlowNodes(project: Project, analysis: LinkAnalysis, cache: Flo
         }
       : undefined
     const line2 = deviceSecondLine(device, index?.entries.get(device.id), lang)
-    const key = `${side}|${JSON.stringify(ports)}|${JSON.stringify(poeUsage ?? null)}|${vlans.join(',')}|${line2}`
+    const key = `${JSON.stringify(sides)}|${JSON.stringify(ports)}|${JSON.stringify(poeUsage ?? null)}|${vlans.join(',')}|${line2}`
     const hit = cache.nodes.get(device.id)
     if (hit && hit.device === device && hit.key === key) {
       out.push(hit.node)
@@ -125,7 +125,7 @@ export function toFlowNodes(project: Project, analysis: LinkAnalysis, cache: Flo
       id: device.id,
       type: isRackDevice(device) ? 'switch' : 'device',
       position: device.position,
-      data: { device, template: getTemplate(project, device.templateId), side, ports, vlans, line2, ...(poeUsage ? { poeUsage } : {}) }
+      data: { device, template: getTemplate(project, device.templateId), sides, ports, vlans, line2, ...(poeUsage ? { poeUsage } : {}) }
     }
     cache.nodes.set(device.id, { key, device, node })
     out.push(node)

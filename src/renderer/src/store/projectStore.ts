@@ -31,7 +31,7 @@ export function sameSelection(a: Selection, b: Selection): boolean {
   const eq = (x: readonly string[] = [], y: readonly string[] = []): boolean => x.length === y.length && x.every((v, i) => v === y[i])
   return eq(a.deviceIds, b.deviceIds) && eq(a.linkIds, b.linkIds) && eq(a.zoneIds, b.zoneIds) && eq(a.rackIds, b.rackIds)
 }
-export type DevicePatch = Partial<Pick<Device, 'name' | 'model' | 'hostname' | 'note' | 'portSide' | 'powerW' | 'dmx' | 'psu' | 'ledStrip'>>
+export type DevicePatch = Partial<Pick<Device, 'name' | 'model' | 'hostname' | 'note' | 'portSide' | 'portSides' | 'powerW' | 'dmx' | 'psu' | 'ledStrip'>>
 export type LinkPatch = Partial<Pick<Link, 'cableId' | 'medium' | 'lengthM' | 'jacketColor' | 'wifi' | 'note' | 'elbow'>>
 export type MetaPatch = Partial<Project['meta']>
 export type ZonePatch = Partial<Pick<Zone, 'name' | 'color' | 'ownPdfPage'>>

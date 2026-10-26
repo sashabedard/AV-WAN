@@ -1,6 +1,7 @@
 // src/renderer/src/panels/inspector/DeviceForm.tsx
 import { useState } from 'react'
-import type { Device, PortSide, Project } from '../../model/types'
+import type { Device, PortSide, Project, SideGroup } from '../../model/types'
+import { SIDE_GROUPS, sideGroupOf } from '../../model/sides'
 import { linksOnRemovedPorts, projectStore } from '../../store/projectStore'
 import { isRackDevice } from '../../model/rules'
 import { switchPoeUsage } from '../../model/derive'
@@ -50,6 +51,13 @@ function SwitchSection({ device, project }: { device: Device; project: Project }
       )}
     </section>
   )
+}
+
+// Réglage d'un type ; '' le retire. Sans aucun réglage, portSides disparaît (rendu d'avant, à l'identique).
+function withGroupSide(device: Device, group: SideGroup, side: PortSide | ''): Device['portSides'] {
+  const { [group]: _old, ...rest } = device.portSides ?? {}
+  const next = side ? { ...rest, [group]: side } : rest
+  return Object.keys(next).length > 0 ? next : undefined
 }
 
 export function DeviceForm({ device, project }: { device: Device; project: Project }) {
@@ -117,6 +125,25 @@ export function DeviceForm({ device, project }: { device: Device; project: Proje
           </select>
         </label>
       )}
+      {!isRackDevice(device) &&
+        SIDE_GROUPS.filter((g) => device.ports.some((p) => sideGroupOf(p.connector) === g)).map((g) => (
+          <label className="field" key={g}>
+            <span className="field__label">{t.sideGroups[g]}</span>
+            <select
+              className="input"
+              aria-label={t.groupSide({ group: t.sideGroups[g] })}
+              value={device.portSides?.[g] ?? ''}
+              onChange={(e) => s().updateDevice(device.id, { portSides: withGroupSide(device, g, e.target.value as PortSide | '') })}
+            >
+              <option value="">{t.sideDefault}</option>
+              <option value="auto">{t.sideAuto}</option>
+              <option value="top">{t.sideTop}</option>
+              <option value="bottom">{t.sideBottom}</option>
+              <option value="left">{t.sideLeft}</option>
+              <option value="right">{t.sideRight}</option>
+            </select>
+          </label>
+        ))}
       <p className="insp__note">{t.zoneLine({ name: project.zones.find((z) => z.id === device.zoneId)?.name })}</p>
       <RackSection device={device} project={project} />
       <SwitchSection device={device} project={project} />

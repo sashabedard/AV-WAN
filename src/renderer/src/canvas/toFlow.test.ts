@@ -16,7 +16,7 @@ describe('toFlowNodes', () => {
     expect(nodes[0]!.data.ports['1']).toEqual({ linkId: 'l1', color: '#3E8EF7', poe: true })
     expect(nodes[1]!.data.ports['ETH']).toEqual({ linkId: 'l1', color: '#3E8EF7', poe: false })
     expect(nodes[0]!.data.poeUsage).toEqual({ usedW: 25, budgetW: 60 })
-    expect(nodes[1]!.data.side).toBe('top')
+    expect(nodes[1]!.data.sides['ETH']).toBe('top')
   })
 
   it('dessine le panneau de brassage comme une façade de rack', () => {
@@ -42,7 +42,18 @@ describe('toFlowNodes', () => {
     const moved = { ...p, devices: p.devices.map((d, i) => (i === 0 ? { ...d, position: { x: 0, y: 600 } } : d)) }
     const second = toFlowNodes(moved, analyzeLinks(moved, 'dark', 'fr'), cache, 'fr')
     expect(second[1]).not.toBe(first[1])
-    expect(second[1]!.data.side).toBe('bottom')
+    expect(second[1]!.data.sides['ETH']).toBe('bottom')
+  })
+
+  it('côtés par type : chaque prise a son côté, et changer un réglage refait la tuile', () => {
+    const p = sampleProject()
+    const cache = createFlowCache()
+    const first = toFlowNodes(p, analyzeLinks(p, 'dark', 'fr'), cache, 'fr')
+    const q = { ...p, devices: p.devices.map((d, i) => (i === 1 ? { ...d, portSides: { video: 'left' as const } } : d)) }
+    const second = toFlowNodes(q, analyzeLinks(q, 'dark', 'fr'), cache, 'fr')
+    expect(second[1]!.data.sides).toEqual({ ETH: 'top', HDMI: 'left' })
+    expect(second[1]).not.toBe(first[1])
+    expect(second[0]).toBe(first[0])
   })
 
   it('met en haut les prises d’un appareil placé sous la moitié droite d’un switch 48 ports', () => {
@@ -53,7 +64,7 @@ describe('toFlowNodes', () => {
     p.devices.push(cam)
     p.links.push({ id: 'l1', cableId: 'C-001', a: { deviceId: sw.id, portId: '40' }, b: { deviceId: cam.id, portId: 'ETH' }, medium: 'cat6' })
     const nodes = toFlowNodes(p, analyzeLinks(p, 'dark', 'fr'), createFlowCache(), 'fr')
-    expect(nodes[1]!.data.side).toBe('top')
+    expect(nodes[1]!.data.sides['ETH']).toBe('top')
   })
 
   it('met l’adresse DMX sur la 2ᵉ ligne et refait la tuile quand l’univers du nœud change', () => {

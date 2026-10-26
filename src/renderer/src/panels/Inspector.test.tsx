@@ -102,10 +102,10 @@ describe('Inspector', () => {
     const user = userEvent.setup()
     projectStore.getState().setSelection({ deviceIds: ['cam1'], linkIds: [] })
     render(<Inspector />)
-    await user.selectOptions(screen.getByLabelText('Côté des prises'), 'left')
+    await user.selectOptions(screen.getByLabelText('Côté des prises — défaut'), 'left')
     expect(project().devices[1]!.portSide).toBe('left')
     act(() => projectStore.getState().setSelection({ deviceIds: ['sw1'], linkIds: [] }))
-    expect(screen.queryByLabelText('Côté des prises')).toBeNull()
+    expect(screen.queryByLabelText('Côté des prises — défaut')).toBeNull()
     const row = screen.getByText('CAM-1 · ETH').closest('tr')!
     expect(within(row).getByText('A · 40')).toBeTruthy()
   })

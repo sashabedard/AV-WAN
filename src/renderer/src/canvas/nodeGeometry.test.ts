@@ -4,7 +4,9 @@ import { estimateNodeSize } from '../model/layout'
 import { createDevice, createProject } from '../model/project'
 import { TEMPLATES } from '../catalog/templates'
 import { SWITCH_PORT_COUNTS } from '../catalog/switch'
-import { DEVICE_NODE_HEIGHT, TAPE_LEFT, TAPE_TOP_MAX_WIDTH, deviceNodeWidth, devicePortOffset, nodeSize, portOffset } from './nodeGeometry'
+import { DEVICE_NODE_HEIGHT, TAPE_LEFT, TAPE_TOP_MAX_WIDTH, deviceNodeBox, deviceNodeWidth, devicePortOffset, nodeSize, portOffset } from './nodeGeometry'
+import { resolvePortSides, sideLayout } from '../model/sides'
+import type { Device } from '../model/types'
 
 const HALF = 5 // .react-flow__handle.port : 10 px de large
 
@@ -15,7 +17,7 @@ describe('devicePortOffset', () => {
     for (let width = 176; width <= deviceNodeWidth(48); width++) {
       for (let count = 1; count <= 8; count++) {
         for (let i = 0; i < count; i++) {
-          const x = devicePortOffset('top', i, count, width)
+          const x = devicePortOffset('top', i, count, width, DEVICE_NODE_HEIGHT)
           const clear = x - HALF >= tapeEnd || x + HALF <= tapeStart
           expect(clear, `largeur ${width}, ${count} prises, prise ${i} à x=${x}`).toBe(true)
           expect(x + HALF).toBeLessThanOrEqual(width)
@@ -26,7 +28,7 @@ describe('devicePortOffset', () => {
 
   it('les prises du haut restent dans l’ordre et ne se superposent pas', () => {
     for (let count = 2; count <= 8; count++) {
-      const xs = Array.from({ length: count }, (_, i) => devicePortOffset('top', i, count, deviceNodeWidth(count)))
+      const xs = Array.from({ length: count }, (_, i) => devicePortOffset('top', i, count, deviceNodeWidth(count), DEVICE_NODE_HEIGHT))
       for (let i = 1; i < count; i++) expect(xs[i]! - xs[i - 1]!).toBeGreaterThanOrEqual(2 * HALF)
     }
   })
@@ -39,7 +41,7 @@ describe('devicePortOffset', () => {
       ['right', DEVICE_NODE_HEIGHT]
     ]
     for (const [side, length] of cases) {
-      for (let i = 0; i < 3; i++) expect(devicePortOffset(side, i, 3, width)).toBe(portOffset(i, 3, length))
+      for (let i = 0; i < 3; i++) expect(devicePortOffset(side, i, 3, width, DEVICE_NODE_HEIGHT)).toBe(portOffset(i, 3, length))
     }
   })
 })
@@ -59,3 +61,46 @@ describe('nodeSize', () => {
     }
   })
 })
+
+describe('deviceNodeBox', () => {
+  it('Review Focus 3 : sans portSides, chaque appareil du catalogue garde sa taille et ses positions de prises', () => {
+    const p = createProject(undefined, 'fr')
+    for (const t of TEMPLATES.filter((t) => !t.switch)) {
+      const d = createDevice(p, t.id, { x: 0, y: 0 }, { lang: 'fr' })
+      if (nodeSize(d).h !== DEVICE_NODE_HEIGHT) continue // façades de baie
+      for (const side of ['top', 'bottom', 'left', 'right'] as const) {
+        const dev: Device = { ...d, portSide: side }
+        const sides = resolvePortSides({ ...p, devices: [dev] }, dev)
+        const box = deviceNodeBox(dev, sides)
+        expect(box, t.id).toEqual({ w: deviceNodeWidth(d.ports.length), h: DEVICE_NODE_HEIGHT })
+        const layout = sideLayout(dev, sides)
+        expect(layout[side].map((x) => x.id)).toEqual(d.ports.map((x) => x.id))
+      }
+    }
+  })
+
+  it('un serveur à 8 DP à droite mesure 16 + 8 × 18 = 160 de haut', () => {
+    const p = createProject(undefined, 'fr')
+    const d: Device = {
+      ...createDevice(p, 'media-server', { x: 0, y: 0 }, { lang: 'fr' }),
+      ports: Array.from({ length: 8 }, (_, i) => ({ id: `DP${i}`, label: `DP ${i}`, connector: 'displayport' as const })),
+      portSides: { video: 'right' }
+    }
+    const box = deviceNodeBox(d, resolvePortSides({ ...p, devices: [d] }, d))
+    expect(box).toEqual({ w: 176, h: 160 })
+    expect(estimateNodeSize(d)).toEqual(box)
+    expect(nodeSize(d)).toEqual(box)
+  })
+
+  it('les prises du haut gardent la réserve de l’étiquette dans la largeur', () => {
+    const p = createProject(undefined, 'fr')
+    const d: Device = {
+      ...createDevice(p, 'media-server', { x: 0, y: 0 }, { lang: 'fr' }),
+      ports: Array.from({ length: 10 }, (_, i) => ({ id: `U${i}`, label: `USB ${i}`, connector: 'usb' as const })),
+      portSides: { usb: 'top' }
+    }
+    // 24 + (10 + ceil(80 / 18) = 5) × 18 = 294
+    expect(deviceNodeBox(d, resolvePortSides({ ...p, devices: [d] }, d))).toEqual({ w: 294, h: DEVICE_NODE_HEIGHT })
+  })
+})
+
