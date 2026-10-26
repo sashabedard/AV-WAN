@@ -1,5 +1,4 @@
 import type { Device, LedStrip, Project } from '../model/types'
-import { primaryIp } from '../model/ips'
 import { LED_STRIP_TYPES, stripPixels, stripPower } from '../model/led'
 import { psuLoad, resolvePsu } from '../model/power'
 import { formatters } from '../../../shared/i18n/format'
@@ -11,7 +10,7 @@ import { getTemplate } from '../catalog'
 import { connection, type Connection } from './connections'
 import { patchIndex } from '../model/dmx'
 import { dmxSummary } from './patch'
-import { DASH, compareText, ipLabel } from './format'
+import { DASH, compareText, deviceIpSummary } from './format'
 
 const NETWORK_CONNECTORS = new Set<string>(['rj45', 'sfp', 'sfp+', 'wifi'])
 
@@ -101,7 +100,7 @@ export function deviceSheets(project: Project, lang: Lang): DeviceSheet[] {
         name: device.name,
         kind: template ? displayName(template, lang) : device.templateId,
         ...(device.model ? { model: device.model } : {}),
-        ip: ipLabel(primaryIp(device), lang),
+        ip: deviceIpSummary(device, lang),
         networked: device.ports.some((p) => NETWORK_CONNECTORS.has(p.connector)),
         ...(device.hostname ? { hostname: device.hostname } : {}),
         ...(zone ? { zone } : {}),

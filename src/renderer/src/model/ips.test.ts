@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Device } from './types'
-import { isNetworkPort, primaryIp, withPrimaryIp } from './ips'
+import { deviceIps, isNetworkPort, portIps, primaryIp, withPrimaryIp } from './ips'
 
 const ip = (address: string) => ({ address, mode: 'static' as const })
 const dev = (over: Partial<Device> = {}): Device => ({
@@ -32,5 +32,20 @@ describe('ips', () => {
   it('withPrimaryIp place l’adresse en tête du 1ᵉʳ port réseau', () => {
     const d = withPrimaryIp(dev({ portState: { ETH1: { nativeVlan: 10, ips: [ip('10.0.0.9')] } } }), ip('10.0.0.1'))
     expect(d.portState['ETH1']).toEqual({ nativeVlan: 10, ips: [ip('10.0.0.1'), ip('10.0.0.9')] })
+  })
+
+  it('portIps : [] sans IP, sinon la liste du port', () => {
+    const d = dev({ portState: { ETH1: { ips: [ip('10.0.0.1')] } } })
+    expect(portIps(d, 'ETH2')).toEqual([])
+    expect(portIps(d, 'ETH1')).toEqual([ip('10.0.0.1')])
+  })
+
+  it('deviceIps : toutes les IP des ports réseau, dans l’ordre des ports', () => {
+    const d = dev({ portState: { USB: { ips: [ip('1.1.1.1')] }, ETH2: { ips: [ip('10.0.0.2'), ip('10.0.0.3')] }, ETH1: { ips: [ip('10.0.0.1')] } } })
+    expect(deviceIps(d).map((e) => [e.port.id, e.ip.address, e.index])).toEqual([
+      ['ETH1', '10.0.0.1', 0],
+      ['ETH2', '10.0.0.2', 0],
+      ['ETH2', '10.0.0.3', 1]
+    ])
   })
 })

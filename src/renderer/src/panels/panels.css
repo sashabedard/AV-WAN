@@ -41,6 +41,11 @@
 .ports { width: 100%; border-collapse: collapse; font: 12px var(--font-mono); }
 .ports th { padding: 4px 2px; text-align: left; font-size: 10px; font-weight: 600; text-transform: uppercase; color: var(--muted); }
 .ports td { padding: 4px 2px; border-top: 1px solid var(--line); }
+.ports tr.ports__ips td { border-top: none; padding-top: 0; }
+.iplist { display: flex; flex-direction: column; gap: 4px; padding-left: 12px; }
+.iplist__row { display: flex; align-items: center; gap: 6px; }
+.iplist__row .input { flex: 1; min-width: 0; }
+.iplist__add, .iplist__remove { align-self: flex-start; padding: 1px 6px; font-size: 11px; }
 
 .qs__backdrop { position: fixed; inset: 0; z-index: 60; display: flex; justify-content: center; align-items: flex-start; padding-top: 14vh; background: color-mix(in srgb, var(--paper) 35%, transparent); }
 .qs { width: 520px; max-width: calc(100vw - 32px); overflow: hidden; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); box-shadow: 0 18px 48px var(--tile-shadow); color: var(--ink); }

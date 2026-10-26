@@ -1,5 +1,5 @@
 // src/renderer/src/panels/inspector/DeviceForm.tsx
-import { useState } from 'react'
+import { Fragment, useState } from 'react'
 import type { Device, PortSide, Project } from '../../model/types'
 import { linksOnRemovedPorts, projectStore } from '../../store/projectStore'
 import { isRackDevice, portDisplayLabel } from '../../model/rules'
@@ -16,6 +16,8 @@ import { PsuSection } from './PsuSection'
 import { LedStripSection } from './LedStripSection'
 import { PatchSection } from './PatchSection'
 import { RackSection } from './RackSection'
+import { PortIps } from './PortIps'
+import { isNetworkPort } from '../../model/ips'
 import { useT } from '../../i18n/useT'
 
 function SwitchSection({ device, project }: { device: Device; project: Project }) {
@@ -136,42 +138,51 @@ export function DeviceForm({ device, project }: { device: Device; project: Proje
           </thead>
           <tbody>
             {device.ports.map((p) => (
-              <tr key={p.id}>
-                <td>{portDisplayLabel(device, p, m)}</td>
-                <td>{peersOf(project, device, p.id, m)}</td>
-                <td>{portVlanSummary(device.portState[p.id], t)}</td>
-                <td>
-                  {p.poeOut ? (
-                    <input
-                      type="checkbox"
-                      aria-label={t.poePort({ label: portDisplayLabel(device, p, m) })}
-                      checked={device.portState[p.id]?.poeEnabled ?? true}
-                      onChange={(e) => s().setPortState(device.id, p.id, { poeEnabled: e.target.checked })}
-                    />
-                  ) : p.poeIn ? (
-                    t.receives
-                  ) : (
-                    ''
-                  )}
-                </td>
-                {universePorts.size > 0 && (
+              <Fragment key={p.id}>
+                <tr>
+                  <td>{portDisplayLabel(device, p, m)}</td>
+                  <td>{peersOf(project, device, p.id, m)}</td>
+                  <td>{portVlanSummary(device.portState[p.id], t)}</td>
                   <td>
-                    {universePorts.has(p.id) && (
-                      <CommitInput
-                        className="input input--mini"
-                        aria-label={t.universeAria({ label: portDisplayLabel(device, p, m) })}
-                        inputMode="numeric"
-                        value={device.portState[p.id]?.universe !== undefined ? String(device.portState[p.id]!.universe) : ''}
-                        onCommit={(v) => {
-                          const n = parseIntField(v, 0, UNIVERSE_MAX)
-                          if (n === undefined) s().showToast(t.universeToast({ max: UNIVERSE_MAX }))
-                          else s().setPortState(device.id, p.id, { universe: n ?? undefined })
-                        }}
+                    {p.poeOut ? (
+                      <input
+                        type="checkbox"
+                        aria-label={t.poePort({ label: portDisplayLabel(device, p, m) })}
+                        checked={device.portState[p.id]?.poeEnabled ?? true}
+                        onChange={(e) => s().setPortState(device.id, p.id, { poeEnabled: e.target.checked })}
                       />
+                    ) : p.poeIn ? (
+                      t.receives
+                    ) : (
+                      ''
                     )}
                   </td>
+                  {universePorts.size > 0 && (
+                    <td>
+                      {universePorts.has(p.id) && (
+                        <CommitInput
+                          className="input input--mini"
+                          aria-label={t.universeAria({ label: portDisplayLabel(device, p, m) })}
+                          inputMode="numeric"
+                          value={device.portState[p.id]?.universe !== undefined ? String(device.portState[p.id]!.universe) : ''}
+                          onCommit={(v) => {
+                            const n = parseIntField(v, 0, UNIVERSE_MAX)
+                            if (n === undefined) s().showToast(t.universeToast({ max: UNIVERSE_MAX }))
+                            else s().setPortState(device.id, p.id, { universe: n ?? undefined })
+                          }}
+                        />
+                      )}
+                    </td>
+                  )}
+                </tr>
+                {isNetworkPort(p) && (
+                  <tr className="ports__ips">
+                    <td colSpan={universePorts.size > 0 ? 5 : 4}>
+                      <PortIps device={device} port={p} />
+                    </td>
+                  </tr>
                 )}
-              </tr>
+              </Fragment>
             ))}
           </tbody>
         </table>

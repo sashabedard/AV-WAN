@@ -53,3 +53,14 @@ describe('DeviceForm en deux langues', () => {
     expect(projectStore.getState().history.present.devices.find((d) => d.id === 'cam1')!.powerW).toBe(1200)
   })
 })
+
+describe('DeviceForm — IP des ports', () => {
+  it('montre les IP sous le port réseau, pas sous le port HDMI', async () => {
+    const user = userEvent.setup()
+    render(<Inspector />)
+    expect((screen.getByRole('textbox', { name: 'Adresse IP 1 de ETH' }) as HTMLInputElement).value).toBe('10.40.0.21')
+    expect(screen.queryByRole('button', { name: 'Ajouter une IP à HDMI' })).toBeNull()
+    await user.click(screen.getByRole('button', { name: 'DHCP' }))
+    expect(projectStore.getState().history.present.devices[1]!.portState['ETH']!.ips).toEqual([{ address: '10.40.0.21', mode: 'dhcp' }])
+  })
+})

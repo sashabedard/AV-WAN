@@ -1,12 +1,11 @@
 // src/renderer/src/reports/portMaps.ts
-import { primaryIp } from '../model/ips'
 import type { Device, PortDef, PortState, Project, SwitchSpec } from '../model/types'
 import { linksOnPort, sameRef } from '../model/rules'
 import { POE_LABELS, linkPoe, switchPoeUsage, type LinkPoe } from '../model/derive'
 import { switchSummary } from '../catalog/switch'
 import { messages } from '../../../shared/i18n/messages'
 import type { Lang } from '../../../shared/i18n/lang'
-import { DASH, compareText, formatNumber, ipLabel, poeLabel, portRefLabel, taggedLabel, vlanName } from './format'
+import { DASH, compareText, deviceIpSummary, formatNumber, poeLabel, portRefLabel, taggedLabel, vlanName } from './format'
 
 export interface PortMapRow {
   portId: string
@@ -76,7 +75,7 @@ export function portMaps(project: Project, lang: Lang): PortMap[] {
         name: device.name,
         summary: switchSummary(device.switch, m),
         ...(device.model ? { model: device.model } : {}),
-        ip: ipLabel(primaryIp(device), lang),
+        ip: deviceIpSummary(device, lang),
         ...(device.switch.poe !== 'none' ? { poe: `PoE ${formatNumber(usage.usedW, lang)}${budget} W` } : {}),
         rows
       }

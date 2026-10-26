@@ -87,4 +87,13 @@ describe('deviceSheets : puissance', () => {
     expect(extras('LED-1')).toEqual(['COB mono · 24 V · 14,4 W/m · 10 m · 144 W'])
     expect(extras('PSU-1')).toEqual(['Alimentation : 24 V · 360 W · charge 288 W (80 %)'])
   })
+
+describe('deviceSheets — IP multiples', () => {
+  it('le champ ip montre l’IP principale suivie de « +N » pour les autres', () => {
+    const q = structuredClone(p)
+    const mac = q.devices.find((d) => d.name === 'MAC-1')!
+    mac.portState['ETH'] = { ...mac.portState['ETH'], ips: [...(mac.portState['ETH']?.ips ?? []), { address: '10.20.0.11', mode: 'static' }, { address: '', mode: 'dhcp' }] }
+    expect(deviceSheets(q, 'fr').find((s) => s.name === 'MAC-1')!.ip).toBe(`${sheet('MAC-1').ip} +2`)
+  })
+})
 })

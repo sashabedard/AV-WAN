@@ -49,6 +49,18 @@ describe('ipPlan', () => {
   })
 })
 
+describe('ipPlan — IP multiples', () => {
+  it('un port à 2 IP donne 2 lignes ; le nom d’hôte est sur la ligne principale seulement', () => {
+    const q = sampleProject()
+    q.devices[1]!.hostname = 'cam-1'
+    q.devices[1]!.portState['ETH'] = { ips: [{ address: '10.40.0.21', mode: 'static' }, { address: '10.40.0.22', mode: 'static' }] }
+    expect(ipPlan(q, 'fr').rows).toEqual([
+      ['CAM-1', 'ETH', '10.40.0.21', 'Statique', '40 NDI', 'cam-1'],
+      ['CAM-1', 'ETH', '10.40.0.22', 'Statique', '40 NDI', '']
+    ])
+  })
+})
+
 describe('ipPlan en anglais', () => {
   it('écrit le plan d’adressage en anglais', () => {
     const t = ipPlan(createExampleProject(new Date(2026, 9, 13), 'en'), 'en')

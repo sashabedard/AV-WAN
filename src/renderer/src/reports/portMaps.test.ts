@@ -42,4 +42,11 @@ describe('portMaps', () => {
   it('ne fait aucune carte sans switch', () => {
     expect(portMaps({ ...p, devices: p.devices.filter((d) => !d.switch), links: [] }, 'fr')).toEqual([])
   })
+
+  it('l’IP du switch est suivie de « +N » quand il en a d’autres', () => {
+    const q = structuredClone(p)
+    const sw = q.devices.find((d) => d.name === 'SW-2')!
+    sw.portState['1'] = { ...sw.portState['1'], ips: [...(sw.portState['1']?.ips ?? []), { address: '10.10.10.30', mode: 'static' }] }
+    expect(sw2(q).ip).toBe(`${sw2().ip} +1`)
+  })
 })
