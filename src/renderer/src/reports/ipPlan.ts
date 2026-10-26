@@ -1,7 +1,7 @@
 // src/renderer/src/reports/ipPlan.ts
 import type { Device, IpConfig, PortRef, Project } from '../model/types'
-import { findDevice, isSwitchLike, linksOnPort, portDisplayLabel } from '../model/rules'
-import { linkVlanView } from '../model/derive'
+import { isSwitchLike, portDisplayLabel } from '../model/rules'
+import { portVlan } from '../model/derive'
 import type { Column, DataTable } from '../../../shared/tables'
 import type { Lang } from '../../../shared/i18n/lang'
 import { messages, type Messages } from '../../../shared/i18n/messages'
@@ -21,17 +21,6 @@ interface Entry {
   ip: IpConfig
   vlan?: number
   hostname?: string
-}
-
-// VLAN d'une prise : le réglage du port d'un switch, sinon celui du câble branché (accès, ou natif d'un trunk).
-function portVlan(project: Project, ref: PortRef): number | undefined {
-  const device = findDevice(project, ref.deviceId)
-  const own = device && isSwitchLike(device) ? device.portState[ref.portId]?.nativeVlan : undefined
-  if (own !== undefined) return own
-  const link = linksOnPort(project, ref)[0]
-  if (!link) return undefined
-  const v = linkVlanView(project, link)
-  return v.kind === 'access' ? v.vlan : v.kind === 'trunk' ? v.native : undefined
 }
 
 // VLAN de l'adresse principale : pour un switch, une passerelle ou un point d'accès, le natif du premier trunk

@@ -760,4 +760,32 @@ describe('projectStore : baies (plan 10)', () => {
     expect(s.getState().toast).toBe('1 câble débranché')
     expect(cam().ports.map((p) => p.id)).toEqual(['HDMI', 'DP-1'])
   })
+
+  it('Review Focus 4 : supprimer un hôte retire ses VMs ; ⌘Z les rend', () => {
+    const s = createProjectStore({ ...sampleProject(), devices: [...sampleProject().devices, createDevice(sampleProject(), 'media-server', { x: 0, y: 400 }, { lang: 'fr', id: 'srv' })] })
+    const id = s.getState().addVm('srv')
+    expect(s.getState().selection).toEqual({ deviceIds: [], linkIds: [], vmIds: [id] })
+    s.getState().addVm('srv')
+    const before = s.getState().history.present
+    s.getState().removeElements(['srv'], [])
+    expect(s.getState().history.present.vms).toEqual([])
+    s.getState().undo()
+    expect(s.getState().history.present).toEqual(before)
+  })
+
+  it('actions des VMs : une entrée d’historique chacune ; retirer un port ponté vide le pont', () => {
+    const s = createProjectStore({ ...sampleProject(), devices: [...sampleProject().devices, createDevice(sampleProject(), 'media-server', { x: 0, y: 400 }, { lang: 'fr', id: 'srv' })] })
+    const id = s.getState().addVm('srv')
+    const vm = () => s.getState().history.present.vms!.find((v) => v.id === id)!
+    s.getState().updateVm(id, { name: 'Show' })
+    s.getState().addVnic(id)
+    s.getState().updateVnic(id, vm().vnics[1]!.id, { bridgePortId: 'ETH2' })
+    s.getState().removeVnic(id, vm().vnics[0]!.id)
+    expect(s.getState().history.past).toHaveLength(5)
+    s.getState().removePort('srv', 'ETH2')
+    expect(vm().vnics[0]).toEqual({ id: expect.any(String), label: 'vnic1', ips: [] })
+    s.getState().removeVms([id])
+    expect(s.getState().history.present.vms).toEqual([])
+    expect(sameSelection({ deviceIds: [], linkIds: [], vmIds: ['a'] }, { deviceIds: [], linkIds: [] })).toBe(false)
+  })
 })

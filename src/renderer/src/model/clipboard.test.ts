@@ -231,4 +231,21 @@ describe('pasteFragment et baie', () => {
     expect(r.project.devices.find((d) => d.id === r.deviceIds[0])!.rack).toBeUndefined()
     expect(r.project.devices.find((d) => d.id === 'cam1')!.rack).toBeDefined()
   })
+
+  it('copier un hôte avec 2 VMs puis coller : nouvelles VMs, hôte remappé, ponts gardés, adresses vidées', () => {
+    const p = sampleProject()
+    p.vms = [
+      { id: 'v1', hostId: 'cam1', name: 'VM 1', vnics: [{ id: 'n1', label: 'vnic0', bridgePortId: 'ETH', ips: [{ address: '10.40.0.50', mode: 'static' }] }] },
+      { id: 'v2', hostId: 'cam1', name: 'VM 2', vnics: [] },
+      { id: 'v3', hostId: 'sw1', name: 'Ailleurs', vnics: [] }
+    ]
+    const f = copyFragment(p, ['cam1'])!
+    expect(f.vms!.map((v) => v.id)).toEqual(['v1', 'v2'])
+    const r = pasteFragment(p, parseFragment(serializeFragment(f))!, { x: 24, y: 24 }, ids())
+    const pasted = r.project.vms!.slice(3)
+    expect(pasted.map((v) => [v.name, v.hostId])).toEqual([['VM 1', r.deviceIds[0]], ['VM 2', r.deviceIds[0]]])
+    expect(new Set([...pasted.map((v) => v.id), ...p.vms.map((v) => v.id)]).size).toBe(5)
+    expect(pasted[0]!.vnics[0]).toMatchObject({ label: 'vnic0', bridgePortId: 'ETH', ips: [{ address: '', mode: 'static' }] })
+    expect(pasted[0]!.vnics[0]!.id).not.toBe('n1')
+  })
 })

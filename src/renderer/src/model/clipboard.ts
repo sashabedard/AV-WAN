@@ -1,7 +1,7 @@
 // src/renderer/src/model/clipboard.ts
 import { z } from 'zod'
-import type { Device, StoredTemplate, DmxChannelList, Link, Project } from './types'
-import { DeviceSchema, DeviceTemplateSchema, DmxChannelListSchema, LinkSchema } from './schema'
+import type { Device, StoredTemplate, DmxChannelList, Link, Project, Vm } from './types'
+import { DeviceSchema, DeviceTemplateSchema, DmxChannelListSchema, LinkSchema, VmSchema } from './schema'
 import { withTemplate } from './customTemplate'
 import { canConnectPorts, nextCableId } from './rules'
 import { channelKey, keyId, listKey, mergeProjectLists } from './dmxChannels'
@@ -17,6 +17,8 @@ export interface Fragment {
   templates?: StoredTemplate[]
   // Listes de canaux DMX des appareils copiés (le projet cible garde les siennes).
   dmxChannels?: DmxChannelList[]
+  // VMs hébergées par les appareils copiés : elles suivent leur hôte.
+  vms?: Vm[]
 }
 
 const FragmentSchema = z.object({
@@ -24,7 +26,8 @@ const FragmentSchema = z.object({
   devices: z.array(DeviceSchema),
   links: z.array(LinkSchema),
   templates: z.array(DeviceTemplateSchema).optional(),
-  dmxChannels: z.array(DmxChannelListSchema).optional()
+  dmxChannels: z.array(DmxChannelListSchema).optional(),
+  vms: z.array(VmSchema).optional()
 })
 
 export function copyFragment(project: Project, deviceIds: readonly string[]): Fragment | null {
@@ -52,17 +55,20 @@ export function copyFragment(project: Project, deviceIds: readonly string[]): Fr
     return k ? [keyId(k)] : []
   }))
   const dmxChannels = (project.dmxChannels ?? []).filter((l) => keys.has(keyId(listKey(l))))
-  return structuredClone({ devices: frozen, links, templates, ...(dmxChannels.length > 0 ? { dmxChannels } : {}) })
+  const vms = (project.vms ?? []).filter((v) => ids.has(v.hostId))
+  return structuredClone({ devices: frozen, links, templates, ...(dmxChannels.length > 0 ? { dmxChannels } : {}), ...(vms.length > 0 ? { vms } : {}) })
 }
 
 export function serializeFragment(f: Fragment): string {
-  return JSON.stringify({ avwanFragment: 1, devices: f.devices, links: f.links, templates: f.templates ?? [], dmxChannels: f.dmxChannels ?? [] })
+  return JSON.stringify({ avwanFragment: 1, devices: f.devices, links: f.links, templates: f.templates ?? [], dmxChannels: f.dmxChannels ?? [], ...(f.vms ? { vms: f.vms } : {}) })
 }
 
 export function parseFragment(text: string): Fragment | null {
   try {
     const r = FragmentSchema.safeParse(JSON.parse(text))
-    return r.success ? { devices: r.data.devices, links: r.data.links, templates: r.data.templates ?? [], dmxChannels: r.data.dmxChannels ?? [] } : null
+    return r.success
+      ? { devices: r.data.devices, links: r.data.links, templates: r.data.templates ?? [], dmxChannels: r.data.dmxChannels ?? [], ...(r.data.vms ? { vms: r.data.vms } : {}) }
+      : null
   } catch {
     return null
   }
@@ -132,5 +138,13 @@ export function pasteFragment(
     p = { ...p, links: [...p.links, link] }
     linkIds.push(link.id)
   }
+  // VMs : nouveaux ids, hôte remappé, ponts gardés (les ports sont copiés tels quels), adresses vidées comme pour les appareils.
+  const vms: Vm[] = []
+  for (const vm of fragment.vms ?? []) {
+    const hostId = idMap.get(vm.hostId)
+    if (!hostId) continue
+    vms.push({ ...structuredClone(vm), id: makeId(), hostId, vnics: vm.vnics.map((n) => ({ ...structuredClone(n), id: makeId(), ips: n.ips.map((ip) => ({ address: '', mode: ip.mode })) })) })
+  }
+  if (vms.length > 0) p = { ...p, vms: [...(p.vms ?? []), ...vms] }
   return { project: p, deviceIds, linkIds }
 }

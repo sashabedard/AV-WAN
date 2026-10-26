@@ -47,6 +47,9 @@ export const model: Messages['model'] = {
   rack: {
     defaultName: (p) => `RACK-${p.n}`
   },
+  vms: {
+    name: (p) => `VM ${p.n}`
+  },
   cards: {
     onboard: 'Onboard',
     gpu: (p) => `GPU ${p.n}`,

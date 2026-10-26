@@ -29,7 +29,7 @@ import { GRID, mergeEdges, mergeNodes, nodesMatchDerived, snapPoint, syncSelecte
 import { useCableHandlers } from './useCableHandlers'
 import { useAltKey } from './useAltKey'
 import { FIT_OPTIONS, pinCurrentView, registerViewport } from './viewport'
-import { arrowDelta, nudgeMoves } from './keyboard'
+import { arrowDelta, nudgeMoves, vmsToDelete } from './keyboard'
 import { isTextInput } from '../app/routeEditCommand'
 import { DeviceNode } from './DeviceNode'
 import { ZoneNode } from './ZoneNode'
@@ -247,6 +247,12 @@ function CanvasInner() {
         uiStore.getState().setPendingSwitch(null)
         uiStore.getState().setPendingZone(false)
         uiStore.getState().setFocusVlan(null)
+        return
+      }
+      const vmIds = vmsToDelete(e.key, projectStore.getState().selection)
+      if (vmIds && !e.metaKey && !e.ctrlKey && !e.altKey && !isTextInput(document.activeElement)) {
+        e.preventDefault()
+        projectStore.getState().removeVms(vmIds)
         return
       }
       const delta = arrowDelta(e.key, e.shiftKey)

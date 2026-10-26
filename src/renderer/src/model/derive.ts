@@ -145,3 +145,14 @@ export function switchPoeUsage(project: Project, deviceId: string): { usedW: num
   const budget = findDevice(project, deviceId)?.switch?.poeBudgetW
   return { usedW: Math.round(used * 10) / 10, ...(budget !== undefined ? { budgetW: budget } : {}) }
 }
+
+// VLAN d'une prise : le réglage du port d'un switch, sinon celui du câble branché (accès, ou natif d'un trunk).
+export function portVlan(project: Project, ref: PortRef): number | undefined {
+  const device = findDevice(project, ref.deviceId)
+  const own = device && isSwitchLike(device) ? device.portState[ref.portId]?.nativeVlan : undefined
+  if (own !== undefined) return own
+  const link = linksOnPort(project, ref)[0]
+  if (!link) return undefined
+  const v = linkVlanView(project, link)
+  return v.kind === 'access' ? v.vlan : v.kind === 'trunk' ? v.native : undefined
+}

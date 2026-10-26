@@ -48,6 +48,9 @@ export const model = {
   rack: {
     defaultName: (p: { n: number }) => `BAIE-${p.n}`
   },
+  vms: {
+    name: (p: { n: number }) => `VM ${p.n}`
+  },
   cards: {
     onboard: 'Intégré',
     gpu: (p: { n: number }) => `GPU ${p.n}`,
