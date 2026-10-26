@@ -31,7 +31,10 @@ Dernière version : page [Releases](https://github.com/sashabedard/AV-WAN/releas
 > [!WARNING]
 > **Windows : préférez le Microsoft Store, sans avertissement.** Avec l'installeur `setup.exe`, la fenêtre bleue « Windows a protégé votre ordinateur » s'affiche au premier lancement. C'est normal, l'installeur n'est pas signé : cliquez **Informations complémentaires**, puis **Exécuter quand même**.
 
-AV·WAN se met à jour seul : la nouvelle version se télécharge en arrière-plan, puis un bandeau propose **Redémarrer maintenant**. Menu **Aide › Rechercher les mises à jour…** pour vérifier tout de suite.
+AV·WAN se met à jour seul : la nouvelle version se télécharge en arrière-plan, puis un bandeau propose **Redémarrer maintenant**. Menu **Aide › Rechercher les mises à jour…** pour vérifier tout de suite. Au premier lancement d'une nouvelle version, un écran **Quoi de neuf** résume les nouveautés ; il se rouvre depuis **Aide › Quoi de neuf dans AV·WAN**.
+
+> [!IMPORTANT]
+> **Depuis la 1.5, retour en 1.4 impossible.** Les fichiers enregistrés avec la 1.5 utilisent un nouveau format (v4) : ils ne s'ouvrent plus correctement dans la 1.4. À la première ouverture d'un fichier 1.4, AV·WAN crée d'abord une copie de l'original à côté de lui, `nom-du-projet.bak.avwan`, qui n'est jamais écrasée (les suivantes s'appellent `.bak-2`, `.bak-3`…). Si cette copie ne peut pas être créée (clé USB ou partage en lecture seule), le projet s'ouvre quand même, mais sans être relié à son fichier : rien ne réécrit l'original. Utilisez « Enregistrer sous… » pour garder vos changements.
 
 ---
 
@@ -67,11 +70,13 @@ AV·WAN est gratuit, fonctionne hors ligne sur macOS, Windows et Linux, et est e
 | **Patcher** | Adresse DMX, canaux et mode de chaque appareil, univers de chaque sortie de nœud. L'univers se déduit du câble DMX (nœud › DMX 2 → lyre → lyre) ou se tape à la main. « Suivante libre » trouve la première plage libre, ⌘D place la copie à la suite, et les chevauchements sont notés sans jamais bloquer. Les bandes pixel occupent leurs univers à partir de la sortie du contrôleur. |
 | **Alimenter** | Puissance de chaque appareil, alimentations 12/24 V (deux valeurs suffisent : P = V × I), câble « Alim DC », charge de chaque alimentation avec la marge de 20 %. Bandes LED COB, FCOB, RGBW, pixel… : W/m × longueur, ampères, pixels et univers. |
 | **Configurer un switch** | 4, 5, 8, 12, 16, 24 ou 48 ports, PoE / PoE+ / PoE++ avec budget en watts, 0 à 4 cages SFP+. La façade est dessinée comme le vrai matériel. |
-| **Mes composantes** | Créer ses propres appareils : nom, code, catégorie, ports (RJ45, SFP, USB, DMX, HDMI…) avec PoE reçu ou fourni, et une icône maison ou importée (SVG ou PNG). Ils se réutilisent d'un projet à l'autre, et chaque projet embarque ceux qu'il utilise : il s'ouvre complet chez quelqu'un qui ne les a pas. |
+| **Cartes et ports** | Dans l'inspecteur, les ports sont regroupés par carte (« Intégré », « GPU 1 », « Carte réseau 1 »…). On ajoute une carte depuis des préréglages (GPU 4× DisplayPort ou HDMI, capture 4× SDI, réseau 2× RJ45 ou SFP+), on ajoute, renomme ou retire un port ; retirer un port câblé débranche ses câbles en une seule action, annulable avec `⌘Z`. Réseau, vidéo, USB / série, alimentation et DMX / pixel peuvent chacun avoir leur côté de la tuile (ou « Automatique »), et la tuile s'agrandit si un côté est chargé. |
+| **Machines virtuelles** | Un ordinateur peut héberger des VMs, dessinées dans sa tuile : nom, OS, vCPU, RAM et une ligne par vNIC. Chaque vNIC est pontée sur un port réseau de l'hôte et a ses propres IP. Les VMs suivent leur hôte au copier-coller et à la suppression. Section **Matériel** : OS, CPU, RAM, stockage et GPU sur les machines physiques ; OS, vCPU, RAM, disque et GPU passthrough sur les VMs. |
+| **Mes composantes** | Créer ses propres appareils : nom, code, catégorie, ports (RJ45, SFP, USB, DMX, HDMI, DisplayPort…) avec PoE reçu ou fourni, et une icône maison ou importée (SVG ou PNG). Ils se réutilisent d'un projet à l'autre, et chaque projet embarque ceux qu'il utilise : il s'ouvre complet chez quelqu'un qui ne les a pas. |
 | **Ne rien perdre** | Enregistrement automatique dans le fichier, comme un document en ligne (Fichier › Enregistrement automatique, actif par défaut) ; un nouveau projet reçoit son fichier dans Documents › AV·WAN. Fichier › Revenir à la version d'ouverture en cas d'erreur. Copie de secours toutes les 30 secondes : après un arrêt imprévu, l'accueil propose de la restaurer. Double-clic sur un fichier `.avwan` pour l'ouvrir. |
 | **Brancher** | Glisser d'un port à un autre, ou lâcher le câble sur l'appareil : AV·WAN choisit un port libre compatible, et un port PoE pour un appareil alimenté. Un port n'accepte qu'un seul câble. On rebranche un bout de câble en le glissant, et on déplace son coude. |
-| **Régler** | IP de chaque appareil (bascule *Statique / DHCP*), VLAN en accès ou en trunk, médium (Cat6, fibre OM4, DAC, Wi-Fi…), longueur. |
-| **Documenter** | Liste de branchement, fiches par appareil, carte des ports de chaque switch, fiches VLAN avec les réglages UniFi (IGMP Snooping, Querier, profil ProAV…), plan d'adressage IP, patch DMX, bilan de puissance, nomenclature. |
+| **Régler** | Une ou plusieurs IP par port réseau (RJ45, SFP, SFP+, Wi-Fi), chacune *Statique* ou *DHCP* (« + IP » pour en ajouter), VLAN en accès ou en trunk, médium (Cat6, fibre OM4, DAC, Wi-Fi…), longueur. |
+| **Documenter** | Liste de branchement, fiches par appareil, carte des ports de chaque switch, fiches VLAN avec les réglages UniFi (IGMP Snooping, Querier, profil ProAV…), plan d'adressage IP (une ligne par adresse, VMs comprises), patch DMX, bilan de puissance, nomenclature. |
 | **Exporter** | PDF vectoriel en Tabloïd + Lettre (ou A3 + A4) avec un cartouche sur chaque page, CSV et Excel. |
 
 ### Exports
@@ -80,11 +85,11 @@ AV·WAN est gratuit, fonctionne hors ligne sur macOS, Windows et Linux, et est e
 
 - **PDF vectoriel**, texte sélectionnable, cartouche et « page x / y » sur chaque page :
   1. schéma en Tabloïd (ou A3) paysage, avec sa légende, plus une page agrandie par zone marquée « page séparée » ;
-  2. fiches par appareil, une ligne par branchement (« ETH › SW-2 · port 1 · PoE+ actif (25 W) · VLAN 40 NDI · C-010 Cat6 12 m ») ;
+  2. fiches par appareil, une ligne par branchement (« ETH › SW-2 · port 1 · PoE+ actif (25 W) · VLAN 40 NDI · C-010 Cat6 12 m »), regroupées par carte, avec le matériel et les VMs hébergées ;
   3. carte des ports de chaque switch : la façade colorée par VLAN natif, puis le tableau port par port ;
   4. liste de branchement ;
   5. fiches VLAN avec les réglages UniFi sous leurs noms exacts ;
-  6. plan d'adressage IP, trié par VLAN puis par adresse ;
+  6. plan d'adressage IP, trié par VLAN puis par adresse : une ligne par adresse, VMs comprises (« SRV-HV-01 › VM Show »), avec le nom de la carte devant le port quand il y en a une ;
   7. patch DMX : un tableau par univers, trié par adresse, chevauchements en remarque ;
   8. bilan de puissance : par alimentation, par zone, total en watts et en ampères à la tension du projet (120 ou 230 V) ;
   9. nomenclature : appareils, câbles par longueur arrondie au mètre, modules SFP+ déduits.
@@ -103,6 +108,7 @@ Le PDF, le CSV et le classeur lisent les mêmes tableaux : ils ne se contredisen
 | **DEL d'un port** | Ambre : le port alimente un appareil (PoE). Vert : lien sans PoE. Éteinte : port libre. |
 | **Fiche de couleur enfoncée dans un port** | Le port est occupé. |
 | **Éclair ⚡ près d'un bout** | Le côté qui fournit l'alimentation PoE. |
+| **Petites tuiles dans un ordinateur** | Ses machines virtuelles : nom, OS, vCPU, RAM et une ligne par vNIC. |
 | **Cadre teinté avec un titre** | Une zone : régie, salle, scène… |
 | **Étiquette ruban** | Le nom de l'appareil (`CAM-PTZ-1`). Le code encadré (`CAM`, `DNT`, `IOT`) donne son type. |
 
@@ -165,7 +171,7 @@ src/main/        processus Electron : fichiers .avwan (écriture atomique), menu
 src/preload/     pont sécurisé (sandbox, contextIsolation)
 src/shared/      types communs : API IPC, tableaux de données, options du PDF
 src/renderer/    l'interface React
-  model/         le projet : schéma zod, règles de branchement, VLAN et PoE dérivés
+  model/         le projet : schéma zod (format v4) et migrations, règles de branchement, VLAN et PoE dérivés
   catalog/       gabarits d'appareils, configurateur de switch, VLAN prédéfinis
   reports/       rapports purs : branchement, fiches, ports, VLAN, IP, nomenclature
   export/        vue d'impression du PDF et boîte d'export
