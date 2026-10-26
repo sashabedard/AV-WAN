@@ -1,7 +1,9 @@
 import { afterEach, describe, expect, it } from 'vitest'
 import { messages } from '../../../shared/i18n/messages'
 import { LED_STRIP_TYPES } from './led'
-import { CURRENT_SCHEMA_VERSION, MIGRATIONS, migrate } from './migrations'
+import { CURRENT_SCHEMA_VERSION, MIGRATIONS, migrate, migrateDeviceV4 } from './migrations'
+import { ProjectSchema } from './schema'
+import { sampleProject } from './__fixtures__/sample'
 
 afterEach(() => {
   delete MIGRATIONS[0]
@@ -29,7 +31,7 @@ describe('migration 1 → 2', () => {
       ]
     }
     expect(migrate(doc, messages('fr'))).toEqual({
-      schemaVersion: 3,
+      schemaVersion: 4,
       devices: [
         { id: 'f', templateId: 'dmx-fixture', dmx: { footprint: 1 } },
         { id: 'g', templateId: 'generic' },
@@ -39,13 +41,13 @@ describe('migration 1 → 2', () => {
   })
 
   it('un document sans liste d’appareils passe quand même', () => {
-    expect(migrate({ schemaVersion: 1 }, messages('fr'))).toEqual({ schemaVersion: 3 })
+    expect(migrate({ schemaVersion: 1 }, messages('fr'))).toEqual({ schemaVersion: 4 })
   })
 
   it('1 → 2 : une ancienne bande reçoit sa prise DC et le type WS2812B, sans longueur', () => {
     const doc = { schemaVersion: 1, devices: [{ id: 'led', templateId: 'led-strip', ports: [{ id: 'IN', label: 'IN', connector: 'pixel' }] }] }
     expect(migrate(doc, messages('fr'))).toEqual({
-      schemaVersion: 3,
+      schemaVersion: 4,
       devices: [
         {
           id: 'led',
@@ -60,6 +62,44 @@ describe('migration 1 → 2', () => {
 
 describe('migration 2 → 3', () => {
   it('2 → 3 : seul le numéro de version change', () => {
-    expect(migrate({ schemaVersion: 2, devices: [] }, messages('fr'))).toEqual({ schemaVersion: 3, devices: [] })
+    expect(migrate({ schemaVersion: 2, devices: [] }, messages('fr'))).toEqual({ schemaVersion: 4, devices: [] })
+  })
+})
+
+describe('migration 3 → 4', () => {
+  const ip = (address: string) => ({ address, mode: 'static' as const })
+
+  it('migrateDeviceV4 déplace portState.ip vers ips', () => {
+    const d = migrateDeviceV4({ ports: [{ id: 'eth0', label: 'eth0', connector: 'rj45' }], portState: { eth0: { ip: ip('10.0.0.5') } } }) as Record<string, any>
+    expect(d['portState'].eth0).toEqual({ ips: [ip('10.0.0.5')] })
+  })
+
+  it("l'IP de l'appareil passe en tête du premier port réseau", () => {
+    const d = migrateDeviceV4({
+      ports: [{ id: 'USB-1', label: 'USB 1', connector: 'usb' }, { id: 'LAN', label: 'LAN', connector: 'rj45' }],
+      portState: { LAN: { ip: ip('10.40.0.22') } },
+      ip: ip('10.40.0.21')
+    }) as Record<string, any>
+    expect(d['portState'].LAN.ips).toEqual([ip('10.40.0.21'), ip('10.40.0.22')])
+    expect('ip' in d).toBe(false)
+  })
+
+  it('sans port réseau, un port NET est créé', () => {
+    const d = migrateDeviceV4({ ports: [{ id: 'DMX-IN', label: 'DMX IN', connector: 'dmx' }], portState: {}, ip: ip('10.50.0.30') }) as Record<string, any>
+    expect(d['ports'].at(-1)).toEqual({ id: 'NET', label: 'NET', connector: 'rj45' })
+    expect(d['portState'].NET.ips).toEqual([ip('10.50.0.30')])
+    expect('ip' in d).toBe(false)
+  })
+
+  it('un document v3 complet passe en v4', () => {
+    const v4 = sampleProject()
+    const v3 = {
+      ...v4,
+      schemaVersion: 3,
+      devices: v4.devices.map((d) => (d.id === 'cam1' ? { ...d, portState: {}, ip: ip('10.40.0.21') } : d))
+    }
+    const out = migrate(v3, messages('fr'))
+    expect(out.schemaVersion).toBe(4)
+    expect(ProjectSchema.parse(out)).toEqual(v4)
   })
 })

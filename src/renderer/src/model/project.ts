@@ -21,7 +21,7 @@ function localDate(now: Date): string {
 // `lang` : langue de l'interface au moment de la création ; les VLAN prédéfinis copiés dans le projet y sont écrits (spec plan 6 § 5.2).
 export function createProject(now: Date = new Date(), lang: Lang): Project {
   return {
-    schemaVersion: 3,
+    schemaVersion: 4,
     meta: { title: messages(lang).model.newProjectTitle, authors: [], date: localDate(now), revision: 'A', status: 'conception' },
     settings: { colorMode: 'vlan', pageFormat: 'na', cableIdPrefix: 'C-', snapToGrid: true },
     vlans: DEFAULT_PROJECT_VLAN_IDS.map((id) => vlanPreset(id, lang)),

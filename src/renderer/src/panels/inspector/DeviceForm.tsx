@@ -8,7 +8,6 @@ import { getTemplate } from '../../catalog'
 import { switchSummary } from '../../catalog/switch'
 import { displayName } from '../../catalog/templateText'
 import { CommitInput } from '../CommitInput'
-import { Segmented } from '../Segmented'
 import { SwitchConfigurator } from '../SwitchConfigurator'
 import { peersOf, portVlanSummary } from './format'
 import { isUniverseOutput, UNIVERSE_MAX } from '../../model/dmx'
@@ -59,7 +58,6 @@ export function DeviceForm({ device, project }: { device: Device; project: Proje
   const { m, lang } = useT()
   const t = m.inspector.device
   const template = getTemplate(project, device.templateId)
-  const ipMode = device.ip?.mode ?? 'dhcp'
   const universePorts = new Set(device.ports.filter((p) => isUniverseOutput(project, device, p)).map((p) => p.id))
   return (
     <div>
@@ -101,25 +99,6 @@ export function DeviceForm({ device, project }: { device: Device; project: Proje
       <PsuSection device={device} project={project} />
       <LedStripSection device={device} project={project} />
       <PatchSection device={device} project={project} />
-      <div className="field">
-        <span className="field__label">{t.ipAddress}</span>
-        <CommitInput
-          className="input"
-          aria-label={t.ipAddress}
-          value={device.ip?.address ?? ''}
-          placeholder="10.40.0.21"
-          onCommit={(v) => s().updateDevice(device.id, { ip: { address: v.trim(), mode: ipMode } })}
-        />
-        <Segmented
-          ariaLabel={t.ipMode}
-          options={[
-            { value: 'static', label: t.ipStatic },
-            { value: 'dhcp', label: 'DHCP' }
-          ]}
-          value={ipMode}
-          onChange={(mode) => s().updateDevice(device.id, { ip: { address: device.ip?.address ?? '', mode } })}
-        />
-      </div>
       <label className="field">
         <span className="field__label">{t.hostname}</span>
         <CommitInput className="input" aria-label={t.hostname} value={device.hostname ?? ''} onCommit={(v) => s().updateDevice(device.id, { hostname: v.trim() || undefined })} />

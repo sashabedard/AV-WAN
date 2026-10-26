@@ -40,7 +40,7 @@ describe('pasteFragment', () => {
     expect(r.linkIds).toEqual(['n3'])
     const [sw, cam] = r.project.devices.slice(2)
     expect(sw).toMatchObject({ id: 'n1', name: 'SW-2', position: { x: 24, y: 24 }, portState: { '1': { mode: 'access', nativeVlan: 40 } } })
-    expect(cam).toMatchObject({ id: 'n2', name: 'CAM-2', position: { x: 24, y: 224 }, ip: { address: '', mode: 'static' } })
+    expect(cam).toMatchObject({ id: 'n2', name: 'CAM-2', position: { x: 24, y: 224 }, portState: { ETH: { ips: [{ address: '', mode: 'static' }] } } })
     expect(r.project.links[1]).toMatchObject({ id: 'n3', cableId: 'C-002', a: { deviceId: 'n1', portId: '1' }, b: { deviceId: 'n2', portId: 'ETH' } })
   })
 

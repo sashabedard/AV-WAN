@@ -38,8 +38,6 @@ describe('DeviceForm en deux langues', () => {
   it('affiche les libellés en anglais', () => {
     act(() => uiStore.getState().setLang('en'))
     render(<Inspector />)
-    expect(screen.getByRole('textbox', { name: 'IP address' })).toBeTruthy()
-    expect(screen.getByRole('button', { name: 'Static' })).toBeTruthy()
     expect(screen.getByRole('heading', { name: 'Ports' })).toBeTruthy()
     expect(screen.getByText('Connected to')).toBeTruthy()
     expect(screen.getByText(/^Zone: /)).toBeTruthy()

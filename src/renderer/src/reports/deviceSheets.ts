@@ -1,4 +1,5 @@
 import type { Device, LedStrip, Project } from '../model/types'
+import { primaryIp } from '../model/ips'
 import { LED_STRIP_TYPES, stripPixels, stripPower } from '../model/led'
 import { psuLoad, resolvePsu } from '../model/power'
 import { formatters } from '../../../shared/i18n/format'
@@ -100,7 +101,7 @@ export function deviceSheets(project: Project, lang: Lang): DeviceSheet[] {
         name: device.name,
         kind: template ? displayName(template, lang) : device.templateId,
         ...(device.model ? { model: device.model } : {}),
-        ip: ipLabel(device.ip, lang),
+        ip: ipLabel(primaryIp(device), lang),
         networked: device.ports.some((p) => NETWORK_CONNECTORS.has(p.connector)),
         ...(device.hostname ? { hostname: device.hostname } : {}),
         ...(zone ? { zone } : {}),

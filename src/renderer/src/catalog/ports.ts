@@ -1,7 +1,7 @@
 import type { PortDef as StoredPort, TemplatePort as PortDef } from '../model/types'
 
 type Extra = Partial<Omit<PortDef, 'id' | 'connector'>>
-export type SimpleConnector = 'usb' | 'dmx' | 'pixel' | 'hdmi' | 'sdi' | 'serial' | 'dc'
+export type SimpleConnector = 'usb' | 'dmx' | 'pixel' | 'hdmi' | 'sdi' | 'serial' | 'dc' | 'displayport'
 
 export function rj45(id: string, extra: Extra = {}): PortDef {
   return { id, label: id, connector: 'rj45', speedMbps: 1000, ...extra }

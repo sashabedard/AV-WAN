@@ -55,4 +55,30 @@ describe('sanitizeProject', () => {
     expect(r.project.racks).toHaveLength(1)
     expect(r.project.devices[0]!.rack).toBeUndefined()
   })
+
+  it('retire une VM dont l’hôte est inconnu, avec un avertissement', () => {
+    const p = sampleProject()
+    p.vms = [{ id: 'vm1', hostId: 'fantome', name: 'VM Show', vnics: [] }]
+    const r = sanitizeProject(p, messages('fr'))
+    expect(r.project.vms).toEqual([])
+    expect(r.warnings[0]).toContain('VM Show')
+  })
+
+  it('retire un pont de vNIC vers un port absent de l’hôte', () => {
+    const p = sampleProject()
+    p.vms = [{ id: 'vm1', hostId: 'cam1', name: 'VM', vnics: [{ id: 'v0', label: 'vnic0', bridgePortId: 'NOPE', ips: [] }, { id: 'v1', label: 'vnic1', bridgePortId: 'ETH', ips: [] }] }]
+    const r = sanitizeProject(p, messages('fr'))
+    expect(r.project.vms![0]!.vnics).toEqual([{ id: 'v0', label: 'vnic0', ips: [] }, { id: 'v1', label: 'vnic1', bridgePortId: 'ETH', ips: [] }])
+  })
+
+  it('un port dont la carte est inconnue retombe dans « Intégré »', () => {
+    const p = sampleProject()
+    const cam = p.devices[1]!
+    cam.cards = [{ id: 'c1', name: 'GPU 1' }]
+    cam.ports = [{ ...cam.ports[0]!, cardId: 'c1' }, { ...cam.ports[1]!, cardId: 'fantome' }]
+    const r = sanitizeProject(p, messages('fr'))
+    const ports = r.project.devices[1]!.ports
+    expect(ports[0]!.cardId).toBe('c1')
+    expect('cardId' in ports[1]!).toBe(false)
+  })
 })

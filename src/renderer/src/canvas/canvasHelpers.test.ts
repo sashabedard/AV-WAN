@@ -1,3 +1,4 @@
+import { withPrimaryIp } from '../model/ips'
 import { describe, expect, it } from 'vitest'
 import { deviceIpLine, deviceSecondLine, mergeEdges, mergeNodes, nodesMatchDerived, snapPoint, syncSelected } from './canvasHelpers'
 import type { CordFlowEdge, DeviceFlowNode } from './toFlow'
@@ -71,7 +72,7 @@ describe('deviceSecondLine', () => {
   it('l’adresse remplace l’IP d’un appareil patchable ; l’IP reste pour les autres', () => {
     let p = createProject(undefined, 'fr')
     const f = { ...createDevice(p, 'dmx-fixture', { x: 0, y: 0 }, { lang: 'fr', id: 'f' }), dmx: { footprint: 16, address: 33, universe: 0 } }
-    const cam = { ...createDevice(p, 'ip-camera', { x: 0, y: 0 }, { lang: 'fr', id: 'c' }), ip: { address: '10.70.0.5', mode: 'static' as const } }
+    const cam = withPrimaryIp(createDevice(p, 'ip-camera', { x: 0, y: 0 }, { lang: 'fr', id: 'c' }), { address: '10.70.0.5', mode: 'static' })
     p = { ...p, devices: [f, cam] }
     const index = patchIndex(p)
     expect(deviceSecondLine(f, index.entries.get('f'), 'fr')).toBe('U0 · 33')

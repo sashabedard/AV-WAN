@@ -1,4 +1,5 @@
 // src/renderer/src/reports/portMaps.ts
+import { primaryIp } from '../model/ips'
 import type { Device, PortDef, PortState, Project, SwitchSpec } from '../model/types'
 import { linksOnPort, sameRef } from '../model/rules'
 import { POE_LABELS, linkPoe, switchPoeUsage, type LinkPoe } from '../model/derive'
@@ -75,7 +76,7 @@ export function portMaps(project: Project, lang: Lang): PortMap[] {
         name: device.name,
         summary: switchSummary(device.switch, m),
         ...(device.model ? { model: device.model } : {}),
-        ip: ipLabel(device.ip, lang),
+        ip: ipLabel(primaryIp(device), lang),
         ...(device.switch.poe !== 'none' ? { poe: `PoE ${formatNumber(usage.usedW, lang)}${budget} W` } : {}),
         rows
       }

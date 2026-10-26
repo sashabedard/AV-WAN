@@ -37,8 +37,8 @@ describe('createExampleProject', () => {
 
   it('règle les VLAN sur les ports des switchs et reste dans le budget PoE', () => {
     expect(byName('SW-1').portState['2']).toEqual({ mode: 'access', nativeVlan: 20 })
-    expect(byName('SW-1').portState['1']).toEqual({ mode: 'trunk', nativeVlan: 10, taggedVlans: 'all' })
-    expect(byName('IOT-2').portState['WIFI']).toEqual({ mode: 'access', nativeVlan: 60 })
+    expect(byName('SW-1').portState['1']).toEqual({ mode: 'trunk', nativeVlan: 10, taggedVlans: 'all', ips: [{ address: '10.10.10.2', mode: 'static' }] })
+    expect(byName('IOT-2').portState['WIFI']).toEqual({ mode: 'access', nativeVlan: 60, ips: [{ address: '', mode: 'dhcp' }] })
     const usage = switchPoeUsage(p, byName('SW-2').id)
     expect(usage).toEqual({ usedW: 123, budgetW: 150 })
   })

@@ -6,6 +6,7 @@ import type { Column, DataTable } from '../../../shared/tables'
 import type { Lang } from '../../../shared/i18n/lang'
 import { messages, type Messages } from '../../../shared/i18n/messages'
 import { DASH, compareText, vlanName } from './format'
+import { isNetworkPort, primaryIp } from '../model/ips'
 
 const WIDTHS = [16, 14, 16, 10, 18, 18]
 
@@ -21,8 +22,6 @@ interface Entry {
   vlan?: number
   hostname?: string
 }
-
-const NETWORK_CONNECTORS: ReadonlySet<string> = new Set(['rj45', 'sfp', 'sfp+', 'wifi'])
 
 // VLAN d'une prise : le réglage du port d'un switch, sinon celui du câble branché (accès, ou natif d'un trunk).
 function portVlan(project: Project, ref: PortRef): number | undefined {
@@ -45,7 +44,7 @@ function deviceVlan(project: Project, device: Device): number | undefined {
     }
   }
   for (const port of device.ports) {
-    if (!NETWORK_CONNECTORS.has(port.connector)) continue
+    if (!isNetworkPort(port)) continue
     const v = portVlan(project, { deviceId: device.id, portId: port.id })
     if (v !== undefined) return v
   }
@@ -83,12 +82,14 @@ export function ipPlan(project: Project, lang: Lang): DataTable {
   const m = messages(lang)
   const entries: Entry[] = []
   for (const device of project.devices) {
-    if (device.ip) {
-      entries.push({ device, iface: m.reports.ip.main, ip: device.ip, vlan: deviceVlan(project, device), ...(device.hostname ? { hostname: device.hostname } : {}) })
-    }
+    // Une ligne par IP. L'adresse principale garde le VLAN de l'appareil (gestion d'un switch) et le nom d'hôte.
+    const main = primaryIp(device)
     for (const port of device.ports) {
-      const ip = device.portState[port.id]?.ip
-      if (ip) entries.push({ device, iface: portDisplayLabel(device, port, m), ip, vlan: portVlan(project, { deviceId: device.id, portId: port.id }) })
+      for (const ip of device.portState[port.id]?.ips ?? []) {
+        const isMain = ip === main
+        const vlan = isMain ? deviceVlan(project, device) : portVlan(project, { deviceId: device.id, portId: port.id })
+        entries.push({ device, iface: portDisplayLabel(device, port, m), ip, vlan, ...(isMain && device.hostname ? { hostname: device.hostname } : {}) })
+      }
     }
   }
   const rows = entries

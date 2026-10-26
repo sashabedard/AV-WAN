@@ -104,13 +104,17 @@ export function pasteFragment(
   for (const d of fragment.devices) {
     const id = makeId()
     idMap.set(d.id, id)
-    const { zoneId: _zone, hostname: _host, rack: _rack, ip, ...rest } = structuredClone(d)
+    const { zoneId: _zone, hostname: _host, rack: _rack, ...rest } = structuredClone(d)
+    // Deux appareils ne partagent pas une IP : les adresses de la copie sont vidées, les modes restent.
+    const portState = Object.fromEntries(
+      Object.entries(rest.portState).map(([k, s]) => [k, s.ips ? { ...s, ips: s.ips.map((ip) => ({ address: '', mode: ip.mode })) } : s])
+    )
     const copy: Device = {
       ...rest,
+      portState,
       id,
       name: nextCopyName(p, d.name),
-      position: { x: d.position.x + offset.x, y: d.position.y + offset.y },
-      ...(ip ? { ip: { address: '', mode: ip.mode } } : {}) // deux appareils ne partagent pas une IP
+      position: { x: d.position.x + offset.x, y: d.position.y + offset.y }
     }
     const placed = withNextAddress(index, copy)
     const dmx = placed.dmx

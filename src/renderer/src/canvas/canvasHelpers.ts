@@ -4,6 +4,7 @@ import type { Device, IpConfig } from '../model/types'
 import { patchLine, type PatchEntry } from '../model/dmx'
 import { LED_STRIP_TYPES, stripPower } from '../model/led'
 import { resolvePsu } from '../model/power'
+import { primaryIp } from '../model/ips'
 import { messages } from '../../../shared/i18n/messages'
 import { formatters } from '../../../shared/i18n/format'
 import type { Lang } from '../../../shared/i18n/lang'
@@ -31,7 +32,7 @@ export function deviceSecondLine(device: Device, patch: PatchEntry | undefined, 
     return [r.volts !== undefined ? fmt.qty(r.volts, 'V') : '', r.watts !== undefined ? fmt.qty(r.watts, 'W') : ''].filter(Boolean).join(' · ')
   }
   if (device.dmx) return patchLine(patch, messages(lang))
-  return deviceIpLine(device.ip, lang)
+  return deviceIpLine(primaryIp(device), lang)
 }
 
 export function snapPoint(p: { x: number; y: number }, on: boolean): { x: number; y: number } {

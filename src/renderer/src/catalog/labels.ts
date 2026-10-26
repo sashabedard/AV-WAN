@@ -17,7 +17,8 @@ const MEDIA_BY_FAMILY: Record<Family, Medium[]> = {
   hdmi: ['hdmi'],
   sdi: ['sdi'],
   serial: ['serial'],
-  dc: ['dc']
+  dc: ['dc'],
+  displayport: ['displayport']
 }
 
 export function mediaForFamily(family: Family): Medium[] {

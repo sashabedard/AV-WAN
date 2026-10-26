@@ -9,6 +9,7 @@ export type Medium = z.infer<typeof S.MediumSchema>
 export type Category = z.infer<typeof S.CategorySchema>
 export type Side = z.infer<typeof S.SideSchema>
 export type PortSide = z.infer<typeof S.PortSideSchema>
+export type SideGroup = z.infer<typeof S.SideGroupSchema>
 export type IpConfig = z.infer<typeof S.IpSchema>
 export type PortDef = z.infer<typeof S.PortDefSchema>
 export type SwitchSpec = z.infer<typeof S.SwitchSpecSchema>
@@ -28,6 +29,10 @@ export type RackPlacement = NonNullable<Device['rack']>
 export type Zone = z.infer<typeof S.ZoneSchema>
 export type Vlan = z.infer<typeof S.VlanSchema>
 export type Project = z.infer<typeof S.ProjectSchema>
+export type Hardware = z.infer<typeof S.HardwareSchema>
+export type Card = z.infer<typeof S.CardSchema>
+export type Vnic = z.infer<typeof S.VnicSchema>
+export type Vm = z.infer<typeof S.VmSchema>
 
 export interface PortRef {
   deviceId: string

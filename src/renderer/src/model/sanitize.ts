@@ -1,4 +1,4 @@
-import type { Device, Link, Project, Rack } from './types'
+import type { Device, Link, Project, Rack, Vm } from './types'
 import type { Messages } from '../../../shared/i18n/messages'
 import { canConnectPorts, findPort } from './rules'
 
@@ -6,13 +6,34 @@ export function sanitizeProject(project: Project, m: Messages): { project: Proje
   const warnings: string[] = []
   const deviceIds = new Set<string>()
   const devices: Device[] = []
+  // Corrections silencieuses (aucune donnée perdue) : elles produisent quand même un nouveau projet.
+  let repaired = false
   for (const d of project.devices) {
     if (deviceIds.has(d.id)) {
       warnings.push(m.model.sanitize.duplicateDevice({ name: d.name }))
       continue
     }
     deviceIds.add(d.id)
-    devices.push(d)
+    // Port dont la carte n'existe pas : il retombe dans « Intégré ».
+    const cardIds = new Set((d.cards ?? []).map((c) => c.id))
+    if (d.ports.some((p) => p.cardId !== undefined && !cardIds.has(p.cardId))) {
+      repaired = true
+      devices.push({ ...d, ports: d.ports.map((p) => (p.cardId === undefined || cardIds.has(p.cardId) ? p : (({ cardId: _c, ...rest }) => rest)(p))) })
+    } else devices.push(d)
+  }
+  // VMs : hôte absent → retirée ; pont vers un port absent de l'hôte → vidé.
+  const vms: Vm[] = []
+  for (const vm of project.vms ?? []) {
+    const host = devices.find((d) => d.id === vm.hostId)
+    if (!host) {
+      warnings.push(m.model.sanitize.vmOrphan({ name: vm.name }))
+      continue
+    }
+    const portIds = new Set(host.ports.map((p) => p.id))
+    if (vm.vnics.some((n) => n.bridgePortId !== undefined && !portIds.has(n.bridgePortId))) {
+      repaired = true
+      vms.push({ ...vm, vnics: vm.vnics.map((n) => (n.bridgePortId === undefined || portIds.has(n.bridgePortId) ? n : (({ bridgePortId: _b, ...rest }) => rest)(n))) })
+    } else vms.push(vm)
   }
   // Baies : ids en double retirés ; placements invalides (baie absente, hors baie, chevauchement) retirés dans l'ordre
   const racks: Rack[] = []
@@ -63,5 +84,6 @@ export function sanitizeProject(project: Project, m: Messages): { project: Proje
     linkIds.add(l.id)
     links.push(l)
   }
-  return { project: warnings.length > 0 ? { ...project, devices, links, ...(project.racks ? { racks } : {}) } : project, warnings }
+  const changed = warnings.length > 0 || repaired
+  return { project: changed ? { ...project, devices, links, ...(project.racks ? { racks } : {}), ...(project.vms ? { vms } : {}) } : project, warnings }
 }

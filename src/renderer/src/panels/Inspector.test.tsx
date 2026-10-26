@@ -22,14 +22,6 @@ describe('Inspector', () => {
     expect(screen.getByRole('heading', { name: 'Projet' })).toBeTruthy()
   })
 
-  it("bascule l'IP d'un appareil en DHCP", async () => {
-    const user = userEvent.setup()
-    projectStore.getState().setSelection({ deviceIds: ['cam1'], linkIds: [] })
-    render(<Inspector />)
-    await user.click(screen.getByRole('button', { name: 'DHCP' }))
-    expect(project().devices[1]!.ip).toEqual({ address: '10.40.0.21', mode: 'dhcp' })
-  })
-
   it('règle un câble en trunk : le réglage est écrit sur le port du switch', async () => {
     const user = userEvent.setup()
     projectStore.getState().setSelection({ deviceIds: [], linkIds: ['l1'] })
