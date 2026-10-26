@@ -53,6 +53,7 @@ export function makeVmFixture(): Project {
   host.portState = { ETH1: { ips: [{ address: '10.40.0.30', mode: 'static' }] } }
   return {
     ...base,
+    // i18n-ignore : banc d'essai
     meta: { ...base.meta, title: 'Banc des VMs' },
     vlans: [vlanPreset(40, 'fr')],
     devices: [host],
@@ -64,6 +65,7 @@ export function makeVmFixture(): Project {
           { id: 'v-n2', label: 'vnic1', bridgePortId: 'ETH2', ips: [{ address: '', mode: 'dhcp' }] }
         ]
       },
+      // i18n-ignore : banc d'essai
       { id: 'v-vm2', hostId: 'v-hv', name: 'VM Contrôle', specs: { os: 'Windows 11', vcpu: 4, ramGb: 16 }, vnics: [{ id: 'v-n3', label: 'vnic0', bridgePortId: 'ETH1', ips: [{ address: '10.40.0.33', mode: 'static' }] }] }
     ]
   }
