@@ -5,13 +5,15 @@ z.config(z.locales.fr())
 
 export const VlanIdSchema = z.number().int().min(1).max(4094)
 export const PoeClassSchema = z.enum(['af', 'at', 'bt'])
-export const ConnectorSchema = z.enum(['rj45', 'sfp', 'sfp+', 'wifi', 'usb', 'dmx', 'pixel', 'hdmi', 'sdi', 'serial', 'dc'])
+export const ConnectorSchema = z.enum(['rj45', 'sfp', 'sfp+', 'wifi', 'usb', 'dmx', 'pixel', 'hdmi', 'sdi', 'serial', 'dc', 'displayport'])
 export const MediumSchema = z.enum([
-  'cat5e', 'cat6', 'cat6a', 'om3', 'om4', 'os2', 'dac', 'wifi', 'usb', 'dmx', 'pixel', 'hdmi', 'sdi', 'serial', 'dc'
+  'cat5e', 'cat6', 'cat6a', 'om3', 'om4', 'os2', 'dac', 'wifi', 'usb', 'dmx', 'pixel', 'hdmi', 'sdi', 'serial', 'dc', 'displayport'
 ])
 export const CategorySchema = z.enum(['reseau', 'ordinateur', 'audio', 'video', 'eclairage', 'iot', 'capteur', 'autre'])
 export const SideSchema = z.enum(['top', 'bottom', 'left', 'right'])
 export const PortSideSchema = z.enum(['auto', 'top', 'bottom', 'left', 'right'])
+// Regroupement des connecteurs pour le côté des ports par type (spec cartes-ip-vms § 4.1). Distinct de Family (rules.ts).
+export const SideGroupSchema = z.enum(['reseau', 'video', 'usb', 'alim', 'dmx'])
 
 const XYSchema = z.object({ x: z.number(), y: z.number() })
 const HexColorSchema = z.string().regex(/^#[0-9A-Fa-f]{6}$/)
@@ -60,7 +62,9 @@ export const PortDefSchema = z.object({
   poeOut: PoeClassSchema.optional(),
   poeIn: PoeClassSchema.optional(),
   poeDrawW: z.number().nonnegative().optional(),
-  row: z.enum(['top', 'bottom', 'side']).optional()
+  row: z.enum(['top', 'bottom', 'side']).optional(),
+  // Carte de l'appareil (Device.cards) ; absent ou inconnu : « Intégré ».
+  cardId: z.string().optional()
 })
 
 export const SwitchSpecSchema = z.object({
@@ -101,7 +105,8 @@ export const PortStateSchema = z.object({
   nativeVlan: VlanIdSchema.optional(),
   taggedVlans: z.union([z.array(VlanIdSchema), z.literal('all')]).optional(),
   poeEnabled: z.boolean().optional(),
-  ip: IpSchema.optional(),
+  // Plusieurs IP par port réseau (alias) ; la première est la principale.
+  ips: z.array(IpSchema).optional(),
   universe: DmxUniverseSchema.optional(),
   label: z.string().optional(),
   note: z.string().optional()
@@ -116,6 +121,17 @@ export const RackSchema = z.object({
 
 export const RackPlacementSchema = z.object({ rackId: z.string(), u: z.number().int().min(1), heightU: z.number().int().min(1).max(52) })
 
+// Attributs matériels en texte libre, sauf la RAM.
+export const HardwareSchema = z.object({
+  os: z.string().optional(),
+  cpu: z.string().optional(),
+  ramGb: z.number().positive().optional(),
+  storage: z.string().optional(),
+  gpu: z.string().optional()
+})
+
+export const CardSchema = z.object({ id: z.string(), name: z.string() })
+
 export const DeviceSchema = z.object({
   id: z.string(),
   templateId: z.string(),
@@ -128,7 +144,10 @@ export const DeviceSchema = z.object({
   switch: SwitchSpecSchema.optional(),
   ports: z.array(PortDefSchema),
   portState: z.record(z.string(), PortStateSchema),
-  ip: IpSchema.optional(),
+  cards: z.array(CardSchema).optional(),
+  onboardName: z.string().optional(),
+  portSides: z.partialRecord(SideGroupSchema, PortSideSchema).optional(),
+  specs: HardwareSchema.optional(),
   hostname: z.string().optional(),
   note: z.string().optional(),
   powerW: z.number().nonnegative().optional(),
@@ -136,6 +155,33 @@ export const DeviceSchema = z.object({
   psu: PsuSchema.optional(),
   ledStrip: LedStripSchema.optional(),
   rack: RackPlacementSchema.optional()
+})
+
+// Une VM n'est pas un Device : ni position, ni câble, ni puissance ; ses vNIC sont pontées sur une NIC de l'hôte.
+export const VnicSchema = z.object({
+  id: z.string(),
+  label: z.string(),
+  bridgePortId: z.string().optional(),
+  vlanId: VlanIdSchema.optional(),
+  ips: z.array(IpSchema)
+})
+
+export const VmSchema = z.object({
+  id: z.string(),
+  hostId: z.string(),
+  name: z.string(),
+  specs: z
+    .object({
+      os: z.string().optional(),
+      vcpu: z.number().int().positive().optional(),
+      ramGb: z.number().positive().optional(),
+      diskGb: z.number().positive().optional(),
+      gpuPassthrough: z.string().optional()
+    })
+    .optional(),
+  vnics: z.array(VnicSchema),
+  hostname: z.string().optional(),
+  note: z.string().optional()
 })
 
 const PortRefSchema = z.object({ deviceId: z.string(), portId: z.string() })
@@ -187,7 +233,7 @@ export const VlanSchema = z.object({
 })
 
 export const ProjectSchema = z.object({
-  schemaVersion: z.literal(3),
+  schemaVersion: z.literal(4),
   meta: z.object({
     title: z.string(),
     course: z.string().optional(),
@@ -208,6 +254,7 @@ export const ProjectSchema = z.object({
   links: z.array(LinkSchema),
   zones: z.array(ZoneSchema),
   racks: z.array(RackSchema).optional(),
+  vms: z.array(VmSchema).optional(),
   templates: z.array(DeviceTemplateSchema),
   dmxChannels: z.array(DmxChannelListSchema).optional(),
   viewport: z.object({ x: z.number(), y: z.number(), zoom: z.number() }).optional()

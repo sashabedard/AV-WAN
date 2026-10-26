@@ -1,22 +1,23 @@
 // src/renderer/src/panels/inspector/DeviceForm.tsx
 import { useState } from 'react'
-import type { Device, PortSide, Project } from '../../model/types'
+import type { Device, PortSide, Project, SideGroup } from '../../model/types'
+import { SIDE_GROUPS, sideGroupOf } from '../../model/sides'
 import { linksOnRemovedPorts, projectStore } from '../../store/projectStore'
-import { isRackDevice, portDisplayLabel } from '../../model/rules'
+import { isRackDevice } from '../../model/rules'
 import { switchPoeUsage } from '../../model/derive'
 import { getTemplate } from '../../catalog'
 import { switchSummary } from '../../catalog/switch'
 import { displayName } from '../../catalog/templateText'
 import { CommitInput } from '../CommitInput'
-import { Segmented } from '../Segmented'
 import { SwitchConfigurator } from '../SwitchConfigurator'
-import { peersOf, portVlanSummary } from './format'
-import { isUniverseOutput, UNIVERSE_MAX } from '../../model/dmx'
-import { decimalText, parseDecimalField, parseIntField } from '../../model/fields'
+import { decimalText, parseDecimalField } from '../../model/fields'
 import { PsuSection } from './PsuSection'
 import { LedStripSection } from './LedStripSection'
 import { PatchSection } from './PatchSection'
 import { RackSection } from './RackSection'
+import { PortsByCard } from './PortsByCard'
+import { HardwareSection } from './HardwareSection'
+import { canHostVms } from '../../model/vms'
 import { useT } from '../../i18n/useT'
 
 function SwitchSection({ device, project }: { device: Device; project: Project }) {
@@ -54,13 +55,18 @@ function SwitchSection({ device, project }: { device: Device; project: Project }
   )
 }
 
+// Réglage d'un type ; '' le retire. Sans aucun réglage, portSides disparaît (rendu d'avant, à l'identique).
+function withGroupSide(device: Device, group: SideGroup, side: PortSide | ''): Device['portSides'] {
+  const { [group]: _old, ...rest } = device.portSides ?? {}
+  const next = side ? { ...rest, [group]: side } : rest
+  return Object.keys(next).length > 0 ? next : undefined
+}
+
 export function DeviceForm({ device, project }: { device: Device; project: Project }) {
   const s = projectStore.getState
   const { m, lang } = useT()
   const t = m.inspector.device
   const template = getTemplate(project, device.templateId)
-  const ipMode = device.ip?.mode ?? 'dhcp'
-  const universePorts = new Set(device.ports.filter((p) => isUniverseOutput(project, device, p)).map((p) => p.id))
   return (
     <div>
       <h2 className="insp__title">{template ? displayName(template, lang) : t.fallbackTitle}</h2>
@@ -101,25 +107,6 @@ export function DeviceForm({ device, project }: { device: Device; project: Proje
       <PsuSection device={device} project={project} />
       <LedStripSection device={device} project={project} />
       <PatchSection device={device} project={project} />
-      <div className="field">
-        <span className="field__label">{t.ipAddress}</span>
-        <CommitInput
-          className="input"
-          aria-label={t.ipAddress}
-          value={device.ip?.address ?? ''}
-          placeholder="10.40.0.21"
-          onCommit={(v) => s().updateDevice(device.id, { ip: { address: v.trim(), mode: ipMode } })}
-        />
-        <Segmented
-          ariaLabel={t.ipMode}
-          options={[
-            { value: 'static', label: t.ipStatic },
-            { value: 'dhcp', label: 'DHCP' }
-          ]}
-          value={ipMode}
-          onChange={(mode) => s().updateDevice(device.id, { ip: { address: device.ip?.address ?? '', mode } })}
-        />
-      </div>
       <label className="field">
         <span className="field__label">{t.hostname}</span>
         <CommitInput className="input" aria-label={t.hostname} value={device.hostname ?? ''} onCommit={(v) => s().updateDevice(device.id, { hostname: v.trim() || undefined })} />
@@ -140,63 +127,35 @@ export function DeviceForm({ device, project }: { device: Device; project: Proje
           </select>
         </label>
       )}
+      {!isRackDevice(device) &&
+        SIDE_GROUPS.filter((g) => device.ports.some((p) => sideGroupOf(p.connector) === g)).map((g) => (
+          <label className="field" key={g}>
+            <span className="field__label">{t.sideGroups[g]}</span>
+            <select
+              className="input"
+              aria-label={t.groupSide({ group: t.sideGroups[g] })}
+              value={device.portSides?.[g] ?? ''}
+              onChange={(e) => s().updateDevice(device.id, { portSides: withGroupSide(device, g, e.target.value as PortSide | '') })}
+            >
+              <option value="">{t.sideDefault}</option>
+              <option value="auto">{t.sideAuto}</option>
+              <option value="top">{t.sideTop}</option>
+              <option value="bottom">{t.sideBottom}</option>
+              <option value="left">{t.sideLeft}</option>
+              <option value="right">{t.sideRight}</option>
+            </select>
+          </label>
+        ))}
       <p className="insp__note">{t.zoneLine({ name: project.zones.find((z) => z.id === device.zoneId)?.name })}</p>
+      <HardwareSection device={device} project={project} />
+      {canHostVms(project, device) && (
+        <button type="button" className="btn" onClick={() => s().addVm(device.id)}>
+          {m.inspector.hardware.addVm}
+        </button>
+      )}
       <RackSection device={device} project={project} />
       <SwitchSection device={device} project={project} />
-      <section className="insp__section">
-        <h3 className="insp__title">{t.ports}</h3>
-        <table className="ports">
-          <thead>
-            <tr>
-              <th>{t.port}</th>
-              <th>{t.pluggedTo}</th>
-              <th>{t.vlan}</th>
-              <th>{t.poe}</th>
-              {universePorts.size > 0 && <th>{t.universe}</th>}
-            </tr>
-          </thead>
-          <tbody>
-            {device.ports.map((p) => (
-              <tr key={p.id}>
-                <td>{portDisplayLabel(device, p, m)}</td>
-                <td>{peersOf(project, device, p.id, m)}</td>
-                <td>{portVlanSummary(device.portState[p.id], t)}</td>
-                <td>
-                  {p.poeOut ? (
-                    <input
-                      type="checkbox"
-                      aria-label={t.poePort({ label: portDisplayLabel(device, p, m) })}
-                      checked={device.portState[p.id]?.poeEnabled ?? true}
-                      onChange={(e) => s().setPortState(device.id, p.id, { poeEnabled: e.target.checked })}
-                    />
-                  ) : p.poeIn ? (
-                    t.receives
-                  ) : (
-                    ''
-                  )}
-                </td>
-                {universePorts.size > 0 && (
-                  <td>
-                    {universePorts.has(p.id) && (
-                      <CommitInput
-                        className="input input--mini"
-                        aria-label={t.universeAria({ label: portDisplayLabel(device, p, m) })}
-                        inputMode="numeric"
-                        value={device.portState[p.id]?.universe !== undefined ? String(device.portState[p.id]!.universe) : ''}
-                        onCommit={(v) => {
-                          const n = parseIntField(v, 0, UNIVERSE_MAX)
-                          if (n === undefined) s().showToast(t.universeToast({ max: UNIVERSE_MAX }))
-                          else s().setPortState(device.id, p.id, { universe: n ?? undefined })
-                        }}
-                      />
-                    )}
-                  </td>
-                )}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </section>
+      <PortsByCard device={device} project={project} />
     </div>
   )
 }

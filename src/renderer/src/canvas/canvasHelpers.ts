@@ -1,9 +1,11 @@
 import type { Node } from '@xyflow/react'
 import type { CordFlowEdge } from './toFlow'
-import type { Device, IpConfig } from '../model/types'
+import type { Device, Hardware, IpConfig } from '../model/types'
+import type { Selection } from '../store/projectStore'
 import { patchLine, type PatchEntry } from '../model/dmx'
 import { LED_STRIP_TYPES, stripPower } from '../model/led'
 import { resolvePsu } from '../model/power'
+import { primaryIp } from '../model/ips'
 import { messages } from '../../../shared/i18n/messages'
 import { formatters } from '../../../shared/i18n/format'
 import type { Lang } from '../../../shared/i18n/lang'
@@ -31,7 +33,15 @@ export function deviceSecondLine(device: Device, patch: PatchEntry | undefined, 
     return [r.volts !== undefined ? fmt.qty(r.volts, 'V') : '', r.watts !== undefined ? fmt.qty(r.watts, 'W') : ''].filter(Boolean).join(' · ')
   }
   if (device.dmx) return patchLine(patch, messages(lang))
-  return deviceIpLine(device.ip, lang)
+  return deviceIpLine(primaryIp(device), lang)
+}
+
+// Ligne matériel sous l'en-tête d'un hôte : CPU · RAM · GPU renseignés ; '' si rien.
+export function hardwareLine(specs: Hardware | undefined, lang: Lang): string {
+  if (!specs) return ''
+  const fmt = formatters(lang)
+  const ram = specs.ramGb !== undefined ? fmt.qty(specs.ramGb, messages(lang).canvas.tile.gb) : ''
+  return [specs.cpu?.trim(), ram, specs.gpu?.trim()].filter(Boolean).join(' · ')
 }
 
 export function snapPoint(p: { x: number; y: number }, on: boolean): { x: number; y: number } {
@@ -69,3 +79,11 @@ export function syncSelected<T extends { id: string; selected?: boolean }>(items
   })
   return changed ? next : items
 }
+
+// Les tuiles de VM ne sont pas des nœuds : quand React Flow vide sa propre sélection (l'hôte se désélectionne
+// parce qu'une VM vient d'être choisie), la VM reste sélectionnée. Un clic dans le vide la retire (Canvas).
+export function selectionFromFlow(current: Selection, next: Selection): Selection {
+  const empty = next.deviceIds.length + next.linkIds.length + (next.zoneIds?.length ?? 0) === 0
+  return empty && (current.vmIds?.length ?? 0) > 0 ? current : next
+}
+

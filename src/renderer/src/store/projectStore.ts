@@ -1,6 +1,6 @@
 import { createStore, type StoreApi } from 'zustand/vanilla'
 import { useStore } from 'zustand'
-import type { Device, Link, MainsVoltage, PortRef, PortState, Project, SwitchSpec, Vlan, Zone } from '../model/types'
+import type { Connector, Device, IpConfig, Link, Vm, Vnic, MainsVoltage, PortRef, PortState, Project, SwitchSpec, Vlan, Zone } from '../model/types'
 import { createDevice, createProject, newId, type CreateDeviceOptions } from '../model/project'
 import { familyLabels, canConnectPorts, canReconnect, connectorFamily, defaultMedium, findPort, nextCableId, sameRef } from '../model/rules'
 import { setLinkVlan as deriveSetLinkVlan, type VlanChoice } from '../model/derive'
@@ -12,6 +12,9 @@ import { withTemplate } from '../model/customTemplate'
 import { autoAddress, autoAddressOnOpen } from '../model/daisyChain'
 import { ownNewKeys, removeProjectList, setProjectList, type ChannelKey } from '../model/dmxChannels'
 import { addRack as addRackModel, updateRack as updateRackModel, removeRack as removeRackModel, placeDevice, firstFreeU, unplaceDevice, setDeviceHeightU, removeInRackView, RACK_HEIGHT_MAX } from '../model/racks'
+import { editPortIps } from '../model/ips'
+import { addVm as addVmModel, addVnic as addVnicModel, moveVm as moveVmModel, removeVms as removeVmsModel, removeVnic as removeVnicModel, updateVm as updateVmModel, updateVnic as updateVnicModel } from '../model/vms'
+import { ONBOARD, addCard as addCardModel, addPort as addPortModel, defaultCardName, removeCard as removeCardModel, removePorts, type CardPresetId } from '../model/cards'
 import { uiStore } from './uiStore'
 import { currentLang, currentMessages } from '../i18n/useT'
 import type { Lang } from '../../../shared/i18n/lang'
@@ -23,13 +26,14 @@ export interface Selection {
   linkIds: string[]
   zoneIds?: string[]
   rackIds?: string[]
+  vmIds?: string[] // tuiles de VM (pas des nœuds du canvas)
 }
 
 export function sameSelection(a: Selection, b: Selection): boolean {
   const eq = (x: readonly string[] = [], y: readonly string[] = []): boolean => x.length === y.length && x.every((v, i) => v === y[i])
-  return eq(a.deviceIds, b.deviceIds) && eq(a.linkIds, b.linkIds) && eq(a.zoneIds, b.zoneIds) && eq(a.rackIds, b.rackIds)
+  return eq(a.deviceIds, b.deviceIds) && eq(a.linkIds, b.linkIds) && eq(a.zoneIds, b.zoneIds) && eq(a.rackIds, b.rackIds) && eq(a.vmIds, b.vmIds)
 }
-export type DevicePatch = Partial<Pick<Device, 'name' | 'model' | 'ip' | 'hostname' | 'note' | 'portSide' | 'powerW' | 'dmx' | 'psu' | 'ledStrip'>>
+export type DevicePatch = Partial<Pick<Device, 'name' | 'model' | 'hostname' | 'note' | 'portSide' | 'portSides' | 'specs' | 'powerW' | 'dmx' | 'psu' | 'ledStrip'>>
 export type LinkPatch = Partial<Pick<Link, 'cableId' | 'medium' | 'lengthM' | 'jacketColor' | 'wifi' | 'note' | 'elbow'>>
 export type MetaPatch = Partial<Project['meta']>
 export type ZonePatch = Partial<Pick<Zone, 'name' | 'color' | 'ownPdfPage'>>
@@ -82,6 +86,22 @@ export interface ProjectState {
   changeVlanId(from: number, to: number): boolean
   removeVlan(id: number): void
   setPortState(deviceId: string, portId: string, patch: Partial<PortState>): void
+  addPortIp(deviceId: string, portId: string): void
+  updatePortIp(deviceId: string, portId: string, index: number, ip: IpConfig): void
+  removePortIp(deviceId: string, portId: string, index: number): void
+  addPort(deviceId: string, cardId: string, connector: Connector): void
+  addCard(deviceId: string, preset: CardPresetId): void
+  renameCard(deviceId: string, cardId: string, name: string): void
+  renamePort(deviceId: string, portId: string, label: string): void
+  removePort(deviceId: string, portId: string): void
+  removeCard(deviceId: string, cardId: string): void
+  addVm(hostId: string): string
+  updateVm(id: string, patch: Partial<Pick<Vm, 'name' | 'specs' | 'hostname' | 'note'>>): void
+  moveVm(id: string, hostId: string): void
+  addVnic(vmId: string): void
+  updateVnic(vmId: string, vnicId: string, patch: Partial<Omit<Vnic, 'id'>>): void
+  removeVnic(vmId: string, vnicId: string): void
+  removeVms(ids: readonly string[]): void
   updateSwitchSpec(deviceId: string, spec: SwitchSpec): void
   updateMeta(patch: MetaPatch): void
   setMainsVoltage(voltage: MainsVoltage): void
@@ -127,6 +147,15 @@ export function createProjectStore(initial: Project = createProject(undefined, c
       const next = autoAddress(ownNewKeys(history.present, fn(history.present), dmxChannelsStore.getState().lists))
       if (next !== history.present) set({ history: commit(history, next) })
     }
+
+    // Suppression de ports : une entrée d'historique, et un toast quand des câbles ont été débranchés.
+    const removeWithToast = (fn: (p: Project) => { project: Project; unplugged: number }): void => {
+      if (refuseReadOnly()) return
+      const r = fn(get().history.present)
+      apply(() => r.project)
+      if (r.unplugged > 0) set({ toast: currentMessages().app.toast.cablesUnplugged({ n: r.unplugged }) })
+    }
+    const mapDevice = (p: Project, id: string, fn: (d: Device) => Device): Project => ({ ...p, devices: p.devices.map((d) => (d.id === id ? fn(d) : d)) })
 
     // Lecture seule : même toast que apply ; true = refusé (les actions booléennes renvoient alors false).
     const refuseReadOnly = (): boolean => {
@@ -211,7 +240,9 @@ export function createProjectStore(initial: Project = createProject(undefined, c
             {
               ...p,
               devices: p.devices.filter((d) => !ds.has(d.id)),
-              links: p.links.filter((l) => !ls.has(l.id) && !ds.has(l.a.deviceId) && !ds.has(l.b.deviceId))
+              links: p.links.filter((l) => !ls.has(l.id) && !ds.has(l.a.deviceId) && !ds.has(l.b.deviceId)),
+              // Les VMs suivent leur hôte (Review Focus 4).
+              ...(p.vms ? { vms: p.vms.filter((v) => !ds.has(v.hostId)) } : {})
             },
             zoneIds
           )
@@ -377,6 +408,45 @@ export function createProjectStore(initial: Project = createProject(undefined, c
             d.id === deviceId ? { ...d, portState: { ...d.portState, [portId]: { ...d.portState[portId], ...patch } } } : d
           )
         })),
+
+      addPortIp: (deviceId, portId) => apply((p) => editPortIps(p, deviceId, portId, (ips) => [...ips, { address: '', mode: 'static' }])),
+      updatePortIp: (deviceId, portId, index, ip) => apply((p) => editPortIps(p, deviceId, portId, (ips) => ips.map((x, i) => (i === index ? ip : x)))),
+      removePortIp: (deviceId, portId, index) => apply((p) => editPortIps(p, deviceId, portId, (ips) => ips.filter((_, i) => i !== index))),
+
+      addPort: (deviceId, cardId, connector) => apply((p) => mapDevice(p, deviceId, (d) => addPortModel(d, cardId, connector))),
+      addCard: (deviceId, preset) => apply((p) => mapDevice(p, deviceId, (d) => addCardModel(d, preset, defaultCardName(d, preset, currentMessages())))),
+      renameCard: (deviceId, cardId, name) =>
+        apply((p) =>
+          mapDevice(p, deviceId, (d) =>
+            cardId === ONBOARD ? { ...d, onboardName: name } : { ...d, cards: (d.cards ?? []).map((c) => (c.id === cardId ? { ...c, name } : c)) }
+          )
+        ),
+      renamePort: (deviceId, portId, label) => apply((p) => mapDevice(p, deviceId, (d) => ({ ...d, ports: d.ports.map((x) => (x.id === portId ? { ...x, label } : x)) }))),
+      // Une seule entrée d'historique ; les câbles des ports retirés sont débranchés dans la même action.
+      removePort: (deviceId, portId) => removeWithToast((p) => removePorts(p, deviceId, [portId])),
+      removeCard: (deviceId, cardId) => removeWithToast((p) => removeCardModel(p, deviceId, cardId)),
+
+      // VMs (spec cartes-ip-vms § 4.5, § 4.6) : la nouvelle VM est sélectionnée.
+      addVm: (hostId) => {
+        let id = ''
+        apply((p) => {
+          const r = addVmModel(p, hostId, currentMessages())
+          id = r.id
+          return r.project
+        })
+        if (id && get().history.present.vms?.some((v) => v.id === id)) set({ selection: { deviceIds: [], linkIds: [], vmIds: [id] } })
+        return id
+      },
+      updateVm: (id, patch) => apply((p) => updateVmModel(p, id, patch)),
+      moveVm: (id, hostId) => apply((p) => moveVmModel(p, id, hostId)),
+      addVnic: (vmId) => apply((p) => addVnicModel(p, vmId)),
+      updateVnic: (vmId, vnicId, patch) => apply((p) => updateVnicModel(p, vmId, vnicId, patch)),
+      removeVnic: (vmId, vnicId) => apply((p) => removeVnicModel(p, vmId, vnicId)),
+      removeVms: (ids) => {
+        if (ids.length === 0) return
+        apply((p) => removeVmsModel(p, ids))
+        set({ selection: EMPTY_SELECTION })
+      },
 
       updateSwitchSpec: (deviceId, spec) =>
         apply((p) => {

@@ -1,11 +1,14 @@
 // src/renderer/src/reports/ipPlan.ts
-import type { Device, IpConfig, PortRef, Project } from '../model/types'
-import { findDevice, isSwitchLike, linksOnPort, portDisplayLabel } from '../model/rules'
-import { linkVlanView } from '../model/derive'
+import type { Device, IpConfig, Project } from '../model/types'
+import { isSwitchLike } from '../model/rules'
+import { portLabelWithCard } from '../model/cards'
+import { vnicVlan } from '../model/vms'
+import { portVlan } from '../model/derive'
 import type { Column, DataTable } from '../../../shared/tables'
 import type { Lang } from '../../../shared/i18n/lang'
 import { messages, type Messages } from '../../../shared/i18n/messages'
 import { DASH, compareText, vlanName } from './format'
+import { isNetworkPort, primaryIp } from '../model/ips'
 
 const WIDTHS = [16, 14, 16, 10, 18, 18]
 
@@ -15,24 +18,11 @@ export function ipColumns(m: Messages): Column[] {
 }
 
 interface Entry {
-  device: Device
+  owner: string // appareil, ou « hôte › VM »
   iface: string
   ip: IpConfig
   vlan?: number
   hostname?: string
-}
-
-const NETWORK_CONNECTORS: ReadonlySet<string> = new Set(['rj45', 'sfp', 'sfp+', 'wifi'])
-
-// VLAN d'une prise : le réglage du port d'un switch, sinon celui du câble branché (accès, ou natif d'un trunk).
-function portVlan(project: Project, ref: PortRef): number | undefined {
-  const device = findDevice(project, ref.deviceId)
-  const own = device && isSwitchLike(device) ? device.portState[ref.portId]?.nativeVlan : undefined
-  if (own !== undefined) return own
-  const link = linksOnPort(project, ref)[0]
-  if (!link) return undefined
-  const v = linkVlanView(project, link)
-  return v.kind === 'access' ? v.vlan : v.kind === 'trunk' ? v.native : undefined
 }
 
 // VLAN de l'adresse principale : pour un switch, une passerelle ou un point d'accès, le natif du premier trunk
@@ -45,7 +35,7 @@ function deviceVlan(project: Project, device: Device): number | undefined {
     }
   }
   for (const port of device.ports) {
-    if (!NETWORK_CONNECTORS.has(port.connector)) continue
+    if (!isNetworkPort(port)) continue
     const v = portVlan(project, { deviceId: device.id, portId: port.id })
     if (v !== undefined) return v
   }
@@ -75,7 +65,7 @@ function compareEntries(a: Entry, b: Entry, lang: Lang): number {
     const t = compareText(a.ip.address, b.ip.address, lang)
     if (t !== 0) return t
   }
-  return compareText(a.device.name, b.device.name, lang) || compareText(a.iface, b.iface, lang)
+  return compareText(a.owner, b.owner, lang) || compareText(a.iface, b.iface, lang)
 }
 
 // Plan d'adressage IP (spec § 11.1, section 6) : trié par VLAN, puis par adresse.
@@ -83,16 +73,30 @@ export function ipPlan(project: Project, lang: Lang): DataTable {
   const m = messages(lang)
   const entries: Entry[] = []
   for (const device of project.devices) {
-    if (device.ip) {
-      entries.push({ device, iface: m.reports.ip.main, ip: device.ip, vlan: deviceVlan(project, device), ...(device.hostname ? { hostname: device.hostname } : {}) })
-    }
+    // Une ligne par IP. L'adresse principale garde le VLAN de l'appareil (gestion d'un switch) et le nom d'hôte.
+    const main = primaryIp(device)
     for (const port of device.ports) {
-      const ip = device.portState[port.id]?.ip
-      if (ip) entries.push({ device, iface: portDisplayLabel(device, port, m), ip, vlan: portVlan(project, { deviceId: device.id, portId: port.id }) })
+      for (const ip of device.portState[port.id]?.ips ?? []) {
+        const isMain = ip === main
+        const vlan = isMain ? deviceVlan(project, device) : portVlan(project, { deviceId: device.id, portId: port.id })
+        entries.push({ owner: device.name, iface: portLabelWithCard(device, port, m), ip, vlan, ...(isMain && device.hostname ? { hostname: device.hostname } : {}) })
+      }
+    }
+  }
+  // VMs : une ligne par IP de vNIC ; le nom d'hôte de la VM sur sa première ligne.
+  for (const vm of project.vms ?? []) {
+    const host = project.devices.find((d) => d.id === vm.hostId)
+    if (!host) continue
+    let first = true
+    for (const vnic of vm.vnics) {
+      for (const ip of vnic.ips) {
+        entries.push({ owner: `${host.name} › ${vm.name}`, iface: vnic.label, ip, vlan: vnicVlan(project, vm, vnic), ...(first && vm.hostname ? { hostname: vm.hostname } : {}) })
+        first = false
+      }
     }
   }
   const rows = entries
     .sort((a, b) => compareEntries(a, b, lang))
-    .map((e) => [e.device.name, e.iface, e.ip.address || DASH, e.ip.mode === 'static' ? m.reports.ip.static : 'DHCP', e.vlan !== undefined ? vlanName(project, e.vlan) : DASH, e.hostname ?? ''])
+    .map((e) => [e.owner, e.iface, e.ip.address || DASH, e.ip.mode === 'static' ? m.reports.ip.static : 'DHCP', e.vlan !== undefined ? vlanName(project, e.vlan) : DASH, e.hostname ?? ''])
   return { id: m.reports.files.ip, title: m.reports.ip.title, columns: ipColumns(m), rows }
 }

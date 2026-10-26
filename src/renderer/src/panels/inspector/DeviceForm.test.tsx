@@ -38,8 +38,6 @@ describe('DeviceForm en deux langues', () => {
   it('affiche les libellés en anglais', () => {
     act(() => uiStore.getState().setLang('en'))
     render(<Inspector />)
-    expect(screen.getByRole('textbox', { name: 'IP address' })).toBeTruthy()
-    expect(screen.getByRole('button', { name: 'Static' })).toBeTruthy()
     expect(screen.getByRole('heading', { name: 'Ports' })).toBeTruthy()
     expect(screen.getByText('Connected to')).toBeTruthy()
     expect(screen.getByText(/^Zone: /)).toBeTruthy()
@@ -55,3 +53,51 @@ describe('DeviceForm en deux langues', () => {
     expect(projectStore.getState().history.present.devices.find((d) => d.id === 'cam1')!.powerW).toBe(1200)
   })
 })
+
+describe('DeviceForm — IP des ports', () => {
+  it('montre les IP sous le port réseau, pas sous le port HDMI', async () => {
+    const user = userEvent.setup()
+    render(<Inspector />)
+    expect((screen.getByRole('textbox', { name: 'Adresse IP 1 de ETH' }) as HTMLInputElement).value).toBe('10.40.0.21')
+    expect(screen.queryByRole('button', { name: 'Ajouter une IP à HDMI' })).toBeNull()
+    await user.click(screen.getByRole('button', { name: 'DHCP' }))
+    expect(projectStore.getState().history.present.devices[1]!.portState['ETH']!.ips).toEqual([{ address: '10.40.0.21', mode: 'dhcp' }])
+  })
+})
+
+describe('DeviceForm — côté des prises par type', () => {
+  it('une ligne par type présent ; Réseau → Gauche ; « défaut » retire le réglage', async () => {
+    const user = userEvent.setup()
+    render(<Inspector />)
+    expect(screen.getByLabelText('Côté des prises — Réseau')).toBeTruthy()
+    expect(screen.getByLabelText('Côté des prises — Vidéo')).toBeTruthy()
+    expect(screen.queryByLabelText('Côté des prises — USB / série')).toBeNull()
+    await user.selectOptions(screen.getByLabelText('Côté des prises — Réseau'), 'left')
+    const cam = () => projectStore.getState().history.present.devices[1]!
+    expect(cam().portSides).toEqual({ reseau: 'left' })
+    await user.selectOptions(screen.getByLabelText('Côté des prises — Réseau'), '')
+    expect(cam().portSides).toBeUndefined()
+  })
+
+  it('rien pour un switch', () => {
+    projectStore.getState().setSelection({ deviceIds: ['sw1'], linkIds: [] })
+    render(<Inspector />)
+    expect(screen.queryByLabelText('Côté des prises — Réseau')).toBeNull()
+  })
+
+  it('en anglais', () => {
+    act(() => uiStore.getState().setLang('en'))
+    render(<Inspector />)
+    expect(screen.getByLabelText('Port side — Network')).toBeTruthy()
+    expect(screen.getByLabelText('Port side — default')).toBeTruthy()
+  })
+})
+
+describe('DeviceForm — matériel d’un appareil de baie', () => {
+  it('pas de section Matériel pour un switch', () => {
+    projectStore.getState().setSelection({ deviceIds: ['sw1'], linkIds: [] })
+    const { container } = render(<Inspector />)
+    expect(container.querySelector('details.hw')).toBeNull()
+  })
+})
+

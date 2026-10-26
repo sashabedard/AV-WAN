@@ -40,7 +40,7 @@ describe('pasteFragment', () => {
     expect(r.linkIds).toEqual(['n3'])
     const [sw, cam] = r.project.devices.slice(2)
     expect(sw).toMatchObject({ id: 'n1', name: 'SW-2', position: { x: 24, y: 24 }, portState: { '1': { mode: 'access', nativeVlan: 40 } } })
-    expect(cam).toMatchObject({ id: 'n2', name: 'CAM-2', position: { x: 24, y: 224 }, ip: { address: '', mode: 'static' } })
+    expect(cam).toMatchObject({ id: 'n2', name: 'CAM-2', position: { x: 24, y: 224 }, portState: { ETH: { ips: [{ address: '', mode: 'static' }] } } })
     expect(r.project.links[1]).toMatchObject({ id: 'n3', cableId: 'C-002', a: { deviceId: 'n1', portId: '1' }, b: { deviceId: 'n2', portId: 'ETH' } })
   })
 
@@ -230,5 +230,22 @@ describe('pasteFragment et baie', () => {
     const r = pasteFragment(p, copyFragment(p, ['cam1'])!, { x: 10, y: 10 }, ids())
     expect(r.project.devices.find((d) => d.id === r.deviceIds[0])!.rack).toBeUndefined()
     expect(r.project.devices.find((d) => d.id === 'cam1')!.rack).toBeDefined()
+  })
+
+  it('copier un hôte avec 2 VMs puis coller : nouvelles VMs, hôte remappé, ponts gardés, adresses vidées', () => {
+    const p = sampleProject()
+    p.vms = [
+      { id: 'v1', hostId: 'cam1', name: 'VM 1', vnics: [{ id: 'n1', label: 'vnic0', bridgePortId: 'ETH', ips: [{ address: '10.40.0.50', mode: 'static' }] }] },
+      { id: 'v2', hostId: 'cam1', name: 'VM 2', vnics: [] },
+      { id: 'v3', hostId: 'sw1', name: 'Ailleurs', vnics: [] }
+    ]
+    const f = copyFragment(p, ['cam1'])!
+    expect(f.vms!.map((v) => v.id)).toEqual(['v1', 'v2'])
+    const r = pasteFragment(p, parseFragment(serializeFragment(f))!, { x: 24, y: 24 }, ids())
+    const pasted = r.project.vms!.slice(3)
+    expect(pasted.map((v) => [v.name, v.hostId])).toEqual([['VM 1', r.deviceIds[0]], ['VM 2', r.deviceIds[0]]])
+    expect(new Set([...pasted.map((v) => v.id), ...p.vms.map((v) => v.id)]).size).toBe(5)
+    expect(pasted[0]!.vnics[0]).toMatchObject({ label: 'vnic0', bridgePortId: 'ETH', ips: [{ address: '', mode: 'static' }] })
+    expect(pasted[0]!.vnics[0]!.id).not.toBe('n1')
   })
 })

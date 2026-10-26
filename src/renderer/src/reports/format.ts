@@ -1,4 +1,5 @@
-import type { IpConfig, PortRef, Project } from '../model/types'
+import type { Device, IpConfig, PortRef, Project } from '../model/types'
+import { deviceIps, primaryIp } from '../model/ips'
 import { findPort, isRackDevice, portDisplayLabel } from '../model/rules'
 import { POE_LABELS, type LinkPoe } from '../model/derive'
 import type { Cell } from '../../../shared/tables'
@@ -55,6 +56,12 @@ export function poeLabel(poe: LinkPoe, lang: Lang): string {
 
 export function lengthLabel(m: number | undefined, lang: Lang): string {
   return m === undefined ? DASH : `${formatNumber(m, lang)} m`
+}
+
+// Adresse principale de l'appareil, suivie de « +N » quand il en a d'autres.
+export function deviceIpSummary(device: Device, lang: Lang): string {
+  const others = deviceIps(device).length - 1
+  return ipLabel(primaryIp(device), lang) + (others > 0 ? ` +${others}` : '')
 }
 
 export function ipLabel(ip: IpConfig | undefined, lang: Lang): string {

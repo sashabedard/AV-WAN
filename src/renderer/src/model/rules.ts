@@ -2,7 +2,7 @@ import type { Connector, Device, Link, Medium, PortDef, PortRef, Project } from 
 import type { Messages } from '../../../shared/i18n/messages'
 import { PATCH_PANEL_TEMPLATE_IDS, RACK_TEMPLATE_IDS } from '../catalog/templates'
 
-export type Family = 'ethernet' | 'optical' | 'wifi' | 'usb' | 'dmx' | 'pixel' | 'hdmi' | 'sdi' | 'serial' | 'dc'
+export type Family = 'ethernet' | 'optical' | 'wifi' | 'usb' | 'dmx' | 'pixel' | 'hdmi' | 'sdi' | 'serial' | 'dc' | 'displayport'
 
 // Libellés des familles de ports dans la langue de `m` (les identifiants de famille ne changent pas).
 export function familyLabels(m: Messages): Record<Family, string> {

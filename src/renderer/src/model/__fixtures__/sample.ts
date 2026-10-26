@@ -2,7 +2,7 @@ import type { Project } from '../types'
 
 export function sampleProject(): Project {
   return {
-    schemaVersion: 3,
+    schemaVersion: 4,
     // i18n-ignore : jeu d'essai, nom de personne
     meta: { title: 'Installation Lumen', authors: ['É. Tremblay'], date: '2026-10-13', revision: 'A', status: 'conception' },
     settings: { colorMode: 'vlan', pageFormat: 'na', cableIdPrefix: 'C-', snapToGrid: true },
@@ -54,8 +54,7 @@ export function sampleProject(): Project {
           { id: 'ETH', label: 'ETH', connector: 'rj45', speedMbps: 1000, poeIn: 'at', poeDrawW: 25 },
           { id: 'HDMI', label: 'HDMI', connector: 'hdmi' }
         ],
-        portState: {},
-        ip: { address: '10.40.0.21', mode: 'static' }
+        portState: { ETH: { ips: [{ address: '10.40.0.21', mode: 'static' }] } }
       }
     ],
     links: [

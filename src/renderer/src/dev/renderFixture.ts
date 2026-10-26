@@ -1,4 +1,5 @@
-import type { Device, Link, Project } from '../model/types'
+import type { Device, IpConfig, Link, Project } from '../model/types'
+import { withPrimaryIp } from '../model/ips'
 import { createDevice, createProject } from '../model/project'
 import { setLinkVlan, type VlanChoice } from '../model/derive'
 import { vlanPreset } from '../catalog/vlanPresets'
@@ -9,9 +10,11 @@ import { vlanPreset } from '../catalog/vlanPresets'
 export function makeRenderFixture(): Project {
   const base = createProject(new Date(2026, 9, 13), 'fr')
   let p: Project = { ...base, meta: { ...base.meta, title: 'Banc de rendu' }, vlans: [10, 20, 30, 40, 60].map((id) => vlanPreset(id, 'fr')) }
-  const add = (id: string, templateId: string, x: number, y: number, extra: Partial<Device> = {}, switchSpec?: Device['switch']): void => {
+  const add = (id: string, templateId: string, x: number, y: number, extra: Partial<Device> & { ip?: IpConfig } = {}, switchSpec?: Device['switch']): void => {
     const d = createDevice(p, templateId, { x, y }, { id, lang: 'fr', ...(switchSpec ? { switchSpec } : {}) })
-    p = { ...p, devices: [...p.devices, { ...d, ...extra }] }
+    const { ip, ...rest } = extra
+    const device: Device = { ...d, ...rest }
+    p = { ...p, devices: [...p.devices, ip ? withPrimaryIp(device, ip) : device] }
   }
   const link = (id: string, a: [string, string], b: [string, string], medium: Link['medium'], vlan: VlanChoice): void => {
     const cableId = `C-${String(p.links.length + 1).padStart(3, '0')}`
@@ -34,3 +37,37 @@ export function makeRenderFixture(): Project {
   link('r-l6', ['r-pix', 'OUT1'], ['r-led', 'IN'], 'pixel', { kind: 'none' })
   return p
 }
+
+// Banc des VMs (spec cartes-ip-vms) : un hôte à carte GPU, côtés par type, matériel et deux VMs imbriquées.
+// Banc séparé : les captures du banc de rendu ne bougent pas.
+export function makeVmFixture(): Project {
+  const base = createProject(new Date(2026, 9, 26), 'fr')
+  const host: Device = {
+    ...createDevice(base, 'media-server', { x: 0, y: 0 }, { id: 'v-hv', lang: 'fr' }),
+    name: 'SRV-HV-01',
+    specs: { os: 'Proxmox 8', cpu: '2× Xeon', ramGb: 256, gpu: '2× A6000' },
+    cards: [{ id: 'g1', name: 'GPU 1' }],
+    portSides: { reseau: 'left', video: 'right' }
+  }
+  host.ports = [...host.ports, ...['1', '2', '3', '4'].map((n) => ({ id: `DP-${n}`, label: `DP ${n}`, connector: 'displayport' as const, cardId: 'g1' }))]
+  host.portState = { ETH1: { ips: [{ address: '10.40.0.30', mode: 'static' }] } }
+  return {
+    ...base,
+    // i18n-ignore : banc d'essai
+    meta: { ...base.meta, title: 'Banc des VMs' },
+    vlans: [vlanPreset(40, 'fr')],
+    devices: [host],
+    vms: [
+      {
+        id: 'v-vm1', hostId: 'v-hv', name: 'VM Show', specs: { os: 'Ubuntu 24.04', vcpu: 8, ramGb: 32 },
+        vnics: [
+          { id: 'v-n1', label: 'vnic0', bridgePortId: 'ETH1', ips: [{ address: '10.40.0.32', mode: 'static' }] },
+          { id: 'v-n2', label: 'vnic1', bridgePortId: 'ETH2', ips: [{ address: '', mode: 'dhcp' }] }
+        ]
+      },
+      // i18n-ignore : banc d'essai
+      { id: 'v-vm2', hostId: 'v-hv', name: 'VM Contrôle', specs: { os: 'Windows 11', vcpu: 4, ramGb: 16 }, vnics: [{ id: 'v-n3', label: 'vnic0', bridgePortId: 'ETH1', ips: [{ address: '10.40.0.33', mode: 'static' }] }] }
+    ]
+  }
+}
+

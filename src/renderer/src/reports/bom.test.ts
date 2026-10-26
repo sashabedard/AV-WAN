@@ -102,3 +102,15 @@ describe('bom en anglais', () => {
     expect(t.rows.filter((r) => r[0] === 'Device').length).toBeGreaterThan(0)
   })
 })
+
+const withVms = (p: Project): Project => ({
+  ...p,
+  vms: [{ id: 'vm', hostId: p.devices[0]!.id, name: 'VM', specs: { vcpu: 4, ramGb: 16 }, vnics: [{ id: 'n', label: 'vnic0', ips: [{ address: '10.0.0.9', mode: 'static' }] }] }]
+})
+
+describe('bom : VMs', () => {
+  it('un projet avec VMs donne la même nomenclature que sans', () => {
+    const p = createExampleProject(new Date(2026, 9, 13), 'fr')
+    expect(bom(withVms(p), 'fr')).toEqual(bom(p, 'fr'))
+  })
+})

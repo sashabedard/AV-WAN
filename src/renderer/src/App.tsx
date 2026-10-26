@@ -9,6 +9,7 @@ import { useFileAutoSave } from './app/fileAutoSave'
 import { useLibraryLoad } from './app/useLibraryLoad'
 import { useDmxChannelsLoad } from './app/useDmxChannelsLoad'
 import { useSettingsSync } from './app/useSettingsSync'
+import { useWhatsNewOnLaunch } from './app/WhatsNew'
 
 export function App() {
   useMenuBridge()
@@ -21,5 +22,6 @@ export function App() {
   useLibraryLoad()
   useDmxChannelsLoad()
   useSettingsSync()
+  useWhatsNewOnLaunch()
   return <AppShell />
 }

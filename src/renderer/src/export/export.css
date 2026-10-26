@@ -11,3 +11,15 @@
 .xd__data { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding-top: 12px; border-top: 1px solid var(--line); }
 .xd__data .xd__legend { flex-basis: 100%; }
 .xd__note { margin: 6px 0 0; font: 12px/1.4 var(--font-mono); color: var(--muted); }
+
+/* Écran « Quoi de neuf » (app/WhatsNew.tsx) : la carte de la boîte d'export, un peu plus large. */
+.wn { z-index: 70; }
+.wn__card { width: 460px; }
+.wn__head { display: flex; align-items: center; gap: 10px; }
+.wn__intro { margin: 0; font-size: 13px; line-height: 1.45; color: var(--ink-2); }
+.wn__list { display: grid; gap: 9px; margin: 0; padding: 0; list-style: none; }
+.wn__item { display: grid; grid-template-columns: 10px 1fr; gap: 10px; align-items: start; font-size: 12.5px; line-height: 1.4; color: var(--ink-2); }
+.wn__dot { width: 8px; height: 8px; margin-top: 5px; border-radius: 50%; background: var(--accent); }
+.wn__name { display: block; font: 600 13px/1.3 var(--font-display); letter-spacing: 0.02em; color: var(--ink); }
+.wn__text { display: block; }
+.wn__note { padding: 10px 12px; border: 1px solid var(--accent); border-radius: 6px; background: var(--accent-bg); font-size: 12px; line-height: 1.45; color: var(--ink); }

@@ -25,11 +25,11 @@ import { useThemeMode } from '../theme/useThemeMode'
 import { currentMessages, useT } from '../i18n/useT'
 import { TEMPLATE_MIME } from '../panels/Palette'
 import { analyzeLinks, createFlowCache, toFlowEdges, toFlowNodes, toFlowZones, type CordFlowEdge, type FlowNode } from './toFlow'
-import { GRID, mergeEdges, mergeNodes, nodesMatchDerived, snapPoint, syncSelected } from './canvasHelpers'
+import { GRID, mergeEdges, mergeNodes, nodesMatchDerived, selectionFromFlow, snapPoint, syncSelected } from './canvasHelpers'
 import { useCableHandlers } from './useCableHandlers'
 import { useAltKey } from './useAltKey'
 import { FIT_OPTIONS, pinCurrentView, registerViewport } from './viewport'
-import { arrowDelta, nudgeMoves } from './keyboard'
+import { arrowDelta, nudgeMoves, vmsToDelete } from './keyboard'
 import { isTextInput } from '../app/routeEditCommand'
 import { DeviceNode } from './DeviceNode'
 import { ZoneNode } from './ZoneNode'
@@ -152,11 +152,14 @@ function CanvasInner() {
   const onSelectionChange = useCallback(({ nodes: ns, edges: es }: OnSelectionChangeParams<FlowNode, CordFlowEdge>) => {
     if (!mounted.current) return
     if (ns.length + es.length > 0) uiStore.getState().setInspectVlan(null)
-    projectStore.getState().setSelection({
-      deviceIds: ns.filter((n) => !isZone(n)).map((n) => n.id),
-      linkIds: es.map((e) => e.id),
-      zoneIds: ns.filter(isZone).map((n) => n.id)
-    })
+    const s = projectStore.getState()
+    s.setSelection(
+      selectionFromFlow(s.selection, {
+        deviceIds: ns.filter((n) => !isZone(n)).map((n) => n.id),
+        linkIds: es.map((e) => e.id),
+        zoneIds: ns.filter(isZone).map((n) => n.id)
+      })
+    )
   }, [mounted])
   const onDelete = useCallback(({ nodes: ns, edges: es }: { nodes: FlowNode[]; edges: CordFlowEdge[] }) => {
     projectStore.getState().removeElements(
@@ -234,7 +237,11 @@ function CanvasInner() {
         return
       }
       const id = ui.pendingTemplateId
-      if (!id) return
+      if (!id) {
+        const s = projectStore.getState()
+        if (s.selection.vmIds?.length) s.setSelection({ deviceIds: [], linkIds: [] })
+        return
+      }
       ui.setPendingTemplate(null)
       place(id, { x: e.clientX, y: e.clientY }, e.altKey)
     },
@@ -247,6 +254,12 @@ function CanvasInner() {
         uiStore.getState().setPendingSwitch(null)
         uiStore.getState().setPendingZone(false)
         uiStore.getState().setFocusVlan(null)
+        return
+      }
+      const vmIds = vmsToDelete(e.key, projectStore.getState().selection)
+      if (vmIds && !e.metaKey && !e.ctrlKey && !e.altKey && !isTextInput(document.activeElement)) {
+        e.preventDefault()
+        projectStore.getState().removeVms(vmIds)
         return
       }
       const delta = arrowDelta(e.key, e.shiftKey)

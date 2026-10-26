@@ -26,6 +26,30 @@ export function newProjectAction(): void {
   if (confirmDiscard()) projectStore.getState().newProject()
 }
 
+// Copie de l'original avant qu'un enregistrement ne le réécrive (migration vers le format courant, câbles retirés),
+// quel que soit le chemin d'ouverture. Un échec (clé USB, partage en lecture seule) n'empêche pas l'ouverture :
+// l'appelant ouvre alors le projet sans chemin, pour que rien ne réécrive l'original en silence.
+async function backupBeforeRewrite(path: string): Promise<{ ok: true; backupPath: string } | { ok: false }> {
+  try {
+    return { ok: true, backupPath: await window.avwan.file.backup(path) }
+  } catch {
+    return { ok: false }
+  }
+}
+
+// Message d'ouverture : copie impossible, avertissements du nettoyage, ou copie conservée après une migration.
+function backupNotice(res: { migratedFrom?: number; warnings: string[] }, backup: { ok: true; backupPath: string } | { ok: false } | null): string | null {
+  const f = currentMessages().app.file
+  if (backup && !backup.ok) return [...res.warnings, f.backupFailed].join(' ')
+  const name = backup?.ok ? fileNameOf(backup.backupPath) : null
+  if (res.warnings.length > 0) return `${res.warnings.join(' ')}${name ? f.backupKept({ name }) : ''}`
+  if (res.migratedFrom !== undefined && name) return f.migratedBackup({ name })
+  return null
+}
+
+const needsBackup = (res: { readOnly: boolean; migratedFrom?: number; warnings: string[] }): boolean =>
+  !res.readOnly && (res.migratedFrom !== undefined || res.warnings.length > 0)
+
 export async function loadFromText(path: string, text: string): Promise<boolean> {
   const s = projectStore.getState()
   const res = parseProjectFile(text, currentMessages())
@@ -33,15 +57,12 @@ export async function loadFromText(path: string, text: string): Promise<boolean>
     s.showToast(res.error)
     return false
   }
-  // Copie de l'original avant qu'un enregistrement ne l'écrase (migration ou câbles retirés).
-  let backupPath: string | null = null
-  if (res.migratedFrom !== undefined || res.warnings.length > 0) backupPath = await window.avwan.file.backup(path)
-  s.loadProject(res.project, res.readOnly ? null : path, { readOnly: res.readOnly })
+  const backup = needsBackup(res) ? await backupBeforeRewrite(path) : null
+  const keepPath = !res.readOnly && backup?.ok !== false
+  s.loadProject(res.project, keepPath ? path : null, { readOnly: res.readOnly })
+  const notice = backupNotice(res, backup)
   if (res.readOnly) s.showToast(currentMessages().app.file.openedReadOnly)
-  else if (res.warnings.length > 0) {
-    const kept = backupPath ? currentMessages().app.file.backupKept({ name: fileNameOf(backupPath) }) : ''
-    s.showToast(`${res.warnings.join(' ')}${kept}`)
-  }
+  else if (notice) s.showToast(notice)
   // Le fichier est valide : il peut entrer dans les récents (un échec ici n'empêche pas l'ouverture).
   void window.avwan.recent.remember(path).catch(() => undefined)
   return true
@@ -58,10 +79,14 @@ export async function restoreRecoveryAction(key: string): Promise<boolean> {
       s.showToast(currentMessages().app.file.restoreFailed({ reason: res.error }))
       return false
     }
-    s.loadProject(res.project, res.readOnly ? null : restored.path, { readOnly: res.readOnly, restored: true })
+    // La copie est chargée « modifiée » : l'enregistrement automatique va réécrire l'original. S'il vient d'une
+    // version précédente, sa copie de sauvegarde passe d'abord ; si elle est impossible, pas de chemin.
+    const backup = restored.path && needsBackup(res) ? await backupBeforeRewrite(restored.path) : null
+    const path = res.readOnly || backup?.ok === false ? null : restored.path
+    s.loadProject(res.project, path, { readOnly: res.readOnly, restored: true })
     autosave.adopt(restored.key)
     uiStore.getState().setWelcome(false)
-    const target = restored.path && !res.readOnly ? fileNameOf(restored.path) : null
+    const target = path ? fileNameOf(path) : null
     // Enregistrement automatique actif : la copie part seule dans son fichier, ou dans Documents › AV·WAN.
     const f = currentMessages().app.file
     const message = uiStore.getState().autoSave
@@ -69,11 +94,8 @@ export async function restoreRecoveryAction(key: string): Promise<boolean> {
       : target
         ? f.restoredSaveTo({ target })
         : f.restoredSave
-    projectStore
-      .getState()
-      .showToast(
-        res.readOnly ? f.restoredReadOnly : message
-      )
+    const notice = backup ? backupNotice(res, backup) : null
+    projectStore.getState().showToast(res.readOnly ? f.restoredReadOnly : notice ? `${message} ${notice}` : message)
     return true
   } catch (e) {
     s.showToast(currentMessages().app.file.restoreFailed({ reason: ipcErrorMessage(e) }))

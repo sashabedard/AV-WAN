@@ -113,7 +113,9 @@ export const reports: Messages['reports'] = {
     stripPixels: (p) => `${p.pixels} px · ${p.universes} universe${enPlural(p.universes, '', 's')}`,
     psuCapacity: (p) => `Power supply: ${[p.volts, `${p.capacity} W`].filter(Boolean).join(' · ')} · load ${p.load} W (${p.pct}%)`,
     psuUnknown: (p) => `Power supply: ${[p.volts, `load ${p.load} W, capacity unknown`].filter(Boolean).join(' · ')}`,
-    power: (p) => `Power: ${p.watts} W`
+    power: (p) => `Power: ${p.watts} W`,
+    hardware: (p) => `Hardware: ${p.line}`,
+    vm: (p) => `VM ${p.name}: ${p.line}`
   },
   vlan: {
     on: 'On',

@@ -1,7 +1,7 @@
 import { stripWithType } from './led'
 import type { Messages } from '../../../shared/i18n/messages'
 
-export const CURRENT_SCHEMA_VERSION = 3
+export const CURRENT_SCHEMA_VERSION = 4
 
 export type RawDoc = Record<string, unknown> & { schemaVersion: number }
 
@@ -19,11 +19,49 @@ export function migrateDeviceV2(device: unknown): unknown {
   return d
 }
 
+const NETWORK = new Set(['rj45', 'sfp', 'sfp+', 'wifi'])
+type RawPort = { id?: unknown; connector?: unknown }
+
+// 3 → 4 (IP multiples) : portState[*].ip devient ips ; l'IP d'appareil passe en tête du premier port réseau,
+// dans un port RJ45 « NET » (id libre) créé s'il n'y en a aucun (aucune perte, rien d'autre d'inventé).
+// Une IP sans adresse (simple clic DHCP / Statique en 1.4) garde son mode sur un port réseau existant,
+// mais ne crée jamais de port.
+export function migrateDeviceV4(device: unknown): unknown {
+  if (typeof device !== 'object' || device === null) return device
+  const { ip, ...d } = device as Record<string, unknown>
+  const state = typeof d['portState'] === 'object' && d['portState'] !== null ? (d['portState'] as Record<string, Record<string, unknown>>) : undefined
+  let portState: Record<string, Record<string, unknown>> | undefined = state
+  if (state) {
+    portState = {}
+    for (const [id, s] of Object.entries(state)) {
+      const { ip: portIp, ...rest } = s ?? {}
+      portState[id] = portIp === undefined ? rest : { ...rest, ips: [portIp] }
+    }
+  }
+  if (ip === undefined) return portState ? { ...d, portState } : d
+  let ports = Array.isArray(d['ports']) ? (d['ports'] as RawPort[]) : []
+  let net = ports.find((p) => typeof p === 'object' && p !== null && NETWORK.has(p.connector as string))
+  if (!net) {
+    const address = typeof ip === 'object' && ip !== null ? (ip as { address?: unknown }).address : undefined
+    if (typeof address !== 'string' || address.trim() === '') return portState ? { ...d, portState } : d
+    const taken = new Set(ports.map((p) => (typeof p === 'object' && p !== null ? p.id : undefined)))
+    let id = 'NET'
+    for (let n = 2; taken.has(id); n++) id = `NET-${n}`
+    net = { id, label: 'NET', connector: 'rj45' } as RawPort
+    ports = [...ports, net]
+  }
+  const id = net.id as string
+  const prev = portState?.[id] ?? {}
+  const ips = Array.isArray(prev['ips']) ? prev['ips'] : []
+  return { ...d, ports, portState: { ...portState, [id]: { ...prev, ips: [ip, ...ips] } } }
+}
+
 // MIGRATIONS[n] transforme un document de version n en version n + 1.
 export const MIGRATIONS: Record<number, (doc: RawDoc) => RawDoc> = {
   1: (doc) => ({ ...doc, schemaVersion: 2, ...(Array.isArray(doc['devices']) ? { devices: doc['devices'].map(migrateDeviceV2) } : {}) }),
   // 2 → 3 (canaux DMX nommés) : le champ dmxChannels est facultatif, rien d'autre ne change.
-  2: (doc) => ({ ...doc, schemaVersion: 3 })
+  2: (doc) => ({ ...doc, schemaVersion: 3 }),
+  3: (doc) => ({ ...doc, schemaVersion: 4, ...(Array.isArray(doc['devices']) ? { devices: doc['devices'].map(migrateDeviceV4) } : {}) })
 }
 
 export function migrate(doc: RawDoc, m: Messages): RawDoc {

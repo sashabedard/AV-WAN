@@ -1,5 +1,6 @@
 // src/renderer/src/samples/exampleProject.ts
-import type { Device, Link, Project } from '../model/types'
+import type { Device, IpConfig, Link, Project } from '../model/types'
+import { withPrimaryIp } from '../model/ips'
 import { createDevice, createProject } from '../model/project'
 import { setLinkVlan, type VlanChoice } from '../model/derive'
 import { assignZones } from '../model/zones'
@@ -9,9 +10,10 @@ import { messages } from '../../../shared/i18n/messages'
 
 export const EXAMPLE_TITLE = messages('fr').model.example.title // titre français (les tests et l'e2e FR l'attendent)
 
-type Extra = Partial<Pick<Device, 'model' | 'ip' | 'hostname' | 'note' | 'dmx' | 'powerW' | 'psu' | 'ledStrip' | 'portState'>>
-const fixe = (address: string): NonNullable<Device['ip']> => ({ address, mode: 'static' })
-const DHCP: NonNullable<Device['ip']> = { address: '', mode: 'dhcp' }
+// ip : posée sur le 1ᵉʳ port réseau de l'appareil (format v4, une liste d'IP par port).
+type Extra = Partial<Pick<Device, 'model' | 'hostname' | 'note' | 'dmx' | 'powerW' | 'psu' | 'ledStrip' | 'portState'>> & { ip?: IpConfig }
+const fixe = (address: string): IpConfig => ({ address, mode: 'static' })
+const DHCP: IpConfig = { address: '', mode: 'dhcp' }
 const access = (vlan: number): VlanChoice => ({ kind: 'access', vlan })
 const NONE: VlanChoice = { kind: 'none' }
 const TRUNK_ALL: VlanChoice = { kind: 'trunk', native: 10, tagged: 'all' }
@@ -31,7 +33,9 @@ export function createExampleProject(now: Date = new Date(), lang: Lang): Projec
   }
   const add = (key: string, templateId: string, x: number, y: number, extra: Extra = {}, switchSpec?: Device['switch']): void => {
     const d = createDevice(p, templateId, { x, y }, { id: `ex-${key}`, lang, ...(switchSpec ? { switchSpec } : {}) })
-    p = { ...p, devices: [...p.devices, { ...d, ...extra }] }
+    const { ip, ...rest } = extra
+    const device: Device = { ...d, ...rest }
+    p = { ...p, devices: [...p.devices, ip ? withPrimaryIp(device, ip) : device] }
     ids.set(key, d.id)
   }
   const link = (a: [string, string], b: [string, string], medium: Link['medium'], vlan: VlanChoice, extra: Partial<Link> = {}): void => {

@@ -30,7 +30,7 @@ describe('serializeProject / parseProjectFile', () => {
   })
 
   it('ouvre en lecture seule un fichier de version plus récente', () => {
-    const text = serializeProject(sampleProject()).replace('"schemaVersion": 3', '"schemaVersion": 4')
+    const text = serializeProject(sampleProject()).replace('"schemaVersion": 4', '"schemaVersion": 5')
     const r = parseProjectFile(text, messages('fr'))
     expect(r.ok && r.readOnly).toBe(true)
   })
@@ -57,12 +57,12 @@ describe('format v3 : listes de canaux DMX', () => {
     if (r.ok) expect(r.project.dmxChannels).toEqual(p.dmxChannels)
   })
 
-  it('un fichier version 2 s’ouvre en version 3, sans liste', () => {
-    const text = serializeProject(sampleProject()).replace('"schemaVersion": 3', '"schemaVersion": 2')
+  it('un fichier version 2 s’ouvre en version 4, sans liste', () => {
+    const text = serializeProject(sampleProject()).replace('"schemaVersion": 4', '"schemaVersion": 2')
     const r = parseProjectFile(text, messages('fr'))
     expect(r.ok).toBe(true)
     if (r.ok) {
-      expect(r.project.schemaVersion).toBe(3)
+      expect(r.project.schemaVersion).toBe(4)
       expect(r.migratedFrom).toBe(2)
       expect(r.project.dmxChannels).toBeUndefined()
     }

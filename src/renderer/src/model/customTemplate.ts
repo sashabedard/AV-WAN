@@ -42,7 +42,7 @@ export interface DraftErrors {
 
 // Préfixe des ports ajoutés en lot : « 4 × RJ45 » donne ETH1 à ETH4.
 const PORT_PREFIX: Record<Connector, string> = {
-  rj45: 'ETH', sfp: 'SFP', 'sfp+': 'SFP+', wifi: 'WIFI', usb: 'USB', dmx: 'DMX', pixel: 'PIX', hdmi: 'HDMI', sdi: 'SDI', serial: 'SER', dc: 'DC'
+  rj45: 'ETH', sfp: 'SFP', 'sfp+': 'SFP+', wifi: 'WIFI', usb: 'USB', dmx: 'DMX', pixel: 'PIX', hdmi: 'HDMI', sdi: 'SDI', serial: 'SER', dc: 'DC', displayport: 'DP'
 }
 const SPEED: Partial<Record<Connector, number>> = { rj45: 1000, sfp: 1000, 'sfp+': 10000 }
 

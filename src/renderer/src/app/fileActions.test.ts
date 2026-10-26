@@ -86,7 +86,7 @@ describe('fileActions', () => {
 
   it('ouvre en lecture seule un fichier plus récent, sans chemin (Enregistrer sous obligatoire)', async () => {
     vi.stubGlobal('window', { avwan: fakeApi(), confirm: () => true })
-    const text = serializeProject(sampleProject()).replace('"schemaVersion": 3', '"schemaVersion": 4')
+    const text = serializeProject(sampleProject()).replace('"schemaVersion": 4', '"schemaVersion": 5')
     expect(await loadFromText('/tmp/futur.avwan', text)).toBe(true)
     expect(projectStore.getState().readOnly).toBe(true)
     expect(projectStore.getState().filePath).toBeNull()
@@ -171,14 +171,35 @@ describe('openRequestAction (double-clic)', () => {
   })
 
   it('une exception pendant l’ouverture devient un toast, accueil ouvert', async () => {
-    const backup = vi.fn(async () => { throw new Error('disque plein') })
-    vi.stubGlobal('window', { avwan: fakeApi({ backup }), confirm: () => true })
+    const api = fakeApi()
+    api.recovery.findNewer = vi.fn(() => { throw new Error('disque plein') }) as never
+    api.file.read = vi.fn() as never
+    vi.stubGlobal('window', { avwan: { ...api, recent: { ...api.recent, remember: vi.fn(() => { throw new Error('disque plein') }) } }, confirm: () => true })
     uiStore.getState().setWelcome(true)
-    const p = sampleProject()
-    p.links.push({ id: 'l2', cableId: 'C-002', a: { deviceId: 'fantome', portId: 'ETH' }, b: { deviceId: 'sw1', portId: '2' }, medium: 'cat6' })
-    expect(await openRequestAction({ path: '/x/orphelin.avwan', text: serializeProject(p) })).toBe(false)
+    expect(await openRequestAction({ path: '/x/sain.avwan', text: serializeProject(sampleProject()) })).toBe(false)
     expect(uiStore.getState().welcome).toBe(true)
     expect(projectStore.getState().toast).toContain('Ouverture impossible')
+  })
+
+  it('copie de sauvegarde impossible (clé USB en lecture seule) : le v3 s’ouvre quand même, sans chemin, avec un avertissement', async () => {
+    const backup = vi.fn(async () => { throw new Error('EROFS: système de fichiers en lecture seule') })
+    vi.stubGlobal('window', { avwan: fakeApi({ backup }), confirm: () => true })
+    const v3 = serializeProject(sampleProject()).replace('"schemaVersion": 4', '"schemaVersion": 3')
+    expect(await loadFromText('/Volumes/USB/salle.avwan', v3)).toBe(true)
+    expect(backup).toHaveBeenCalledWith('/Volumes/USB/salle.avwan')
+    // Sans chemin, ni l'enregistrement automatique ni ⌘S ne réécrivent l'original en v4.
+    expect(projectStore.getState().filePath).toBeNull()
+    expect(projectStore.getState().readOnly).toBe(false)
+    expect(projectStore.getState().toast).toContain('Copie de sauvegarde impossible')
+  })
+
+  it('un v3 ouvert normalement garde son chemin et annonce sa copie de sauvegarde', async () => {
+    const backup = vi.fn(async (path: string) => path.replace(/\.avwan$/, '.bak.avwan'))
+    vi.stubGlobal('window', { avwan: fakeApi({ backup }), confirm: () => true })
+    const v3 = serializeProject(sampleProject()).replace('"schemaVersion": 4', '"schemaVersion": 3')
+    expect(await loadFromText('/x/salle.avwan', v3)).toBe(true)
+    expect(projectStore.getState().filePath).toBe('/x/salle.avwan')
+    expect(projectStore.getState().toast).toContain('salle.bak.avwan')
   })
 })
 
@@ -228,6 +249,29 @@ describe('restauration', () => {
     expect(uiStore.getState().welcome).toBe(false)
   })
 
+  it('restaurer la copie d’un fichier v3 fait d’abord la copie de sauvegarde de l’original', async () => {
+    const backup = vi.fn(async (path: string) => path.replace(/\.avwan$/, '.bak.avwan'))
+    const api = fakeApi({ backup })
+    const v3 = serializeProject(sampleProject()).replace('"schemaVersion": 4', '"schemaVersion": 3')
+    vi.mocked(api.recovery.restore).mockResolvedValue({ key: 'f-0123456789abcdef', path: '/x/salle-b.avwan', text: v3 })
+    vi.stubGlobal('window', { avwan: api, confirm: () => true })
+    expect(await restoreRecoveryAction('f-0123456789abcdef')).toBe(true)
+    expect(backup).toHaveBeenCalledWith('/x/salle-b.avwan')
+    expect(projectStore.getState().filePath).toBe('/x/salle-b.avwan')
+    expect(projectStore.getState().toast).toContain('salle-b.bak.avwan')
+  })
+
+  it('restaurer une copie v3 quand la sauvegarde échoue : pas de chemin, l’original n’est jamais réécrit', async () => {
+    const backup = vi.fn(async () => { throw new Error('EACCES') })
+    const api = fakeApi({ backup })
+    const v3 = serializeProject(sampleProject()).replace('"schemaVersion": 4', '"schemaVersion": 3')
+    vi.mocked(api.recovery.restore).mockResolvedValue({ key: 'f-0123456789abcdef', path: '/x/salle-b.avwan', text: v3 })
+    vi.stubGlobal('window', { avwan: api, confirm: () => true })
+    expect(await restoreRecoveryAction('f-0123456789abcdef')).toBe(true)
+    expect(projectStore.getState().filePath).toBeNull()
+    expect(projectStore.getState().toast).toContain('Copie de sauvegarde impossible')
+  })
+
   it('une copie illisible affiche l’erreur et ne touche pas au projet', async () => {
     const api = fakeApi()
     vi.mocked(api.recovery.restore).mockResolvedValue({ key: 'u-abcdef', path: null, text: '{pas du json' })
@@ -239,7 +283,7 @@ describe('restauration', () => {
 
   it('une copie d’une version plus récente se restaure en lecture seule', async () => {
     const api = fakeApi()
-    const future = JSON.stringify({ ...sampleProject(), schemaVersion: 4 })
+    const future = JSON.stringify({ ...sampleProject(), schemaVersion: 5 })
     vi.mocked(api.recovery.restore).mockResolvedValue({ key: 'f-0123456789abcdef', path: '/x/salle-b.avwan', text: future })
     vi.stubGlobal('window', { avwan: api, confirm: () => true })
     expect(await restoreRecoveryAction('f-0123456789abcdef')).toBe(true)

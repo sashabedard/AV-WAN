@@ -25,7 +25,8 @@ export const model = {
     hdmi: 'HDMI',
     sdi: 'SDI',
     serial: 'série',
-    dc: 'alim DC'
+    dc: 'alim DC',
+    displayport: 'DisplayPort'
   },
   file: {
     notJson: 'Fichier illisible : ce n’est pas du JSON valide.',
@@ -41,10 +42,21 @@ export const model = {
     cableMissingEnd: (p: { label: string }) => `Câble ${p.label} ignoré : il référence un appareil ou un port absent.`,
     cableBlocked: (p: { label: string }) => `Câble ${p.label} ignoré : port déjà occupé ou connecteurs incompatibles.`,
     rackPlacementDropped: (p: { name: string }) => `${p.name} retiré de sa baie : baie absente ou place déjà prise.`,
-    duplicateRack: (p: { name: string }) => `Baie en double ignorée : ${p.name}.`
+    duplicateRack: (p: { name: string }) => `Baie en double ignorée : ${p.name}.`,
+    vmOrphan: (p: { name: string }) => `VM ${p.name} ignorée : son hôte est absent.`
   },
   rack: {
     defaultName: (p: { n: number }) => `BAIE-${p.n}`
+  },
+  vms: {
+    name: (p: { n: number }) => `VM ${p.n}`
+  },
+  cards: {
+    onboard: 'Intégré',
+    gpu: (p: { n: number }) => `GPU ${p.n}`,
+    capture: (p: { n: number }) => `Capture ${p.n}`,
+    nic: (p: { n: number }) => `Carte réseau ${p.n}`,
+    card: (p: { n: number }) => `Carte ${p.n}`
   },
   example: {
     title: 'Installation interactive (exemple)',

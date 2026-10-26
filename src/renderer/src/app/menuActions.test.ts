@@ -40,6 +40,12 @@ describe('handleMenuAction', () => {
     expect(uiStore.getState().search).toEqual({ at: null })
   })
 
+  it('Aide › Quoi de neuf ouvre l’écran des nouveautés', () => {
+    uiStore.getState().setWhatsNewOpen(false)
+    handleMenuAction('whatsNew')
+    expect(uiStore.getState().whatsNewOpen).toBe(true)
+  })
+
   it('ouvre la boîte d’export du PDF (⌘E)', () => {
     uiStore.getState().setExportOpen(false)
     handleMenuAction('exportPdf')

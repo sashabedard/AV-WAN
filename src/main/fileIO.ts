@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto'
-import { closeSync, fsyncSync, openSync, renameSync, rmSync, writeFileSync, promises as fs } from 'node:fs'
+import { closeSync, constants as fsConstants, fsyncSync, openSync, renameSync, rmSync, writeFileSync, promises as fs } from 'node:fs'
 import { basename, dirname, join } from 'node:path'
 
 // Écriture atomique : le contenu est écrit puis synchronisé sur disque (fsync) dans un fichier
@@ -65,8 +65,17 @@ export function backupPathFor(path: string): string {
   return `${path.replace(/\.avwan$/i, '')}.bak.avwan`
 }
 
+// Une copie existante n'est jamais écrasée (la première garde le fichier d'origine, ex. 1.4) :
+// la suivante prend « .bak-2 », « .bak-3 »…
 export async function backupFile(path: string): Promise<string> {
-  const dest = backupPathFor(path)
-  await fs.copyFile(path, dest)
-  return dest
+  const first = backupPathFor(path)
+  for (let n = 1; ; n++) {
+    const dest = n === 1 ? first : first.replace(/\.bak\.avwan$/, `.bak-${n}.avwan`)
+    try {
+      await fs.copyFile(path, dest, fsConstants.COPYFILE_EXCL)
+      return dest
+    } catch (e) {
+      if ((e as NodeJS.ErrnoException).code !== 'EEXIST') throw e
+    }
+  }
 }

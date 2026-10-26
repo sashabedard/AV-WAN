@@ -25,6 +25,8 @@ export const app: Messages['app'] = {
     dropHint: 'To open a project, use File › Open…',
     openedReadOnly: 'This file comes from a newer version of AV·WAN: opened read-only.',
     backupKept: (p) => ` Backup copy kept: ${p.name}`,
+    migratedBackup: (p) => `File from an earlier AV·WAN version, updated. Copy of the original kept: ${p.name}`,
+    backupFailed: 'Backup copy impossible: the original file will not be changed. Use “Save as…” to keep your changes.',
     restoreFailed: (p) => `Could not restore: ${p.reason}`,
     restoredAuto: (p) => `Recovered version restored: it will be saved to ${p.target}.`,
     restoredSaveTo: (p) => `Recovered version restored. Save to keep it in ${p.target}.`,
@@ -44,6 +46,7 @@ export const app: Messages['app'] = {
   toast: {
     readOnly: 'This file comes from a newer version of AV·WAN: it is read-only. Use “Save As…”.',
     zoneNeedsSelection: 'Select at least one device to create a zone around.',
+    cablesUnplugged: (p) => (p.n === 1 ? '1 cable unplugged' : `${p.n} cables unplugged`),
     connectBlocked: (p) => `Cannot connect: port in use or ${p.family} connectors incompatible.`,
     connectImpossible: 'Cannot connect.',
     reconnectImpossible: 'Cannot reconnect: port in use or connectors incompatible.',

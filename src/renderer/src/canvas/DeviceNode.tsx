@@ -1,4 +1,4 @@
-import { memo, useEffect, useState, type CSSProperties } from 'react'
+import { memo, useEffect, useMemo, useState, type CSSProperties } from 'react'
 import { Handle, Position, useUpdateNodeInternals, type NodeProps } from '@xyflow/react'
 import type { Side } from '../model/types'
 import { POE_LABELS } from '../model/derive'
@@ -11,28 +11,33 @@ import { useT } from '../i18n/useT'
 import { displayName } from '../catalog/templateText'
 import { usePortCompatibility } from './useConnectingFrom'
 import { InlineName } from './InlineName'
-import { DEVICE_NODE_HEIGHT, TAPE_TOP_MAX_WIDTH, deviceNodeWidth, devicePortOffset } from './nodeGeometry'
+import { TAPE_TOP_MAX_WIDTH, VM_HEADER_H, baseBox, deviceNodeBox, devicePortOffset, vmBlock } from './nodeGeometry'
+import { VmTile } from './VmTile'
+import { hardwareLine } from './canvasHelpers'
+import { sideLayout } from '../model/sides'
 
 const POSITION: Record<Side, Position> = { top: Position.Top, bottom: Position.Bottom, left: Position.Left, right: Position.Right }
 
 function DeviceNodeImpl({ id, data, selected }: NodeProps<DeviceFlowNode>) {
-  const { device, template, side, ports } = data
+  const { device, template, sides, ports, vms } = data
   const { m, lang } = useT()
   const readOnly = useLocked()
   const focus = useEffectiveFocus()
   const dim = focus !== null && !data.vlans.includes(focus)
   const [renaming, setRenaming] = useState(false)
   const updateInternals = useUpdateNodeInternals()
+  const sidesKey = JSON.stringify(sides)
   useEffect(() => {
     updateInternals(id)
-  }, [id, side, device.ports.length, updateInternals])
+  }, [id, sidesKey, device.ports.length, updateInternals])
   const compat = usePortCompatibility(id)
-  const width = deviceNodeWidth(device.ports.length)
-  const horizontal = side === 'top' || side === 'bottom'
+  const layout = useMemo(() => sideLayout(device, sides), [device, sides])
+  const { w: width, h: height } = deviceNodeBox(device, sides, vms)
+  const hw = vms.length > 0 ? hardwareLine(device.specs, lang) : ''
   const line1 = device.model ?? (template ? displayName(template, lang) : undefined) ?? m.canvas.tile.device
   const line2 = data.line2
   return (
-    <div className={`dn${selected ? ' dn--selected' : ''}${dim ? ' is-dim' : ''}`} style={{ width, height: DEVICE_NODE_HEIGHT }} data-testid={`device-${device.name}`}>
+    <div className={`dn${selected ? ' dn--selected' : ''}${dim ? ' is-dim' : ''}`} style={{ width, height }} data-testid={`device-${device.name}`}>
       {renaming ? (
         <InlineName
           value={device.name}
@@ -43,7 +48,7 @@ function DeviceNodeImpl({ id, data, selected }: NodeProps<DeviceFlowNode>) {
       ) : (
         <span
           className="dn__tape"
-          style={side === 'top' ? { maxWidth: TAPE_TOP_MAX_WIDTH } : undefined}
+          style={layout.top.length > 0 ? { maxWidth: TAPE_TOP_MAX_WIDTH } : undefined}
           title={readOnly ? device.name : m.canvas.tile.renameDevice({ title: device.name })}
           onDoubleClick={(e) => {
             if (readOnly) return
@@ -60,24 +65,40 @@ function DeviceNodeImpl({ id, data, selected }: NodeProps<DeviceFlowNode>) {
       </span>
       <span className="dn__line1">{line1}</span>
       <span className="dn__line2">{line2}</span>
-      {device.ports.map((p, i) => {
-        const info = ports[p.id]
-        const state = compat(p.id)
-        const offset = devicePortOffset(side, i, device.ports.length, width)
-        const style = { ...(horizontal ? { left: offset } : { top: offset }), ...(info ? { '--plug': info.color } : {}) } as CSSProperties
-        const kind = p.connector === 'sfp+' ? 'sfpp' : p.connector
-        return (
-          <Handle
-            key={p.id}
-            id={p.id}
-            type="source"
-            position={POSITION[side]}
-            className={`port port--${kind}${info ? ' port--linked' : ''}${state ? ` port--${state}` : ''}`}
-            style={style}
-            title={`${p.label} · ${p.connector.toUpperCase()}${p.poeIn ? ` · ${m.canvas.tile.poweredBy({ label: POE_LABELS[p.poeIn] })}` : ''}`}
-          />
-        )
-      })}
+      {vms.length > 0 && (
+        <div className="dn__vms" style={{ top: baseBox(device, sides).h, width: vmBlock(vms).w }}>
+          <div className="dn__hw" style={{ height: VM_HEADER_H }}>
+            {device.specs?.os && <span className="vm__os">{device.specs.os}</span>}
+            {hw && <span>{hw}</span>}
+          </div>
+          <div className="dn__vmgrid">
+            {vms.map((vm) => (
+              <VmTile key={vm.id} vm={vm} />
+            ))}
+          </div>
+        </div>
+      )}
+      {(Object.keys(layout) as Side[]).flatMap((side) =>
+        layout[side].map((p, i, list) => {
+          const info = ports[p.id]
+          const state = compat(p.id)
+          const horizontal = side === 'top' || side === 'bottom'
+          const offset = devicePortOffset(side, i, list.length, width, height)
+          const style = { ...(horizontal ? { left: offset } : { top: offset }), ...(info ? { '--plug': info.color } : {}) } as CSSProperties
+          const kind = p.connector === 'sfp+' ? 'sfpp' : p.connector
+          return (
+            <Handle
+              key={p.id}
+              id={p.id}
+              type="source"
+              position={POSITION[side]}
+              className={`port port--${kind}${info ? ' port--linked' : ''}${state ? ` port--${state}` : ''}`}
+              style={style}
+              title={`${p.label} · ${p.connector.toUpperCase()}${p.poeIn ? ` · ${m.canvas.tile.poweredBy({ label: POE_LABELS[p.poeIn] })}` : ''}`}
+            />
+          )
+        })
+      )}
     </div>
   )
 }

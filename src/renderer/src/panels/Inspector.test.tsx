@@ -22,14 +22,6 @@ describe('Inspector', () => {
     expect(screen.getByRole('heading', { name: 'Projet' })).toBeTruthy()
   })
 
-  it("bascule l'IP d'un appareil en DHCP", async () => {
-    const user = userEvent.setup()
-    projectStore.getState().setSelection({ deviceIds: ['cam1'], linkIds: [] })
-    render(<Inspector />)
-    await user.click(screen.getByRole('button', { name: 'DHCP' }))
-    expect(project().devices[1]!.ip).toEqual({ address: '10.40.0.21', mode: 'dhcp' })
-  })
-
   it('règle un câble en trunk : le réglage est écrit sur le port du switch', async () => {
     const user = userEvent.setup()
     projectStore.getState().setSelection({ deviceIds: [], linkIds: ['l1'] })
@@ -110,10 +102,10 @@ describe('Inspector', () => {
     const user = userEvent.setup()
     projectStore.getState().setSelection({ deviceIds: ['cam1'], linkIds: [] })
     render(<Inspector />)
-    await user.selectOptions(screen.getByLabelText('Côté des prises'), 'left')
+    await user.selectOptions(screen.getByLabelText('Côté des prises — défaut'), 'left')
     expect(project().devices[1]!.portSide).toBe('left')
     act(() => projectStore.getState().setSelection({ deviceIds: ['sw1'], linkIds: [] }))
-    expect(screen.queryByLabelText('Côté des prises')).toBeNull()
+    expect(screen.queryByLabelText('Côté des prises — défaut')).toBeNull()
     const row = screen.getByText('CAM-1 · ETH').closest('tr')!
     expect(within(row).getByText('A · 40')).toBeTruthy()
   })

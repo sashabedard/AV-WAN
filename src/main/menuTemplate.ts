@@ -40,6 +40,7 @@ export function menuTemplate(isMac: boolean, send: (action: MenuAction) => void,
   const quitItems: MenuItemConstructorOptions[] = isMac ? [] : [SEPARATOR, { role: 'quit', label: m.quit }]
   const helpItems: MenuItemConstructorOptions[] = [
     ...(isMac ? [] : [{ label: m.about({ app: APP_NAME }), click: () => help.about() }, SEPARATOR]),
+    { label: m.whatsNew, click: () => send('whatsNew') },
     { label: m.checkUpdates, click: () => help.checkUpdates() },
     { label: m.releases, click: () => help.releases() }
   ]

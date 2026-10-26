@@ -12,10 +12,10 @@ export const catalog = {
   },
   media: {
     cat5e: 'Cat5e', cat6: 'Cat6', cat6a: 'Cat6A', om3: 'Fibre OM3', om4: 'Fibre OM4', os2: 'Fibre OS2', dac: 'DAC',
-    wifi: 'Wi-Fi', usb: 'USB', dmx: 'DMX', pixel: 'Pixels', hdmi: 'HDMI', sdi: 'SDI', serial: 'Série', dc: 'Alim DC'
+    wifi: 'Wi-Fi', usb: 'USB', dmx: 'DMX', pixel: 'Pixels', hdmi: 'HDMI', sdi: 'SDI', serial: 'Série', dc: 'Alim DC', displayport: 'DisplayPort'
   },
   connectors: {
-    rj45: 'RJ45', sfp: 'SFP', 'sfp+': 'SFP+', wifi: 'Wi-Fi', usb: 'USB', dmx: 'DMX', pixel: 'Pixels', hdmi: 'HDMI', sdi: 'SDI', serial: 'Série', dc: 'Alim DC'
+    rj45: 'RJ45', sfp: 'SFP', 'sfp+': 'SFP+', wifi: 'Wi-Fi', usb: 'USB', dmx: 'DMX', pixel: 'Pixels', hdmi: 'HDMI', sdi: 'SDI', serial: 'Série', dc: 'Alim DC', displayport: 'DisplayPort'
   },
   poeChoices: {
     none: 'Aucun',

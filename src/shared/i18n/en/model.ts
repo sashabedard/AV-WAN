@@ -24,7 +24,8 @@ export const model: Messages['model'] = {
     hdmi: 'HDMI',
     sdi: 'SDI',
     serial: 'serial',
-    dc: 'DC power'
+    dc: 'DC power',
+    displayport: 'DisplayPort'
   },
   file: {
     notJson: 'Unreadable file: this is not valid JSON.',
@@ -40,10 +41,21 @@ export const model: Messages['model'] = {
     cableMissingEnd: (p) => `Cable ${p.label} ignored: it refers to a missing device or port.`,
     cableBlocked: (p) => `Cable ${p.label} ignored: port already in use or incompatible connectors.`,
     rackPlacementDropped: (p) => `${p.name} removed from its rack: missing rack or slot already taken.`,
-    duplicateRack: (p) => `Duplicate rack ignored: ${p.name}.`
+    duplicateRack: (p) => `Duplicate rack ignored: ${p.name}.`,
+    vmOrphan: (p) => `VM ${p.name} ignored: its host is missing.`
   },
   rack: {
     defaultName: (p) => `RACK-${p.n}`
+  },
+  vms: {
+    name: (p) => `VM ${p.n}`
+  },
+  cards: {
+    onboard: 'Onboard',
+    gpu: (p) => `GPU ${p.n}`,
+    capture: (p) => `Capture ${p.n}`,
+    nic: (p) => `NIC ${p.n}`,
+    card: (p) => `Card ${p.n}`
   },
   example: {
     title: 'Interactive installation (example)',

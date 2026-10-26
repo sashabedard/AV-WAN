@@ -24,6 +24,8 @@ export const app = {
     dropHint: 'Pour ouvrir un projet, utilisez Fichier › Ouvrir…',
     openedReadOnly: 'Ce fichier vient d’une version plus récente d’AV·WAN : ouvert en lecture seule.',
     backupKept: (p: { name: string }) => ` Copie de sauvegarde conservée : ${p.name}`,
+    migratedBackup: (p: { name: string }) => `Fichier d’une version précédente d’AV·WAN, mis à jour. Copie de l’original conservée : ${p.name}`,
+    backupFailed: 'Copie de sauvegarde impossible : le fichier d’origine ne sera pas modifié. Utilisez « Enregistrer sous… » pour garder vos changements.',
     restoreFailed: (p: { reason: string }) => `Restauration impossible : ${p.reason}`,
     restoredAuto: (p: { target: string }) => `Version récupérée restaurée : elle sera enregistrée dans ${p.target}.`,
     restoredSaveTo: (p: { target: string }) => `Version récupérée restaurée. Enregistrez pour la garder dans ${p.target}.`,
@@ -43,6 +45,7 @@ export const app = {
   toast: {
     readOnly: 'Ce fichier vient d’une version plus récente d’AV·WAN : il est en lecture seule. Utilisez « Enregistrer sous… ».',
     zoneNeedsSelection: 'Sélectionnez au moins un appareil pour créer une zone autour.',
+    cablesUnplugged: (p: { n: number }) => (p.n === 1 ? '1 câble débranché' : `${p.n} câbles débranchés`),
     connectBlocked: (p: { family: string }) => `Branchement impossible : port occupé ou connecteurs ${p.family} incompatibles.`,
     connectImpossible: 'Branchement impossible.',
     reconnectImpossible: 'Rebranchement impossible : port occupé ou connecteurs incompatibles.',
