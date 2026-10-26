@@ -4,9 +4,9 @@ import { estimateNodeSize } from '../model/layout'
 import { createDevice, createProject } from '../model/project'
 import { TEMPLATES } from '../catalog/templates'
 import { SWITCH_PORT_COUNTS } from '../catalog/switch'
-import { DEVICE_NODE_HEIGHT, TAPE_LEFT, TAPE_TOP_MAX_WIDTH, deviceNodeBox, deviceNodeWidth, devicePortOffset, nodeSize, portOffset } from './nodeGeometry'
+import { DEVICE_NODE_HEIGHT, TAPE_LEFT, TAPE_TOP_MAX_WIDTH, VM_GAP, VM_HEADER_H, VM_TILE_W, deviceNodeBox, vmBlock, vmTileHeight, deviceNodeWidth, devicePortOffset, nodeSize, portOffset } from './nodeGeometry'
 import { resolvePortSides, sideLayout } from '../model/sides'
-import type { Device } from '../model/types'
+import type { Device, Vm } from '../model/types'
 
 const HALF = 5 // .react-flow__handle.port : 10 px de large
 
@@ -101,6 +101,33 @@ describe('deviceNodeBox', () => {
     }
     // 24 + (10 + ceil(80 / 18) = 5) × 18 = 294
     expect(deviceNodeBox(d, resolvePortSides({ ...p, devices: [d] }, d))).toEqual({ w: 294, h: DEVICE_NODE_HEIGHT })
+  })
+})
+
+describe('VMs dans le nœud de l’hôte', () => {
+  const vm = (id: string, vnics = 1): Vm => ({ id, hostId: 'h', name: id, vnics: Array.from({ length: vnics }, (_, i) => ({ id: `${id}-${i}`, label: `vnic${i}`, ips: [] })) })
+  const p = createProject(undefined, 'fr')
+  const host = createDevice(p, 'media-server', { x: 0, y: 0 }, { lang: 'fr', id: 'h' })
+  const sides = resolvePortSides({ ...p, devices: [host] }, host)
+
+  it('hauteur d’une tuile : 44 + 14 par vNIC ; bloc vide sans VM', () => {
+    expect(vmTileHeight(vm('a', 2))).toBe(72)
+    expect(vmBlock([])).toEqual({ w: 0, h: 0 })
+  })
+
+  it('hôte sans VM : taille inchangée', () => {
+    expect(deviceNodeBox(host, sides, [])).toEqual(deviceNodeBox(host, sides))
+    expect(deviceNodeBox(host, sides)).toEqual(nodeSize(host))
+  })
+
+  it('4 VMs : 2 rangées, largeur ≥ 3 × 150 + 2 × 8 + 24', () => {
+    const vms = [vm('a'), vm('b', 3), vm('c'), vm('d')]
+    expect(vmBlock(vms)).toEqual({ w: 3 * VM_TILE_W + 2 * VM_GAP, h: vmTileHeight(vms[1]!) + VM_GAP + vmTileHeight(vms[3]!) })
+    const box = deviceNodeBox(host, sides, vms)
+    expect(box.w).toBeGreaterThanOrEqual(3 * 150 + 2 * 8 + 24)
+    expect(box.h).toBe(DEVICE_NODE_HEIGHT + VM_HEADER_H + vmBlock(vms).h + VM_GAP)
+    expect(estimateNodeSize(host, vms)).toEqual(box)
+    expect(nodeSize(host, vms)).toEqual(box)
   })
 })
 

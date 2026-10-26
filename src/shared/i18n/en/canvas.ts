@@ -29,7 +29,9 @@ export const canvas: Messages['canvas'] = {
     zoneNameLabel: 'Zone name',
     renameDevice: (p) => `${p.title} · double-click to rename`,
     renameZone: (p) => `${p.name} · drag to move the zone and its devices · double-click to rename`,
-    portTitle: (p) => `Port ${p.label}`
+    portTitle: (p) => `Port ${p.label}`,
+    gb: 'GB',
+    vmTitle: (p) => `${p.name} · click to open the VM in the inspector`
   },
   cord: {
     elbowGrip: 'Drag to move the bend · double-click to re-center it'

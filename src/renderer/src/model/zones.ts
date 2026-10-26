@@ -1,5 +1,5 @@
 import type { Device, Project, Zone } from './types'
-import { estimateNodeSize, type SizeOf } from './layout'
+import { projectSizeOf, type SizeOf } from './layout'
 import { newId } from './project'
 
 export type ZoneRect = Zone['rect']
@@ -27,7 +27,7 @@ export function createZone(project: Project, rect: ZoneRect, opts: { name?: stri
   }
 }
 
-export function zoneAround(project: Project, deviceIds: readonly string[], sizeOf: SizeOf = estimateNodeSize): ZoneRect | null {
+export function zoneAround(project: Project, deviceIds: readonly string[], sizeOf: SizeOf = projectSizeOf(project)): ZoneRect | null {
   const ids = new Set(deviceIds)
   const devices = project.devices.filter((d) => ids.has(d.id))
   if (devices.length === 0) return null
@@ -58,7 +58,7 @@ export function zoneAt(project: Project, point: XY): Zone | undefined {
 }
 
 // Appartenance selon le centre de la tuile. Sans changement, rend le même objet (pas d'entrée d'historique).
-export function assignZones(project: Project, deviceIds?: readonly string[], sizeOf: SizeOf = estimateNodeSize): Project {
+export function assignZones(project: Project, deviceIds?: readonly string[], sizeOf: SizeOf = projectSizeOf(project)): Project {
   const only = deviceIds ? new Set(deviceIds) : null
   let changed = false
   const devices = project.devices.map((d): Device => {
@@ -161,7 +161,7 @@ export function removeZones(project: Project, ids: readonly string[]): Project {
   }
 }
 
-export function resizeZone(project: Project, id: string, rect: ZoneRect, sizeOf: SizeOf = estimateNodeSize): Project {
+export function resizeZone(project: Project, id: string, rect: ZoneRect, sizeOf: SizeOf = projectSizeOf(project)): Project {
   if (!project.zones.some((z) => z.id === id)) return project
   return assignZones({ ...project, zones: project.zones.map((z) => (z.id === id ? { ...z, rect: { ...rect } } : z)) }, undefined, sizeOf)
 }

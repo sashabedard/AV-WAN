@@ -56,6 +56,18 @@ describe('toFlowNodes', () => {
     expect(second[0]).toBe(first[0])
   })
 
+  it('passe les VMs à leur hôte ; changer une VM ne refait que la tuile de son hôte', () => {
+    const p = { ...sampleProject(), vms: [{ id: 'v', hostId: 'cam1', name: 'VM 1', vnics: [] }] }
+    const cache = createFlowCache()
+    const first = toFlowNodes(p, analyzeLinks(p, 'dark', 'fr'), cache, 'fr')
+    expect(first[1]!.data.vms.map((v) => v.id)).toEqual(['v'])
+    expect(first[0]!.data.vms).toEqual([])
+    const q = { ...p, vms: [{ ...p.vms[0]!, name: 'Show' }] }
+    const second = toFlowNodes(q, analyzeLinks(q, 'dark', 'fr'), cache, 'fr')
+    expect(second[1]).not.toBe(first[1])
+    expect(second[0]).toBe(first[0])
+  })
+
   it('met en haut les prises d’un appareil placé sous la moitié droite d’un switch 48 ports', () => {
     const p = createProject(undefined, 'fr')
     const sw = createDevice(p, 'switch', { x: 0, y: 0 }, { lang: 'fr', switchSpec: { portCount: 48, poe: 'at', sfpPlus: 4, managed: true } })

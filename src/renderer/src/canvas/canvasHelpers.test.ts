@@ -1,6 +1,6 @@
 import { withPrimaryIp } from '../model/ips'
 import { describe, expect, it } from 'vitest'
-import { deviceIpLine, deviceSecondLine, mergeEdges, mergeNodes, nodesMatchDerived, snapPoint, syncSelected } from './canvasHelpers'
+import { deviceIpLine, hardwareLine, selectionFromFlow, deviceSecondLine, mergeEdges, mergeNodes, nodesMatchDerived, snapPoint, syncSelected } from './canvasHelpers'
 import type { CordFlowEdge, DeviceFlowNode } from './toFlow'
 import { patchIndex } from '../model/dmx'
 import { createDevice, createProject } from '../model/project'
@@ -89,3 +89,22 @@ describe('deviceSecondLine : puissance', () => {
     expect(deviceSecondLine({ ...base, psu: { volts: 24 } }, undefined, 'fr')).toBe('24 V')
   })
 })
+
+describe('hardwareLine', () => {
+  it('CPU · RAM · GPU non vides ; rien sans attributs', () => {
+    expect(hardwareLine({ cpu: '2× Xeon', ramGb: 256, gpu: '2× A6000', os: 'Proxmox' }, 'fr')).toBe('2× Xeon · 256 Go · 2× A6000')
+    expect(hardwareLine({ ramGb: 12.5 }, 'en')).toBe('12.5 GB')
+    expect(hardwareLine({ os: 'Linux' }, 'fr')).toBe('')
+    expect(hardwareLine(undefined, 'fr')).toBe('')
+  })
+})
+
+describe('selectionFromFlow', () => {
+  it('une sélection vide venue de React Flow garde la VM sélectionnée ; une vraie sélection la remplace', () => {
+    const vm = { deviceIds: [], linkIds: [], vmIds: ['v'] }
+    expect(selectionFromFlow(vm, { deviceIds: [], linkIds: [], zoneIds: [] })).toBe(vm)
+    expect(selectionFromFlow(vm, { deviceIds: ['d'], linkIds: [], zoneIds: [] })).toEqual({ deviceIds: ['d'], linkIds: [], zoneIds: [] })
+    expect(selectionFromFlow({ deviceIds: ['d'], linkIds: [] }, { deviceIds: [], linkIds: [], zoneIds: [] })).toEqual({ deviceIds: [], linkIds: [], zoneIds: [] })
+  })
+})
+

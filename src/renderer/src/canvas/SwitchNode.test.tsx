@@ -25,7 +25,7 @@ const panel: Device = {
 const info = (linkId: string): PortInfo => ({ linkId, color: '#2a9d8f', poe: false })
 
 function renderPanel(ports: Record<string, PortInfo>, staticView = false) {
-  const props = { id: 'pp1', selected: false, data: { device: panel, template: undefined, sides: {}, ports, vlans: [], line2: '' } } as unknown as NodeProps<DeviceFlowNode>
+  const props = { id: 'pp1', selected: false, data: { device: panel, template: undefined, sides: {}, ports, vlans: [], line2: '', vms: [] } } as unknown as NodeProps<DeviceFlowNode>
   const tree = (
     <ReactFlowProvider>
       <SwitchNode {...props} />

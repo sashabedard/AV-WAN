@@ -28,7 +28,9 @@ export const canvas = {
     zoneNameLabel: 'Nom de la zone',
     renameDevice: (p: { title: string }) => `${p.title} · double-clic pour renommer`,
     renameZone: (p: { name: string }) => `${p.name} · glisser pour déplacer la zone et ses appareils · double-clic pour renommer`,
-    portTitle: (p: { label: string }) => `Port ${p.label}`
+    portTitle: (p: { label: string }) => `Port ${p.label}`,
+    gb: 'Go',
+    vmTitle: (p: { name: string }) => `${p.name} · clic pour ouvrir la VM dans l’inspecteur`
   },
   cord: {
     elbowGrip: 'Glisser pour déplacer le coude · double-clic pour le recentrer'

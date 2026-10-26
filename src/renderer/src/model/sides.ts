@@ -1,5 +1,5 @@
 import type { Connector, Device, PortDef, Project, Side, SideGroup } from './types'
-import { estimateNodeSize, facingSide, groupOfConnector, resolvePortSide, type SizeOf } from './layout'
+import { facingSide, groupOfConnector, projectSizeOf, resolvePortSide, type SizeOf } from './layout'
 
 // Côté des ports par type de connecteur (spec cartes-ip-vms § 4.3, § 4.4).
 export const SIDE_GROUPS: readonly SideGroup[] = ['reseau', 'video', 'usb', 'alim', 'dmx']
@@ -10,7 +10,7 @@ export function sideGroupOf(c: Connector): SideGroup {
 
 // portId → côté. Groupe réglé → ce côté ; « auto » → face aux voisins branchés par les seuls ports du groupe,
 // sinon le côté par défaut ; groupe absent → le côté par défaut (device.portSide résolu, comme avant).
-export function resolvePortSides(project: Project, device: Device, sizeOf: SizeOf = estimateNodeSize): Record<string, Side> {
+export function resolvePortSides(project: Project, device: Device, sizeOf: SizeOf = projectSizeOf(project)): Record<string, Side> {
   const fallback = resolvePortSide(project, device, sizeOf)
   const bySet = new Map<SideGroup, Side>()
   for (const g of SIDE_GROUPS) {

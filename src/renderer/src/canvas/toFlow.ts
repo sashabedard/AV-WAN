@@ -1,6 +1,6 @@
 import type { Messages } from '../../../shared/i18n/messages'
 import type { Edge, Node } from '@xyflow/react'
-import type { Device, DeviceTemplate, Link, PortRef, Project, Side, Zone } from '../model/types'
+import type { Device, DeviceTemplate, Link, PortRef, Project, Side, Vm, Zone } from '../model/types'
 import { getTemplate } from '../catalog'
 import { resolvePortSides } from '../model/sides'
 import { findPort, isPatchPanel, isRackDevice, portDisplayLabel, sameRef } from '../model/rules'
@@ -29,6 +29,7 @@ export type DeviceNodeData = {
   poeUsage?: PoeUsage
   vlans: number[]
   line2: string
+  vms: Vm[] // VMs hébergées, dessinées dans la tuile
 }
 export type DeviceFlowNode = Node<DeviceNodeData, 'device' | 'switch'>
 export type ZoneNodeData = { zone: Zone }
@@ -98,14 +99,19 @@ export function analyzeLinks(project: Project, theme: ThemeMode, lang: Lang): Li
 
 const NO_PORTS: Record<string, PortInfo> = {}
 const NO_VLANS: number[] = []
+const NO_VMS: Vm[] = []
 
 export function toFlowNodes(project: Project, analysis: LinkAnalysis, cache: FlowCache, lang: Lang): DeviceFlowNode[] {
   const out: DeviceFlowNode[] = []
   const alive = new Set<string>()
   const index = project.devices.some((d) => d.dmx) ? patchIndex(project) : undefined
+  const vmsByHost = new Map<string, Vm[]>()
+  for (const vm of project.vms ?? []) vmsByHost.set(vm.hostId, [...(vmsByHost.get(vm.hostId) ?? []), vm])
+  const sizeOf = (d: Device) => nodeSize(d, vmsByHost.get(d.id) ?? NO_VMS)
   for (const device of project.devices) {
     alive.add(device.id)
-    const sides = resolvePortSides(project, device, nodeSize)
+    const sides = resolvePortSides(project, device, sizeOf)
+    const vms = vmsByHost.get(device.id) ?? NO_VMS
     const ports = analysis.ports.get(device.id) ?? NO_PORTS
     const vlans = analysis.deviceVlans.get(device.id) ?? NO_VLANS
     const poeUsage: PoeUsage | undefined = device.switch
@@ -115,7 +121,7 @@ export function toFlowNodes(project: Project, analysis: LinkAnalysis, cache: Flo
         }
       : undefined
     const line2 = deviceSecondLine(device, index?.entries.get(device.id), lang)
-    const key = `${JSON.stringify(sides)}|${JSON.stringify(ports)}|${JSON.stringify(poeUsage ?? null)}|${vlans.join(',')}|${line2}`
+    const key = `${JSON.stringify(sides)}|${JSON.stringify(ports)}|${JSON.stringify(poeUsage ?? null)}|${vlans.join(',')}|${line2}|${vms.length > 0 ? JSON.stringify(vms) : ''}`
     const hit = cache.nodes.get(device.id)
     if (hit && hit.device === device && hit.key === key) {
       out.push(hit.node)
@@ -125,7 +131,7 @@ export function toFlowNodes(project: Project, analysis: LinkAnalysis, cache: Flo
       id: device.id,
       type: isRackDevice(device) ? 'switch' : 'device',
       position: device.position,
-      data: { device, template: getTemplate(project, device.templateId), sides, ports, vlans, line2, ...(poeUsage ? { poeUsage } : {}) }
+      data: { device, template: getTemplate(project, device.templateId), sides, ports, vlans, line2, vms, ...(poeUsage ? { poeUsage } : {}) }
     }
     cache.nodes.set(device.id, { key, device, node })
     out.push(node)
