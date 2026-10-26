@@ -16,6 +16,8 @@ import { LedStripSection } from './LedStripSection'
 import { PatchSection } from './PatchSection'
 import { RackSection } from './RackSection'
 import { PortsByCard } from './PortsByCard'
+import { HardwareSection } from './HardwareSection'
+import { canHostVms } from '../../model/vms'
 import { useT } from '../../i18n/useT'
 
 function SwitchSection({ device, project }: { device: Device; project: Project }) {
@@ -145,6 +147,12 @@ export function DeviceForm({ device, project }: { device: Device; project: Proje
           </label>
         ))}
       <p className="insp__note">{t.zoneLine({ name: project.zones.find((z) => z.id === device.zoneId)?.name })}</p>
+      <HardwareSection device={device} project={project} />
+      {canHostVms(project, device) && (
+        <button type="button" className="btn" onClick={() => s().addVm(device.id)}>
+          {m.inspector.hardware.addVm}
+        </button>
+      )}
       <RackSection device={device} project={project} />
       <SwitchSection device={device} project={project} />
       <PortsByCard device={device} project={project} />

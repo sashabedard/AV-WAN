@@ -236,5 +236,37 @@ export const inspector = {
     ignored: (p: { n: number; footprint: number }) => `${p.n} ligne${frPlural(p.n, '', 's')} ignorée${frPlural(p.n, '', 's')} après le canal ${p.footprint}.`,
     notSavedForOthers: (p: { error: string }) => `Liste non retenue pour vos autres projets : ${p.error}`,
     settingsNotChanged: (p: { error: string }) => `Réglages non modifiés : ${p.error}`
+  },
+  vm: {
+    title: 'Machine virtuelle',
+    name: 'Nom',
+    host: 'Hôte',
+    os: 'Système',
+    vcpu: 'vCPU',
+    ram: 'RAM (Go)',
+    disk: 'Disque (Go)',
+    gpu: 'GPU passthrough',
+    hostname: 'Nom d’hôte',
+    note: 'Note',
+    vnics: 'Interfaces virtuelles (vNIC)',
+    vnicLabel: (p: { label: string }) => `Nom de ${p.label}`,
+    bridge: (p: { label: string }) => `Pont de ${p.label}`,
+    bridgeNone: '—',
+    vlan: (p: { label: string }) => `VLAN de ${p.label}`,
+    vlanInherited: (p: { vlan: number }) => `hérité : ${p.vlan}`,
+    addVnic: '+ vNIC',
+    removeVnic: (p: { label: string }) => `Retirer ${p.label}`,
+    remove: 'Supprimer la VM',
+    numberToast: 'Un nombre positif, ou vide.',
+    vlanToast: 'VLAN : un nombre de 1 à 4094, ou vide.'
+  },
+  hardware: {
+    title: 'Matériel',
+    os: 'Système',
+    cpu: 'CPU',
+    ram: 'RAM (Go)',
+    storage: 'Stockage',
+    gpu: 'GPU',
+    addVm: '+ VM'
   }
 } as const

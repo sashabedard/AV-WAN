@@ -236,5 +236,37 @@ export const inspector: Messages['inspector'] = {
     ignored: (p) => `${p.n} line${enPlural(p.n, '', 's')} ignored after channel ${p.footprint}.`,
     notSavedForOthers: (p) => `List not kept for your other projects: ${p.error}`,
     settingsNotChanged: (p) => `Settings not changed: ${p.error}`
+  },
+  vm: {
+    title: 'Virtual machine',
+    name: 'Name',
+    host: 'Host',
+    os: 'Operating system',
+    vcpu: 'vCPU',
+    ram: 'RAM (GB)',
+    disk: 'Disk (GB)',
+    gpu: 'GPU passthrough',
+    hostname: 'Hostname',
+    note: 'Note',
+    vnics: 'Virtual interfaces (vNIC)',
+    vnicLabel: (p) => `Name of ${p.label}`,
+    bridge: (p) => `Bridge of ${p.label}`,
+    bridgeNone: '—',
+    vlan: (p) => `VLAN of ${p.label}`,
+    vlanInherited: (p) => `inherited: ${p.vlan}`,
+    addVnic: '+ vNIC',
+    removeVnic: (p) => `Remove ${p.label}`,
+    remove: 'Delete the VM',
+    numberToast: 'A positive number, or empty.',
+    vlanToast: 'VLAN: a number from 1 to 4094, or empty.'
+  },
+  hardware: {
+    title: 'Hardware',
+    os: 'Operating system',
+    cpu: 'CPU',
+    ram: 'RAM (GB)',
+    storage: 'Storage',
+    gpu: 'GPU',
+    addVm: '+ VM'
   }
 }

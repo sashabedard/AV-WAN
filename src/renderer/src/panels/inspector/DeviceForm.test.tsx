@@ -93,3 +93,11 @@ describe('DeviceForm — côté des prises par type', () => {
   })
 })
 
+describe('DeviceForm — matériel d’un appareil de baie', () => {
+  it('pas de section Matériel pour un switch', () => {
+    projectStore.getState().setSelection({ deviceIds: ['sw1'], linkIds: [] })
+    const { container } = render(<Inspector />)
+    expect(container.querySelector('details.hw')).toBeNull()
+  })
+})
+
