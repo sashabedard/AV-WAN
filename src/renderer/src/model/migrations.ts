@@ -23,7 +23,9 @@ const NETWORK = new Set(['rj45', 'sfp', 'sfp+', 'wifi'])
 type RawPort = { id?: unknown; connector?: unknown }
 
 // 3 → 4 (IP multiples) : portState[*].ip devient ips ; l'IP d'appareil passe en tête du premier port réseau,
-// dans un port RJ45 « NET » créé s'il n'y en a aucun (aucune perte, rien d'autre d'inventé).
+// dans un port RJ45 « NET » (id libre) créé s'il n'y en a aucun (aucune perte, rien d'autre d'inventé).
+// Une IP sans adresse (simple clic DHCP / Statique en 1.4) garde son mode sur un port réseau existant,
+// mais ne crée jamais de port.
 export function migrateDeviceV4(device: unknown): unknown {
   if (typeof device !== 'object' || device === null) return device
   const { ip, ...d } = device as Record<string, unknown>
@@ -40,7 +42,12 @@ export function migrateDeviceV4(device: unknown): unknown {
   let ports = Array.isArray(d['ports']) ? (d['ports'] as RawPort[]) : []
   let net = ports.find((p) => typeof p === 'object' && p !== null && NETWORK.has(p.connector as string))
   if (!net) {
-    net = { id: 'NET', label: 'NET', connector: 'rj45' } as RawPort
+    const address = typeof ip === 'object' && ip !== null ? (ip as { address?: unknown }).address : undefined
+    if (typeof address !== 'string' || address.trim() === '') return portState ? { ...d, portState } : d
+    const taken = new Set(ports.map((p) => (typeof p === 'object' && p !== null ? p.id : undefined)))
+    let id = 'NET'
+    for (let n = 2; taken.has(id); n++) id = `NET-${n}`
+    net = { id, label: 'NET', connector: 'rj45' } as RawPort
     ports = [...ports, net]
   }
   const id = net.id as string

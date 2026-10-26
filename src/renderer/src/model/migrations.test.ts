@@ -91,6 +91,31 @@ describe('migration 3 → 4', () => {
     expect('ip' in d).toBe(false)
   })
 
+  it('une IP vide (clic DHCP/Statique en 1.4) ne crée pas de port NET', () => {
+    for (const mode of ['dhcp', 'static'] as const) {
+      const d = migrateDeviceV4({ ports: [{ id: 'DMX-IN', label: 'DMX IN', connector: 'dmx' }], portState: {}, ip: { address: '', mode } }) as Record<string, any>
+      expect(d['ports']).toEqual([{ id: 'DMX-IN', label: 'DMX IN', connector: 'dmx' }])
+      expect(d['portState']).toEqual({})
+      expect('ip' in d).toBe(false)
+    }
+  })
+
+  it('une IP vide garde son mode sur le port réseau existant (aucune perte)', () => {
+    const d = migrateDeviceV4({ ports: [{ id: 'ETH', label: 'ETH', connector: 'rj45' }], portState: {}, ip: { address: '', mode: 'dhcp' } }) as Record<string, any>
+    expect(d['portState'].ETH.ips).toEqual([{ address: '', mode: 'dhcp' }])
+  })
+
+  it('un port « NET » déjà pris : le port créé prend un id libre', () => {
+    const d = migrateDeviceV4({
+      ports: [{ id: 'NET', label: 'NET', connector: 'dmx' }, { id: 'NET-2', label: 'x', connector: 'usb' }],
+      portState: {},
+      ip: ip('10.0.0.7')
+    }) as Record<string, any>
+    expect(d['ports'].map((p: { id: string }) => p.id)).toEqual(['NET', 'NET-2', 'NET-3'])
+    expect(d['portState']['NET-3'].ips).toEqual([ip('10.0.0.7')])
+    expect(d['portState']['NET']).toBeUndefined()
+  })
+
   it('un document v3 complet passe en v4', () => {
     const v4 = sampleProject()
     const v3 = {
