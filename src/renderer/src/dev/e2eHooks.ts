@@ -10,7 +10,7 @@ import type { MenuAction } from '../../../shared/api'
 import type { PdfOptions } from '../../../shared/pdfOptions'
 import { exportPdfAction } from '../export/exportActions'
 import { makeStressProject } from './stress'
-import { makeRenderFixture } from './renderFixture'
+import { makeRenderFixture, makeVmFixture } from './renderFixture'
 
 let flow: ReactFlowInstance<FlowNode, CordFlowEdge> | null = null
 
@@ -24,6 +24,7 @@ export interface E2EHooks {
   setView(view: 'schema' | 'racks'): void
   loadStress(): void
   loadRenderFixture(): void
+  loadVmFixture(): void
   fitView(padding?: FitViewOptions['padding']): Promise<boolean>
   setViewport(viewport: { x: number; y: number; zoom: number }): Promise<boolean>
   saveTo(path: string): Promise<void>
@@ -40,6 +41,7 @@ export function installE2EHooks(): void {
     menu: (action) => handleMenuAction(action),
     loadStress: () => projectStore.getState().loadProject(makeStressProject(), null),
     loadRenderFixture: () => projectStore.getState().loadProject(makeRenderFixture(), null),
+    loadVmFixture: () => projectStore.getState().loadProject(makeVmFixture(), null),
     fitView: async (padding) => (flow ? flow.fitView({ padding: padding ?? 0.05 }) : false),
     setViewport: async (viewport) => (flow ? flow.setViewport(viewport) : false),
     saveTo: async (path) => {

@@ -37,3 +37,35 @@ export function makeRenderFixture(): Project {
   link('r-l6', ['r-pix', 'OUT1'], ['r-led', 'IN'], 'pixel', { kind: 'none' })
   return p
 }
+
+// Banc des VMs (spec cartes-ip-vms) : un hôte à carte GPU, côtés par type, matériel et deux VMs imbriquées.
+// Banc séparé : les captures du banc de rendu ne bougent pas.
+export function makeVmFixture(): Project {
+  const base = createProject(new Date(2026, 9, 26), 'fr')
+  const host: Device = {
+    ...createDevice(base, 'media-server', { x: 0, y: 0 }, { id: 'v-hv', lang: 'fr' }),
+    name: 'SRV-HV-01',
+    specs: { os: 'Proxmox 8', cpu: '2× Xeon', ramGb: 256, gpu: '2× A6000' },
+    cards: [{ id: 'g1', name: 'GPU 1' }],
+    portSides: { reseau: 'left', video: 'right' }
+  }
+  host.ports = [...host.ports, ...['1', '2', '3', '4'].map((n) => ({ id: `DP-${n}`, label: `DP ${n}`, connector: 'displayport' as const, cardId: 'g1' }))]
+  host.portState = { ETH1: { ips: [{ address: '10.40.0.30', mode: 'static' }] } }
+  return {
+    ...base,
+    meta: { ...base.meta, title: 'Banc des VMs' },
+    vlans: [vlanPreset(40, 'fr')],
+    devices: [host],
+    vms: [
+      {
+        id: 'v-vm1', hostId: 'v-hv', name: 'VM Show', specs: { os: 'Ubuntu 24.04', vcpu: 8, ramGb: 32 },
+        vnics: [
+          { id: 'v-n1', label: 'vnic0', bridgePortId: 'ETH1', ips: [{ address: '10.40.0.32', mode: 'static' }] },
+          { id: 'v-n2', label: 'vnic1', bridgePortId: 'ETH2', ips: [{ address: '', mode: 'dhcp' }] }
+        ]
+      },
+      { id: 'v-vm2', hostId: 'v-hv', name: 'VM Contrôle', specs: { os: 'Windows 11', vcpu: 4, ramGb: 16 }, vnics: [{ id: 'v-n3', label: 'vnic0', bridgePortId: 'ETH1', ips: [{ address: '10.40.0.33', mode: 'static' }] }] }
+    ]
+  }
+}
+

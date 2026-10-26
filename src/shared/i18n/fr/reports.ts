@@ -113,7 +113,9 @@ export const reports = {
     psuCapacity: (p: { volts: string; capacity: string; load: string; pct: number }) =>
       `Alimentation : ${[p.volts, `${p.capacity} W`].filter(Boolean).join(' · ')} · charge ${p.load} W (${p.pct} %)`,
     psuUnknown: (p: { volts: string; load: string }) => `Alimentation : ${[p.volts, `charge ${p.load} W, capacité inconnue`].filter(Boolean).join(' · ')}`,
-    power: (p: { watts: string }) => `Puissance : ${p.watts} W`
+    power: (p: { watts: string }) => `Puissance : ${p.watts} W`,
+    hardware: (p: { line: string }) => `Matériel : ${p.line}`,
+    vm: (p: { name: string; line: string }) => `VM ${p.name} : ${p.line}`
   },
   vlan: {
     on: 'Activé',

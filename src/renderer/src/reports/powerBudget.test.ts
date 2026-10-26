@@ -156,3 +156,15 @@ describe('powerTable en anglais', () => {
     expect(t.rows.at(-1)).toEqual(['', 'No power rating entered', '', null, '', null, 'SW-1'])
   })
 })
+
+const withVms = (p: Project): Project => ({
+  ...p,
+  vms: [{ id: 'vm', hostId: p.devices[0]!.id, name: 'VM', specs: { vcpu: 4, ramGb: 16 }, vnics: [{ id: 'n', label: 'vnic0', ips: [{ address: '10.0.0.9', mode: 'static' }] }] }]
+})
+
+describe('powerBudget : VMs', () => {
+  it('un projet avec VMs donne le même bilan que sans', () => {
+    const p = show()
+    expect(powerBudget(withVms(p), 'fr')).toEqual(powerBudget(p, 'fr'))
+  })
+})

@@ -61,6 +61,33 @@ describe('ipPlan — IP multiples', () => {
   })
 })
 
+describe('ipPlan — VMs et cartes', () => {
+  function hv() {
+    const q = sampleProject()
+    const host = { ...createDevice(q, 'media-server', { x: 0, y: 400 }, { lang: 'fr', id: 'hv' }), name: 'SRV-HV-01' }
+    host.cards = [{ id: 'k', name: 'Carte réseau 1' }]
+    host.ports = [...host.ports, { id: 'eth2', label: 'eth2', connector: 'rj45' as const, cardId: 'k' }]
+    host.portState = { eth2: { ips: [{ address: '10.80.0.2', mode: 'static' }] } }
+    q.devices.push(host)
+    q.links.push({ id: 'l9', cableId: 'C-009', a: { deviceId: 'sw1', portId: '2' }, b: { deviceId: 'hv', portId: 'ETH1' }, medium: 'cat6' })
+    q.devices[0]!.portState['2'] = { mode: 'access', nativeVlan: 40 }
+    q.vms = [{ id: 'vm', hostId: 'hv', name: 'VM Show', hostname: 'show-01', vnics: [{ id: 'n', label: 'vnic0', bridgePortId: 'ETH1', ips: [{ address: '10.40.0.32', mode: 'static' }, { address: '10.40.0.33', mode: 'static' }] }] }]
+    return q
+  }
+
+  it('une VM à 2 IP sur vnic0 donne 2 lignes « hôte › VM », VLAN du pont, nom d’hôte sur la 1ʳᵉ', () => {
+    const rows = ipPlan(hv(), 'fr').rows.filter((r) => String(r[0]).includes('›'))
+    expect(rows).toEqual([
+      ['SRV-HV-01 › VM Show', 'vnic0', '10.40.0.32', 'Statique', '40 NDI', 'show-01'],
+      ['SRV-HV-01 › VM Show', 'vnic0', '10.40.0.33', 'Statique', '40 NDI', '']
+    ])
+  })
+
+  it('un port d’une carte (hors « Intégré ») est préfixé du nom de la carte', () => {
+    expect(ipPlan(hv(), 'fr').rows.find((r) => r[2] === '10.80.0.2')!.slice(0, 2)).toEqual(['SRV-HV-01', 'Carte réseau 1 › eth2'])
+  })
+})
+
 describe('ipPlan en anglais', () => {
   it('écrit le plan d’adressage en anglais', () => {
     const t = ipPlan(createExampleProject(new Date(2026, 9, 13), 'en'), 'en')

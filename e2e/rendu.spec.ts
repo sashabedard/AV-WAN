@@ -35,3 +35,27 @@ test('captures de référence du canvas', async () => {
     await app.close()
   }
 })
+
+// Hôte de VMs (spec cartes-ip-vms) : tuiles de VM dans le nœud de l'hôte, sous la ligne matériel.
+// Sans capture de référence (pas d'image dans git) : la mise en page est vérifiée par ses mesures.
+test('hôte de VMs : tuiles imbriquées et ligne matériel', async () => {
+  const { app, page } = await launchApp()
+  try {
+    await page.evaluate(() => window.__avwan!.loadVmFixture())
+    await page.evaluate(() => window.__avwan!.setViewport({ x: 80, y: 80, zoom: 1 }))
+    const host = page.locator('.react-flow__node[data-id="v-hv"]')
+    const tiles = host.locator('.vm')
+    await expect(tiles).toHaveCount(2)
+    await expect(host.locator('.dn__hw')).toContainText('2× Xeon · 256 Go · 2× A6000')
+    await expect(tiles.first()).toContainText('vnic1 · DHCP')
+    const box = (await host.boundingBox())!
+    for (const tile of await tiles.all()) {
+      const t = (await tile.boundingBox())!
+      expect(t.x).toBeGreaterThanOrEqual(box.x)
+      expect(t.y + t.height).toBeLessThanOrEqual(box.y + box.height + 0.5)
+      expect(t.x + t.width).toBeLessThanOrEqual(box.x + box.width + 0.5)
+    }
+  } finally {
+    await app.close()
+  }
+})

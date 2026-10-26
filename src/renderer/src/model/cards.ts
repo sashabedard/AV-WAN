@@ -1,6 +1,7 @@
 import type { Card, Connector, Device, PortDef, Project } from './types'
 import type { Messages } from '../../../shared/i18n/messages'
 import { newId } from './project'
+import { portDisplayLabel } from './rules'
 
 // Cartes de ports d'un appareil (spec cartes-ip-vms § 4.2). Un port sans cardId (ou inconnu) est dans « Intégré ».
 export const ONBOARD = ''
@@ -111,3 +112,11 @@ export function removeCard(project: Project, deviceId: string, cardId: string): 
     project: { ...r.project, devices: r.project.devices.map((d) => (d.id === deviceId ? { ...d, cards: (d.cards ?? []).filter((c) => c.id !== cardId) } : d)) }
   }
 }
+
+// Libellé d'un port dans les rapports : préfixé du nom de sa carte hors « Intégré » (« Carte réseau 1 › eth2 »).
+export function portLabelWithCard(device: Device, port: PortDef, m: Messages): string {
+  const label = portDisplayLabel(device, port, m)
+  const card = cardOf(device, port) === ONBOARD ? undefined : device.cards?.find((c) => c.id === port.cardId)
+  return card ? `${card.name} › ${label}` : label
+}
+

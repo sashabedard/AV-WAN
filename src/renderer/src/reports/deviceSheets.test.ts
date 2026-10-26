@@ -97,3 +97,28 @@ describe('deviceSheets — IP multiples', () => {
   })
 })
 })
+
+describe('deviceSheets — hôte de VMs', () => {
+  it('ligne matériel, une ligne par VM, ports groupés par carte', () => {
+    const q = createProject(new Date(2026, 9, 26), 'fr')
+    const host = { ...createDevice(q, 'media-server', { x: 0, y: 0 }, { lang: 'fr', id: 'hv' }), name: 'SRV-HV-01' }
+    host.specs = { os: 'Proxmox 8', cpu: '2× Xeon', ramGb: 256, gpu: '2× A6000' }
+    host.cards = [{ id: 'g', name: 'GPU 1' }]
+    host.ports = [{ id: 'DP-1', label: 'DP 1', connector: 'displayport', cardId: 'g' }, ...host.ports]
+    const scr = createDevice(q, 'display', { x: 400, y: 0 }, { lang: 'fr', id: 'scr' })
+    scr.ports = [...scr.ports, { id: 'DP', label: 'DP', connector: 'displayport' }]
+    const p: Project = {
+      ...q,
+      devices: [host, scr],
+      links: [
+        { id: 'a', cableId: 'C-001', a: { deviceId: 'hv', portId: 'DP-1' }, b: { deviceId: 'scr', portId: 'DP' }, medium: 'displayport' },
+        { id: 'b', cableId: 'C-002', a: { deviceId: 'hv', portId: 'OUT1' }, b: { deviceId: 'scr', portId: 'HDMI' }, medium: 'hdmi' }
+      ],
+      vms: [{ id: 'vm', hostId: 'hv', name: 'VM Show', specs: { os: 'Ubuntu', vcpu: 4, ramGb: 16 }, vnics: [{ id: 'n', label: 'vnic0', ips: [{ address: '10.40.0.32', mode: 'static' }] }] }]
+    }
+    const s = deviceSheets(p, 'fr').find((x) => x.name === 'SRV-HV-01')!
+    expect(s.extras).toEqual(['Matériel : Proxmox 8 · 2× Xeon · 256 Go · 2× A6000', 'VM VM Show : Ubuntu · 4 vCPU · 16 Go · 10.40.0.32'])
+    expect(s.lines.map((l) => l.port)).toEqual(['OUT1', 'GPU 1 › DP 1'])
+  })
+})
+
