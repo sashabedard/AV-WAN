@@ -22,5 +22,6 @@ import { reports } from './reports'
 import { exportMessages } from './export'
 import { pdf } from './pdf'
 import { racks } from './racks'
+import { whatsNew } from './whatsNew'
 
-export const fr = { common, menu, dialogs, errors, update, topbar, welcome, app, theme, canvas, palette, quickSearch, vlanPanel, componentEditor, switchConfigurator, panels, inspector, catalog, model, reports, export: exportMessages, pdf, racks } as const
+export const fr = { common, menu, dialogs, errors, update, topbar, welcome, app, theme, canvas, palette, quickSearch, vlanPanel, componentEditor, switchConfigurator, panels, inspector, catalog, model, reports, export: exportMessages, pdf, racks, whatsNew } as const

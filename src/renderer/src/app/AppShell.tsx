@@ -11,6 +11,7 @@ import { RackView } from '../racks/RackView'
 import { useUiStore } from '../store/uiStore'
 import { UpdateBanner } from './UpdateBanner'
 import { SidebarResizer } from './SidebarResizer'
+import { WhatsNew } from './WhatsNew'
 
 export function AppShell() {
   const { m } = useT()
@@ -33,6 +34,7 @@ export function AppShell() {
       <ExportDialog />
       <ComponentEditor />
       <Welcome />
+      <WhatsNew />
     </div>
   )
 }

@@ -8,6 +8,7 @@ export const menu = {
   quit: 'Quit',
   checkUpdates: 'Check for Updates…',
   releases: 'Downloads and Release Notes…',
+  whatsNew: 'What’s New in AV·WAN',
   file: 'File',
   newProject: 'New Project',
   open: 'Open…',

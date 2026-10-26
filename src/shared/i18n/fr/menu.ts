@@ -6,6 +6,7 @@ export const menu = {
   unhide: 'Tout afficher',
   quitApp: (p: { app: string }) => `Quitter ${p.app}`,
   quit: 'Quitter',
+  whatsNew: 'Quoi de neuf dans AV·WAN',
   checkUpdates: 'Rechercher les mises à jour…',
   releases: 'Téléchargements et notes de version…',
   file: 'Fichier',

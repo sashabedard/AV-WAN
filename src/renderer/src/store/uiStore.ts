@@ -34,6 +34,8 @@ export interface UiState {
   closeSearch(): void
   exportOpen: boolean
   setExportOpen(on: boolean): void
+  whatsNewOpen: boolean // écran « Quoi de neuf » (une fois par version, ou menu Aide)
+  setWhatsNewOpen(on: boolean): void
   // Dernier choix de sections (pour la session) : la boîte le reprend au prochain export.
   lastPdfChoice: { sections: PdfSection[]; zonePages: boolean } | null
   rememberPdfChoice(choice: { sections: PdfSection[]; zonePages: boolean }): void
@@ -89,6 +91,8 @@ export const uiStore = createStore<UiState>()((set) => ({
   closeSearch: () => set({ search: null }),
   exportOpen: false,
   setExportOpen: (on) => set({ exportOpen: on }),
+  whatsNewOpen: false,
+  setWhatsNewOpen: (on) => set({ whatsNewOpen: on }),
   lastPdfChoice: null,
   rememberPdfChoice: (choice) => set({ lastPdfChoice: choice }),
   // Vue épinglée (spec 2026-10-14) : le cadre de la vignette, le temps de la session.

@@ -70,5 +70,8 @@ export function handleMenuAction(action: MenuAction): void {
     case 'exportXlsx':
       void exportXlsxAction()
       break
+    case 'whatsNew':
+      uiStore.getState().setWhatsNewOpen(true)
+      break
   }
 }
