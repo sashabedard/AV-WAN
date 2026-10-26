@@ -39,6 +39,18 @@ describe('fileIO', () => {
     expect(readFileSync(join(dir, 'lumen.bak.avwan'), 'utf8')).toBe('v0')
   })
 
+  it('n’écrase jamais une copie de sauvegarde existante : la suivante est suffixée', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'avwan-io-'))
+    const file = join(dir, 'lumen.avwan')
+    writeFileSync(file, 'v3 d’origine')
+    expect(await backupFile(file)).toBe(join(dir, 'lumen.bak.avwan'))
+    writeFileSync(file, 'v4')
+    expect(await backupFile(file)).toBe(join(dir, 'lumen.bak-2.avwan'))
+    expect(await backupFile(file)).toBe(join(dir, 'lumen.bak-3.avwan'))
+    expect(readFileSync(join(dir, 'lumen.bak.avwan'), 'utf8')).toBe('v3 d’origine')
+    expect(readFileSync(join(dir, 'lumen.bak-2.avwan'), 'utf8')).toBe('v4')
+  })
+
   it('écrit aussi des octets (PDF, classeur) de façon atomique', async () => {
     const dir = mkdtempSync(join(tmpdir(), 'avwan-io-'))
     const file = join(dir, 'plan.pdf')
