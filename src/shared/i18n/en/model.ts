@@ -47,6 +47,13 @@ export const model: Messages['model'] = {
   rack: {
     defaultName: (p) => `RACK-${p.n}`
   },
+  cards: {
+    onboard: 'Onboard',
+    gpu: (p) => `GPU ${p.n}`,
+    capture: (p) => `Capture ${p.n}`,
+    nic: (p) => `NIC ${p.n}`,
+    card: (p) => `Card ${p.n}`
+  },
   example: {
     title: 'Interactive installation (example)',
     authors: 'Technical team',

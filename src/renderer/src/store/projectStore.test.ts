@@ -728,4 +728,36 @@ describe('projectStore : baies (plan 10)', () => {
     s.getState().undo()
     expect(eth()).toEqual(before)
   })
+
+  it('Review Focus 2 : supprimer une carte dont 2 ports sont câblés, puis ⌘Z, rend tout en une annulation', () => {
+    const s = store()
+    s.getState().addCard('cam1', 'nic-rj45')
+    const card = s.getState().history.present.devices[1]!.cards![0]!
+    expect(card.name).toBe('Carte réseau 1')
+    s.getState().addPortIp('cam1', 'eth0')
+    s.getState().connect({ deviceId: 'sw1', portId: '2' }, { deviceId: 'cam1', portId: 'eth0' })
+    s.getState().connect({ deviceId: 'sw1', portId: '3' }, { deviceId: 'cam1', portId: 'eth1' })
+    const before = s.getState().history.present
+    expect(before.links).toHaveLength(3)
+    s.getState().removeCard('cam1', card.id)
+    expect(s.getState().history.present.links).toHaveLength(1)
+    expect(s.getState().toast).toBe('2 câbles débranchés')
+    s.getState().undo()
+    expect(s.getState().history.present).toEqual(before)
+  })
+
+  it('ajoute, renomme et retire un port ; renomme « Intégré »', () => {
+    const s = store()
+    s.getState().addPort('cam1', '', 'displayport')
+    const cam = () => s.getState().history.present.devices[1]!
+    expect(cam().ports.at(-1)).toEqual({ id: 'DP-1', label: 'DP 1', connector: 'displayport' })
+    s.getState().renamePort('cam1', 'DP-1', 'Moniteur')
+    expect(cam().ports.at(-1)!.label).toBe('Moniteur')
+    s.getState().renameCard('cam1', '', 'Carte mère')
+    expect(cam().onboardName).toBe('Carte mère')
+    s.getState().removePort('cam1', 'ETH')
+    expect(s.getState().history.present.links).toHaveLength(0)
+    expect(s.getState().toast).toBe('1 câble débranché')
+    expect(cam().ports.map((p) => p.id)).toEqual(['HDMI', 'DP-1'])
+  })
 })

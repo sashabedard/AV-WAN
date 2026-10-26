@@ -44,6 +44,7 @@ export const app: Messages['app'] = {
   toast: {
     readOnly: 'This file comes from a newer version of AV·WAN: it is read-only. Use “Save As…”.',
     zoneNeedsSelection: 'Select at least one device to create a zone around.',
+    cablesUnplugged: (p) => (p.n === 1 ? '1 cable unplugged' : `${p.n} cables unplugged`),
     connectBlocked: (p) => `Cannot connect: port in use or ${p.family} connectors incompatible.`,
     connectImpossible: 'Cannot connect.',
     reconnectImpossible: 'Cannot reconnect: port in use or connectors incompatible.',

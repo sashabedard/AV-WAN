@@ -1,6 +1,6 @@
 import { createStore, type StoreApi } from 'zustand/vanilla'
 import { useStore } from 'zustand'
-import type { Device, IpConfig, Link, MainsVoltage, PortRef, PortState, Project, SwitchSpec, Vlan, Zone } from '../model/types'
+import type { Connector, Device, IpConfig, Link, MainsVoltage, PortRef, PortState, Project, SwitchSpec, Vlan, Zone } from '../model/types'
 import { createDevice, createProject, newId, type CreateDeviceOptions } from '../model/project'
 import { familyLabels, canConnectPorts, canReconnect, connectorFamily, defaultMedium, findPort, nextCableId, sameRef } from '../model/rules'
 import { setLinkVlan as deriveSetLinkVlan, type VlanChoice } from '../model/derive'
@@ -13,6 +13,7 @@ import { autoAddress, autoAddressOnOpen } from '../model/daisyChain'
 import { ownNewKeys, removeProjectList, setProjectList, type ChannelKey } from '../model/dmxChannels'
 import { addRack as addRackModel, updateRack as updateRackModel, removeRack as removeRackModel, placeDevice, firstFreeU, unplaceDevice, setDeviceHeightU, removeInRackView, RACK_HEIGHT_MAX } from '../model/racks'
 import { editPortIps } from '../model/ips'
+import { ONBOARD, addCard as addCardModel, addPort as addPortModel, defaultCardName, removeCard as removeCardModel, removePorts, type CardPresetId } from '../model/cards'
 import { uiStore } from './uiStore'
 import { currentLang, currentMessages } from '../i18n/useT'
 import type { Lang } from '../../../shared/i18n/lang'
@@ -86,6 +87,12 @@ export interface ProjectState {
   addPortIp(deviceId: string, portId: string): void
   updatePortIp(deviceId: string, portId: string, index: number, ip: IpConfig): void
   removePortIp(deviceId: string, portId: string, index: number): void
+  addPort(deviceId: string, cardId: string, connector: Connector): void
+  addCard(deviceId: string, preset: CardPresetId): void
+  renameCard(deviceId: string, cardId: string, name: string): void
+  renamePort(deviceId: string, portId: string, label: string): void
+  removePort(deviceId: string, portId: string): void
+  removeCard(deviceId: string, cardId: string): void
   updateSwitchSpec(deviceId: string, spec: SwitchSpec): void
   updateMeta(patch: MetaPatch): void
   setMainsVoltage(voltage: MainsVoltage): void
@@ -131,6 +138,15 @@ export function createProjectStore(initial: Project = createProject(undefined, c
       const next = autoAddress(ownNewKeys(history.present, fn(history.present), dmxChannelsStore.getState().lists))
       if (next !== history.present) set({ history: commit(history, next) })
     }
+
+    // Suppression de ports : une entrée d'historique, et un toast quand des câbles ont été débranchés.
+    const removeWithToast = (fn: (p: Project) => { project: Project; unplugged: number }): void => {
+      if (refuseReadOnly()) return
+      const r = fn(get().history.present)
+      apply(() => r.project)
+      if (r.unplugged > 0) set({ toast: currentMessages().app.toast.cablesUnplugged({ n: r.unplugged }) })
+    }
+    const mapDevice = (p: Project, id: string, fn: (d: Device) => Device): Project => ({ ...p, devices: p.devices.map((d) => (d.id === id ? fn(d) : d)) })
 
     // Lecture seule : même toast que apply ; true = refusé (les actions booléennes renvoient alors false).
     const refuseReadOnly = (): boolean => {
@@ -385,6 +401,19 @@ export function createProjectStore(initial: Project = createProject(undefined, c
       addPortIp: (deviceId, portId) => apply((p) => editPortIps(p, deviceId, portId, (ips) => [...ips, { address: '', mode: 'static' }])),
       updatePortIp: (deviceId, portId, index, ip) => apply((p) => editPortIps(p, deviceId, portId, (ips) => ips.map((x, i) => (i === index ? ip : x)))),
       removePortIp: (deviceId, portId, index) => apply((p) => editPortIps(p, deviceId, portId, (ips) => ips.filter((_, i) => i !== index))),
+
+      addPort: (deviceId, cardId, connector) => apply((p) => mapDevice(p, deviceId, (d) => addPortModel(d, cardId, connector))),
+      addCard: (deviceId, preset) => apply((p) => mapDevice(p, deviceId, (d) => addCardModel(d, preset, defaultCardName(d, preset, currentMessages())))),
+      renameCard: (deviceId, cardId, name) =>
+        apply((p) =>
+          mapDevice(p, deviceId, (d) =>
+            cardId === ONBOARD ? { ...d, onboardName: name } : { ...d, cards: (d.cards ?? []).map((c) => (c.id === cardId ? { ...c, name } : c)) }
+          )
+        ),
+      renamePort: (deviceId, portId, label) => apply((p) => mapDevice(p, deviceId, (d) => ({ ...d, ports: d.ports.map((x) => (x.id === portId ? { ...x, label } : x)) }))),
+      // Une seule entrée d'historique ; les câbles des ports retirés sont débranchés dans la même action.
+      removePort: (deviceId, portId) => removeWithToast((p) => removePorts(p, deviceId, [portId])),
+      removeCard: (deviceId, cardId) => removeWithToast((p) => removeCardModel(p, deviceId, cardId)),
 
       updateSwitchSpec: (deviceId, spec) =>
         apply((p) => {

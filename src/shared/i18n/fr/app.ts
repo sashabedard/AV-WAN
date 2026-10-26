@@ -43,6 +43,7 @@ export const app = {
   toast: {
     readOnly: 'Ce fichier vient d’une version plus récente d’AV·WAN : il est en lecture seule. Utilisez « Enregistrer sous… ».',
     zoneNeedsSelection: 'Sélectionnez au moins un appareil pour créer une zone autour.',
+    cablesUnplugged: (p: { n: number }) => (p.n === 1 ? '1 câble débranché' : `${p.n} câbles débranchés`),
     connectBlocked: (p: { family: string }) => `Branchement impossible : port occupé ou connecteurs ${p.family} incompatibles.`,
     connectImpossible: 'Branchement impossible.',
     reconnectImpossible: 'Rebranchement impossible : port occupé ou connecteurs incompatibles.',

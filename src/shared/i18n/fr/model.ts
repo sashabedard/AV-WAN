@@ -48,6 +48,13 @@ export const model = {
   rack: {
     defaultName: (p: { n: number }) => `BAIE-${p.n}`
   },
+  cards: {
+    onboard: 'Intégré',
+    gpu: (p: { n: number }) => `GPU ${p.n}`,
+    capture: (p: { n: number }) => `Capture ${p.n}`,
+    nic: (p: { n: number }) => `Carte réseau ${p.n}`,
+    card: (p: { n: number }) => `Carte ${p.n}`
+  },
   example: {
     title: 'Installation interactive (exemple)',
     authors: 'Équipe technique',

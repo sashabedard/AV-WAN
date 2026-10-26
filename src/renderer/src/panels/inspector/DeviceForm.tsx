@@ -1,23 +1,20 @@
 // src/renderer/src/panels/inspector/DeviceForm.tsx
-import { Fragment, useState } from 'react'
+import { useState } from 'react'
 import type { Device, PortSide, Project } from '../../model/types'
 import { linksOnRemovedPorts, projectStore } from '../../store/projectStore'
-import { isRackDevice, portDisplayLabel } from '../../model/rules'
+import { isRackDevice } from '../../model/rules'
 import { switchPoeUsage } from '../../model/derive'
 import { getTemplate } from '../../catalog'
 import { switchSummary } from '../../catalog/switch'
 import { displayName } from '../../catalog/templateText'
 import { CommitInput } from '../CommitInput'
 import { SwitchConfigurator } from '../SwitchConfigurator'
-import { peersOf, portVlanSummary } from './format'
-import { isUniverseOutput, UNIVERSE_MAX } from '../../model/dmx'
-import { decimalText, parseDecimalField, parseIntField } from '../../model/fields'
+import { decimalText, parseDecimalField } from '../../model/fields'
 import { PsuSection } from './PsuSection'
 import { LedStripSection } from './LedStripSection'
 import { PatchSection } from './PatchSection'
 import { RackSection } from './RackSection'
-import { PortIps } from './PortIps'
-import { isNetworkPort } from '../../model/ips'
+import { PortsByCard } from './PortsByCard'
 import { useT } from '../../i18n/useT'
 
 function SwitchSection({ device, project }: { device: Device; project: Project }) {
@@ -60,7 +57,6 @@ export function DeviceForm({ device, project }: { device: Device; project: Proje
   const { m, lang } = useT()
   const t = m.inspector.device
   const template = getTemplate(project, device.templateId)
-  const universePorts = new Set(device.ports.filter((p) => isUniverseOutput(project, device, p)).map((p) => p.id))
   return (
     <div>
       <h2 className="insp__title">{template ? displayName(template, lang) : t.fallbackTitle}</h2>
@@ -124,69 +120,7 @@ export function DeviceForm({ device, project }: { device: Device; project: Proje
       <p className="insp__note">{t.zoneLine({ name: project.zones.find((z) => z.id === device.zoneId)?.name })}</p>
       <RackSection device={device} project={project} />
       <SwitchSection device={device} project={project} />
-      <section className="insp__section">
-        <h3 className="insp__title">{t.ports}</h3>
-        <table className="ports">
-          <thead>
-            <tr>
-              <th>{t.port}</th>
-              <th>{t.pluggedTo}</th>
-              <th>{t.vlan}</th>
-              <th>{t.poe}</th>
-              {universePorts.size > 0 && <th>{t.universe}</th>}
-            </tr>
-          </thead>
-          <tbody>
-            {device.ports.map((p) => (
-              <Fragment key={p.id}>
-                <tr>
-                  <td>{portDisplayLabel(device, p, m)}</td>
-                  <td>{peersOf(project, device, p.id, m)}</td>
-                  <td>{portVlanSummary(device.portState[p.id], t)}</td>
-                  <td>
-                    {p.poeOut ? (
-                      <input
-                        type="checkbox"
-                        aria-label={t.poePort({ label: portDisplayLabel(device, p, m) })}
-                        checked={device.portState[p.id]?.poeEnabled ?? true}
-                        onChange={(e) => s().setPortState(device.id, p.id, { poeEnabled: e.target.checked })}
-                      />
-                    ) : p.poeIn ? (
-                      t.receives
-                    ) : (
-                      ''
-                    )}
-                  </td>
-                  {universePorts.size > 0 && (
-                    <td>
-                      {universePorts.has(p.id) && (
-                        <CommitInput
-                          className="input input--mini"
-                          aria-label={t.universeAria({ label: portDisplayLabel(device, p, m) })}
-                          inputMode="numeric"
-                          value={device.portState[p.id]?.universe !== undefined ? String(device.portState[p.id]!.universe) : ''}
-                          onCommit={(v) => {
-                            const n = parseIntField(v, 0, UNIVERSE_MAX)
-                            if (n === undefined) s().showToast(t.universeToast({ max: UNIVERSE_MAX }))
-                            else s().setPortState(device.id, p.id, { universe: n ?? undefined })
-                          }}
-                        />
-                      )}
-                    </td>
-                  )}
-                </tr>
-                {isNetworkPort(p) && (
-                  <tr className="ports__ips">
-                    <td colSpan={universePorts.size > 0 ? 5 : 4}>
-                      <PortIps device={device} port={p} />
-                    </td>
-                  </tr>
-                )}
-              </Fragment>
-            ))}
-          </tbody>
-        </table>
-      </section>
+      <PortsByCard device={device} project={project} />
     </div>
   )
 }
